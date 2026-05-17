@@ -91,18 +91,10 @@
                                             <a href="{{ route('frontend.courses') }}">Our programs</a>
                                             <ul class="submenu programs-menu">
                                                 <li class="programs-menu__parent">
-                                                    <a href="{{ route('frontend.courses') }}">Online platform</a>
-                                                    <ul class="submenu-flyout">
                                                         <li><a href="{{ route('frontend.holiday-camps') }}">Holiday Camps</a></li>
                                                         <li><a href="{{ route('frontend.courses') }}">Short Courses</a></li>
-                                                    </ul>
-                                                </li>
-                                                <li class="programs-menu__parent">
-                                                    <a href="{{ route('frontend.contact') }}">On campus</a>
-                                                    <ul class="submenu-flyout">
                                                         <li><a href="{{ route('frontend.early-years') }}">Early Years</a></li>
                                                         <li><a href="{{ route('frontend.primary-education') }}">Primary Education</a></li>
-                                                    </ul>
                                                 </li>
                                             </ul>
                                         </li>
