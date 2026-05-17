@@ -141,6 +141,21 @@ class FrontendController extends Controller
         return view('frontend.events', compact('events'));
     }
 
+    public function holidayCamps()
+    {
+        return view('frontend.holiday-camps');
+    }
+
+    public function earlyYears()
+    {
+        return view('frontend.early-years');
+    }
+
+    public function primaryEducation()
+    {
+        return view('frontend.primary-education');
+    }
+
     public function courses()
     {
         $data = $this->frontendCoursesCatalog();

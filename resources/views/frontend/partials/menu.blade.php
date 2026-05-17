@@ -87,7 +87,26 @@
                                         <li><a href="{{ route('frontend.about') }}">{{ ___('frontend.About') }}</a></li>
                                         <li><a href="{{ route('frontend.news') }}">{{ ___('frontend.News') }}</a></li>
                                         <li><a href="{{ route('frontend.events') }}">{{ ___('frontend.Events') }}</a></li>
-                                        <li><a href="{{ route('frontend.courses') }}">{{ ___('frontend.Courses') }}</a></li>
+                                        <li>
+                                            <a href="{{ route('frontend.courses') }}">Our programs</a>
+                                            <ul class="submenu">
+                                                <li>
+                                                    <a href="{{ route('frontend.courses') }}">Online platform</a>
+                                                    <ul class="submenu">
+                                                        <li><a href="{{ route('frontend.holiday-camps') }}">Holiday Camps</a></li>
+                                                        <li><a href="{{ route('frontend.courses') }}">Short Courses</a></li>
+                                                    </ul>
+                                                </li>
+                                                <li>
+                                                    <a href="{{ route('frontend.contact') }}">On campus</a>
+                                                    <ul class="submenu">
+                                                        <li><a href="{{ route('frontend.early-years') }}">Early Years</a></li>
+                                                        <li><a href="{{ route('frontend.primary-education') }}">Primary Education</a></li>
+                                                    </ul>
+                                                </li>
+
+                                            </ul>
+                                        </li>
                                         <li><a href="{{ route('frontend.notices') }}">{{ ___('frontend.notices') }}</a></li>
                                         <li><a href="{{ route('frontend.result') }}">{{ ___('frontend.Result') }}</a></li>
                                         <li><a href="{{ route('frontend.contact') }}">{{ ___('frontend.contact_us') }}</a></li>

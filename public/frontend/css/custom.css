@@ -132,3 +132,29 @@ footer.home_three_footer .copyright_area .footer_border {
     list-style: block;
 }
 
+/* Our programs — nested submenu (Online platform → Holiday Camps / Short courses) */
+.header_area .main_menu ul li .submenu li {
+    position: relative;
+}
+
+.header_area .main_menu ul li .submenu li .submenu {
+    left: 100%;
+    top: 0;
+    margin-left: 0;
+}
+
+.header_area .main_menu ul li .submenu li:hover > .submenu {
+    top: 0;
+    opacity: 1;
+    visibility: visible;
+}
+
+.mobile_menu .slicknav_nav ul.submenu ul.submenu {
+    background: #efefef;
+}
+
+.mobile_menu .slicknav_nav ul.submenu ul.submenu li a {
+    padding-left: 28px;
+    font-size: 15px;
+}
+

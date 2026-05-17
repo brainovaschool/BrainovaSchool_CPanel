@@ -25,6 +25,9 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/news',             'news')->name('frontend.news');
                 Route::get('/news-detail/{id}', 'newsDetail')->name('frontend.news-detail');
                 Route::get('/events',           'events')->name('frontend.events');
+                Route::get('/programs/holiday-camps', 'holidayCamps')->name('frontend.holiday-camps');
+                Route::get('/programs/early-years', 'earlyYears')->name('frontend.early-years');
+                Route::get('/programs/primary-education', 'primaryEducation')->name('frontend.primary-education');
                 Route::get('/courses',          'courses')->name('frontend.courses');
                 Route::get('/courses/{slug}',   'courseDetail')->name('frontend.course-detail');
                 Route::get('/event-detail/{id}','eventDetail')->name('frontend.events-detail');
