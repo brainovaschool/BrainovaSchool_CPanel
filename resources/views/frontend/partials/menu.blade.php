@@ -90,18 +90,24 @@
                                         <li class="has-programs-menu">
                                             <a href="{{ route('frontend.courses') }}">Our programs</a>
                                             <ul class="submenu programs-menu">
-                                                <li class="programs-menu__label">Online platform</li>
-                                                <li><a href="{{ route('frontend.holiday-camps') }}">Holiday Camps</a></li>
-                                                <li><a href="{{ route('frontend.courses') }}">Short Courses</a></li>
-                                                <li class="programs-menu__divider" aria-hidden="true"></li>
-                                                <li class="programs-menu__label">On campus</li>
-                                                <li><a href="{{ route('frontend.early-years') }}">Early Years</a></li>
-                                                <li><a href="{{ route('frontend.primary-education') }}">Primary Education</a></li>
+                                                <li class="programs-menu__parent">
+                                                    <a href="{{ route('frontend.courses') }}">Online platform</a>
+                                                    <ul class="submenu-flyout">
+                                                        <li><a href="{{ route('frontend.holiday-camps') }}">Holiday Camps</a></li>
+                                                        <li><a href="{{ route('frontend.courses') }}">Short Courses</a></li>
+                                                    </ul>
+                                                </li>
+                                                <li class="programs-menu__parent">
+                                                    <a href="{{ route('frontend.contact') }}">On campus</a>
+                                                    <ul class="submenu-flyout">
+                                                        <li><a href="{{ route('frontend.early-years') }}">Early Years</a></li>
+                                                        <li><a href="{{ route('frontend.primary-education') }}">Primary Education</a></li>
+                                                    </ul>
+                                                </li>
                                             </ul>
                                         </li>
                                         <li><a href="{{ route('frontend.notices') }}">{{ ___('frontend.notices') }}</a></li>
                                         <li><a href="{{ route('frontend.result') }}">{{ ___('frontend.Result') }}</a></li>
-                                        <li><a href="{{ route('frontend.contact') }}">{{ ___('frontend.contact_us') }}</a></li>
                                         <li class="d-lg-none"><a href="{{ route('frontend.online-admission') }}">{{ ___('frontend.online_admission') }}</a></li>
                                         @foreach ($header_pages as $header)
                                             <li><a href="{{ route('frontend.page',$header->slug) }}">{{ @$header->defaultTranslate->name }}</a></li>
