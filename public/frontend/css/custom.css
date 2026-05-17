@@ -132,19 +132,57 @@ footer.home_three_footer .copyright_area .footer_border {
     list-style: block;
 }
 
-/* Our programs — nested submenu (Online platform → Holiday Camps / Short courses) */
+/* Our programs — nested submenu (Online platform / On campus flyouts) */
+.header_area .main_menu ul li > .submenu {
+    min-width: 220px;
+}
+
+.header_area .main_menu ul li:hover > .submenu {
+    top: 100%;
+    opacity: 1;
+    visibility: visible;
+}
+
+.header_area .main_menu ul li:hover .submenu .submenu {
+    top: 0;
+    left: 100%;
+    opacity: 0;
+    visibility: hidden;
+}
+
 .header_area .main_menu ul li .submenu li {
     position: relative;
 }
 
+.header_area .main_menu ul li .submenu li > a {
+    padding-right: 28px;
+}
+
+.header_area .main_menu ul li .submenu li:has(> .submenu) > a::after {
+    content: "\203A";
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.6;
+}
+
 .header_area .main_menu ul li .submenu li .submenu {
+    position: absolute;
     left: 100%;
     top: 0;
     margin-left: 0;
+    width: 220px;
+    opacity: 0;
+    visibility: hidden;
+    z-index: 12;
 }
 
 .header_area .main_menu ul li .submenu li:hover > .submenu {
     top: 0;
+    left: 100%;
     opacity: 1;
     visibility: visible;
 }
