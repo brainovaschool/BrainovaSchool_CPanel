@@ -87,24 +87,16 @@
                                         <li><a href="{{ route('frontend.about') }}">{{ ___('frontend.About') }}</a></li>
                                         <li><a href="{{ route('frontend.news') }}">{{ ___('frontend.News') }}</a></li>
                                         <li><a href="{{ route('frontend.events') }}">{{ ___('frontend.Events') }}</a></li>
-                                        <li>
+                                        <li class="has-programs-menu">
                                             <a href="{{ route('frontend.courses') }}">Our programs</a>
-                                            <ul class="submenu">
-                                                <li>
-                                                    <a href="{{ route('frontend.courses') }}">Online platform</a>
-                                                    <ul class="submenu">
-                                                        <li><a href="{{ route('frontend.holiday-camps') }}">Holiday Camps</a></li>
-                                                        <li><a href="{{ route('frontend.courses') }}">Short Courses</a></li>
-                                                    </ul>
-                                                </li>
-                                                <li>
-                                                    <a href="{{ route('frontend.contact') }}">On campus</a>
-                                                    <ul class="submenu">
-                                                        <li><a href="{{ route('frontend.early-years') }}">Early Years</a></li>
-                                                        <li><a href="{{ route('frontend.primary-education') }}">Primary Education</a></li>
-                                                    </ul>
-                                                </li>
-
+                                            <ul class="submenu programs-menu">
+                                                <li class="programs-menu__label">Online platform</li>
+                                                <li><a href="{{ route('frontend.holiday-camps') }}">Holiday Camps</a></li>
+                                                <li><a href="{{ route('frontend.courses') }}">Short Courses</a></li>
+                                                <li class="programs-menu__divider" aria-hidden="true"></li>
+                                                <li class="programs-menu__label">On campus</li>
+                                                <li><a href="{{ route('frontend.early-years') }}">Early Years</a></li>
+                                                <li><a href="{{ route('frontend.primary-education') }}">Primary Education</a></li>
                                             </ul>
                                         </li>
                                         <li><a href="{{ route('frontend.notices') }}">{{ ___('frontend.notices') }}</a></li>
