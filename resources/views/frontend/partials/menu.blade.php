@@ -91,7 +91,7 @@
                                             <a href="{{ route('frontend.courses') }}">Our programs</a>
                                             <ul class="submenu programs-menu">
                                                 <li class="programs-menu__parent">
-                                                        <li><a href="{{ route('frontend.holiday-clubs') }}">Holiday Clubs</a></li>
+                                                        <li><a href="{{ route('frontend.holiday-camps') }}">Holiday Clubs</a></li>
                                                         <li><a href="{{ route('frontend.courses') }}">Short Courses</a></li>
                                                         <li><a href="{{ route('frontend.early-years') }}">Early Years</a></li>
                                                         <li><a href="{{ route('frontend.primary-education') }}">Primary Education</a></li>
