@@ -116,6 +116,8 @@
 }
 
 .fe-filter-pill {
+  display: inline-flex;
+  align-items: center;
   border: 1px solid rgba(148, 163, 184, 0.5);
   background: #fff;
   color: #475569;
@@ -124,7 +126,13 @@
   font-size: 0.875rem;
   font-weight: 600;
   cursor: pointer;
+  text-decoration: none;
   transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+a.fe-filter-pill:hover {
+  color: #312e81;
+  text-decoration: none;
 }
 
 .fe-filter-pill:hover,
@@ -147,6 +155,33 @@
   font-size: 0.9rem;
   color: #64748b;
   font-weight: 500;
+}
+
+.fe-courses-count-filter {
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.fe-courses-pagination {
+  margin-top: 2rem;
+  padding-top: 0.5rem;
+}
+
+.fe-courses-pagination .page-link {
+  border-radius: 10px;
+  color: #334155;
+  font-weight: 600;
+  padding: 0.45rem 0.85rem;
+  border-color: rgba(148, 163, 184, 0.45);
+}
+
+.fe-courses-pagination .page-item.active .page-link {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border-color: transparent;
+}
+
+.fe-courses-pagination .page-item.disabled .page-link {
+  opacity: 0.45;
 }
 
 .fe-courses-grid {

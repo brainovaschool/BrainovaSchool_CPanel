@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Frontend;
 
 use PDF;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\Controller;
 use App\Repositories\GenderRepository;
@@ -156,11 +157,43 @@ class FrontendController extends Controller
         return view('frontend.primary-education');
     }
 
-    public function courses()
+    public function courses(Request $request)
     {
         $data = $this->normalizeCoursesCatalog($this->frontendCoursesCatalog());
+        $allCourses = collect($data['courses'] ?? []);
 
-        return view('frontend.courses', compact('data'));
+        $category = $this->normalizeCourseCategory((string) $request->query('category', 'all'));
+        if ($category === '') {
+            $category = 'all';
+        }
+
+        $filtered = $category === 'all'
+            ? $allCourses
+            : $allCourses->filter(fn (array $course) => ($course['category'] ?? '') === $category);
+
+        $perPage = 9;
+        $page = max(1, (int) $request->query('page', 1));
+        $total = $filtered->count();
+        $items = $filtered->values()->forPage($page, $perPage);
+
+        $query = $category !== 'all' ? ['category' => $category] : [];
+
+        $paginator = new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path'  => route('frontend.courses'),
+                'query' => $query,
+            ]
+        );
+
+        $data['courses'] = $items->values()->all();
+        $data['active_category'] = $category;
+        $data['catalog_total'] = $allCourses->count();
+
+        return view('frontend.courses', compact('data', 'paginator'));
     }
 
     public function courseDetail(string $slug)

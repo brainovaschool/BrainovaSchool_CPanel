@@ -14,6 +14,8 @@
     $courses = $data['courses'] ?? [];
     $faqs = $data['faqs'] ?? [];
     $trust = $data['trust'] ?? [];
+    $activeCategory = $data['active_category'] ?? 'all';
+    $catalogTotal = $data['catalog_total'] ?? count($courses);
     $categories = $data['categories'] ?? [];
     if (empty($categories)) {
         $categories = [
@@ -52,14 +54,19 @@
 
     <section class="fe-courses-filters section_padding pt-4 pb-0">
         <div class="container">
-            <div class="fe-filter-pills" id="feCourseFilters" role="tablist" aria-label="Course categories">
-                @foreach ($categories as $idx => $cat)
-                    @php $slug = $cat['slug'] ?? 'all'; @endphp
-                    <button type="button"
-                        class="fe-filter-pill {{ $idx === 0 ? 'fe-is-active' : '' }}"
-                        data-fe-filter="{{ $slug }}"
+            <div class="fe-filter-pills" role="tablist" aria-label="Course categories">
+                @foreach ($categories as $cat)
+                    @php
+                        $slug = $cat['slug'] ?? 'all';
+                        $isActive = $activeCategory === $slug;
+                        $filterUrl = $slug === 'all'
+                            ? route('frontend.courses')
+                            : route('frontend.courses', ['category' => $slug]);
+                    @endphp
+                    <a href="{{ $filterUrl }}"
+                        class="fe-filter-pill {{ $isActive ? 'fe-is-active' : '' }}"
                         role="tab"
-                        aria-selected="{{ $idx === 0 ? 'true' : 'false' }}">{{ $cat['label'] ?? $slug }}</button>
+                        aria-selected="{{ $isActive ? 'true' : 'false' }}">{{ $cat['label'] ?? $slug }}</a>
                 @endforeach
             </div>
         </div>
@@ -68,17 +75,26 @@
     <section class="fe-courses-grid section_padding pt-4">
         <div class="container">
             <div class="fe-courses-toolbar">
-                <p class="fe-courses-count mb-0"><span id="feCoursesVisible">{{ count($courses) }}</span> programs shown</p>
+                <p class="fe-courses-count mb-0">
+                    @if(isset($paginator) && $paginator->total() > 0)
+                        Showing {{ $paginator->firstItem() }}–{{ $paginator->lastItem() }} of {{ $paginator->total() }} programs
+                        @if($activeCategory !== 'all')
+                            <span class="fe-courses-count-filter">({{ $catalogTotal }} total in catalog)</span>
+                        @endif
+                    @else
+                        No programs match this filter.
+                    @endif
+                </p>
                 <a href="{{ route('frontend.contact') }}" class="fe-btn-pill fe-btn-ghost fe-mini d-none d-sm-inline-flex">Ask a question</a>
             </div>
 
+            @if(count($courses))
             <div class="row fe-courses-row" id="feCoursesGrid">
                 @foreach ($courses as $course)
                     @php
-                        $cat = $course['category'] ?? '';
                         $accent = $course['accent'] ?? 'indigo';
                     @endphp
-                    <div class="col-xl-4 col-lg-4 col-md-6 mb-4 fe-course-wrap" data-fe-course-category="{{ $cat }}">
+                    <div class="col-xl-4 col-lg-4 col-md-6 mb-4 fe-course-wrap">
                         <article class="fe-course-card">
                             <div class="fe-course-card-media fe-accent-{{ $accent }} {{ empty($course['image']) ? 'fe-course-card-media--placeholder' : '' }}">
                                 @if(!empty($course['image']))
@@ -122,7 +138,12 @@
                 @endforeach
             </div>
 
-            <p class="fe-courses-empty" id="feCoursesEmpty">No programs match this filter yet—try another category or contact us for custom options.</p>
+            @if(isset($paginator))
+                @include('frontend.partials.courses-pagination', ['paginator' => $paginator])
+            @endif
+            @else
+            <p class="fe-courses-empty fe-is-visible">No programs match this filter yet—try another category or <a href="{{ route('frontend.contact') }}">contact us</a>.</p>
+            @endif
         </div>
     </section>
 
@@ -163,75 +184,6 @@
 @push('script')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    var grid = document.getElementById('feCoursesGrid');
-    var filters = document.getElementById('feCourseFilters');
-    var countEl = document.getElementById('feCoursesVisible');
-    var emptyEl = document.getElementById('feCoursesEmpty');
-
-    if (!grid || !filters) {
-        return;
-    }
-
-    var categoryAliases = {
-        maths: 'math',
-        mathematics: 'math',
-        english: 'language',
-        languages: 'language',
-        'stem & computing': 'stem',
-        'life skills': 'skills'
-    };
-
-    function normalizeCategory(value) {
-        var slug = String(value || '').toLowerCase().trim();
-        return categoryAliases[slug] || slug;
-    }
-
-    function getCards() {
-        return grid.querySelectorAll('.fe-course-wrap');
-    }
-
-    function applyFilter(slug) {
-        var filter = normalizeCategory(slug || 'all');
-        if (!filter) {
-            filter = 'all';
-        }
-
-        var visible = 0;
-        getCards().forEach(function (card) {
-            var cat = normalizeCategory(card.getAttribute('data-fe-course-category'));
-            var show = filter === 'all' || cat === filter;
-            card.classList.toggle('d-none', !show);
-            if (show) {
-                visible++;
-            }
-        });
-
-        if (countEl) {
-            countEl.textContent = String(visible);
-        }
-        if (emptyEl) {
-            emptyEl.classList.toggle('fe-is-visible', visible === 0);
-        }
-    }
-
-    filters.addEventListener('click', function (event) {
-        var pill = event.target.closest('[data-fe-filter]');
-        if (!pill) {
-            return;
-        }
-
-        var slug = pill.getAttribute('data-fe-filter') || 'all';
-        filters.querySelectorAll('[data-fe-filter]').forEach(function (btn) {
-            btn.classList.remove('fe-is-active');
-            btn.setAttribute('aria-selected', 'false');
-        });
-        pill.classList.add('fe-is-active');
-        pill.setAttribute('aria-selected', 'true');
-        applyFilter(slug);
-    });
-
-    applyFilter('all');
-
     document.querySelectorAll('.fe-faq-q').forEach(function (btn) {
         btn.addEventListener('click', function () {
             var item = btn.closest('.fe-faq-item');
