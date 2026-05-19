@@ -183,29 +183,30 @@ class FrontendController extends Controller
      */
     protected function frontendCoursesCatalog(): array
     {
-        $path = config_path('frontend_courses.php');
-        $fromFile = (is_file($path) && is_readable($path)) ? require $path : null;
+        $paths = [
+            base_path('config/frontend_courses.php'),
+            config_path('frontend_courses.php'),
+        ];
 
-        $data = config('frontend_courses');
-        if (!is_array($data)) {
-            $data = [];
-        }
+        foreach ($paths as $path) {
+            if (!is_readable($path)) {
+                continue;
+            }
 
-        // config:cache may hold a stale partial courses list — always prefer the PHP file when present.
-        if (is_array($fromFile) && !empty($fromFile['courses']) && is_array($fromFile['courses'])) {
-            $data = array_replace_recursive($data, $fromFile);
-            $data['courses'] = $fromFile['courses'];
-            if (!empty($fromFile['categories'])) {
-                $data['categories'] = $fromFile['categories'];
+            $data = require $path;
+
+            if (is_array($data) && !empty($data['courses']) && is_array($data['courses'])) {
+                return $this->normalizeCoursesCatalog($data);
             }
         }
 
-        $courses = $data['courses'] ?? null;
-        if (!is_array($courses) || count($courses) === 0) {
-            $data = $this->minimalFrontendCoursesCatalog();
+        $cached = config('frontend_courses');
+
+        if (is_array($cached) && !empty($cached['courses']) && is_array($cached['courses'])) {
+            return $this->normalizeCoursesCatalog($cached);
         }
 
-        return $this->normalizeCoursesCatalog($data);
+        return $this->normalizeCoursesCatalog($this->minimalFrontendCoursesCatalog());
     }
 
     /**
@@ -263,8 +264,10 @@ class FrontendController extends Controller
             ],
             'categories' => [
                 ['slug' => 'all', 'label' => 'All programs'],
+                ['slug' => 'stem', 'label' => 'STEM & computing'],
                 ['slug' => 'math', 'label' => 'Mathematics'],
                 ['slug' => 'language', 'label' => 'Languages'],
+                ['slug' => 'skills', 'label' => 'Life skills'],
             ],
             'courses' => [
                 [

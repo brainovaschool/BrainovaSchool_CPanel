@@ -103,12 +103,16 @@
 
 .fe-courses-filters {
   padding: 0 0 1rem;
+  position: relative;
+  z-index: 5;
 }
 
 .fe-filter-pills {
-  display: flex;
+  display: flex !important;
   flex-wrap: wrap;
   gap: 0.5rem;
+  visibility: visible;
+  opacity: 1;
 }
 
 .fe-filter-pill {

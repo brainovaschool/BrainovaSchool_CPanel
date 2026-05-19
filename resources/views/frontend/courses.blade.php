@@ -11,10 +11,19 @@
 @section('main')
 @php
     $hero = $data['hero'] ?? [];
-    $categories = $data['categories'] ?? [];
     $courses = $data['courses'] ?? [];
     $faqs = $data['faqs'] ?? [];
     $trust = $data['trust'] ?? [];
+    $categories = $data['categories'] ?? [];
+    if (empty($categories)) {
+        $categories = [
+            ['slug' => 'all', 'label' => 'All programs'],
+            ['slug' => 'stem', 'label' => 'STEM & computing'],
+            ['slug' => 'math', 'label' => 'Mathematics'],
+            ['slug' => 'language', 'label' => 'Languages'],
+            ['slug' => 'skills', 'label' => 'Life skills'],
+        ];
+    }
 @endphp
 
 <div class="fe-courses-page">
@@ -153,9 +162,13 @@
 
 @push('script')
 <script>
-$(function () {
-    var $grid = $('#feCoursesGrid');
-    if (!$grid.length) {
+document.addEventListener('DOMContentLoaded', function () {
+    var grid = document.getElementById('feCoursesGrid');
+    var filters = document.getElementById('feCourseFilters');
+    var countEl = document.getElementById('feCoursesVisible');
+    var emptyEl = document.getElementById('feCoursesEmpty');
+
+    if (!grid || !filters) {
         return;
     }
 
@@ -173,33 +186,47 @@ $(function () {
         return categoryAliases[slug] || slug;
     }
 
+    function getCards() {
+        return grid.querySelectorAll('.fe-course-wrap');
+    }
+
     function applyFilter(slug) {
         var filter = normalizeCategory(slug || 'all');
-        if (filter === '') {
+        if (!filter) {
             filter = 'all';
         }
 
         var visible = 0;
-        $grid.find('.fe-course-wrap').each(function () {
-            var $card = $(this);
-            var cat = normalizeCategory($card.attr('data-fe-course-category'));
+        getCards().forEach(function (card) {
+            var cat = normalizeCategory(card.getAttribute('data-fe-course-category'));
             var show = filter === 'all' || cat === filter;
-            $card.toggleClass('d-none', !show);
+            card.classList.toggle('d-none', !show);
             if (show) {
                 visible++;
             }
         });
 
-        $('#feCoursesVisible').text(visible);
-        $('#feCoursesEmpty').toggleClass('fe-is-visible', visible === 0);
+        if (countEl) {
+            countEl.textContent = String(visible);
+        }
+        if (emptyEl) {
+            emptyEl.classList.toggle('fe-is-visible', visible === 0);
+        }
     }
 
-    $('#feCourseFilters').on('click', '[data-fe-filter]', function () {
-        var slug = $(this).attr('data-fe-filter') || 'all';
-        $('#feCourseFilters [data-fe-filter]')
-            .removeClass('fe-is-active')
-            .attr('aria-selected', 'false');
-        $(this).addClass('fe-is-active').attr('aria-selected', 'true');
+    filters.addEventListener('click', function (event) {
+        var pill = event.target.closest('[data-fe-filter]');
+        if (!pill) {
+            return;
+        }
+
+        var slug = pill.getAttribute('data-fe-filter') || 'all';
+        filters.querySelectorAll('[data-fe-filter]').forEach(function (btn) {
+            btn.classList.remove('fe-is-active');
+            btn.setAttribute('aria-selected', 'false');
+        });
+        pill.classList.add('fe-is-active');
+        pill.setAttribute('aria-selected', 'true');
         applyFilter(slug);
     });
 
@@ -212,7 +239,9 @@ $(function () {
             var inner = panel.querySelector('.fe-faq-a-inner');
             var open = !item.classList.contains('fe-open');
             document.querySelectorAll('.fe-faq-item.fe-open').forEach(function (o) {
-                if (o === item) return;
+                if (o === item) {
+                    return;
+                }
                 o.classList.remove('fe-open');
                 o.querySelector('.fe-faq-a').style.maxHeight = '0';
             });

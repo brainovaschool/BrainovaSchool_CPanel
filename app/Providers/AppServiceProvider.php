@@ -63,6 +63,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        $this->registerFrontendCoursesConfig();
+
         RateLimiter::for('web', function (Request $request) {
             return Limit::perMinute(2)->by(optional($request->user())->id ?: $request->ip());
         });
@@ -143,6 +145,24 @@ class AppServiceProvider extends ServiceProvider
      * Subscribe + page sections for global view composer. Cached once per HTTP request
      * so wildcard composers do not re-query on every nested @include.
      */
+    /**
+     * Always load the full public courses catalog from disk (avoids stale config:cache lists).
+     */
+    protected function registerFrontendCoursesConfig(): void
+    {
+        $path = base_path('config/frontend_courses.php');
+
+        if (!is_readable($path)) {
+            return;
+        }
+
+        $catalog = require $path;
+
+        if (is_array($catalog)) {
+            Config::set('frontend_courses', $catalog);
+        }
+    }
+
     protected function pageSectionsAndSubscriber(): array
     {
         static $payload = null;
