@@ -158,14 +158,14 @@ class FrontendController extends Controller
 
     public function courses()
     {
-        $data = $this->frontendCoursesCatalog();
+        $data = $this->normalizeCoursesCatalog($this->frontendCoursesCatalog());
 
         return view('frontend.courses', compact('data'));
     }
 
     public function courseDetail(string $slug)
     {
-        $data = $this->frontendCoursesCatalog();
+        $data = $this->normalizeCoursesCatalog($this->frontendCoursesCatalog());
         $courses = $data['courses'] ?? [];
         $course = collect($courses)->firstWhere('slug', $slug);
         if ($course === null) {
@@ -183,25 +183,61 @@ class FrontendController extends Controller
      */
     protected function frontendCoursesCatalog(): array
     {
+        $path = config_path('frontend_courses.php');
+        $fromFile = (is_file($path) && is_readable($path)) ? require $path : null;
+
         $data = config('frontend_courses');
         if (!is_array($data)) {
             $data = [];
         }
 
-        $courses = $data['courses'] ?? null;
-        if (!is_array($courses) || count($courses) === 0) {
-            $path = config_path('frontend_courses.php');
-            if (is_file($path)) {
-                $fromFile = require $path;
-                if (is_array($fromFile)) {
-                    $data = array_replace_recursive($data, $fromFile);
-                }
+        // config:cache may hold a stale partial courses list — always prefer the PHP file when present.
+        if (is_array($fromFile) && !empty($fromFile['courses']) && is_array($fromFile['courses'])) {
+            $data = array_replace_recursive($data, $fromFile);
+            $data['courses'] = $fromFile['courses'];
+            if (!empty($fromFile['categories'])) {
+                $data['categories'] = $fromFile['categories'];
             }
         }
 
         $courses = $data['courses'] ?? null;
         if (!is_array($courses) || count($courses) === 0) {
             $data = $this->minimalFrontendCoursesCatalog();
+        }
+
+        return $this->normalizeCoursesCatalog($data);
+    }
+
+    /**
+     * Map legacy / display category labels to filter pill slugs.
+     */
+    protected function normalizeCourseCategory(string $category): string
+    {
+        $category = strtolower(trim($category));
+
+        $map = [
+            'maths'        => 'math',
+            'mathematics'  => 'math',
+            'english'      => 'language',
+            'languages'    => 'language',
+            'stem & computing' => 'stem',
+            'life skills'  => 'skills',
+        ];
+
+        return $map[$category] ?? $category;
+    }
+
+    protected function normalizeCoursesCatalog(array $data): array
+    {
+        if (!empty($data['courses']) && is_array($data['courses'])) {
+            foreach ($data['courses'] as $index => $course) {
+                if (!is_array($course)) {
+                    continue;
+                }
+                $data['courses'][$index]['category'] = $this->normalizeCourseCategory(
+                    (string) ($course['category'] ?? '')
+                );
+            }
         }
 
         return $data;
@@ -227,12 +263,13 @@ class FrontendController extends Controller
             ],
             'categories' => [
                 ['slug' => 'all', 'label' => 'All programs'],
-                ['slug' => 'stem', 'label' => 'STEM'],
+                ['slug' => 'math', 'label' => 'Mathematics'],
+                ['slug' => 'language', 'label' => 'Languages'],
             ],
             'courses' => [
                 [
-                    'slug'        => 'Basic to Intermediate Maths',
-                    'category'    => 'Maths',
+                    'slug'        => 'basic-to-intermediate-maths',
+                    'category'    => 'math',
                     'badge'       => 'Maths',
                     'title'       => 'Basic to Intermediate Maths',
                     'description' => 'Number place value, Arthematics, Fractions, Decimals, Geometry',
@@ -249,8 +286,8 @@ class FrontendController extends Controller
                     'format'      => 'Twice weekly',
                 ],
                 [
-                    'slug'        => 'Advanced Maths',
-                    'category'    => 'Maths',
+                    'slug'        => 'advanced-maths',
+                    'category'    => 'math',
                     'badge'       => 'Maths',
                     'title'       => 'Advanced Maths',
                     'description' => 'Word problem, Arthematic, Geometry and Algebra',
@@ -267,8 +304,26 @@ class FrontendController extends Controller
                     'format'      => 'Twice weekly.',
                 ],
                 [
-                    'slug'        => 'Advanced English',
-                    'category'    => 'English',
+                    'slug'        => 'basic-to-intermediate-english',
+                    'category'    => 'language',
+                    'badge'       => 'English',
+                    'title'       => 'Basic to Intermediate English',
+                    'description' => 'Reading, writing, listening, and speaking from foundational fluency through confident intermediate use.',
+                    'age_range'   => 'Ages 8–12',
+                    'grade'       => 'Grade 4–6',
+                    'lessons'     => '60 workshops',
+                    'duration'    => 'Academic year',
+                    'enrolled'    => 'Open enrollment',
+                    'price'       => 'Contact for fee',
+                    'accent'      => 'amber',
+                    'image'       => 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80',
+                    'overview'    => ['Placement by short diagnostic.'],
+                    'highlights'  => ['Growth dashboards', 'Weekly feedback'],
+                    'format'      => '3 × 55-minute sessions weekly',
+                ],
+                [
+                    'slug'        => 'advanced-english',
+                    'category'    => 'language',
                     'badge'       => 'English',
                     'title'       => 'Advanced English',
                     'description' => 'Comprehension, Creative Writting, Grammar and Vocabulary, Spoken English',

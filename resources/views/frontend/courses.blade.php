@@ -63,10 +63,10 @@
                 <a href="{{ route('frontend.contact') }}" class="fe-btn-pill fe-btn-ghost fe-mini d-none d-sm-inline-flex">Ask a question</a>
             </div>
 
-            <div class="row" id="feCoursesGrid">
+            <div class="row fe-courses-row" id="feCoursesGrid">
                 @foreach ($courses as $course)
                     @php
-                        $cat = $course['category'] ?? 'all';
+                        $cat = $course['category'] ?? '';
                         $accent = $course['accent'] ?? 'indigo';
                     @endphp
                     <div class="col-xl-4 col-lg-4 col-md-6 mb-4 fe-course-wrap" data-fe-course-category="{{ $cat }}">
@@ -153,35 +153,57 @@
 
 @push('script')
 <script>
-(function () {
-    var pills = document.querySelectorAll('#feCourseFilters [data-fe-filter]');
-    var wraps = document.querySelectorAll('.fe-course-wrap');
-    var countEl = document.getElementById('feCoursesVisible');
-    var emptyEl = document.getElementById('feCoursesEmpty');
-
-    function applyFilter(slug) {
-        var n = 0;
-        wraps.forEach(function (w) {
-            var ok = slug === 'all' || w.getAttribute('data-fe-course-category') === slug;
-            w.style.display = ok ? '' : 'none';
-            if (ok) n++;
-        });
-        if (countEl) countEl.textContent = n;
-        if (emptyEl) emptyEl.classList.toggle('fe-is-visible', n === 0);
+$(function () {
+    var $grid = $('#feCoursesGrid');
+    if (!$grid.length) {
+        return;
     }
 
-    pills.forEach(function (p) {
-        p.addEventListener('click', function () {
-            var slug = p.getAttribute('data-fe-filter') || 'all';
-            pills.forEach(function (x) {
-                x.classList.remove('fe-is-active');
-                x.setAttribute('aria-selected', 'false');
-            });
-            p.classList.add('fe-is-active');
-            p.setAttribute('aria-selected', 'true');
-            applyFilter(slug);
+    var categoryAliases = {
+        maths: 'math',
+        mathematics: 'math',
+        english: 'language',
+        languages: 'language',
+        'stem & computing': 'stem',
+        'life skills': 'skills'
+    };
+
+    function normalizeCategory(value) {
+        var slug = String(value || '').toLowerCase().trim();
+        return categoryAliases[slug] || slug;
+    }
+
+    function applyFilter(slug) {
+        var filter = normalizeCategory(slug || 'all');
+        if (filter === '') {
+            filter = 'all';
+        }
+
+        var visible = 0;
+        $grid.find('.fe-course-wrap').each(function () {
+            var $card = $(this);
+            var cat = normalizeCategory($card.attr('data-fe-course-category'));
+            var show = filter === 'all' || cat === filter;
+            $card.toggleClass('d-none', !show);
+            if (show) {
+                visible++;
+            }
         });
+
+        $('#feCoursesVisible').text(visible);
+        $('#feCoursesEmpty').toggleClass('fe-is-visible', visible === 0);
+    }
+
+    $('#feCourseFilters').on('click', '[data-fe-filter]', function () {
+        var slug = $(this).attr('data-fe-filter') || 'all';
+        $('#feCourseFilters [data-fe-filter]')
+            .removeClass('fe-is-active')
+            .attr('aria-selected', 'false');
+        $(this).addClass('fe-is-active').attr('aria-selected', 'true');
+        applyFilter(slug);
     });
+
+    applyFilter('all');
 
     document.querySelectorAll('.fe-faq-q').forEach(function (btn) {
         btn.addEventListener('click', function () {
@@ -203,6 +225,6 @@
             }
         });
     });
-})();
+});
 </script>
 @endpush
