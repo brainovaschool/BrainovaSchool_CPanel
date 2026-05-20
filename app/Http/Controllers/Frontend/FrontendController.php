@@ -174,11 +174,12 @@ class FrontendController extends Controller
             ]
         );
 
-        $data['camps'] = $items->values()->all();
+        $camps = array_values($items->all());
+        $data['camps'] = $camps;
         $data['active_category'] = $category;
         $data['catalog_total'] = $allCamps->count();
 
-        return view('frontend.holiday-camps', compact('data', 'paginator'));
+        return view('frontend.holiday-camps', compact('data', 'paginator', 'camps'));
     }
 
     public function holidayCampDetail(string $slug)
@@ -325,30 +326,137 @@ class FrontendController extends Controller
 
     protected function frontendHolidayCampsCatalog(): array
     {
-        $paths = [
-            base_path('config/frontend_holiday_camps.php'),
-            config_path('frontend_holiday_camps.php'),
-        ];
+        $data = $this->loadHolidayCampsConfigFromDisk();
 
-        foreach ($paths as $path) {
+        if (empty($data['camps']) || !is_array($data['camps'])) {
+            $data['camps'] = $this->defaultHolidayCampsList();
+        }
+
+        if (empty($data['hero']) || !is_array($data['hero'])) {
+            $data['hero'] = [
+                'title'    => 'Summer camp programs',
+                'subtitle' => 'One-week holiday camps for ages 6–13.',
+                'primary_cta' => ['label' => 'Talk to admissions', 'route' => 'frontend.contact'],
+                'secondary_cta' => ['label' => 'Start online admission', 'route' => 'frontend.online-admission'],
+            ];
+        }
+
+        if (empty($data['categories']) || !is_array($data['categories'])) {
+            $data['categories'] = [
+                ['slug' => 'all', 'label' => 'All camps'],
+                ['slug' => 'digital', 'label' => 'Digital skills'],
+                ['slug' => 'creative', 'label' => 'Creative crafts'],
+                ['slug' => 'science', 'label' => 'Science'],
+                ['slug' => 'culinary', 'label' => 'Baking'],
+                ['slug' => 'arts', 'label' => 'Art'],
+                ['slug' => 'tech', 'label' => 'Coding'],
+            ];
+        }
+
+        return $this->normalizeCampsCatalog($data);
+    }
+
+    /**
+     * Load summer camp catalog from config file (bypasses stale config:cache).
+     */
+    protected function loadHolidayCampsConfigFromDisk(): array
+    {
+        foreach ([base_path('config/frontend_holiday_camps.php'), config_path('frontend_holiday_camps.php')] as $path) {
             if (!is_readable($path)) {
                 continue;
             }
 
             $data = require $path;
 
-            if (is_array($data) && !empty($data['camps']) && is_array($data['camps'])) {
-                return $this->normalizeCampsCatalog($data);
+            if (is_array($data)) {
+                return $data;
             }
         }
 
         $cached = config('frontend_holiday_camps');
 
-        if (is_array($cached) && !empty($cached['camps']) && is_array($cached['camps'])) {
-            return $this->normalizeCampsCatalog($cached);
+        return is_array($cached) ? $cached : [];
+    }
+
+    /**
+     * Built-in camp list when config file is missing on the server.
+     */
+    protected function defaultHolidayCampsList(): array
+    {
+        $fromDisk = $this->loadHolidayCampsConfigFromDisk();
+
+        if (!empty($fromDisk['camps']) && is_array($fromDisk['camps'])) {
+            return $fromDisk['camps'];
         }
 
-        return $this->normalizeCampsCatalog([]);
+        return [
+            [
+                'slug' => 'digital-skills-camp', 'category' => 'digital', 'badge' => 'Digital',
+                'title' => 'Digital Skills Camp',
+                'description' => 'Learn Canva, Excel, PowerPoint, and Word through fun, practical projects.',
+                'age_range' => 'Ages 6–13', 'grade' => 'All levels welcome', 'lessons' => '1 week course',
+                'duration' => '1 week', 'enrolled' => 'Summer intake—limited seats', 'price' => 'Contact for fee',
+                'accent' => 'violet',
+                'image' => 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80',
+                'overview' => ['Hands-on digital projects every day.'], 'highlights' => ['Ages 6–13'],
+                'format' => '1-week camp',
+            ],
+            [
+                'slug' => 'plaster-candle-camp', 'category' => 'creative', 'badge' => 'Crafts',
+                'title' => 'Plaster Crafting & Candle Making',
+                'description' => 'Shape plaster creations and pour beautiful candles.',
+                'age_range' => 'Ages 6–13', 'grade' => 'All levels welcome', 'lessons' => '1 week course',
+                'duration' => '1 week', 'enrolled' => 'Summer intake—limited seats', 'price' => 'Contact for fee',
+                'accent' => 'rose',
+                'image' => 'https://images.unsplash.com/photo-1452860607049-958cad10aeff?auto=format&fit=crop&w=1200&q=80',
+                'overview' => ['Creative studio projects to take home.'], 'highlights' => ['Ages 6–13'],
+                'format' => '1-week camp',
+            ],
+            [
+                'slug' => 'science-camp', 'category' => 'science', 'badge' => 'Science',
+                'title' => 'Science Camp',
+                'description' => 'Experimentation and exploration through safe, exciting lab activities.',
+                'age_range' => 'Ages 6–13', 'grade' => 'All levels welcome', 'lessons' => '1 week course',
+                'duration' => '1 week', 'enrolled' => 'Summer intake—limited seats', 'price' => 'Contact for fee',
+                'accent' => 'teal',
+                'image' => 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1200&q=80',
+                'overview' => ['Predict, test, and discover like young scientists.'], 'highlights' => ['Ages 6–13'],
+                'format' => '1-week camp',
+            ],
+            [
+                'slug' => 'baking-camp', 'category' => 'culinary', 'badge' => 'Baking',
+                'title' => 'Baking Camp',
+                'description' => 'Pizza, cookies, cupcakes, icing and decoration.',
+                'age_range' => 'Ages 6–13', 'grade' => 'All levels welcome', 'lessons' => '1 week course',
+                'duration' => '1 week', 'enrolled' => 'Summer intake—limited seats', 'price' => 'Contact for fee',
+                'accent' => 'amber',
+                'image' => 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200&q=80',
+                'overview' => ['Kitchen skills and tasty results every day.'], 'highlights' => ['Ages 6–13'],
+                'format' => '1-week camp',
+            ],
+            [
+                'slug' => 'mix-media-art-camp', 'category' => 'arts', 'badge' => 'Art',
+                'title' => 'Mix Media, Texture Art & Painting',
+                'description' => 'Mix media, texture techniques, and painting.',
+                'age_range' => 'Ages 6–13', 'grade' => 'All levels welcome', 'lessons' => '1 week course',
+                'duration' => '1 week', 'enrolled' => 'Summer intake—limited seats', 'price' => 'Contact for fee',
+                'accent' => 'coral',
+                'image' => 'https://images.unsplash.com/photo-1460661419341-fd1ae736aeb5?auto=format&fit=crop&w=1200&q=80',
+                'overview' => ['Original artworks using layered materials.'], 'highlights' => ['Ages 6–13'],
+                'format' => '1-week camp',
+            ],
+            [
+                'slug' => 'coding-animation-camp', 'category' => 'tech', 'badge' => 'Coding',
+                'title' => 'Coding & Animation Camp',
+                'description' => 'Coding and animation with Scratch and Game Lab.',
+                'age_range' => 'Ages 6–13', 'grade' => 'All levels welcome', 'lessons' => '1 week course',
+                'duration' => '1 week', 'enrolled' => 'Summer intake—limited seats', 'price' => 'Contact for fee',
+                'accent' => 'indigo',
+                'image' => 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1200&q=80',
+                'overview' => ['Build games and animated stories in Scratch.'], 'highlights' => ['Ages 6–13'],
+                'format' => '1-week camp',
+            ],
+        ];
     }
 
     protected function normalizeCampCategory(string $category): string

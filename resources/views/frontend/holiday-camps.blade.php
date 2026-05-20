@@ -11,7 +11,10 @@
 @section('main')
 @php
     $hero = $data['hero'] ?? [];
-    $camps = $data['camps'] ?? [];
+    $camps = $camps ?? $data['camps'] ?? [];
+    if (empty($camps) && isset($paginator) && $paginator->count() > 0) {
+        $camps = $paginator->items();
+    }
     $faqs = $data['faqs'] ?? [];
     $trust = $data['trust'] ?? [];
     $activeCategory = $data['active_category'] ?? 'all';
@@ -90,7 +93,7 @@
                 <a href="{{ route('frontend.contact') }}" class="fe-btn-pill fe-btn-ghost fe-mini d-none d-sm-inline-flex">Ask a question</a>
             </div>
 
-            @if(count($camps))
+            @if(count($camps) > 0)
             <div class="row fe-courses-row" id="feCampsGrid">
                 @foreach ($camps as $camp)
                     @php
