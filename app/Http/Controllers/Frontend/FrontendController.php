@@ -142,9 +142,55 @@ class FrontendController extends Controller
         return view('frontend.events', compact('events'));
     }
 
-    public function holidayCamps()
+    public function holidayCamps(Request $request)
     {
-        return view('frontend.holiday-camps');
+        $data = $this->normalizeCampsCatalog($this->frontendHolidayCampsCatalog());
+        $allCamps = collect($data['camps'] ?? []);
+
+        $category = $this->normalizeCampCategory((string) $request->query('category', 'all'));
+        if ($category === '') {
+            $category = 'all';
+        }
+
+        $filtered = $category === 'all'
+            ? $allCamps
+            : $allCamps->filter(fn (array $camp) => ($camp['category'] ?? '') === $category);
+
+        $perPage = 9;
+        $page = max(1, (int) $request->query('page', 1));
+        $total = $filtered->count();
+        $items = $filtered->values()->forPage($page, $perPage);
+
+        $query = $category !== 'all' ? ['category' => $category] : [];
+
+        $paginator = new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path'  => route('frontend.holiday-camps'),
+                'query' => $query,
+            ]
+        );
+
+        $data['camps'] = $items->values()->all();
+        $data['active_category'] = $category;
+        $data['catalog_total'] = $allCamps->count();
+
+        return view('frontend.holiday-camps', compact('data', 'paginator'));
+    }
+
+    public function holidayCampDetail(string $slug)
+    {
+        $data = $this->normalizeCampsCatalog($this->frontendHolidayCampsCatalog());
+        $camp = collect($data['camps'] ?? [])->firstWhere('slug', $slug);
+        if ($camp === null) {
+            abort(404);
+        }
+        $data['camp'] = $camp;
+
+        return view('frontend.holiday-camp-detail', compact('data'));
     }
 
     public function earlyYears()
@@ -270,6 +316,55 @@ class FrontendController extends Controller
                 }
                 $data['courses'][$index]['category'] = $this->normalizeCourseCategory(
                     (string) ($course['category'] ?? '')
+                );
+            }
+        }
+
+        return $data;
+    }
+
+    protected function frontendHolidayCampsCatalog(): array
+    {
+        $paths = [
+            base_path('config/frontend_holiday_camps.php'),
+            config_path('frontend_holiday_camps.php'),
+        ];
+
+        foreach ($paths as $path) {
+            if (!is_readable($path)) {
+                continue;
+            }
+
+            $data = require $path;
+
+            if (is_array($data) && !empty($data['camps']) && is_array($data['camps'])) {
+                return $this->normalizeCampsCatalog($data);
+            }
+        }
+
+        $cached = config('frontend_holiday_camps');
+
+        if (is_array($cached) && !empty($cached['camps']) && is_array($cached['camps'])) {
+            return $this->normalizeCampsCatalog($cached);
+        }
+
+        return $this->normalizeCampsCatalog([]);
+    }
+
+    protected function normalizeCampCategory(string $category): string
+    {
+        return strtolower(trim($category));
+    }
+
+    protected function normalizeCampsCatalog(array $data): array
+    {
+        if (!empty($data['camps']) && is_array($data['camps'])) {
+            foreach ($data['camps'] as $index => $camp) {
+                if (!is_array($camp)) {
+                    continue;
+                }
+                $data['camps'][$index]['category'] = $this->normalizeCampCategory(
+                    (string) ($camp['category'] ?? '')
                 );
             }
         }
