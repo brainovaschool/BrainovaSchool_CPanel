@@ -144,10 +144,10 @@
           <div>
             <span class="hw-section-chip"><i class="fa-solid fa-scroll"></i> Stage 2</span>
             <h4 class="mb-0">{{ @$data['title'] }} — quest log</h4>
-            <div class="hw-eval-column mt-2">
-              <div id="hw-evaluation-status" class="hw-evaluation-status small" role="status" aria-live="polite"></div>
+            <div class="hw-eval-column mt-2 w-100">
+              <div id="hw-evaluation-status" class="hw-evaluation-status" role="status" aria-live="polite"></div>
               <p class="hw-eval-legend small mb-0 mt-2">
-                Tasks with <span class="hw-marking-asterisk" aria-hidden="true">*</span> after the title have submitted work still awaiting marks.
+                <strong>Need your marks</strong> = students who already handed in work. <strong>Haven&rsquo;t submitted</strong> = still waiting on the student (not your grading queue). Use the orange <strong>Grade</strong> button to mark work.
               </p>
             </div>
           </div>
@@ -177,12 +177,13 @@
                   <th class="hw-sortable" data-sort-col="6" scope="col" tabindex="0" aria-sort="none" style="white-space:nowrap;width:72px">
                     {{ ___('common.marks') ?? 'Marks' }} <i class="hw-sort-icon fa-solid fa-sort" aria-hidden="true"></i>
                   </th>
-                  <th class="action" style="white-space:nowrap;min-width:100px">{{ ___('common.action') }}</th>
+                  <th style="white-space:nowrap;min-width:108px">Submissions</th>
+                  <th class="action" style="white-space:nowrap;min-width:120px">{{ ___('common.action') }}</th>
                 </tr>
               </thead>
               <tbody id="filtered-table-body" class="tbody">
                 <tr>
-                  <td colspan="8" class="text-center text-muted py-5">
+                  <td colspan="9" class="text-center text-muted py-5">
                     <i class="fa-solid fa-wand-magic-sparkles me-2"></i>
                     Choose filters and hit <strong>Deploy</strong> to load your quest log.
                   </td>
@@ -217,13 +218,18 @@
             <i class="fa-solid fa-spinner fa-spin fs-3 text-primary"></i>
           </div>
         </div>
-        <div class="modal-footer">
-          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-            {{ ___('common.cancel') }}
-          </button>
-          <button type="submit" class="btn ot-btn-primary">
-            <i class="fa-solid fa-check me-1"></i>{{ ___('common.save') }}
-          </button>
+        <div class="modal-footer d-flex flex-wrap align-items-center justify-content-between gap-2">
+          <p class="small text-muted mb-0" id="ev-save-hint">
+            <i class="fa-solid fa-circle-info me-1"></i>Enter marks for submitted students, then save.
+          </p>
+          <div class="d-flex gap-2 ms-auto">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              {{ ___('common.cancel') }}
+            </button>
+            <button type="submit" class="btn ot-btn-primary hw-btn-save-grades">
+              <i class="fa-solid fa-floppy-disk me-1"></i>Save grades
+            </button>
+          </div>
         </div>
       </form>
     </div>
@@ -367,22 +373,79 @@ function renderHwEvaluationStatus(es) {
   }
   var hp = parseInt(es.homeworks_pending_evaluation, 10) || 0;
   var sa = parseInt(es.submissions_awaiting_marks, 10) || 0;
+  var graded = parseInt(es.submissions_graded, 10) || 0;
+  var pipelineSubmitted = parseInt(es.pipeline_submitted, 10) || 0;
+  var notSubmitted = parseInt(es.pipeline_not_submitted, 10) || 0;
+
   if (sa === 0) {
+    var thirdValue = notSubmitted > 0 ? String(notSubmitted) : (graded > 0 ? '✓' : '—');
+    var thirdLabel = notSubmitted > 0 ? 'Haven\'t submitted yet' : (pipelineSubmitted > 0 ? 'All hand-ins graded' : 'No hand-ins yet');
+    var thirdClass = notSubmitted > 0 ? 'hw-eval-stat--waiting' : 'hw-eval-stat--done';
+    var thirdIcon = notSubmitted > 0 ? 'fa-user-clock' : 'fa-flag-checkered';
+    var note = '';
+
+    if (notSubmitted > 0 && pipelineSubmitted === 0) {
+      note = '<p class="hw-eval-note hw-eval-note--info mb-0 mt-2"><i class="fa-solid fa-circle-info me-1"></i>' +
+        '<strong>0 need your marks.</strong> ' + notSubmitted + ' student slot' + (notSubmitted === 1 ? '' : 's') +
+        ' still waiting for a submission — open tasks below when work arrives.</p>';
+    } else if (notSubmitted > 0) {
+      note = '<p class="hw-eval-note hw-eval-note--info mb-0 mt-2"><i class="fa-solid fa-circle-info me-1"></i>' +
+        '<strong>0 need your marks</strong> right now. ' + notSubmitted + ' student' + (notSubmitted === 1 ? '' : 's') +
+        ' still need to submit (shown in the chart as Pending / Overdue).</p>';
+    } else if (graded > 0) {
+      note = '<p class="hw-eval-note hw-eval-note--success mb-0 mt-2"><i class="fa-solid fa-circle-check me-1"></i>' +
+        'Every submitted hand-in has marks. Nothing waiting for you to grade.</p>';
+    } else {
+      note = '<p class="hw-eval-note mb-0 mt-2"><i class="fa-solid fa-inbox me-1"></i>' +
+        'No student submissions in this filter yet.</p>';
+    }
+
     $el.html(
-      '<span class="hw-eval-banner hw-eval-banner--clear">' +
-      '<i class="fa-solid fa-circle-check me-1" aria-hidden="true"></i>' +
-      '<strong>Evaluation:</strong> no submitted work is awaiting marks.' +
-      '</span>'
+      '<div class="row g-2 hw-eval-stats">' +
+        '<div class="col-sm-4">' +
+          '<div class="hw-eval-stat hw-eval-stat--done">' +
+            '<span class="hw-eval-stat__icon"><i class="fa-solid fa-circle-check"></i></span>' +
+            '<div><span class="hw-eval-stat__value">' + graded + '</span>' +
+            '<span class="hw-eval-stat__label">Already graded</span></div>' +
+          '</div></div>' +
+        '<div class="col-sm-4">' +
+          '<div class="hw-eval-stat hw-eval-stat--done">' +
+            '<span class="hw-eval-stat__icon"><i class="fa-solid fa-clipboard-check"></i></span>' +
+            '<div><span class="hw-eval-stat__value">0</span>' +
+            '<span class="hw-eval-stat__label">Need your marks</span></div>' +
+          '</div></div>' +
+        '<div class="col-sm-4">' +
+          '<div class="hw-eval-stat ' + thirdClass + '">' +
+            '<span class="hw-eval-stat__icon"><i class="fa-solid ' + thirdIcon + '"></i></span>' +
+            '<div><span class="hw-eval-stat__value">' + thirdValue + '</span>' +
+            '<span class="hw-eval-stat__label">' + thirdLabel + '</span></div>' +
+          '</div></div>' +
+      '</div>' + note
     );
     return;
   }
-  var taskWord = hp === 1 ? 'task' : 'tasks';
-  var subWord = sa === 1 ? 'submission' : 'submissions';
+
   $el.html(
-    '<span class="hw-eval-banner hw-eval-banner--backlog">' +
-    '<i class="fa-solid fa-pen-to-square me-1" aria-hidden="true"></i>' +
-    '<strong>Evaluation backlog:</strong> ' + sa + ' ' + subWord + ' need marks across ' + hp + ' homework ' + taskWord + '.' +
-    '</span>'
+    '<div class="row g-2 hw-eval-stats">' +
+      '<div class="col-sm-4">' +
+        '<div class="hw-eval-stat hw-eval-stat--urgent" title="Open a task and use Grade">' +
+          '<span class="hw-eval-stat__icon"><i class="fa-solid fa-pen-to-square"></i></span>' +
+          '<div><span class="hw-eval-stat__value">' + sa + '</span>' +
+          '<span class="hw-eval-stat__label">Need your marks</span></div>' +
+        '</div></div>' +
+      '<div class="col-sm-4">' +
+        '<div class="hw-eval-stat hw-eval-stat--tasks">' +
+          '<span class="hw-eval-stat__icon"><i class="fa-solid fa-list-check"></i></span>' +
+          '<div><span class="hw-eval-stat__value">' + hp + '</span>' +
+          '<span class="hw-eval-stat__label">Tasks with backlog</span></div>' +
+        '</div></div>' +
+      '<div class="col-sm-4">' +
+        '<div class="hw-eval-stat hw-eval-stat--done">' +
+          '<span class="hw-eval-stat__icon"><i class="fa-solid fa-check-double"></i></span>' +
+          '<div><span class="hw-eval-stat__value">' + graded + '</span>' +
+          '<span class="hw-eval-stat__label">Already graded</span></div>' +
+        '</div></div>' +
+    '</div>'
   );
 }
 

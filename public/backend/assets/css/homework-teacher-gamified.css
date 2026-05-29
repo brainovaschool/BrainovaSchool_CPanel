@@ -468,67 +468,272 @@ body.dark-theme .hw-gamified .hw-btn-apply {
   font-size: 12px;
 }
 
-/* Evaluation status + asterisk legend (quest log header) */
+/* Evaluation status counters (quest log header) */
 .hw-gamified .hw-eval-column {
-  max-width: 52rem;
+  max-width: 100%;
 }
 .hw-gamified .hw-evaluation-status {
   min-height: 0;
 }
-.hw-gamified .hw-eval-banner {
-  display: inline-block;
-  padding: 0.45rem 0.75rem;
-  border-radius: 10px;
-  font-size: 0.8125rem;
-  line-height: 1.45;
+.hw-gamified .hw-eval-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 12px;
   border: 1px solid transparent;
+  height: 100%;
+  min-height: 64px;
 }
-.hw-gamified .hw-eval-banner--clear {
-  color: #0c4a6e;
-  background: linear-gradient(135deg, rgba(224, 242, 254, 0.95), rgba(239, 246, 255, 0.98));
-  border-color: rgba(56, 189, 248, 0.45);
-  box-shadow: 0 2px 10px rgba(14, 165, 233, 0.12);
+.hw-gamified .hw-eval-stat__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
 }
-.hw-gamified .hw-eval-banner--clear .fa-circle-check {
-  color: #0284c7;
+.hw-gamified .hw-eval-stat__value {
+  display: block;
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--hw-text, #0f172a);
 }
-.hw-gamified .hw-eval-banner--backlog {
-  color: #0c4a6e;
-  background: linear-gradient(135deg, #e0f2fe 0%, #dbeafe 45%, #eff6ff 100%);
+.hw-gamified .hw-eval-stat__label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--hw-muted, #64748b);
+  margin-top: 0.1rem;
+}
+.hw-gamified .hw-eval-stat--urgent {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border-color: rgba(245, 158, 11, 0.45);
+  box-shadow: 0 2px 10px rgba(245, 158, 11, 0.15);
+}
+.hw-gamified .hw-eval-stat--urgent .hw-eval-stat__icon {
+  background: #fed7aa;
+  color: #c2410c;
+}
+.hw-gamified .hw-eval-stat--urgent .hw-eval-stat__value {
+  color: #c2410c;
+}
+.hw-gamified .hw-eval-stat--tasks {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
   border-color: rgba(37, 99, 235, 0.35);
-  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.12);
 }
-.hw-gamified .hw-eval-banner--backlog .fa-pen-to-square {
-  color: #2563eb;
+.hw-gamified .hw-eval-stat--tasks .hw-eval-stat__icon {
+  background: #bfdbfe;
+  color: #1d4ed8;
+}
+.hw-gamified .hw-eval-stat--done {
+  background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+.hw-gamified .hw-eval-stat--done .hw-eval-stat__icon {
+  background: #a7f3d0;
+  color: #047857;
+}
+.hw-gamified .hw-eval-stat--done .hw-eval-stat__value {
+  font-size: 1rem;
+}
+.hw-gamified .hw-eval-stat--waiting {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-color: rgba(100, 116, 139, 0.35);
+}
+.hw-gamified .hw-eval-stat--waiting .hw-eval-stat__icon {
+  background: #e2e8f0;
+  color: #475569;
+}
+.hw-gamified .hw-eval-stat--waiting .hw-eval-stat__value {
+  color: #475569;
+}
+.hw-gamified .hw-eval-note {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  border-left: 3px solid #cbd5e1;
+  color: #475569;
+  background: #f8fafc;
+}
+.hw-gamified .hw-eval-note--info {
+  border-left-color: #38bdf8;
+  background: #f0f9ff;
+  color: #0c4a6e;
+}
+.hw-gamified .hw-eval-note--success {
+  border-left-color: #10b981;
+  background: #ecfdf5;
+  color: #065f46;
 }
 .hw-gamified .hw-eval-legend.small,
 .hw-gamified p.hw-eval-legend {
   color: #64748b;
   border-left: 3px solid rgba(56, 189, 248, 0.55);
   padding-left: 0.6rem;
-  font-size: 0.65rem;
-  font-style: italic;
-  line-height: 1.35;
-}
-.hw-gamified .hw-eval-legend .hw-marking-asterisk {
-  font-size: 1.05em;
-  font-style: normal;
-  margin-left: 0;
-  margin-right: 0.05em;
+  font-size: 0.72rem;
+  line-height: 1.4;
 }
 
-/* Quest log — marking backlog indicator (same logic as evaluation banner) */
-.hw-gamified .hw-marking-asterisk {
-  color: #d97706;
-  font-weight: 600;
-  font-size: 1.2em;
-  margin-left: 0.2em;
-  line-height: 1;
+/* Quest log — submission mini stats + grade button */
+.hw-gamified .hw-awaiting-pill {
+  display: inline-block;
+  margin-left: 0.35rem;
+  padding: 0.12rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9a3412;
+  background: #ffedd5;
+  border: 1px solid #fdba74;
   vertical-align: middle;
+}
+.hw-gamified .hw-sub-mini-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  align-items: flex-start;
+}
+.hw-gamified .hw-sub-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+}
+.hw-gamified .hw-sub-mini--none {
+  color: #94a3b8;
+}
+.hw-gamified .hw-sub-mini--in {
+  color: #0369a1;
+  background: #e0f2fe;
+}
+.hw-gamified .hw-sub-mini--wait {
+  color: #c2410c;
+  background: #ffedd5;
+}
+.hw-gamified .hw-sub-mini--done {
+  color: #047857;
+  background: #d1fae5;
+}
+.hw-gamified .hw-btn-grade {
+  font-weight: 700;
+  white-space: nowrap;
+}
+.hw-gamified .hw-btn-grade--pending {
+  color: #fff !important;
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 100%) !important;
+  border-color: #ea580c !important;
+  box-shadow: 0 2px 8px rgba(234, 88, 12, 0.35);
+}
+.hw-gamified .hw-btn-grade--pending:hover {
+  filter: brightness(1.05);
+  color: #fff !important;
+}
+.hw-gamified .hw-grade-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.35rem;
+  margin-left: 0.15rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.95);
+  color: #c2410c;
 }
 .hw-gamified .hw-row-needs-marking td.serial,
 .hw-gamified .hw-row-needs-marking td.hw-quest-num {
   box-shadow: inset 3px 0 0 #f59e0b;
+}
+
+/* Evaluation modal — summary + row states */
+.hw-ev-summary-card {
+  text-align: center;
+  padding: 0.75rem 0.5rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+}
+.hw-ev-summary-card__value {
+  display: block;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.hw-ev-summary-card__label {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.2rem;
+  opacity: 0.85;
+}
+.hw-ev-summary-card--wait {
+  background: #fff7ed;
+  border-color: #fdba74;
+  color: #c2410c;
+}
+.hw-ev-summary-card--done {
+  background: #ecfdf5;
+  border-color: #6ee7b7;
+  color: #047857;
+}
+.hw-ev-summary-card--in {
+  background: #eff6ff;
+  border-color: #93c5fd;
+  color: #1d4ed8;
+}
+.hw-ev-summary-card--out {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #64748b;
+}
+.hw-ev-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+}
+.hw-ev-status--wait {
+  color: #c2410c;
+  background: #ffedd5;
+}
+.hw-ev-status--done {
+  color: #047857;
+  background: #d1fae5;
+}
+.hw-ev-status--missing {
+  color: #64748b;
+  background: #f1f5f9;
+}
+.hw-ev-row--needs-mark td:first-of-type {
+  box-shadow: inset 3px 0 0 #f59e0b;
+}
+.hw-mark-input--pending {
+  border-color: #f59e0b !important;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.25);
+}
+.hw-btn-save-grades {
+  font-weight: 700;
 }
 
 .hw-stat-slab {
@@ -567,8 +772,23 @@ body.dark-theme .hw-gamified .hw-btn-apply {
 }
 
 /* ── Dark theme ─────────────────────────────────────────────────── */
-body.dark-theme .hw-gamified .hw-marking-asterisk {
-  color: #fbbf24;
+body.dark-theme .hw-gamified .hw-eval-stat__value {
+  color: #f1f5f9;
+}
+body.dark-theme .hw-gamified .hw-eval-stat--urgent {
+  background: linear-gradient(135deg, rgba(124, 45, 18, 0.45) 0%, rgba(154, 52, 18, 0.35) 100%);
+  border-color: rgba(251, 146, 60, 0.4);
+}
+body.dark-theme .hw-gamified .hw-eval-stat--urgent .hw-eval-stat__value {
+  color: #fdba74;
+}
+body.dark-theme .hw-gamified .hw-awaiting-pill {
+  color: #fed7aa;
+  background: rgba(124, 45, 18, 0.5);
+  border-color: rgba(251, 146, 60, 0.45);
+}
+body.dark-theme .hw-gamified .hw-btn-grade--pending .hw-grade-count {
+  color: #9a3412;
 }
 
 body.dark-theme .hw-game-title {

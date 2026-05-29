@@ -13,7 +13,66 @@
 {{-- Header: homework title, total marks, export button --}}
 @php
     $hwIsActive = (int) ($data['homework']->status ?? 0) === \App\Enums\Status::ACTIVE;
+    $hwIsQuiz = ($data['homework']->task_type ?? '') === 'quiz';
+    $students = collect($data['students'] ?? []);
+    $evSubmitted = $students->filter(fn ($r) => !empty($r->homeworkStudent))->count();
+    $evNotSubmitted = max(0, $students->count() - $evSubmitted);
+    $evNeedsMarks = $hwIsQuiz ? 0 : $students->filter(function ($r) {
+        if (empty($r->homeworkStudent)) {
+            return false;
+        }
+
+        return $r->homeworkStudent->marks === null;
+    })->count();
+    $evGraded = max(0, $evSubmitted - $evNeedsMarks);
 @endphp
+
+<div class="hw-ev-summary row g-2 mb-4" role="group" aria-label="Submission summary">
+    <div class="col-6 col-md-3">
+        <div class="hw-ev-summary-card hw-ev-summary-card--wait">
+            <span class="hw-ev-summary-card__value">{{ $evNeedsMarks }}</span>
+            <span class="hw-ev-summary-card__label">Need marks</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="hw-ev-summary-card hw-ev-summary-card--done">
+            <span class="hw-ev-summary-card__value">{{ $evGraded }}</span>
+            <span class="hw-ev-summary-card__label">Graded</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="hw-ev-summary-card hw-ev-summary-card--in">
+            <span class="hw-ev-summary-card__value">{{ $evSubmitted }}</span>
+            <span class="hw-ev-summary-card__label">Submitted</span>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="hw-ev-summary-card hw-ev-summary-card--out">
+            <span class="hw-ev-summary-card__value">{{ $evNotSubmitted }}</span>
+            <span class="hw-ev-summary-card__label">Not submitted</span>
+        </div>
+    </div>
+</div>
+
+@if($hwIsQuiz && $evSubmitted > 0)
+<p class="hw-ev-action-hint alert alert-info py-2 px-3 small mb-3">
+    <i class="fa-solid fa-robot me-1"></i>This quiz is <strong>auto-scored</strong> when students submit. Review scores below or export results — no manual grading needed.
+</p>
+@elseif($evNeedsMarks > 0)
+<p class="hw-ev-action-hint alert alert-warning py-2 px-3 small mb-3">
+    <i class="fa-solid fa-pen-to-square me-1"></i>
+    <strong>{{ $evNeedsMarks }}</strong> student{{ $evNeedsMarks === 1 ? '' : 's' }} submitted work — enter marks in the orange rows below, then click <strong>Save grades</strong>.
+</p>
+@elseif($evSubmitted > 0)
+<p class="hw-ev-action-hint alert alert-success py-2 px-3 small mb-3">
+    <i class="fa-solid fa-circle-check me-1"></i>All submitted work has marks. You can still update feedback or marks, then save.
+</p>
+@else
+<p class="hw-ev-action-hint alert alert-secondary py-2 px-3 small mb-3">
+    <i class="fa-solid fa-inbox me-1"></i>No submissions yet. This screen will show students here when they hand in work.
+</p>
+@endif
+
 <div class="d-flex align-items-start justify-content-between mb-4 pb-3 border-bottom flex-wrap gap-2">
     <div>
         <h6 class="mb-1 text-muted text-uppercase fw-bold" style="font-size:11px;letter-spacing:.08em">
@@ -78,39 +137,49 @@
         </thead>
         <tbody class="tbody">
             @forelse($data['students'] as $row)
-            <tr style="background:{{ $loop->even ? '#fafbff' : '#fff' }}">
+            @php
+                $hasSubmission = !empty($row->homeworkStudent);
+                $marksVal = $hasSubmission ? $row->homeworkStudent->marks : null;
+                $needsMark = !$hwIsQuiz && $hasSubmission && $marksVal === null;
+                $rowClass = $needsMark ? 'hw-ev-row--needs-mark' : ($hasSubmission ? 'hw-ev-row--graded' : 'hw-ev-row--missing');
+            @endphp
+            <tr class="{{ $rowClass }}" style="background:{{ $loop->even ? '#fafbff' : '#fff' }}">
                 <td style="border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;vertical-align:middle">{{ @$row->student->admission_no }}</td>
                 <td style="border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;vertical-align:middle;font-weight:600">{{ @$row->student->first_name }} {{ @$row->student->last_name }}</td>
                 <td style="border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;vertical-align:middle;text-align:center">{{ @$row->roll }}</td>
 
                 <td style="border:1px solid #e2e8f0;padding:10px 12px;font-size:13px;vertical-align:middle">
                     @if($row->homeworkStudent)
-                        <div class="small text-muted mb-1">
+                        @if($needsMark)
+                            <span class="hw-ev-status hw-ev-status--wait">
+                                <i class="fa-solid fa-pen-to-square"></i> Grade me
+                            </span>
+                        @else
+                            <span class="hw-ev-status hw-ev-status--done">
+                                <i class="fa-solid fa-check"></i> Graded
+                            </span>
+                        @endif
+                        <div class="small text-muted mt-1">
                             <i class="fa-solid fa-calendar-check me-1"></i>
-                            Submitted: {{ $row->homeworkStudent->date ?? '—' }}
+                            {{ $row->homeworkStudent->date ?? '—' }}
                         </div>
 
                         @if($data['homework']->task_type === 'quiz')
-                            {{-- Quiz: auto-graded on submission, no file to view --}}
-                            <span class="badge bg-info text-white">
-                                <i class="fa-solid fa-robot me-1"></i>Auto-graded
+                            <span class="badge bg-info text-white mt-1">
+                                <i class="fa-solid fa-robot me-1"></i>Quiz (auto-scored)
                             </span>
                         @elseif($row->homeworkStudent->homeworkUpload)
-                            {{--
-                                Use url() directly — globalAsset() resolves relative paths
-                                from the wrong CWD on some server configs, causing 404s.
-                            --}}
-                            <a class="btn btn-sm ot-btn-primary radius_30px"
+                            <a class="btn btn-sm ot-btn-primary radius_30px mt-1"
                                href="{{ url($row->homeworkStudent->homeworkUpload->path) }}"
                                target="_blank">
-                                <i class="fa-solid fa-eye me-1"></i>View Work
+                                <i class="fa-solid fa-eye me-1"></i>View work
                             </a>
                         @else
-                            <span class="badge bg-warning text-dark">No file</span>
+                            <span class="badge bg-warning text-dark mt-1">No file attached</span>
                         @endif
                     @else
-                        <span class="badge-basic-danger-text">
-                            <i class="fa-solid fa-clock me-1"></i>Not Submitted Yet
+                        <span class="hw-ev-status hw-ev-status--missing">
+                            <i class="fa-solid fa-clock"></i> Not submitted
                         </span>
                     @endif
                 </td>
@@ -119,20 +188,21 @@
                     @if($row->homeworkStudent)
                         <div class="d-flex align-items-center gap-2">
                             <input type="number"
-                                   class="form-control ot-input"
+                                   class="form-control ot-input {{ $needsMark ? 'hw-mark-input--pending' : '' }}"
                                    style="max-width:85px"
                                    step="0.5"
                                    min="0"
                                    max="{{ $data['homework']->marks ?? 9999 }}"
                                    name="marks[]"
                                    value="{{ $row->homeworkStudent->marks ?? '' }}"
-                                   placeholder="0"
+                                   placeholder="{{ $needsMark ? 'Enter' : '0' }}"
+                                   @if($needsMark) aria-label="Marks required for {{ @$row->student->first_name }}" @endif
                                    required />
                             <input type="hidden" name="students[]" value="{{ $row->student_id }}" />
                             <small class="text-muted">/ {{ $data['homework']->marks ?? '?' }}</small>
                         </div>
                     @else
-                        <span class="text-muted">—</span>
+                        <span class="text-muted small">No submission</span>
                     @endif
                 </td>
 

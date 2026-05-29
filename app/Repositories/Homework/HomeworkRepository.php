@@ -668,8 +668,13 @@ class HomeworkRepository implements HomeworkInterface
         // Build task status donut data (submission pipeline)
         $donutData = $this->getTaskStatisticsForFilters($homeworks);
 
-        // Teacher marking backlog — only homework_students rows (submitted); non-submitters excluded
+        // Teacher marking backlog — manual tasks only (quizzes are auto-scored on submit)
         $evaluationStatus = $this->getEvaluationMarkingStatusForFilters($homeworks);
+        $evaluationStatus['pipeline_submitted'] = (int) ($donutData['data'][0] ?? 0);
+        $evaluationStatus['pipeline_pending'] = (int) ($donutData['data'][1] ?? 0);
+        $evaluationStatus['pipeline_overdue'] = (int) ($donutData['data'][2] ?? 0);
+        $evaluationStatus['pipeline_not_submitted'] = $evaluationStatus['pipeline_pending']
+            + $evaluationStatus['pipeline_overdue'];
 
         // Build score trend line data
         $trendData = $this->getScoreTrendForFilters($homeworks);
@@ -678,6 +683,7 @@ class HomeworkRepository implements HomeworkInterface
         $tableHtml = view('backend.homework.partials.filtered-table', [
             'homeworks'                 => $homeworks,
             'homeworkIdsPendingMarks'   => $evaluationStatus['homework_ids_pending_marks'] ?? [],
+            'perHomeworkStats'          => $evaluationStatus['per_homework'] ?? [],
         ])->render();
 
         return [
@@ -796,18 +802,28 @@ class HomeworkRepository implements HomeworkInterface
     {
         $homeworksPendingEvaluation = 0;
         $submissionsAwaitingMarks    = 0;
+        $submissionsGraded           = 0;
         $homeworkIdsPendingMarks     = [];
+        $perHomework                 = [];
 
         foreach ($homeworks as $hw) {
-            $awaitingHere = (int) DB::table('homework_students')
+            $submittedHere = (int) DB::table('homework_students')
                 ->where('homework_id', $hw->id)
-                ->where(function ($q) {
-                    $q->whereNull('marks')->orWhere('marks', '');
-                })
                 ->selectRaw('COUNT(DISTINCT student_id) as c')
                 ->value('c');
 
+            $awaitingHere = $this->countHomeworkSubmissionsAwaitingTeacherMarks((int) $hw->id, $hw->task_type ?? null);
+
+            $gradedHere = max(0, $submittedHere - $awaitingHere);
+
             $submissionsAwaitingMarks += $awaitingHere;
+            $submissionsGraded += $gradedHere;
+
+            $perHomework[(int) $hw->id] = [
+                'submitted'       => $submittedHere,
+                'awaiting_marks'  => $awaitingHere,
+                'graded'          => $gradedHere,
+            ];
 
             if ($awaitingHere > 0) {
                 $homeworksPendingEvaluation++;
@@ -818,8 +834,28 @@ class HomeworkRepository implements HomeworkInterface
         return [
             'homeworks_pending_evaluation' => $homeworksPendingEvaluation,
             'submissions_awaiting_marks'   => $submissionsAwaitingMarks,
+            'submissions_graded'           => $submissionsGraded,
             'homework_ids_pending_marks'   => $homeworkIdsPendingMarks,
+            'per_homework'                 => $perHomework,
         ];
+    }
+
+    /**
+     * Submissions that still need a teacher to enter marks (excludes auto-scored quizzes).
+     */
+    private function countHomeworkSubmissionsAwaitingTeacherMarks(int $homeworkId, ?string $taskType = null): int
+    {
+        if (($taskType ?? '') === 'quiz') {
+            return 0;
+        }
+
+        return (int) DB::table('homework_students')
+            ->where('homework_id', $homeworkId)
+            ->where(function ($q) {
+                $q->whereNull('marks');
+            })
+            ->selectRaw('COUNT(DISTINCT student_id) as c')
+            ->value('c');
     }
 
     /**
