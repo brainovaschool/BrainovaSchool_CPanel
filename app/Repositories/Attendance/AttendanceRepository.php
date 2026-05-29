@@ -127,8 +127,9 @@ class AttendanceRepository implements AttendanceInterface
 
             return $this->responseWithSuccess(___('alert.submitted_successfully'), []);
         } catch (\Throwable $th) {
-            dd($th->getMessage());
             DB::rollBack();
+            \Log::error('Subject attendance store failed: ' . $th->getMessage());
+
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
     }
@@ -188,7 +189,8 @@ class AttendanceRepository implements AttendanceInterface
             $data['status'] = 0; // new
         }
 
-        $students2 = SessionClassStudent::with('student')->where('session_id', setting('session'))
+        $students2 = SessionClassStudent::with(['student', 'class', 'section'])
+            ->where('session_id', setting('session'))
             ->where('classes_id', $request->class)
             ->where('section_id', $request->section)
             ->whereNotIn('student_id', $ids)

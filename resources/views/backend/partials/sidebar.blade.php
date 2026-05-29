@@ -275,7 +275,7 @@
 
                             @if (hasPermission('attendance_read'))
                                 <li
-                                    class="sidebar-menu-item {{ set_menu(['attendance.subject-attendance', 'attendance.search']) }}">
+                                    class="sidebar-menu-item {{ set_menu(['attendance.subject-attendance', 'attendance.student.search']) }}">
                                     <a href="{{ route('attendance.subject-attendance') }}">{{ ___('settings.Subject Attendance') }}</a>
                                 </li>
                             @endif

@@ -22,13 +22,11 @@
         <div class="row">
             <div class="col-12">
                 <div class="card ot-card mb-24 position-relative z_1">
-                    <form action="{{ route('attendance.student.search') }}" enctype="multipart/form-data" method="get">
+                    <form action="{{ route('attendance.student.search') }}" enctype="multipart/form-data" method="get" id="subject-attendance-filter">
                         <div class="card-header d-flex align-items-center gap-4 flex-wrap">
                             <h3 class="mb-0">{{ ___('common.Filtering') }}</h3>
 
                             <div class="card_header_right d-flex align-items-center gap-3 flex-fill justify-content-end flex-wrap">
-                                <!-- table_searchBox -->
-
                                 <div class="single_large_selectBox">
                                     <select id="getSections" class="class nice-select niceSelect bordered_style wide @error('class') is-invalid @enderror" name="class">
                                         <option value="">{{ ___('student_info.select_class') }}</option>
@@ -37,13 +35,11 @@
                                         @endforeach
                                     </select>
                                     @error('class')
-                                    <div id="validationServer04Feedback" class="invalid-feedback">
-                                        {{ $message }}
-                                    </div>
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
                                 </div>
                                 <div class="single_large_selectBox">
-                                    <select class="sections section nice-select niceSelect bordered_style wide @error('section') is-invalid @enderror" name="section">
+                                    <select id="getSubjects" class="sections section nice-select niceSelect bordered_style wide @error('section') is-invalid @enderror" name="section">
                                         <option value="">{{ ___('student_info.select_section') }}</option>
                                         @foreach ($data['sections'] as $item)
                                             <option {{ old('section', @$data['request']->section) == $item->section->id ? 'selected' : '' }}
@@ -51,42 +47,33 @@
                                         @endforeach
                                     </select>
                                     @error('section')
-                                    <div id="validationServer04Feedback" class="invalid-feedback">
-                                        {{ $message }}
-                                    </div>
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
                                 </div>
 
                                 <div class="single_large_selectBox">
-                                    <select class="nice-select niceSelect bordered_style wide @error('subject') is-invalid @enderror" name="subject">
+                                    <select class="subjects nice-select niceSelect bordered_style wide @error('subject') is-invalid @enderror" name="subject">
                                         <option value="">{{ ___('student_info.select subject') }}</option>
                                         @foreach ($data['subjects'] as $item)
-                                            <option {{ old('subject', @$data['request']->subject) == $item->id ? 'selected' : '' }}
-                                                    value="{{ $item->id }}">{{ $item->name }}</option>
+                                            <option {{ old('subject', @$data['request']->subject) == $item->subject->id ? 'selected' : '' }}
+                                                    value="{{ $item->subject->id }}">{{ $item->subject->name }}</option>
                                         @endforeach
                                     </select>
                                     @error('subject')
-                                    <div id="validationServer04Feedback" class="invalid-feedback">
-                                        {{ $message }}
-                                    </div>
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
                                 </div>
 
                                 <div class="single_large_selectBox">
-                                    <input value="{{ old('date', @$data['request']->date) }}" name="date" class="form-control ot-input @error('date') is-invalid @enderror" type="date">
-
+                                    <input value="{{ old('date', @$data['request']->date ?? date('Y-m-d')) }}" name="date" class="form-control ot-input @error('date') is-invalid @enderror" type="date">
                                     @error('date')
-                                    <div id="validationServer04Feedback" class="invalid-feedback">
-                                        {{ $message }}
-                                    </div>
+                                    <div class="invalid-feedback d-block">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <button class="btn btn-lg ot-btn-primary">
+                                <button class="btn btn-lg ot-btn-primary" type="submit">
                                     {{___('common.Search')}}
                                 </button>
                             </div>
-
-
                         </div>
                     </form>
                 </div>
@@ -109,13 +96,11 @@
                         <form action="{{ route('attendance.subject-attendance.store') }}" method="post" enctype="multipart/form-data">
                             @csrf
 
-                            <!--  start hidden items -->
                             <input type="hidden" name="status" value="{{ @$data['status'] }}">
                             <input type="hidden" name="class" value="{{ @$data['request']->class }}">
                             <input type="hidden" name="section" value="{{ @$data['request']->section }}">
                             <input type="hidden" name="subject" value="{{ @$data['request']->subject }}">
                             <input type="hidden" name="date" value="{{ @$data['request']->date }}">
-                            <!--  end -->
 
                             <div class="input-check-radio mb-3">
                                 <div class="form-check d-flex align-items-center">
@@ -145,38 +130,36 @@
                                             <td>{{ @$item->class->name }} ({{ @$item->section->name }})</td>
                                             <td>
 
-                                                <!--  start hidden items -->
                                                 <input type="hidden" name="items[]" value="{{ @$item->id }}">
                                                 <input type="hidden" name="students[]" value="{{ @$item->student->id }}">
                                                 <input type="hidden" name="studentsRoll[]" value="{{ @$item->roll }}">
-                                                <!--  end -->
 
                                                 <div class="remember-me d-flex align-items-center input-check-radio mb-20 gap-4 attendance">
                                                     <div class="form-check d-flex align-items-center mt-6">
-                                                        <input class="form-check-input {{ @$item->attendance == App\Enums\AttendanceType::PRESENT ? 'checkedItem':'' }}" type="radio" id="flexRadioDefault1" name="attendance[{{@$item->student->id}}]"
+                                                        <input class="form-check-input {{ @$item->attendance == App\Enums\AttendanceType::PRESENT ? 'checkedItem':'' }}" type="radio" name="attendance[{{@$item->student->id}}]"
                                                                value="{{ App\Enums\AttendanceType::PRESENT }}" {{ @$item->attendance == App\Enums\AttendanceType::PRESENT ? 'checked':'' }}/>
-                                                        <label for="flexRadioDefault1">{{ ___('attendance.Present') }}</label>
+                                                        <label>{{ ___('attendance.Present') }}</label>
                                                     </div>
                                                     <div class="form-check d-flex align-items-center mt-6 ">
-                                                        <input class="form-check-input {{ @$item->attendance == App\Enums\AttendanceType::LATE ? 'checkedItem':'' }}" type="radio" id="flexRadioDefault2" name="attendance[{{@$item->student->id}}]"
+                                                        <input class="form-check-input {{ @$item->attendance == App\Enums\AttendanceType::LATE ? 'checkedItem':'' }}" type="radio" name="attendance[{{@$item->student->id}}]"
                                                                value="{{ App\Enums\AttendanceType::LATE }}" {{ @$item->attendance == App\Enums\AttendanceType::LATE ? 'checked':'' }}/>
-                                                        <label for="flexRadioDefault2">{{ ___('attendance.Late') }}</label>
+                                                        <label>{{ ___('attendance.Late') }}</label>
                                                     </div>
                                                     <div class="form-check d-flex align-items-center mt-6 ">
-                                                        <input class="form-check-input {{ @$item->attendance == App\Enums\AttendanceType::ABSENT ? 'checkedItem':'' }}" type="radio" id="flexRadioDefault3" name="attendance[{{@$item->student->id}}]"
+                                                        <input class="form-check-input {{ @$item->attendance == App\Enums\AttendanceType::ABSENT ? 'checkedItem':'' }}" type="radio" name="attendance[{{@$item->student->id}}]"
                                                                value="{{ App\Enums\AttendanceType::ABSENT }}" {{ @$item->attendance == App\Enums\AttendanceType::ABSENT ? 'checked':'' }}{{ @$data['status'] == 1  && @$item->attendance == null ? 'checked':'' }}{{ @$data['status'] == 0 ? 'checked':'' }}/>
-                                                        <label for="flexRadioDefault3">{{ ___('attendance.Absent') }}</label>
+                                                        <label>{{ ___('attendance.Absent') }}</label>
                                                     </div>
                                                     <div class="form-check d-flex align-items-center mt-6 ">
-                                                        <input class="form-check-input {{ @$item->attendance == App\Enums\AttendanceType::HALFDAY ? 'checkedItem':'' }}" type="radio" id="flexRadioDefault4" name="attendance[{{@$item->student->id}}]"
+                                                        <input class="form-check-input {{ @$item->attendance == App\Enums\AttendanceType::HALFDAY ? 'checkedItem':'' }}" type="radio" name="attendance[{{@$item->student->id}}]"
                                                                value="{{ App\Enums\AttendanceType::HALFDAY }}" {{ @$item->attendance == App\Enums\AttendanceType::HALFDAY ? 'checked':'' }}/>
-                                                        <label for="flexRadioDefault4">{{ ___('attendance.Half Day') }}</label>
+                                                        <label>{{ ___('attendance.Half Day') }}</label>
                                                     </div>
 
                                                     <div class="form-check d-flex align-items-center mt-6 ">
-                                                        <input class="form-check-input {{ @$item->attendance == App\Enums\AttendanceType::LEAVE ? 'checkedItem':'' }}" type="radio" id="flexRadioDefault4" name="attendance[{{@$item->student->id}}]"
+                                                        <input class="form-check-input {{ @$item->attendance == App\Enums\AttendanceType::LEAVE ? 'checkedItem':'' }}" type="radio" name="attendance[{{@$item->student->id}}]"
                                                                value="{{ App\Enums\AttendanceType::LEAVE }}" {{ @$item->attendance == App\Enums\AttendanceType::LEAVE ? 'checked':'' }}/>
-                                                        <label for="flexRadioDefault4">{{ ___('attendance.Leave') }}</label>
+                                                        <label>{{ ___('attendance.Leave') }}</label>
                                                     </div>
                                                 </div>
 
@@ -190,16 +173,12 @@
                                             <td colspan="100%" class="text-center gray-color">
                                                 <img src="{{ asset('images/no_data.svg') }}" alt="" class="mb-primary" width="100">
                                                 <p class="mb-0 text-center">{{ ___('common.no_data_available') }}</p>
-                                                <p class="mb-0 text-center text-secondary font-size-90">
-                                                    {{ ___('common.please_add_new_entity_regarding_this_table') }}</p>
                                             </td>
                                         </tr>
                                     @endforelse
                                     </tbody>
                                 </table>
                             </div>
-
-
 
                             @if (hasPermission('attendance_create'))
                                 <div class="ot-pagination pagination-content d-flex justify-content-end align-content-center py-3">
@@ -211,12 +190,8 @@
 
                         </form>
                     </div>
-
-
-
                 </div>
             </div>
-            <!--  table content end -->
 
         @endif
 
@@ -225,4 +200,54 @@
 
 @push('script')
     @include('backend.partials.delete-ajax')
+    <script>
+        (function () {
+            var selectedSubject = @json(old('subject', @$data['request']->subject));
+            var url = $('#url').val();
+
+            function loadSubjectsForSection(classId, sectionId, keepSubjectId) {
+                if (!classId || !sectionId) {
+                    return;
+                }
+                $.ajax({
+                    type: 'GET',
+                    dataType: 'json',
+                    data: { classes_id: classId, section_id: sectionId },
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                    url: url + '/assign-subject/get-subjects',
+                    success: function (items) {
+                        var subjectPlaceholder = @json(___('student_info.select subject'));
+                        var subjectOptions = '<option value="">' + subjectPlaceholder + '</option>';
+                        var subjectLi = '';
+                        $.each(items || [], function (i, item) {
+                            if (!item.subject) return;
+                            var sel = keepSubjectId && String(keepSubjectId) === String(item.subject.id) ? ' selected' : '';
+                            subjectOptions += '<option value="' + item.subject.id + '"' + sel + '>' + item.subject.name + '</option>';
+                            subjectLi += '<li data-value="' + item.subject.id + '" class="option">' + item.subject.name + '</li>';
+                        });
+                        $('select.subjects option').remove();
+                        $('select.subjects').append(subjectOptions);
+                        if ($('div .subjects').length) {
+                            $('div .subjects .list li').remove();
+                            $('div .subjects .list').append(subjectLi);
+                            var label = $('select.subjects option:selected').text() || $('select.subjects option:first').text();
+                            $('div .subjects .current').html(label);
+                        }
+                    }
+                });
+            }
+
+            $('#getSubjects').on('change', function () {
+                loadSubjectsForSection($('#getSections').val(), $(this).val(), null);
+            });
+
+            @if(old('class', @$data['request']->class) && old('section', @$data['request']->section))
+            loadSubjectsForSection(
+                @json(old('class', @$data['request']->class)),
+                @json(old('section', @$data['request']->section)),
+                selectedSubject
+            );
+            @endif
+        })();
+    </script>
 @endpush

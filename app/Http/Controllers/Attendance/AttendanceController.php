@@ -10,6 +10,7 @@ use App\Http\Requests\Report\AttendanceRequest;
 use App\Http\Requests\SubjectAttendanceSearchRequest;
 use App\Repositories\Academic\ClassesRepository;
 use App\Repositories\Academic\ClassSetupRepository;
+use App\Repositories\Academic\SubjectAssignRepository;
 use App\Repositories\Academic\SubjectRepository;
 use App\Repositories\Attendance\AttendanceRepository;
 use Illuminate\Http\Request;
@@ -23,17 +24,21 @@ class AttendanceController extends Controller
 
     private $subjectRepo;
 
+    private $subjectAssignRepo;
+
     function __construct(
         AttendanceRepository   $repo,
         ClassesRepository      $classRepo,
         ClassSetupRepository   $classSetupRepo,
         SubjectRepository      $subjectRepo,
+        SubjectAssignRepository $subjectAssignRepo,
     )
     {
         $this->repo              = $repo;
         $this->classRepo         = $classRepo;
         $this->classSetupRepo    = $classSetupRepo;
         $this->subjectRepo       = $subjectRepo;
+        $this->subjectAssignRepo = $subjectAssignRepo;
     }
 
     public function index()
@@ -50,7 +55,8 @@ class AttendanceController extends Controller
         $data['title']              = ___('attendance.Subject Attendance');
         $data['classes']            = $this->classRepo->assignedAll();
         $data['sections']           = [];
-        $data['subjects']           = $this->subjectRepo->all();
+        $data['subjects']           = collect();
+
         return view('backend.attendance.subject-attendance', compact('data'));
     }
 
@@ -92,10 +98,28 @@ class AttendanceController extends Controller
         $data = $this->repo->searchSubjectAttendance($request);
         $data['title']    = ___('attendance.Subject Attendance'). ' ('. $data['subject_name'] .')';
         $data['request']  = $request;
-        $data['subjects']           = $this->subjectRepo->all();
         $data['classes']  = $this->classRepo->assignedAll();
         $data['sections'] = $this->classSetupRepo->getSections($request->class);
+        $data['subjects'] = $this->subjectsForClassSection($request->class, $request->section);
+
         return view('backend.attendance.subject-attendance', compact('data'));
+    }
+
+    /**
+     * Subjects assigned to a class/section (for filter dropdown).
+     */
+    private function subjectsForClassSection($classId, $sectionId)
+    {
+        if (!$classId || !$sectionId) {
+            return collect();
+        }
+
+        $request = new Request([
+            'classes_id' => $classId,
+            'section_id' => $sectionId,
+        ]);
+
+        return collect($this->subjectAssignRepo->getSubjects($request));
     }
 
     // report start----------------------------------------------------------------------------------------------

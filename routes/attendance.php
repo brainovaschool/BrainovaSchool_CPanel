@@ -17,8 +17,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/subject-attendance', 'subjectAttendance')->name('attendance.subject-attendance')->middleware('PermissionCheck:attendance_read');
                     Route::post('/store',           'store')->name('attendance.store')->middleware('PermissionCheck:attendance_create');
                     Route::post('/subject-attendance', 'storeSubjectAttendance')->name('attendance.subject-attendance.store')->middleware('PermissionCheck:attendance_create');
-                    Route::any('/search',           'searchStudents')->name('attendance.search');
-                    Route::get('/search',           'searchAttendance')->name('attendance.student.search');
+                    Route::post('/search',          'searchStudents')->name('attendance.search');
+                    Route::match(['get', 'post'], '/subject-attendance/search', 'searchAttendance')->name('attendance.student.search');
                     Route::get('/report',           'report')->name('attendance.report')->middleware('PermissionCheck:attendance_read');
                     Route::any('/report-search',    'reportSearch')->name('attendance.report-search')->middleware('PermissionCheck:attendance_read');
 

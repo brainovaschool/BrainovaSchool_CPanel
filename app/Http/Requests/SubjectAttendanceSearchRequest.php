@@ -22,10 +22,15 @@ class SubjectAttendanceSearchRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'date'       => 'required',
+            'date'       => 'required|date',
             'class'      => 'required',
             'section'    => 'required',
             'subject'    => 'required',
         ];
+    }
+
+    protected function getRedirectUrl(): string
+    {
+        return route('attendance.subject-attendance');
     }
 }
