@@ -854,6 +854,24 @@ if (!function_exists('isSuperAdmin')) {
 }
 
 
+if (!function_exists('online_admission_programs')) {
+    function online_admission_programs(): array
+    {
+        $programs = config('online_admission.programs');
+
+        if (is_array($programs)) {
+            return $programs;
+        }
+
+        return [
+            'Online School',
+            'Online Short Courses',
+            'On-Campus School',
+            'On-Campus After School Clubs',
+        ];
+    }
+}
+
 if (!function_exists('admission_fields')) {
     function admission_fields()
     {

@@ -21,7 +21,7 @@ class OnlineAdmissionStoreRequest extends FormRequest
             'parent_name'    => 'required|string|max:255',
             'parent_email'   => 'required|email|max:255',
             'parent_phone'   => 'required|string|max:50',
-            'program'        => ['required', Rule::in(config('online_admission.programs'))],
+            'program'        => ['required', Rule::in(online_admission_programs())],
         ];
     }
 }

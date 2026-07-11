@@ -138,7 +138,7 @@
                                     <label class="primary_label2" for="program">Program <span class="text-danger">*</span></label>
                                     <select class="theme_select wide @error('program') is-invalid @enderror" name="program" id="program" required>
                                         <option value="" data-display="Select">Select program</option>
-                                        @foreach (config('online_admission.programs') as $program)
+                                        @foreach (online_admission_programs() as $program)
                                             <option value="{{ $program }}" {{ old('program') == $program ? 'selected' : '' }}>
                                                 {{ $program }}
                                             </option>
