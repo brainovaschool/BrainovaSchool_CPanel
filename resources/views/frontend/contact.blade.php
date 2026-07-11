@@ -44,7 +44,7 @@
                                 <img src="{{ @globalAsset(@$item->upload->path,'65X90.webp') }}" alt="Icon">
                             </div>
                             <h3>{{ @$item->defaultTranslate->name }}</h3>
-                            <p>{{ @$item->defaultTranslate->address }}</p>
+                            <p>{{ str_ireplace('G-9, Islamabad', 'Islamabad', @$item->defaultTranslate->address) }}</p>
                         </div>
                     @endforeach
 
