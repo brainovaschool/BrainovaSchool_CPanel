@@ -52,8 +52,6 @@ class OnlineAdmissionController extends Controller
 
     public function index()
     {
-        $data['classes']  = $this->classRepo->assignedAll();
-        $data['sections'] = [];
         $data['title']    = ___('student_info.online_admission');
         $data['students'] = $this->repo->all();
         return view('backend.student-info.online-admission.index', compact('data'));
@@ -61,8 +59,6 @@ class OnlineAdmissionController extends Controller
 
     public function search(Request $request)
     {
-        $data['classes']  = $this->classRepo->assignedAll();
-        $data['sections'] = $this->classSetupRepo->getSections($request->class);
         $data['request']  = $request;
         $data['title']    = ___('student_info.online_admission');
         $data['students'] = $this->repo->searchStudents($request);
@@ -71,16 +67,9 @@ class OnlineAdmissionController extends Controller
 
     public function edit($id)
     {
-        $data['title']        = ___('student_info.Update Online Admission');
-        $data['student']      = $this->repo->show($id);
-        $data['classes']      = $this->classRepo->assignedAll();
-        $data['sections']     = $this->classSetupRepo->getSections($data['student']->class->id);
-        $data['shifts']       = $this->shiftRepo->all();
+        $data['title']   = ___('student_info.Update Online Admission');
+        $data['student'] = $this->repo->show($id);
 
-        $data['bloods']       = $this->bloodRepo->all();
-        $data['religions']    = $this->religionRepo->all();
-        $data['genders']      = $this->genderRepo->all();
-        $data['categories']   = $this->categoryRepo->all();
         return view('backend.student-info.online-admission.edit', compact('data'));
     }
 
