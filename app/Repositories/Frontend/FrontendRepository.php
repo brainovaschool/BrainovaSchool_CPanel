@@ -205,59 +205,26 @@ class FrontendRepository implements FrontendInterface
 
     public function onlineAdmission($request){
         try {
-
-            $setting = $this->online_admission_setting();
             $row                 = new OnlineAdmission();
             $row->reference_no   = Str::random(6);
-            $row->first_name     = $request->first_name;
-            $row->last_name      = $request->last_name;
-            $row->phone          = $request->phone;
-            $row->email          = $request->email;
-            $row->session_id     = $request->session;
-            $row->shift_id       = $request->shift;
-            $row->classes_id     = $request->class;
-            $row->section_id     = $request->section;
-            $row->dob            = $request->dob;
-            $row->gender_id      = $request->gender;
-            $row->religion_id    = $request->religion;
-            $row->student_image_id = $this->UploadImageCreate($request->student_image, 'backend/uploads/students');
-            $row->upload_documents =  $this->uploadDocuments($request);
-            $row->guardian_name  = $request->guardian_name;
-            $row->guardian_phone = $request->guardian_phone;
-            $row->guardian_profession = $request->guardian_profession;
-            $row->gurdian_image_id = $this->UploadImageCreate($request->gurdian_image, 'backend/uploads/students');
-
-
-            $row->previous_school = $request->previous_school ?? 0;
-            $row->previous_school_info = $request->previous_school_info;
-            $row->previous_school_image_id = $this->UploadImageCreate($request->previous_school_image, 'backend/uploads/students');
-
-            $row->father_name = $request->father_name;
-            $row->father_phone = $request->father_phone;
-            $row->father_profession = $request->father_profession;
-            $row->father_image_id =  $this->UploadImageCreate($request->father_image, 'backend/uploads/students');
-
-            $row->mother_name = $request->mother_name;
-            $row->mother_phone = $request->mother_phone;
-            $row->mother_profession = $request->mother_profession;
-            $row->mother_image_id = $this->UploadImageCreate($request->mother_image, 'backend/uploads/students');
-            $row->payment_status = ($setting->is_show == 1) ? 2 : 0 ;
-
-
-            $row->place_of_birth = $request->place_of_birth;
-            $row->nationality = $request->nationality;
-            $row->cpr_no = $request->cpr_no;
-            $row->spoken_lang_at_home = $request->spoken_lang_at_home;
-            $row->residance_address = $request->residance_address;
-            $row->father_nationality = $request->father_nationality;
+            $row->first_name     = $request->student_name;
+            $row->last_name      = null;
+            $row->student_age    = $request->student_age;
+            $row->student_class  = $request->student_class;
+            $row->program        = $request->program;
+            $row->guardian_name  = $request->parent_name;
+            $row->guardian_phone = $request->parent_phone;
+            $row->phone          = $request->parent_phone;
+            $row->email          = $request->parent_email;
+            $row->payment_status = 0;
             $row->save();
 
             $data = [];
-            $data['student_name'] = @$row->first_name.' '.@$row->last_name;
-            $data['class'] =  @$row->class->name;
-            $data['section'] =  @$row->section->name;
+            $data['student_name'] = $row->first_name;
+            $data['class'] = $row->student_class;
+            $data['program'] = $row->program;
             $data['admission_date'] = dateFormat(Carbon::now());
-            $data['url'] = route('online-admissions.edit',$row->id);
+            $data['url'] = route('online-admissions.edit', $row->id);
 
             if(env('NOTIFICATION_JOB') == 'queue'){
                 dispatch(new NotificationSendJob('Online_Admission', [1], $data , ['Super Admin']));
@@ -267,7 +234,7 @@ class FrontendRepository implements FrontendInterface
 
             return $row;
         } catch (\Throwable $th) {
-            return response()->json([___('frontend.Error'), ___('frontend.something_went_wrong'), 'error', ___('frontend.OK')]);
+            return null;
         }
     }
 

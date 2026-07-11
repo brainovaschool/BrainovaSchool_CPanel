@@ -15,6 +15,8 @@ use App\Repositories\Report\MarksheetRepository;
 use App\Repositories\Frontend\FrontendRepository;
 use App\Repositories\WebsiteSetup\PageRepository;
 use App\Http\Requests\Frontend\SearchResultRequest;
+use App\Http\Requests\Frontend\OnlineAdmissionStoreRequest;
+use App\Models\WebsiteSetup\OnlineAdmission;
 use App\Repositories\Academic\ShiftRepository;
 use App\Repositories\StudentInfo\StudentRepository;
 use App\Repositories\StudentInfo\OnlineAdmissionSettingRepository;
@@ -626,12 +628,7 @@ class FrontendController extends Controller
     // onlineAdmission
     public function onlineAdmission()
     {
-        $data = $this->repo->result();
-        $data['religions']= $this->religionRepo->all();
-        $data['genders']  = $this->genderRepo->all();
-        $data['shifts']  = $this->shift_repo->all();
-        $data['setting']  = $this->admission_setting_repo->getIsShowByType('online_admission');
-        return view('frontend.online-admission', compact('data'));
+        return view('frontend.online-admission');
     }
 
 
@@ -649,17 +646,14 @@ class FrontendController extends Controller
             return view('frontend.online-admission-fees', compact('data'));
         }
 
-    public function storeOnlineAdmission(Request $request) {
-
+    public function storeOnlineAdmission(OnlineAdmissionStoreRequest $request) {
         $admission = $this->repo->onlineAdmission($request);
-        $fees = $this->repo->onlineAdmissionFees($admission->session_id, $admission->classes_id , $admission->section_id);
-        $payment_setting = $this->admission_setting_repo->getOneByFied('admission_payment');
 
-        if($admission && $fees && $payment_setting->is_show == 1){
-            return redirect()->route('frontend.online-admission-fees',[$admission->reference_no , $admission->id])->with('message' , 'Admission Inform submitted successfully , Please wait for school approval');
+        if (!$admission instanceof OnlineAdmission) {
+            return redirect()->back()->with('error', 'Something went wrong. Please try again.');
         }
-        return redirect()->back()->with('message' , 'Admission Inform submitted successfully, Please wait for school approval');
 
+        return redirect()->route('frontend.online-admission')->with('message', 'Your application has been submitted successfully! We will contact you shortly.');
     }
 
 

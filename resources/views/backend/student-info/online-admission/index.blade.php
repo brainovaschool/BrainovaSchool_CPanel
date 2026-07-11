@@ -93,11 +93,12 @@
                                 <tr>
                                     <th class="serial">{{ ___('common.sr_no') }}</th>
                                     <th class="purchase">{{ ___('student_info.student_name') }}</th>
-                                    <th class="purchase">{{ ___('academic.class') }} ({{ ___('academic.section') }})</th>
-                                    <th class="purchase">{{ ___('student_info.date_of_birth') }}</th>
-                                    <th class="purchase">{{ ___('student_info.mobile') }}</th>
+                                    <th class="purchase">Student Age</th>
+                                    <th class="purchase">Student Class</th>
                                     <th class="purchase">{{ ___('student_info.guardian_name') }}</th>
+                                    <th class="purchase">Parent Email</th>
                                     <th class="purchase">{{ ___('student_info.guardian_mobile') }}</th>
+                                    <th class="purchase">Program</th>
                                     @if (hasPermission('student_update') || hasPermission('student_delete'))
                                         <th class="action">{{ ___('common.action') }}</th>
                                     @endif
@@ -107,12 +108,13 @@
                                 @forelse ($data['students'] as $key => $row)
                                 <tr id="row_{{ $row->id }}">
                                     <td class="serial">{{ ++$key }}</td>
-                                    <td>{{ @$row->first_name }} {{ @$row->last_name }}</td>
-                                    <td>{{ @$row->class->name }} ({{ @$row->section->name }})</td>
-                                    <td>{{ dateFormat(@$row->dob) }}</td>
-                                    <td>{{ @$row->phone }}</td>
+                                    <td>{{ @$row->first_name }}</td>
+                                    <td>{{ @$row->student_age }}</td>
+                                    <td>{{ @$row->student_class ?? @$row->class->name }}</td>
                                     <td>{{ @$row->guardian_name }}</td>
+                                    <td>{{ @$row->email }}</td>
                                     <td>{{ @$row->guardian_phone }}</td>
+                                    <td>{{ @$row->program }}</td>
                                     @if (hasPermission('student_update') || hasPermission('student_delete'))
                                         <td class="action">
                                             <div class="dropdown dropdown-action">

@@ -47,14 +47,18 @@ class OnlineAdmissionRepository implements OnlineAdmissionInterface
             $result = $result->where('section_id', $request->section);
         }
         if($request->keyword != "") {
-            $result = $result
-            ->orWhere('first_name', 'LIKE', "%{$request->keyword}%")
-            ->orWhere('last_name', 'LIKE', "%{$request->keyword}%")
-            ->where('phone', 'LIKE', "%{$request->keyword}%")
-            ->orWhere('email', 'LIKE', "%{$request->keyword}%")
-            ->orWhere('dob', 'LIKE', "%{$request->keyword}%")
-            ->orWhere('guardian_name', 'LIKE', "%{$request->keyword}%")
-            ->orWhere('guardian_phone', 'LIKE', "%{$request->keyword}%");
+            $keyword = $request->keyword;
+            $result = $result->where(function ($query) use ($keyword) {
+                $query->where('first_name', 'LIKE', "%{$keyword}%")
+                    ->orWhere('last_name', 'LIKE', "%{$keyword}%")
+                    ->orWhere('student_age', 'LIKE', "%{$keyword}%")
+                    ->orWhere('student_class', 'LIKE', "%{$keyword}%")
+                    ->orWhere('program', 'LIKE', "%{$keyword}%")
+                    ->orWhere('phone', 'LIKE', "%{$keyword}%")
+                    ->orWhere('email', 'LIKE', "%{$keyword}%")
+                    ->orWhere('guardian_name', 'LIKE', "%{$keyword}%")
+                    ->orWhere('guardian_phone', 'LIKE', "%{$keyword}%");
+            });
         }
 
         return $result->paginate(Settings::PAGINATE);
