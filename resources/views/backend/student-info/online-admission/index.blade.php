@@ -109,12 +109,12 @@
                                 <tr id="row_{{ $row->id }}">
                                     <td class="serial">{{ ++$key }}</td>
                                     <td>{{ @$row->first_name }}</td>
-                                    <td>{{ @$row->student_age }}</td>
-                                    <td>{{ @$row->student_class ?? @$row->class->name }}</td>
+                                    <td>{{ @$row->dob }}</td>
+                                    <td>{{ @$row->nationality ?? @$row->class->name }}</td>
                                     <td>{{ @$row->guardian_name }}</td>
                                     <td>{{ @$row->email }}</td>
                                     <td>{{ @$row->guardian_phone }}</td>
-                                    <td>{{ @$row->program }}</td>
+                                    <td>{{ @$row->spoken_lang_at_home }}</td>
                                     @if (hasPermission('student_update') || hasPermission('student_delete'))
                                         <td class="action">
                                             <div class="dropdown dropdown-action">

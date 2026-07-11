@@ -9,6 +9,8 @@ use App\Models\Slider;
 use App\Models\Counter;
 use App\Models\Gallery;
 use App\Models\Session;
+use App\Models\Academic\Classes;
+use App\Models\Academic\Section;
 use App\Models\NoticeBoard;
 use App\Models\Staff\Staff;
 use Illuminate\Support\Str;
@@ -209,20 +211,23 @@ class FrontendRepository implements FrontendInterface
             $row->reference_no   = Str::random(6);
             $row->first_name     = $request->student_name;
             $row->last_name      = null;
-            $row->student_age    = $request->student_age;
-            $row->student_class  = $request->student_class;
-            $row->program        = $request->program;
+            $row->dob            = $request->student_age;
+            $row->nationality    = $request->student_class;
+            $row->spoken_lang_at_home = $request->program;
             $row->guardian_name  = $request->parent_name;
             $row->guardian_phone = $request->parent_phone;
             $row->phone          = $request->parent_phone;
             $row->email          = $request->parent_email;
+            $row->session_id     = setting('session') ?? Session::where('status', Status::ACTIVE)->orderBy('id')->value('id');
+            $row->classes_id     = Classes::orderBy('id')->value('id');
+            $row->section_id     = Section::orderBy('id')->value('id');
             $row->payment_status = 0;
             $row->save();
 
             $data = [];
             $data['student_name'] = $row->first_name;
-            $data['class'] = $row->student_class;
-            $data['program'] = $row->program;
+            $data['class'] = $row->nationality;
+            $data['program'] = $row->spoken_lang_at_home;
             $data['admission_date'] = dateFormat(Carbon::now());
             $data['url'] = route('online-admissions.edit', $row->id);
 

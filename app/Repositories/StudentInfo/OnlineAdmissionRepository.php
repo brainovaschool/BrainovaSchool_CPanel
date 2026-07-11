@@ -51,9 +51,9 @@ class OnlineAdmissionRepository implements OnlineAdmissionInterface
             $result = $result->where(function ($query) use ($keyword) {
                 $query->where('first_name', 'LIKE', "%{$keyword}%")
                     ->orWhere('last_name', 'LIKE', "%{$keyword}%")
-                    ->orWhere('student_age', 'LIKE', "%{$keyword}%")
-                    ->orWhere('student_class', 'LIKE', "%{$keyword}%")
-                    ->orWhere('program', 'LIKE', "%{$keyword}%")
+                    ->orWhere('dob', 'LIKE', "%{$keyword}%")
+                    ->orWhere('nationality', 'LIKE', "%{$keyword}%")
+                    ->orWhere('spoken_lang_at_home', 'LIKE', "%{$keyword}%")
                     ->orWhere('phone', 'LIKE', "%{$keyword}%")
                     ->orWhere('email', 'LIKE', "%{$keyword}%")
                     ->orWhere('guardian_name', 'LIKE', "%{$keyword}%")
