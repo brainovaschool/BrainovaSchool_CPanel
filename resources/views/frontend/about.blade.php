@@ -155,6 +155,7 @@
                 <div class="col-lg-12">
                     <div class="section__title mb_76 text-center">
                         <h3 class="text-capitalize">{{ @$sections['our_teachers']->defaultTranslate->name }}</span></h3>
+                            <p>{{ "Our Teachers are highly qualified and dedicated to providing an excellent education to our students." }}</p>
                     </div>
                 </div>
             </div>
