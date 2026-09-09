@@ -87,48 +87,15 @@
                                     <li><a href="{{ route('frontend.about') }}">{{ ___('frontend.About') }}</a></li>
 
                                     <!-- Our Programs: new taxonomy, self-contained mega menu (bn- prefixed classes) -->
-                                    <li class="bn-mega-trigger">
-                                        <a href="{{ route('frontend.courses') }}">Our programs</a>
-                                        <div class="bn-mega-menu">
-                                            <div class="bn-mega-col">
-                                                <h4>Homeschooling</h4>
-                                                <ul>
-                                                    <li><a href="{{ route('frontend.courses') }}">Pre-K &amp; Kindergarten</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">1st Grade</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">2nd Grade</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">3rd Grade</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">4th Grade</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">5th Grade</a></li>
-                                                </ul>
-                                            </div>
-                                            <div class="bn-mega-col">
-                                                <h4>Tutoring</h4>
-                                                <ul>
-                                                    <li><a href="{{ route('frontend.courses') }}">Academic Subjects</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">Private Lessons</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">1-on-1 Coaching</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">Test Prep</a></li>
-                                                </ul>
-                                            </div>
-                                            <div class="bn-mega-col">
-                                                <h4>Electives &amp; Enrichment</h4>
-                                                <ul>
-                                                    <li><a href="{{ route('frontend.courses') }}">Arts</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">Health &amp; Wellness</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">Coding &amp; Tech</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">Life Skills</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">World Languages</a></li>
-                                                </ul>
-                                            </div>
-                                            <div class="bn-mega-col">
-                                                <h4>Social Clubs</h4>
-                                                <ul>
-                                                    <li><a href="{{ route('frontend.courses') }}">Games &amp; Trivia</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">Art Hub</a></li>
-                                                </ul>
-                                            </div>
-                                        </div>
-                                    </li>
+                                    <li class="bn-dropdown">
+    <a href="{{ route('frontend.courses') }}">Our programs</a>
+    <ul class="bn-dropdown-menu">
+        <li><a href="{{ route('frontend.courses') }}">Homeschooling</a></li>
+        <li><a href="{{ route('frontend.courses') }}">Tutoring</a></li>
+        <li><a href="{{ route('frontend.courses') }}">Electives &amp; Enrichment</a></li>
+        <li><a href="{{ route('frontend.courses') }}">Social Clubs</a></li>
+    </ul>
+</li>
 
                                     <li><a href="{{ route('frontend.events') }}">{{ ___('frontend.Events') }}</a></li>
 
@@ -230,25 +197,6 @@
     min-width: 720px;
     text-align: left;
 }
-.bn-mega-trigger:hover .bn-mega-menu {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 28px;
-}
-.bn-mega-col h4 {
-    color: #0097B2;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    margin-bottom: 14px;
-}
-.bn-mega-col ul { list-style: none; padding: 0; margin: 0; }
-.bn-mega-col li { margin-bottom: 10px; }
-.bn-mega-col a {
-    color: #142433;
-    text-decoration: none;
-    font-size: 14px;
-}
-.bn-mega-col a:hover { color: #8C52FF; }
+
 </style>
 <!--/ HEADER::END -->
