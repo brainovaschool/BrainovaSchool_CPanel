@@ -171,8 +171,9 @@
 .bn-dropdown:hover .bn-dropdown-menu { display: block; }
 .bn-dropdown-menu li a {
     display: block;
-    padding: 10px 18px;
-    font-weight: 500;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 400;
     color: #142433;
     text-decoration: none;
 }
