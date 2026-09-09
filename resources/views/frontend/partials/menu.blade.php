@@ -140,20 +140,54 @@
                             <!-- main_menu_start  -->
 
                             <!-- header__right_start  -->
-                            <div class="header__right">
-                                <div class="contact_wrap d-flex align-items-center">
-                                    <div class="contact_btn d-none d-lg-flex gap_15 align-items-center">
-                                        <a href="{{ route('frontend.online-admission') }}" class="theme_btn small_btn3 min_windth_150 text-center">{{ ___('frontend.online_admission') }}</a>
-                                    </div>
-
-                                </div> 
-                                <div class="contact_btn d-none d-lg-flex gap_15 align-items-center">
-    <a href="#" class="theme_btn small_btn3 min_windth_150 text-center" title="Coming soon">Book a Free Trial</a>
-   <!-- <a href="{{ route('frontend.online-admission') }}" class="theme_btn small_btn3 min_windth_150 text-center">{{ ___('frontend.online_admission') }}</a>
- -->
+<!-- header__right_start  -->
+<div class="header__right">
+    <div class="contact_wrap d-flex align-items-center">
+        <div class="contact_btn d-none d-lg-flex gap_15 align-items-center">
+            <div class="dropdown contact_us_dropdown">
+                <a href="#"
+                   class="theme_btn small_btn3 min_windth_150 text-center dropdown-toggle"
+                   role="button"
+                   data-bs-toggle="dropdown"
+                   aria-expanded="false">
+                    Contact Us
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{{ route('frontend.online-admission') }}">
+                            {{ ___('frontend.online_admission') }}
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="#" title="Coming soon">
+                            Book a Free Demo Class
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
 </div>
-                            </div>
+<!-- header__right_end  -->
+ <style>
+.contact_us_dropdown .dropdown-menu {
+    min-width: 220px;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: 8px 0;
+}
+.contact_us_dropdown .dropdown-item {
+    padding: 10px 18px;
+    font-weight: 500;
+}
+.contact_us_dropdown .dropdown-item:hover {
+    background-color: rgba(140, 82, 255, 0.08); /* light purple tint from your brand palette */
+    color: #8C52FF;
+}
+</style>
                             <!-- header__right_end  -->
+
                         </div>
                     </div>
                     <div class="col-12">
