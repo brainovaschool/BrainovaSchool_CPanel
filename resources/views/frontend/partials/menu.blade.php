@@ -86,22 +86,53 @@
                                     <li><a href="{{ route('frontend.home') }}">{{ ___('frontend.Home') }}</a></li>
                                     <li><a href="{{ route('frontend.about') }}">{{ ___('frontend.About') }}</a></li>
 
-                                    <!-- Our Programs: UNCHANGED, holding until mega menu + course filtering are ready -->
-                                    <li class="has-programs-menu">
+                                    <!-- Our Programs: new taxonomy, self-contained mega menu (bn- prefixed classes) -->
+                                    <li class="bn-mega-trigger">
                                         <a href="{{ route('frontend.courses') }}">Our programs</a>
-                                        <ul class="submenu programs-menu">
-                                            <li class="programs-menu__parent">
-                                                    <li><a href="{{ route('frontend.holiday-camps') }}">Holiday Clubs</a></li>
-                                                    <li><a href="{{ route('frontend.courses') }}">Short Courses</a></li>
-                                                    <li><a href="{{ route('frontend.early-years') }}">Early Years</a></li>
-                                                    <li><a href="{{ route('frontend.primary-education') }}">Primary Education</a></li>
-                                            </li>
-                                        </ul>
+                                        <div class="bn-mega-menu">
+                                            <div class="bn-mega-col">
+                                                <h4>Homeschooling</h4>
+                                                <ul>
+                                                    <li><a href="{{ route('frontend.courses') }}">Pre-K &amp; Kindergarten</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">1st Grade</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">2nd Grade</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">3rd Grade</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">4th Grade</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">5th Grade</a></li>
+                                                </ul>
+                                            </div>
+                                            <div class="bn-mega-col">
+                                                <h4>Tutoring</h4>
+                                                <ul>
+                                                    <li><a href="{{ route('frontend.courses') }}">Academic Subjects</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">Private Lessons</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">1-on-1 Coaching</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">Test Prep</a></li>
+                                                </ul>
+                                            </div>
+                                            <div class="bn-mega-col">
+                                                <h4>Electives &amp; Enrichment</h4>
+                                                <ul>
+                                                    <li><a href="{{ route('frontend.courses') }}">Arts</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">Health &amp; Wellness</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">Coding &amp; Tech</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">Life Skills</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">World Languages</a></li>
+                                                </ul>
+                                            </div>
+                                            <div class="bn-mega-col">
+                                                <h4>Social Clubs</h4>
+                                                <ul>
+                                                    <li><a href="{{ route('frontend.courses') }}">Games &amp; Trivia</a></li>
+                                                    <li><a href="{{ route('frontend.courses') }}">Art Hub</a></li>
+                                                </ul>
+                                            </div>
+                                        </div>
                                     </li>
 
                                     <li><a href="{{ route('frontend.events') }}">{{ ___('frontend.Events') }}</a></li>
 
-                                    <!-- Community: Notices + Result (existing routes) + Testimonials & Reviews (new CMS Page) -->
+                                    <!-- Community: unchanged, already working -->
                                     <li class="has-programs-menu">
                                         <a href="#">Community</a>
                                         <ul class="submenu">
@@ -111,7 +142,7 @@
                                         </ul>
                                     </li>
 
-                                    <!-- Resources: News module reused, split into Blog / News subcategories -->
+                                    <!-- Resources: unchanged, already working -->
                                     <li class="has-programs-menu">
                                         <a href="#">Resources</a>
                                         <ul class="submenu">
@@ -121,10 +152,6 @@
                                     </li>
 
                                     <li class="d-lg-none"><a href="{{ route('frontend.online-admission') }}">{{ ___('frontend.online_admission') }}</a></li>
-
-                                    {{-- header_pages loop intentionally removed: new admin-created pages are now
-                                         linked deliberately (e.g. Testimonials & Reviews under Community) instead
-                                         of auto-appearing as flat top-level items. --}}
                                 </ul>
                             </nav>
                         </div>
@@ -134,16 +161,13 @@
                         <div class="header__right">
                             <div class="contact_wrap d-flex align-items-center">
                                 <div class="contact_btn d-none d-lg-flex gap_15 align-items-center">
-                                    <!-- Reuses the exact same has-programs-menu / submenu classes as
-                                         "Our Programs" above, so it opens via whatever mechanism (CSS
-                                         :hover most likely) already works for that menu — no new JS. -->
-                                    <li class="has-programs-menu contact_us_btn" style="list-style:none;">
+                                    <div class="bn-dropdown">
                                         <a href="#" class="theme_btn small_btn3 min_windth_150 text-center">Contact Us</a>
-                                        <ul class="submenu">
+                                        <ul class="bn-dropdown-menu">
                                             <li><a href="{{ route('frontend.online-admission') }}">{{ ___('frontend.online_admission') }}</a></li>
                                             <li><a href="#" title="Coming soon">Book a Free Trial</a></li>
                                         </ul>
-                                    </li>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -158,4 +182,73 @@
         </div>
     </div>
 </header>
+
+<style>
+/* Contact Us dropdown — self-contained, pure CSS hover, no JS dependency */
+.bn-dropdown { position: relative; display: inline-block; }
+.bn-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 8px;
+    background: #fff;
+    list-style: none;
+    padding: 8px 0;
+    min-width: 220px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    z-index: 999;
+    text-align: left;
+}
+.bn-dropdown:hover .bn-dropdown-menu { display: block; }
+.bn-dropdown-menu li a {
+    display: block;
+    padding: 10px 18px;
+    font-weight: 500;
+    color: #142433;
+    text-decoration: none;
+}
+.bn-dropdown-menu li a:hover {
+    background-color: rgba(140, 82, 255, 0.08);
+    color: #8C52FF;
+}
+
+/* Our Programs mega menu — self-contained, pure CSS hover, no JS dependency */
+.bn-mega-trigger { position: relative; }
+.bn-mega-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.15);
+    border-radius: 10px;
+    padding: 28px;
+    z-index: 999;
+    min-width: 720px;
+    text-align: left;
+}
+.bn-mega-trigger:hover .bn-mega-menu {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+}
+.bn-mega-col h4 {
+    color: #0097B2;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 14px;
+}
+.bn-mega-col ul { list-style: none; padding: 0; margin: 0; }
+.bn-mega-col li { margin-bottom: 10px; }
+.bn-mega-col a {
+    color: #142433;
+    text-decoration: none;
+    font-size: 14px;
+}
+.bn-mega-col a:hover { color: #8C52FF; }
+</style>
 <!--/ HEADER::END -->
