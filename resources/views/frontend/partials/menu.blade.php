@@ -201,7 +201,64 @@
     color: #8C52FF;
 }
 </style>
+<style>
+.contact_us_dropdown {
+    position: relative;
+    display: inline-block;
+}
+.contact_us_dropdown .contact_us_toggle {
+    border: none;
+    cursor: pointer;
+}
+.contact_us_menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 8px;
+    background: #fff;
+    list-style: none;
+    padding: 8px 0;
+    min-width: 220px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    z-index: 999;
+}
+.contact_us_menu.open {
+    display: block;
+}
+.contact_us_menu li a {
+    display: block;
+    padding: 10px 18px;
+    font-weight: 500;
+    color: #142433;
+    text-decoration: none;
+}
+.contact_us_menu li a:hover {
+    background-color: rgba(140, 82, 255, 0.08);
+    color: #8C52FF;
+}
+</style>
 
+<script>
+document.addEventListener('click', function (e) {
+    var toggle = e.target.closest('.contact_us_toggle');
+
+    if (toggle) {
+        e.preventDefault();
+        e.stopPropagation();
+        var dropdown = toggle.closest('.contact_us_dropdown');
+        var menu = dropdown ? dropdown.querySelector('.contact_us_menu') : null;
+        if (menu) menu.classList.toggle('open');
+        return;
+    }
+
+    // Click outside any dropdown: close all open menus
+    document.querySelectorAll('.contact_us_menu.open').forEach(function (menu) {
+        menu.classList.remove('open');
+    });
+});
+</script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     var toggle = document.querySelector('.contact_us_toggle');
