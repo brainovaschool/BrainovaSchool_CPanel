@@ -144,24 +144,18 @@
 <div class="header__right">
     <div class="contact_wrap d-flex align-items-center">
         <div class="contact_btn d-none d-lg-flex gap_15 align-items-center">
-            <div class="dropdown contact_us_dropdown">
-                <a href="#"
-                   class="theme_btn small_btn3 min_windth_150 text-center dropdown-toggle"
-                   role="button"
-                   data-bs-toggle="dropdown"
-                   aria-expanded="false">
+            <div class="contact_us_dropdown">
+                <button type="button" class="theme_btn small_btn3 min_windth_150 text-center contact_us_toggle">
                     Contact Us
-                </a>
-                <ul class="dropdown-menu dropdown-menu-end">
+                </button>
+                <ul class="contact_us_menu">
                     <li>
-                        <a class="dropdown-item" href="{{ route('frontend.online-admission') }}">
+                        <a href="{{ route('frontend.online-admission') }}">
                             {{ ___('frontend.online_admission') }}
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item" href="#" title="Coming soon">
-                            Book a Free Demo Class
-                        </a>
+                        <a href="#" title="Coming soon">Book a Free Trial</a>
                     </li>
                 </ul>
             </div>
@@ -169,23 +163,64 @@
     </div>
 </div>
 <!-- header__right_end  -->
- <style>
-.contact_us_dropdown .dropdown-menu {
-    min-width: 220px;
+<style>
+.contact_us_dropdown {
+    position: relative;
+    display: inline-block;
+}
+.contact_us_dropdown .contact_us_toggle {
     border: none;
+    cursor: pointer;
+}
+.contact_us_menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 8px;
+    background: #fff;
+    list-style: none;
+    padding: 8px 0;
+    min-width: 220px;
     border-radius: 8px;
     box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    padding: 8px 0;
+    z-index: 999;
 }
-.contact_us_dropdown .dropdown-item {
+.contact_us_menu.open {
+    display: block;
+}
+.contact_us_menu li a {
+    display: block;
     padding: 10px 18px;
     font-weight: 500;
+    color: #142433;
+    text-decoration: none;
 }
-.contact_us_dropdown .dropdown-item:hover {
-    background-color: rgba(140, 82, 255, 0.08); /* light purple tint from your brand palette */
+.contact_us_menu li a:hover {
+    background-color: rgba(140, 82, 255, 0.08);
     color: #8C52FF;
 }
 </style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var toggle = document.querySelector('.contact_us_toggle');
+    var menu = document.querySelector('.contact_us_menu');
+    if (!toggle || !menu) return;
+
+    toggle.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        menu.classList.toggle('open');
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!menu.contains(e.target) && e.target !== toggle) {
+            menu.classList.remove('open');
+        }
+    });
+});
+</script>
                             <!-- header__right_end  -->
 
                         </div>
