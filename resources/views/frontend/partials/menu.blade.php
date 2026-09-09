@@ -80,33 +80,63 @@
                             <!-- header__left__start  -->
 
                             <!-- main_menu_start  -->
-                            <div class="main_menu text-right d-none d-lg-block">
-                                <nav>
-                                    <ul id="mobile-menu">
-                                        <li><a href="{{ route('frontend.home') }}">{{ ___('frontend.Home') }}</a></li>
-                                        <li><a href="{{ route('frontend.about') }}">{{ ___('frontend.About') }}</a></li>
-                                        <li><a href="{{ route('frontend.news') }}">{{ ___('frontend.News') }}</a></li>
-                                        <li><a href="{{ route('frontend.events') }}">{{ ___('frontend.Events') }}</a></li>
-                                        <li class="has-programs-menu">
-                                            <a href="{{ route('frontend.courses') }}">Our programs</a>
-                                            <ul class="submenu programs-menu">
-                                                <li class="programs-menu__parent">
-                                                        <li><a href="{{ route('frontend.holiday-camps') }}">Holiday Clubs</a></li>
-                                                        <li><a href="{{ route('frontend.courses') }}">Short Courses</a></li>
-                                                        <li><a href="{{ route('frontend.early-years') }}">Early Years</a></li>
-                                                        <li><a href="{{ route('frontend.primary-education') }}">Primary Education</a></li>
-                                                </li>
-                                            </ul>
-                                        </li>
-                                        <li><a href="{{ route('frontend.notices') }}">{{ ___('frontend.notices') }}</a></li>
-                                        <li><a href="{{ route('frontend.result') }}">{{ ___('frontend.Result') }}</a></li>
-                                        <li class="d-lg-none"><a href="{{ route('frontend.online-admission') }}">{{ ___('frontend.online_admission') }}</a></li>
-                                        @foreach ($header_pages as $header)
-                                            <li><a href="{{ route('frontend.page',$header->slug) }}">{{ @$header->defaultTranslate->name }}</a></li>
-                                        @endforeach
-                                    </ul>
-                                </nav>
-                            </div>
+<!-- main_menu_start  -->
+<div class="main_menu text-right d-none d-lg-block">
+    <nav>
+        <ul id="mobile-menu">
+            <li><a href="{{ route('frontend.home') }}">{{ ___('frontend.Home') }}</a></li>
+            <li><a href="{{ route('frontend.about') }}">{{ ___('frontend.About') }}</a></li>
+
+            <!-- Our Programs: UNCHANGED, holding until mega menu + course filtering are ready -->
+            <li class="has-programs-menu">
+                <a href="{{ route('frontend.courses') }}">Our programs</a>
+                <ul class="submenu programs-menu">
+                    <li class="programs-menu__parent">
+                        <li><a href="{{ route('frontend.holiday-camps') }}">Holiday Clubs</a></li>
+                        <li><a href="{{ route('frontend.courses') }}">Short Courses</a></li>
+                        <li><a href="{{ route('frontend.early-years') }}">Early Years</a></li>
+                        <li><a href="{{ route('frontend.primary-education') }}">Primary Education</a></li>
+                    </li>
+                </ul>
+            </li>
+
+            <li><a href="{{ route('frontend.events') }}">{{ ___('frontend.Events') }}</a></li>
+
+            <!-- Community: Notices + Result (existing routes) + Testimonials & Reviews (new CMS Page) -->
+            <li class="has-programs-menu">
+                <a href="#">Community</a>
+                <ul class="submenu">
+                    <li><a href="{{ route('frontend.notices') }}">{{ ___('frontend.notices') }}</a></li>
+                    <li><a href="{{ route('frontend.result') }}">{{ ___('frontend.Result') }}</a></li>
+                    <li><a href="{{ route('frontend.page', 'testimonials-reviews') }}">Testimonials &amp; Reviews</a></li>
+                </ul>
+            </li>
+
+            <!-- Resources: News module reused, split into Blog / News subcategories -->
+            <li class="has-programs-menu">
+                <a href="#">Resources</a>
+                <ul class="submenu">
+                    <li><a href="{{ route('frontend.news', ['type' => 'blog']) }}">Blog</a></li>
+                    <li><a href="{{ route('frontend.news') }}">News</a></li>
+                </ul>
+            </li>
+
+            <li class="d-lg-none"><a href="{{ route('frontend.online-admission') }}">{{ ___('frontend.online_admission') }}</a></li>
+
+            {{-- Removed: @foreach ($header_pages as $header) loop.
+                 This used to auto-inject every admin-created Page as a flat top-level item.
+                 We're now curating fixed headings instead — new pages (like Testimonials &
+                 Reviews above) get linked deliberately from the right dropdown instead of
+                 floating loose in the bar. --}}
+        </ul>
+    </nav>
+</div>
+<!-- main_menu_start  -->
+
+
+
+
+
                             <!-- main_menu_start  -->
 
                             <!-- header__right_start  -->
@@ -117,6 +147,10 @@
                                     </div>
 
                                 </div>
+                                <div class="contact_btn d-none d-lg-flex gap_15 align-items-center">
+    <a href="#" class="theme_btn small_btn3 min_windth_150 text-center" title="Coming soon">Book a Free Trial</a>
+    <a href="{{ route('frontend.online-admission') }}" class="theme_btn small_btn3 min_windth_150 text-center">{{ ___('frontend.online_admission') }}</a>
+</div>
                             </div>
                             <!-- header__right_end  -->
                         </div>
