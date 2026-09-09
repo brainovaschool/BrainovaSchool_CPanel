@@ -141,12 +141,12 @@
 
                             <!-- header__right_start  -->
                             <div class="header__right">
-                                <div class="contact_wrap d-flex align-items-center">
+                               <!-- <div class="contact_wrap d-flex align-items-center">
                                     <div class="contact_btn d-none d-lg-flex gap_15 align-items-center">
                                         <a href="{{ route('frontend.online-admission') }}" class="theme_btn small_btn3 min_windth_150 text-center">{{ ___('frontend.online_admission') }}</a>
                                     </div>
 
-                                </div>
+                                </div> -->
                                 <div class="contact_btn d-none d-lg-flex gap_15 align-items-center">
     <a href="#" class="theme_btn small_btn3 min_windth_150 text-center" title="Coming soon">Book a Free Trial</a>
     <a href="{{ route('frontend.online-admission') }}" class="theme_btn small_btn3 min_windth_150 text-center">{{ ___('frontend.online_admission') }}</a>
