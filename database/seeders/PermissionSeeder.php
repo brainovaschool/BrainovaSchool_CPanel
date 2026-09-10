@@ -83,6 +83,9 @@ class PermissionSeeder extends Seeder
             'event'             => ['read' => 'event_read', 'create' => 'event_create', 'update' => 'event_update', 'delete' => 'event_delete'],
             'gallery_category'  => ['read' => 'gallery_category_read', 'create' => 'gallery_category_create', 'update' => 'gallery_category_update', 'delete' => 'gallery_category_delete'],
             'gallery'           => ['read' => 'gallery_read', 'create' => 'gallery_create', 'update' => 'gallery_update', 'delete' => 'gallery_delete'],
+            'program_category'  => ['read' => 'program_category_read', 'create' => 'program_category_create', 'update' => 'program_category_update', 'delete' => 'program_category_delete'],
+            'program_focus'     => ['read' => 'program_focus_read', 'create' => 'program_focus_create', 'update' => 'program_focus_update', 'delete' => 'program_focus_delete'],
+            'program'           => ['read' => 'program_read', 'create' => 'program_create', 'update' => 'program_update', 'delete' => 'program_delete'],
             'subscribe'         => ['read' => 'subscribe_read'],
             'contact_message'   => ['read' => 'contact_message_read'],
             // Settings

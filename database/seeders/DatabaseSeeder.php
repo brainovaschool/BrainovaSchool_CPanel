@@ -31,6 +31,7 @@ use Database\Seeders\Staff\DepartmentSeeder;
 use Database\Seeders\Staff\DesignationSeeder;
 use Database\Seeders\WebsiteSetup\NewsSeeder;
 use Database\Seeders\WebsiteSetup\PageSeeder;
+use Database\Seeders\WebsiteSetup\ProgramCatalogSeeder;
 use Database\Seeders\Academic\ClassRoomSeeder;
 use Database\Seeders\SystemNotificationSeeder;
 use Database\Seeders\WebsiteSetup\AboutSeeder;
@@ -140,6 +141,7 @@ class DatabaseSeeder extends Seeder
                 DepartmentContactSeeder::class,
                 AboutSeeder::class,
                 PageSeeder::class,
+                ProgramCatalogSeeder::class,
                 // // Library
                 BookCategorySeeder::class,
                 // // Online Examination
@@ -184,6 +186,7 @@ class DatabaseSeeder extends Seeder
                 DepartmentContactSeeder::class,
                 AboutSeeder::class,
                 PageSeeder::class,
+                ProgramCatalogSeeder::class,
                 // Library
                 CurrencySeeder::class,
                 MobileAppSettingSeeder::class
