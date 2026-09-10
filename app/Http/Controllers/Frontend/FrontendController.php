@@ -311,14 +311,24 @@ class FrontendController extends Controller
         return view('frontend.contact', compact('data'));
     }
 
-    // Testimonials & Reviews
-    public function testimonials()
+    // Testimonials & Reviews — one method, two routes
+    public function testimonialsPage(Request $request)
     {
-        $all = \App\Models\WebsiteSetup\Testimonial::query()->active()
-            ->orderBy('sort_order')->orderBy('id', 'desc')->get();
+        $type = $request->routeIs('frontend.reviews') ? 'review' : 'testimonial';
 
-        $data['testimonials'] = $all->where('type', 'testimonial')->values();
-        $data['reviews']      = $all->where('type', 'review')->values();
+        $data['type']  = $type;
+        $data['title'] = $type === 'review' ? 'Reviews' : 'Testimonials';
+        $data['lead']  = $type === 'review'
+            ? 'Ratings and feedback shared by our community.'
+            : 'Stories from parents and students across our programs.';
+        $data['other'] = $type === 'review'
+            ? ['label' => 'Read testimonials', 'url' => route('frontend.testimonials')]
+            : ['label' => 'See reviews', 'url' => route('frontend.reviews')];
+
+        $data['items'] = \App\Models\WebsiteSetup\Testimonial::query()->active()
+            ->where('type', $type)
+            ->orderBy('sort_order')->orderBy('id', 'desc')
+            ->get();
 
         return view('frontend.testimonials', compact('data'));
     }

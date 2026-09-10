@@ -635,3 +635,65 @@ body::after {
 .bn-cal-time.is-selected { background: var(--bn-primary); border-color: var(--bn-primary); color: #fff; }
 
 .bn-cal-note { font-size: 12px; color: var(--bn-muted); margin-top: 8px; }
+
+/* ============================================================
+   TYPOGRAPHY & CHROME REFINEMENT
+   The CodeCanyon theme ships very large headings and a tall
+   page-header banner. These bring the scale down to something
+   calmer. custom.css loads last so it wins at every breakpoint.
+   ============================================================ */
+
+/* --- Page-header banner (the big rectangle on every inner page) --- */
+.breadcrumb_area { height: 220px; }
+.breadcrumb_area::before { opacity: 0.72; }
+.breadcrumb_area .breadcam_wrap h3 {
+    font-size: 34px;
+    margin-bottom: 8px;
+    letter-spacing: -0.01em;
+}
+.breadcrumb_area .breadcam_wrap span,
+.breadcrumb_area .custom_breadcam,
+.breadcrumb_area .custom_breadcam a { font-size: 14px; }
+@media (max-width: 767.98px) {
+    .breadcrumb_area { height: 170px; }
+    .breadcrumb_area .breadcam_wrap h3 { font-size: 25px; }
+}
+
+/* --- Section titles ("Why Brainova", "Our programs", etc.) --- */
+.section__title h3 { font-size: 28px; line-height: 1.35; margin-bottom: 12px; }
+.section__title h1 { font-size: 34px; line-height: 1.2; }
+.section__title p { font-size: 15px; line-height: 1.7; }
+@media (max-width: 767.98px) {
+    .section__title h3 { font-size: 23px; }
+    .section__title h1 { font-size: 27px; }
+}
+
+/* --- Mission / Vision statement list --- */
+.statement_info h3 { font-size: 26px; line-height: 1.4; margin-bottom: 20px; }
+.statement_info .statement_lists .statement_title h4 { font-size: 19px; }
+.statement_info .statement_lists li:not(:last-child) { margin-bottom: 22px; }
+.description_1 { font-size: 15px; line-height: 1.75; }
+
+/* --- Body copy: a touch smaller across the site --- */
+.statement_area p, .services_area p, .explorer_tab_content p,
+.event_wrapper p, .blog_page_widget p, .eventList_widget p { font-size: 15px; line-height: 1.75; }
+
+/* --- Testimonials / Reviews page extras --- */
+.bn-tm-switch {
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--bn-primary-strong);
+    border: 1px solid var(--bn-line);
+    border-radius: 999px;
+    padding: 8px 16px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+.bn-tm-switch:hover { border-color: var(--bn-primary); }
+
+/* --- Sticky header: glide, and only reveal while scrolling up --- */
+.header_area.navbar_fixed {
+    transition: transform .38s cubic-bezier(.4,0,.2,1), background .3s ease, box-shadow .3s ease !important;
+}
+.header_area.navbar_fixed.bn-nav-up { transform: translateY(-100%); }

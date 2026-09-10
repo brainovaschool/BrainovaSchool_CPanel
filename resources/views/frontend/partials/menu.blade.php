@@ -118,7 +118,7 @@
                                             <li><a href="{{ route('frontend.notices') }}">{{ ___('frontend.notices') }}</a></li>
                                             <li><a href="{{ route('frontend.result') }}">{{ ___('frontend.Result') }}</a></li>
                                             <li><a href="{{ route('frontend.testimonials') }}">Testimonials</a></li>
-                                            <li><a href="{{ route('frontend.testimonials') }}#reviews">Reviews</a></li>
+                                            <li><a href="{{ route('frontend.reviews') }}">Reviews</a></li>
                                         </ul>
                                     </li>
 

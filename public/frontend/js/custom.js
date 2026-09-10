@@ -359,3 +359,33 @@ $('.language-change').on('change', function (e) {
     });
 });
 // ---------------------------------------------------------------- End Language Change ----------------------------------------------------------------
+
+// ---- Sticky header refinement: hide while scrolling down, show while scrolling up ----
+(function () {
+    var header = document.getElementById('sticky-header');
+    if (!header) return;
+    var lastY = window.pageYOffset || 0;
+    var ticking = false;
+
+    function update() {
+        var y = window.pageYOffset || 0;
+        if (header.classList.contains('navbar_fixed')) {
+            if (y > lastY && y > 340) {
+                header.classList.add('bn-nav-up');       // scrolling down
+            } else {
+                header.classList.remove('bn-nav-up');     // scrolling up
+            }
+        } else {
+            header.classList.remove('bn-nav-up');
+        }
+        lastY = y;
+        ticking = false;
+    }
+
+    window.addEventListener('scroll', function () {
+        if (!ticking) {
+            window.requestAnimationFrame(update);
+            ticking = true;
+        }
+    }, { passive: true });
+})();
