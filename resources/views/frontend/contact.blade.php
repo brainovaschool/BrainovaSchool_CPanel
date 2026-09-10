@@ -13,6 +13,7 @@
             <div class="col-lg-6 col-xl-5">
                 <div class="breadcam_wrap text-center">
                     <h3>{{ ___('frontend.contact_us') }}</h3>
+                    <p>Questions about admissions, programs or a visit? We’re glad to help.</p>
                     <div class="custom_breadcam">
                         <a href="{{url('/')}}" class="breadcrumb-item">{{ ___('frontend.home') }}</a>
                         <a href="#" class="breadcrumb-item">{{ ___('frontend.contact_us') }}</a>

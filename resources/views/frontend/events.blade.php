@@ -12,6 +12,7 @@
             <div class="col-lg-8 col-xl-8">
                 <div class="breadcam_wrap text-center">
                     <h3>{{ ___('frontend.Events') }}</h3>
+                    <p>Open days, workshops and what’s coming up at Brainova.</p>
                     <div class="custom_breadcam">
                         <a href="{{url('/')}}" class="breadcrumb-item">{{ ___('frontend.home') }}</a>
                         <a href="#" class="breadcrumb-item">{{ ___('frontend.Events') }}</a>

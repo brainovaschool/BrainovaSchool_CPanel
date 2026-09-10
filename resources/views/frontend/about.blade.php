@@ -11,6 +11,7 @@
                 <div class="col-lg-6 col-xl-5">
                     <div class="breadcam_wrap text-center">
                         <h3>{{ ___('frontend.about_US') }}</h3>
+                        <p>The people, mission and philosophy behind Brainova School.</p>
                         <div class="custom_breadcam">
                             <a href="{{ url('/') }}" class="breadcrumb-item">{{ ___('frontend.home') }}</a>
                             <a href="#" class="breadcrumb-item">{{ ___('frontend.about_US') }}</a>

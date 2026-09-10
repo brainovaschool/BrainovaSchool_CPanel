@@ -370,10 +370,10 @@ $('.language-change').on('change', function (e) {
     function update() {
         var y = window.pageYOffset || 0;
         if (header.classList.contains('navbar_fixed')) {
-            if (y > lastY && y > 340) {
-                header.classList.add('bn-nav-up');       // scrolling down
-            } else {
-                header.classList.remove('bn-nav-up');     // scrolling up
+            if (y > lastY + 4 && y > 220) {
+                header.classList.add('bn-nav-up');        // scrolling down -> tuck away
+            } else if (y < lastY - 4) {
+                header.classList.remove('bn-nav-up');     // scrolling up -> reveal
             }
         } else {
             header.classList.remove('bn-nav-up');

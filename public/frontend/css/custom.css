@@ -643,21 +643,45 @@ body::after {
    calmer. custom.css loads last so it wins at every breakpoint.
    ============================================================ */
 
-/* --- Page-header banner (the big rectangle on every inner page) --- */
-.breadcrumb_area { height: 220px; }
-.breadcrumb_area::before { opacity: 0.72; }
+/* --- Page-header: was a 350px photo banner with a "Home / X" trail on every
+       inner page. Now a slim, photo-less title strip on the aurora field. --- */
+.breadcrumb_area {
+    height: auto;
+    min-height: 0;
+    padding: 40px 0 22px;
+    display: block;
+    text-align: center;
+    background-image: none !important;
+    background-color: transparent;
+}
+.breadcrumb_area::before { display: none !important; }
+.breadcrumb_area .breadcam_wrap { max-width: 720px; margin: 0 auto; }
 .breadcrumb_area .breadcam_wrap h3 {
-    font-size: 34px;
-    margin-bottom: 8px;
+    font-size: 30px;
+    line-height: 1.2;
     letter-spacing: -0.01em;
+    color: var(--bn-ink);
+    margin-bottom: 8px;
 }
-.breadcrumb_area .breadcam_wrap span,
+.breadcrumb_area .breadcam_wrap p {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--bn-muted);
+    margin: 0;
+    max-width: 60ch;
+    margin-left: auto;
+    margin-right: auto;
+}
+/* drop the redundant "Home / Page name" trail everywhere */
 .breadcrumb_area .custom_breadcam,
-.breadcrumb_area .custom_breadcam a { font-size: 14px; }
+.breadcrumb_area .breadcam_wrap > span { display: none; }
 @media (max-width: 767.98px) {
-    .breadcrumb_area { height: 170px; }
-    .breadcrumb_area .breadcam_wrap h3 { font-size: 25px; }
+    .breadcrumb_area { padding: 28px 0 16px; }
+    .breadcrumb_area .breadcam_wrap h3 { font-size: 24px; }
 }
+
+/* a couple of inner pages set a light hero of their own — keep those readable */
+.fe-courses-hero h1, .fe-courses-hero .fe-courses-hero-lead { color: var(--bn-ink); }
 
 /* --- Section titles ("Why Brainova", "Our programs", etc.) --- */
 .section__title h3 { font-size: 28px; line-height: 1.35; margin-bottom: 12px; }
@@ -692,8 +716,10 @@ body::after {
 }
 .bn-tm-switch:hover { border-color: var(--bn-primary); }
 
-/* --- Sticky header: glide, and only reveal while scrolling up --- */
+/* --- Sticky header: slim it (no dark top bar), glide it, and tuck it away
+       while scrolling down — the scroll-direction logic is in custom.js. --- */
 .header_area.navbar_fixed {
-    transition: transform .38s cubic-bezier(.4,0,.2,1), background .3s ease, box-shadow .3s ease !important;
+    transition: transform .4s cubic-bezier(.4,0,.2,1), background .3s ease, box-shadow .3s ease !important;
 }
+.header_area.navbar_fixed .header_topbar_area { display: none; }
 .header_area.navbar_fixed.bn-nav-up { transform: translateY(-100%); }

@@ -32,7 +32,7 @@
    <script src="{{ global_asset('frontend') }}/js/theme.js"></script>
    <!-- MAIN JS   -->
    <script src="{{ global_asset('frontend') }}/js/main.js"></script>
-   <script src="{{ global_asset('frontend') }}/js/custom.js"></script>
+   <script src="{{ global_asset('frontend') }}/js/custom.js?v={{ @filemtime(public_path('frontend/js/custom.js')) ?: 1 }}"></script>
    <script src="{{ global_asset('frontend') }}/js/sweetalert2.all.min.js"></script>
    @stack('script')
    </body>

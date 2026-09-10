@@ -28,7 +28,7 @@
     <link rel="stylesheet" href="{{global_asset('frontend')}}/css/animate.min.css">
     <link rel="stylesheet" href="{{global_asset('frontend')}}/css/slicknav.css">
     <link rel="stylesheet" href="{{global_asset('frontend')}}/css/style.css">
-    <link rel="stylesheet" href="{{global_asset('frontend')}}/css/custom.css">
+    <link rel="stylesheet" href="{{global_asset('frontend')}}/css/custom.css?v={{ @filemtime(public_path('frontend/css/custom.css')) ?: 1 }}">
     <link rel="stylesheet" href="{{global_asset('frontend')}}/css/sweetalert2.min.css">
 
     @stack('css')
