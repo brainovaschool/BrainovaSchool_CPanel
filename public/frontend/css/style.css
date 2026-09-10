@@ -18467,7 +18467,7 @@ html[dir="rtl"] a.arrow_btns i {
 }
 
 .dark-theme .header_area {
-  background: #14151B;
+  background: var(--bn-glass);
 }
 
 .dark-theme .header_area .main_menu ul li a {
@@ -18475,11 +18475,11 @@ html[dir="rtl"] a.arrow_btns i {
 }
 
 .dark-theme .statement_info {
-  background: #1F2025;
+  background: var(--bn-glass);
 }
 
 .dark-theme .serevice_box {
-  background: #14151B;
+  background: var(--bn-glass);
 }
 
 .dark-theme .services_area::before {
@@ -18488,8 +18488,7 @@ html[dir="rtl"] a.arrow_btns i {
 }
 
 .dark-theme .teaching_grid .teaching_single {
-  background: #14151B;
-  box-shadow: 0px 4px 14px 0px rgba(0, 0, 0, 0.05);
+  background: var(--bn-glass);
 }
 
 .dark-theme .teaching_grid .teaching_single p {

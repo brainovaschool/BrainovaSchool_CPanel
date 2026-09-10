@@ -16,7 +16,12 @@
     --bn-muted:          #647079;
     --bn-line:           #dde8eb;
     --bn-surface:        #ffffff;
-    --bn-sunken:         #f1f8f9;
+    --bn-sunken:         #eef3f7;
+    --bn-glass:          rgba(255, 255, 255, 0.55);
+    --bn-glass-brd:      rgba(255, 255, 255, 0.65);
+    --bn-glass-hi:       rgba(255, 255, 255, 0.90);
+    --bn-shadow-near:    0 2px 10px rgba(20, 45, 60, 0.06);
+    --bn-shadow-far:     0 34px 66px -30px rgba(0, 95, 115, 0.24);
 }
 
 body.dark-theme {
@@ -32,7 +37,12 @@ body.dark-theme {
     --bn-muted:          #7c868c;
     --bn-line:           #25313a;
     --bn-surface:        #161e23;
-    --bn-sunken:         #10161a;
+    --bn-sunken:         #0a0e14;
+    --bn-glass:          rgba(19, 27, 38, 0.55);
+    --bn-glass-brd:      rgba(255, 255, 255, 0.10);
+    --bn-glass-hi:       rgba(255, 255, 255, 0.12);
+    --bn-shadow-near:    0 2px 12px rgba(0, 0, 0, 0.50);
+    --bn-shadow-far:     0 40px 80px -28px rgba(0, 0, 0, 0.72);
 }
 
 body {
@@ -330,86 +340,206 @@ footer.home_three_footer .copyright_area .footer_border {
 }
 
 /* ============================================================
-   AURORA GLASS — frosted surfaces (glass phase)
-   Opaque fallback first; the frost is gated behind @supports so
-   browsers without backdrop-filter keep a solid, readable panel.
+   AURORA GLASS — cinematic glass pass
+   1) a fixed, aurora-lit background field everything floats over
+   2) section wrappers made transparent so the field shows through
+   3) one frosted-glass treatment on every card + the header + dropdowns
+   Opaque fallbacks first; frost gated behind @supports; motion &
+   transparency preferences respected at the end.
    ============================================================ */
 
-/* Sticky header: solid at the top of the page, frosts once it sticks on scroll */
-.header_area.navbar_fixed {
-    background: var(--bn-surface);
-    border-bottom: 1px solid var(--bn-line);
+/* ---------- 1. The lit background field ---------- */
+body { position: relative; background: var(--bn-sunken); }
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+        radial-gradient(46% 40% at 12% 4%,  color-mix(in srgb, var(--bn-primary) 22%, transparent), transparent 70%),
+        radial-gradient(44% 44% at 92% 14%, color-mix(in srgb, var(--bn-accent) 16%, transparent), transparent 72%),
+        radial-gradient(60% 50% at 60% 106%, color-mix(in srgb, var(--bn-primary) 15%, transparent), transparent 70%),
+        var(--bn-sunken);
 }
 
-/* Dropdown panels float over page content, so they frost in every state */
+body::after {
+    content: "";
+    position: fixed;
+    z-index: -1;
+    pointer-events: none;
+    left: -12vw;
+    top: -16vh;
+    width: 56vw;
+    height: 56vw;
+    max-width: 620px;
+    max-height: 620px;
+    border-radius: 50%;
+    filter: blur(72px);
+    opacity: 0.5;
+    background: radial-gradient(circle, color-mix(in srgb, var(--bn-primary) 55%, transparent), transparent 70%);
+    animation: bn-drift 34s ease-in-out infinite alternate;
+}
+@keyframes bn-drift { to { transform: translate3d(40vw, 36vh, 0) scale(1.3); } }
+
+/* ---------- 2. Let the field show through section wrappers ---------- */
+.statement_area, .services_area, .explorer_area, .teaching_area, .event_area,
+.blog_area, .gallery_area, .who_we_area, .about_gallery_area, .counter_area,
+.testmonial_area, .instractors_area, .courses_area, .eventList_area, .fourm_area,
+.about_area, .facilites_area, .gray_bg,
+.dark-theme .gray_bg, .dark-theme .facilites_area {
+    background-color: transparent;
+    background-image: none;
+}
+
+/* ---------- 3. The glass surface ---------- */
+.bn-glass,
+.facilites_box, .serevice_box, .gallery_box,
+.teaching_grid .teaching_single, .explorer_tab_content, .statement_info,
+.event_wrapper, .blog_page_widget, .eventList_widget,
+.search_result_box, .search_result_form,
+.contact_form_box, .contact_department_box, .find_content_widget_wrapper,
+.card_visibility_box, .visibility_box, .instractors_wrapper,
+.single_about_content, .about_gallery_wrapper, .single_latest_news_list,
+.header_area, .header_area.navbar_fixed {
+    background: var(--bn-surface);
+    border: 1px solid var(--bn-line);
+    border-radius: 18px;
+    box-shadow: var(--bn-shadow-near), var(--bn-shadow-far);
+}
+
+/* header keeps square corners, a bottom rule, and a lighter shadow */
+.header_area, .header_area.navbar_fixed {
+    border-radius: 0;
+    border-left: 0; border-right: 0; border-top: 0;
+    border-bottom: 1px solid var(--bn-line);
+    box-shadow: 0 10px 30px -16px color-mix(in srgb, var(--bn-ink) 24%, transparent);
+}
+
+/* dropdowns: rounded, tighter radius */
 .header_area .main_menu ul li .submenu,
 .header_area .main_menu ul li .submenu.programs-menu .submenu-flyout,
 .header__right .bn-dropdown .bn-dropdown-menu {
+    background: var(--bn-surface);
     border: 1px solid var(--bn-line);
-    border-radius: 12px;
+    border-radius: 14px;
+    box-shadow: var(--bn-shadow-near), var(--bn-shadow-far);
 }
 
 @supports ((-webkit-backdrop-filter: blur(6px)) or (backdrop-filter: blur(6px))) {
-    .header_area.navbar_fixed {
-        background: color-mix(in srgb, var(--bn-surface) 72%, transparent);
-        -webkit-backdrop-filter: blur(16px) saturate(150%);
-        backdrop-filter: blur(16px) saturate(150%);
-        border-bottom-color: color-mix(in srgb, var(--bn-primary) 16%, var(--bn-line));
-        box-shadow: 0 10px 34px -12px color-mix(in srgb, var(--bn-primary) 22%, transparent);
-    }
-
+    .bn-glass,
+    .facilites_box, .serevice_box, .gallery_box,
+    .teaching_grid .teaching_single, .explorer_tab_content, .statement_info,
+    .event_wrapper, .blog_page_widget, .eventList_widget,
+    .search_result_box, .search_result_form,
+    .contact_form_box, .contact_department_box, .find_content_widget_wrapper,
+    .card_visibility_box, .visibility_box, .instractors_wrapper,
+    .single_about_content, .about_gallery_wrapper, .single_latest_news_list,
+    .header_area, .header_area.navbar_fixed,
     .header_area .main_menu ul li .submenu,
     .header_area .main_menu ul li .submenu.programs-menu .submenu-flyout,
     .header__right .bn-dropdown .bn-dropdown-menu {
-        background: color-mix(in srgb, var(--bn-surface) 82%, transparent);
-        -webkit-backdrop-filter: blur(18px) saturate(160%);
-        backdrop-filter: blur(18px) saturate(160%);
-        border-color: color-mix(in srgb, var(--bn-primary) 20%, var(--bn-line));
-        box-shadow:
-            0 18px 44px -14px color-mix(in srgb, var(--bn-ink) 28%, transparent),
-            inset 0 1px 0 color-mix(in srgb, #ffffff 45%, transparent);
+        background: var(--bn-glass);
+        -webkit-backdrop-filter: blur(24px) saturate(170%);
+        backdrop-filter: blur(24px) saturate(170%);
+        border-color: var(--bn-glass-brd);
+    }
+    .header_area, .header_area.navbar_fixed {
+        border-bottom-color: color-mix(in srgb, var(--bn-primary) 18%, var(--bn-glass-brd));
     }
 }
 
-/* Reusable frosted card — for the content phases (course cards, hero panels, ...) */
-.bn-glass {
-    background: var(--bn-surface);
-    border: 1px solid var(--bn-line);
-    border-radius: 16px;
-}
-@supports ((-webkit-backdrop-filter: blur(6px)) or (backdrop-filter: blur(6px))) {
-    .bn-glass {
-        background: color-mix(in srgb, var(--bn-surface) 70%, transparent);
-        -webkit-backdrop-filter: blur(16px) saturate(150%);
-        backdrop-filter: blur(16px) saturate(150%);
-        border-color: color-mix(in srgb, var(--bn-primary) 18%, var(--bn-line));
-        box-shadow: 0 16px 40px -14px color-mix(in srgb, var(--bn-primary) 22%, transparent);
-    }
-}
-
-/* Ambient aurora wash — add to a section wrapper that needs atmosphere behind it */
-.bn-aurora {
+/* soft top rim-light on the bigger panels */
+.bn-glass, .serevice_box, .gallery_box, .teaching_grid .teaching_single,
+.event_wrapper, .blog_page_widget, .eventList_widget, .contact_form_box,
+.explorer_tab_content, .statement_info {
     position: relative;
-    isolation: isolate;
 }
-.bn-aurora::before {
+.bn-glass::after, .serevice_box::after, .gallery_box::after,
+.teaching_grid .teaching_single::after, .event_wrapper::after,
+.blog_page_widget::after, .eventList_widget::after, .contact_form_box::after {
     content: "";
     position: absolute;
     inset: 0;
-    z-index: -1;
+    border-radius: inherit;
     pointer-events: none;
-    background:
-        radial-gradient(60% 55% at 10% 0%, color-mix(in srgb, var(--bn-primary) 20%, transparent), transparent 70%),
-        radial-gradient(55% 60% at 100% 100%, color-mix(in srgb, var(--bn-accent) 16%, transparent), transparent 70%);
+    box-shadow: inset 0 1px 0 var(--bn-glass-hi);
 }
 
-/* Respect reduced-transparency: drop the frost, keep solid surfaces */
+/* hover lift on the interactive cards */
+.serevice_box, .gallery_box, .teaching_grid .teaching_single,
+.blog_page_widget, .eventList_widget, .card_visibility_box {
+    transition: transform .35s cubic-bezier(.2,.7,.3,1), box-shadow .35s ease;
+}
+.serevice_box:hover, .gallery_box:hover, .teaching_grid .teaching_single:hover,
+.blog_page_widget:hover, .eventList_widget:hover, .card_visibility_box:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--bn-shadow-near),
+                0 44px 80px -28px color-mix(in srgb, var(--bn-primary) 28%, transparent);
+}
+
+/* text inside glassed cards follows the theme in LIGHT mode
+   (dark mode is already forced light by the theme's own .dark-theme rules) */
+.facilites_box :is(h1,h2,h3,h4,h5,h6),
+.serevice_box :is(h1,h2,h3,h4,h5,h6),
+.gallery_box :is(h1,h2,h3,h4,h5,h6),
+.teaching_grid .teaching_single :is(h1,h2,h3,h4,h5,h6),
+.statement_info :is(h1,h2,h3,h4,h5,h6),
+.event_wrapper :is(h1,h2,h3,h4,h5,h6),
+.blog_page_widget :is(h1,h2,h3,h4,h5,h6),
+.eventList_widget :is(h1,h2,h3,h4,h5,h6) {
+    color: var(--bn-ink);
+}
+.facilites_box p, .serevice_box p, .gallery_box p,
+.teaching_grid .teaching_single p, .statement_info p,
+.event_wrapper p, .blog_page_widget p, .eventList_widget p {
+    color: var(--bn-body);
+}
+
+/* counter numbers pop turquoise in both themes */
+.facilites_box .facilites_box_content h4 {
+    color: var(--bn-primary-strong) !important;
+}
+
+/* ---------- 4. Buttons: gradient primary, glass ghost ---------- */
+.theme_btn {
+    background: linear-gradient(135deg, var(--bn-primary), color-mix(in srgb, var(--bn-primary) 55%, var(--bn-accent)));
+    box-shadow: 0 14px 30px -12px color-mix(in srgb, var(--bn-primary) 60%, transparent);
+}
+.theme_line_btn {
+    background: var(--bn-glass);
+}
+@supports ((-webkit-backdrop-filter: blur(6px)) or (backdrop-filter: blur(6px))) {
+    .theme_line_btn { -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+}
+
+/* ---------- 5. Ambient wash helper (opt-in on a section wrapper) ---------- */
+.bn-aurora { position: relative; isolation: isolate; }
+.bn-aurora::before {
+    content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background:
+        radial-gradient(60% 55% at 10% 0%, color-mix(in srgb, var(--bn-primary) 18%, transparent), transparent 70%),
+        radial-gradient(55% 60% at 100% 100%, color-mix(in srgb, var(--bn-accent) 14%, transparent), transparent 70%);
+}
+
+/* ---------- 6. Preferences ---------- */
+@media (prefers-reduced-motion: reduce) { body::after { animation: none; } }
+
 @media (prefers-reduced-transparency: reduce) {
-    .header_area.navbar_fixed,
+    .bn-glass,
+    .facilites_box, .serevice_box, .gallery_box,
+    .teaching_grid .teaching_single, .explorer_tab_content, .statement_info,
+    .event_wrapper, .blog_page_widget, .eventList_widget,
+    .search_result_box, .search_result_form,
+    .contact_form_box, .contact_department_box, .find_content_widget_wrapper,
+    .card_visibility_box, .visibility_box, .instractors_wrapper,
+    .single_about_content, .about_gallery_wrapper, .single_latest_news_list,
+    .header_area, .header_area.navbar_fixed,
     .header_area .main_menu ul li .submenu,
     .header_area .main_menu ul li .submenu.programs-menu .submenu-flyout,
     .header__right .bn-dropdown .bn-dropdown-menu,
-    .bn-glass {
+    .theme_line_btn {
         background: var(--bn-surface);
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
