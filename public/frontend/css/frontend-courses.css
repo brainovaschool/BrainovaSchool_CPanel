@@ -221,13 +221,22 @@ a.fe-filter-pill:hover {
 .fe-course-card-media {
   position: relative;
   aspect-ratio: 16 / 10;
+  min-height: 0;
+  flex: none;
+  overflow: hidden;
   background: var(--accent, var(--fe-c-indigo));
 }
 
+/* absolutely positioned so a portrait image can't stretch the box —
+   every card keeps the same 16:10 frame and the image is centre-cropped. */
 .fe-course-card-media img {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
+  display: block;
 }
 
 .fe-course-card__badge {

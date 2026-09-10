@@ -61,11 +61,21 @@ class MigrationRunnerController extends Controller
             $tm = 'error: ' . $e->getMessage();
         }
 
+        // Coding demo notice (idempotent — matched on title).
+        $notice = 'skipped';
+        try {
+            (new \Database\Seeders\WebsiteSetup\StarterContentSeeder())->run();
+            $notice = 'ok — coding demo notice synced';
+        } catch (\Throwable $e) {
+            $notice = 'error: ' . $e->getMessage();
+        }
+
         return response(
             '<pre style="font:14px/1.5 monospace;padding:24px">'
             . e($migrate) . "\n\nPermissions: " . e($perms)
             . "\nCatalogue seed: " . e($seed)
             . "\nTestimonials seed: " . e($tm)
+            . "\nNotice seed: " . e($notice)
             . "</pre>"
         );
     }

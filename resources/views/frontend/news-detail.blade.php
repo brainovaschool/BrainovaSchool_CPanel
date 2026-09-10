@@ -40,9 +40,9 @@
                         </div>
                     </div>
                     <h3 class="event_d_title mb_15">{{ $data['news']->defaultTranslate->title }}</h3>
-                    <p class="event_lists mb_40">
+                    <div class="event_lists ck-ditor-img mb_40">
                         {!! $data['news']->defaultTranslate->description !!}
-                    </p>
+                    </div>
                 </div>
             </div>
             <div class="col-xl-4">
@@ -51,6 +51,7 @@
                     <div class="latest_news_list mb_50">
 
                         @foreach ($data['allNews'] as $item)
+                            @continue($item->id == $data['news']->id)
                             <!-- single_latest_single -->
                             <div class="single_latest_news_list">
                                 <a href="{{ route('frontend.news-detail',$item->id) }}" class="icon_thumb">

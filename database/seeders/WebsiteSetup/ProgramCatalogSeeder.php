@@ -113,7 +113,7 @@ class ProgramCatalogSeeder extends Seeder
             'study-skills-bootcamp'                => '1434030216411-0b793f4b4173',
             // starter programmes
             'pre-k-kindergarten-programme'         => '1509062522246-3755977927d7',
-            'grade-1-programme'                    => '1544928147-79a2dbc1f389',
+            'grade-1-programme'                    => '1600880292203-757bb62b4baf',
             'grade-2-programme'                    => '1501504905252-473c47e087f8',
             'grade-3-programme'                    => '1522202176988-66273c2fd55f',
             'grade-4-programme'                    => '1531482615713-2afd69097998',
