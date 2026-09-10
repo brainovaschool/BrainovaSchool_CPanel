@@ -38,6 +38,7 @@
                                 <tr>
                                     <th class="serial">{{ ___('common.sr_no') }}</th>
                                     <th class="purchase">{{ ___('common.title') }}</th>
+                                    <th class="purchase">{{ ___('settings.post_type') }}</th>
                                     <th class="purchase">{{ ___('common.locale') }}</th>
                                     <th class="purchase">{{ ___('common.image') }}</th>
                                     <th class="purchase">{{ ___('common.date') }}</th>
@@ -53,6 +54,13 @@
                                 <tr id="row_{{ $row->id }}">
                                     <td class="serial">{{ ++$key }}</td>
                                     <td>{{ @$row->defaultTranslate->title ?? @$row->title }}</td>
+                                    <td>
+                                        @if (($row->type ?? 'news') === 'blog')
+                                            <span class="badge-basic-primary-text">{{ ___('settings.blog') }}</span>
+                                        @else
+                                            <span class="badge-basic-info-text">{{ ___('settings.news') }}</span>
+                                        @endif
+                                    </td>
                                     <td>{{ @$row->defaultTranslate->locale ?? @$row->locale }}</td>
                                     <td>
                                         <div class="user-avatar">

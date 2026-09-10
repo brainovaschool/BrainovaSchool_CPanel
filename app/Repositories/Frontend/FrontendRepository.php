@@ -65,14 +65,24 @@ class FrontendRepository implements FrontendInterface
     }
 
     // News
-    public function news()
+    public function news($type = 'news')
     {
-        return News::where('status', Status::ACTIVE)->where('publish_date', '<=', date('Y-m-d'))->orderBy('id', 'desc')->paginate(6);
+        $type = in_array($type, ['news', 'blog'], true) ? $type : 'news';
+
+        return News::where('status', Status::ACTIVE)
+            ->where('type', $type)
+            ->where('publish_date', '<=', date('Y-m-d'))
+            ->orderBy('id', 'desc')
+            ->paginate(6)
+            ->withQueryString();
     }
 
     public function latestNews()
     {
-        return News::where('status', Status::ACTIVE)->where('publish_date', '<=', date('Y-m-d'))->orderBy('id', 'desc')->take(4)->get();
+        return News::where('status', Status::ACTIVE)
+            ->where('type', 'news')
+            ->where('publish_date', '<=', date('Y-m-d'))
+            ->orderBy('id', 'desc')->take(4)->get();
     }
 
     public function newsDetail($id)
@@ -269,6 +279,26 @@ class FrontendRepository implements FrontendInterface
        return  OnlineAdmissionFeesAssign::where('session_id',$session_id)->where('class_id',$class_id)->when( !is_null($section_id),function ($query, $section_id){
             return $query->where('section_id' , $section_id);
         })->first();
+    }
+
+    public function freeTrial($request){
+        $lines = [
+            'Child age / grade: ' . ($request->child_age ?: '—'),
+            'Interested in: ' . ($request->program ?: '—'),
+            'Preferred days / time: ' . ($request->preferred_time ?: '—'),
+        ];
+        if (trim((string) $request->message) !== '') {
+            $lines[] = '';
+            $lines[] = trim((string) $request->message);
+        }
+
+        $row          = new Contact();
+        $row->name    = $request->name;
+        $row->phone   = $request->phone;
+        $row->email   = $request->email;
+        $row->subject = 'Free Trial Request';
+        $row->message = implode("\n", $lines);
+        $row->save();
     }
 
     public function contact($request){

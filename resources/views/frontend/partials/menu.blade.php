@@ -131,6 +131,7 @@
                                     </li>
 
                                     <li class="d-lg-none"><a href="{{ route('frontend.online-admission') }}">{{ ___('frontend.online_admission') }}</a></li>
+                                    <li class="d-lg-none"><a href="{{ route('frontend.book-free-trial') }}">Book a Free Trial</a></li>
                                 </ul>
                             </nav>
                         </div>
@@ -144,7 +145,7 @@
                                         <a href="#" class="theme_btn small_btn3 min_windth_150 text-center">Contact Us</a>
                                         <ul class="bn-dropdown-menu">
                                             <li><a href="{{ route('frontend.online-admission') }}">{{ ___('frontend.online_admission') }}</a></li>
-                                            <li><a href="#" title="Coming soon">Book a Free Trial</a></li>
+                                            <li><a href="{{ route('frontend.book-free-trial') }}">Book a Free Trial</a></li>
                                         </ul>
                                     </div>
                                 </div>

@@ -39,6 +39,7 @@ class NewsRepository implements NewsInterface{
         try {
             $row                   = new $this->news;
             $row->title            = $request->title;
+            $row->type             = in_array($request->type, ['news', 'blog'], true) ? $request->type : 'news';
             $row->description      = $request->description;
             $row->date             = $request->date;
             $row->publish_date     = $request->publish_date;
@@ -72,6 +73,7 @@ class NewsRepository implements NewsInterface{
         try {
             $row = $this->news->findOrfail($id);
             $row->title = $request->title;
+            $row->type = in_array($request->type, ['news', 'blog'], true) ? $request->type : ($row->type ?: 'news');
             $row->description = $request->description;
             $row->date = $request->date;
             $row->publish_date = $request->publish_date;

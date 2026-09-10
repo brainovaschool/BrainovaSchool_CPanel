@@ -124,16 +124,29 @@ class FrontendController extends Controller
         return view('frontend.about', compact('data'));
     }
 
-    // Blog
-    public function news()
+    // News / Blog (same table, split by the `type` column)
+    public function news(Request $request)
     {
-        $data['news'] = $this->repo->news();
+        $type = $request->query('type') === 'blog' ? 'blog' : 'news';
+
+        $data['news']      = $this->repo->news($type);
+        $data['type']      = $type;
+        $data['pageTitle'] = $type === 'blog' ? ___('frontend.Blog') : ___('frontend.News');
+
         return view('frontend.news', compact('data'));
     }
+
     public function newsDetail($id)
     {
-        $data['allNews'] = $this->repo->news();
-        $data['news']    = $this->repo->newsDetail($id);
+        $data['news'] = $this->repo->newsDetail($id);
+        if (!$data['news']) {
+            abort(404);
+        }
+
+        $data['type']      = ($data['news']->type ?? 'news') === 'blog' ? 'blog' : 'news';
+        $data['pageTitle'] = $data['type'] === 'blog' ? ___('frontend.Blog') : ___('frontend.News');
+        $data['allNews']   = $this->repo->news($data['type']);
+
         return view('frontend.news-detail', compact('data'));
     }
 
@@ -296,6 +309,33 @@ class FrontendController extends Controller
         $data['contactInfo']    = $this->repo->contactInfo();
         $data['depContact']     = $this->repo->depContact();
         return view('frontend.contact', compact('data'));
+    }
+
+    // Book a free trial
+    public function bookFreeTrial()
+    {
+        $data['categories'] = \App\Models\WebsiteSetup\ProgramCategory::where('status', 1)
+            ->orderBy('sort_order')->orderBy('name')->get();
+
+        return view('frontend.book-a-free-trial', compact('data'));
+    }
+
+    public function storeFreeTrial(Request $request)
+    {
+        $request->validate([
+            'name'           => 'required|string|max:120',
+            'email'          => 'required|email|max:150',
+            'phone'          => 'required|string|max:40',
+            'child_age'      => 'nullable|string|max:80',
+            'program'        => 'nullable|string|max:150',
+            'preferred_time' => 'nullable|string|max:150',
+            'message'        => 'nullable|string|max:2000',
+        ]);
+
+        $this->repo->freeTrial($request);
+
+        return redirect()->route('frontend.book-free-trial')
+            ->with('message', 'Thanks! Your free-trial request has been received — our team will contact you shortly.');
     }
 
     // onlineAdmission

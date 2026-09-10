@@ -14,7 +14,7 @@
                     <h3>{{ ___('frontend.news_details') }}</h3>
                     <div class="custom_breadcam">
                         <a href="{{url('/')}}" class="breadcrumb-item">{{ ___('frontend.home') }}</a>
-                        <a href="#" class="breadcrumb-item">{{ ___('frontend.news_details') }}</a>
+                        <a href="{{ ($data['type'] ?? 'news') === 'blog' ? route('frontend.news', ['type' => 'blog']) : route('frontend.news') }}" class="breadcrumb-item">{{ $data['pageTitle'] ?? ___('frontend.News') }}</a>
                     </div>
                 </div>
             </div>

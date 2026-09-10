@@ -103,6 +103,15 @@
                             @enderror
                         </div>
 
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">{{ ___('settings.post_type') }} <span class="fillable">*</span></label>
+                            <select class="nice-select niceSelect bordered_style wide" name="type">
+                                <option value="news" {{ old('type', 'news') === 'news' ? 'selected' : '' }}>{{ ___('settings.news') }}</option>
+                                <option value="blog" {{ old('type') === 'blog' ? 'selected' : '' }}>{{ ___('settings.blog') }}</option>
+                            </select>
+                            <small class="text-secondary">{{ ___('settings.post_type_note') }}</small>
+                        </div>
+
                         <div class="col-md-12 mb-3">
                             <label for="exampleDataList" class="form-label">{{ ___('common.Description') }}</label>
                             <textarea id="summernote" class="form-control ot-textarea @error('description') is-invalid @enderror" name="description"

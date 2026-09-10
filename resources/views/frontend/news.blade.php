@@ -1,6 +1,7 @@
+@php $bnHeading = $data['pageTitle'] ?? ___('frontend.News'); @endphp
 @extends('frontend.master')
 @section('title')
-    {{ ___('frontend.News') }}
+    {{ $bnHeading }}
 @endsection
 
 @section('main')
@@ -11,10 +12,10 @@
         <div class="row justify-content-center">
             <div class="col-lg-6 col-xl-5">
                 <div class="breadcam_wrap text-center">
-                    <h3>{{ ___('frontend.News') }}</h3>
+                    <h3>{{ $bnHeading }}</h3>
                     <div class="custom_breadcam">
                         <a href="{{url('/')}}" class="breadcrumb-item">{{ ___('frontend.home') }}</a>
-                        <a href="#" class="breadcrumb-item">{{ ___('frontend.News') }}</a>
+                        <a href="#" class="breadcrumb-item">{{ $bnHeading }}</a>
                     </div>
                 </div>
             </div>
@@ -55,32 +56,30 @@
             <div class="col-12">
                 <div class="theme_pagination">
 
-                    @if ($data['news']->currentPage() == 1)
-                        <a class="arrow_btns d-inline-flex align-items-center justify-content-center ms-0"
-                            href="javascript:void(0)">
+                    @if ($data['news']->onFirstPage())
+                        <a class="arrow_btns d-inline-flex align-items-center justify-content-center ms-0" href="javascript:void(0)">
                             <i class="fas fa-arrow-left"></i>
                         </a>
                     @else
                         <a class="arrow_btns d-inline-flex align-items-center justify-content-center ms-0"
-                            href="{{ url('news?page=') }}{{ $data['news']->currentPage() - 1 }}">
+                            href="{{ $data['news']->previousPageUrl() }}">
                             <i class="fas fa-arrow-left"></i>
                         </a>
                     @endif
 
 
-                    @foreach ($data['news']->links()['elements'][0] as $key => $item)
+                    @foreach ($data['news']->getUrlRange(1, $data['news']->lastPage()) as $key => $item)
                         <a class="page_counter {{ $key == $data['news']->currentPage() ? 'active' : '' }}"
                             href="{{ $item }}">{{ $key }}</a>
                     @endforeach
 
-                    @if ($data['news']->currentPage() == count($data['news']->links()['elements'][0]))
+                    @if ($data['news']->hasMorePages())
                         <a class="arrow_btns d-inline-flex align-items-center justify-content-center"
-                            href="javascript:void(0)">
+                            href="{{ $data['news']->nextPageUrl() }}">
                             <i class="fas fa-arrow-right"></i>
                         </a>
                     @else
-                        <a class="arrow_btns d-inline-flex align-items-center justify-content-center"
-                            href="{{ url('news?page=') }}{{ $data['news']->currentPage() + 1 }}">
+                        <a class="arrow_btns d-inline-flex align-items-center justify-content-center" href="javascript:void(0)">
                             <i class="fas fa-arrow-right"></i>
                         </a>
                     @endif
