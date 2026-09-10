@@ -86,16 +86,53 @@
                                     <li><a href="{{ route('frontend.home') }}">{{ ___('frontend.Home') }}</a></li>
                                     <li><a href="{{ route('frontend.about') }}">{{ ___('frontend.About') }}</a></li>
 
-                                    <!-- Our Programs: new taxonomy, self-contained mega menu (bn- prefixed classes) -->
-                                    <li class="bn-dropdown">
-    <a href="{{ route('frontend.courses') }}">Our programs</a>
-    <ul class="bn-dropdown-menu">
-        <li><a href="{{ route('frontend.courses') }}">Homeschooling</a></li>
-        <li><a href="{{ route('frontend.courses') }}">Tutoring</a></li>
-        <li><a href="{{ route('frontend.courses') }}">Electives &amp; Enrichment</a></li>
-        <li><a href="{{ route('frontend.courses') }}">Social Clubs</a></li>
-    </ul>
-</li>
+                                    <!-- Our Programs: 4 categories + side flyouts. Uses the theme's working
+                                         .submenu hover pattern (same as Community/Resources) plus the
+                                         pre-built .programs-menu / .submenu-flyout CSS in custom.css.
+                                         Category headings -> /courses (placeholder); sub-items -> # until
+                                         real per-category pages are built in the Course Catalog phase. -->
+                                    <li class="has-programs-menu">
+                                        <a href="{{ route('frontend.courses') }}">Our Programs</a>
+                                        <ul class="submenu programs-menu">
+                                            <li class="programs-menu__parent">
+                                                <a href="{{ route('frontend.courses') }}">Homeschooling</a>
+                                                <ul class="submenu-flyout">
+                                                    <li><a href="#">Pre-K &amp; Kindergarten</a></li>
+                                                    <li><a href="#">1st Grade</a></li>
+                                                    <li><a href="#">2nd Grade</a></li>
+                                                    <li><a href="#">3rd Grade</a></li>
+                                                    <li><a href="#">4th Grade</a></li>
+                                                    <li><a href="#">5th Grade</a></li>
+                                                </ul>
+                                            </li>
+                                            <li class="programs-menu__parent">
+                                                <a href="{{ route('frontend.courses') }}">Tutoring</a>
+                                                <ul class="submenu-flyout">
+                                                    <li><a href="#">Academic Subjects</a></li>
+                                                    <li><a href="#">Private Lessons</a></li>
+                                                    <li><a href="#">1-on-1 Coaching</a></li>
+                                                    <li><a href="#">Test Prep</a></li>
+                                                </ul>
+                                            </li>
+                                            <li class="programs-menu__parent">
+                                                <a href="{{ route('frontend.courses') }}">Electives &amp; Enrichment</a>
+                                                <ul class="submenu-flyout">
+                                                    <li><a href="#">Arts</a></li>
+                                                    <li><a href="#">Health &amp; Wellness</a></li>
+                                                    <li><a href="#">Coding &amp; Tech</a></li>
+                                                    <li><a href="#">Life Skills</a></li>
+                                                    <li><a href="#">World Languages</a></li>
+                                                </ul>
+                                            </li>
+                                            <li class="programs-menu__parent">
+                                                <a href="{{ route('frontend.courses') }}">Social Clubs</a>
+                                                <ul class="submenu-flyout">
+                                                    <li><a href="#">Games &amp; Trivia</a></li>
+                                                    <li><a href="#">Art Hub</a></li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </li>
 
                                     <li><a href="{{ route('frontend.events') }}">{{ ___('frontend.Events') }}</a></li>
 
@@ -150,54 +187,5 @@
     </div>
 </header>
 
-<style>
-/* Contact Us dropdown — self-contained, pure CSS hover, no JS dependency */
-.bn-dropdown { position: relative; display: inline-block; }
-.bn-dropdown-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    right: 0;
-    margin-top: 8px;
-    background: #fff;
-    list-style: none;
-    padding: 8px 0;
-    min-width: 220px;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    z-index: 999;
-    text-align: left;
-}
-.bn-dropdown:hover .bn-dropdown-menu { display: block; }
-.bn-dropdown-menu li a {
-    display: block;
-    padding: 8px 20px;
-    font-size: 14px;
-    font-weight: 400;
-    color: #142433;
-    text-decoration: none;
-}
-.bn-dropdown-menu li a:hover {
-    background-color: rgba(140, 82, 255, 0.08);
-    color: #8C52FF;
-}
 
-/* Our Programs mega menu — self-contained, pure CSS hover, no JS dependency */
-.bn-mega-trigger { position: relative; }
-.bn-mega-menu {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    transform: translateX(-50%);
-    background: #fff;
-    box-shadow: 0 12px 32px rgba(0,0,0,0.15);
-    border-radius: 10px;
-    padding: 28px;
-    z-index: 999;
-    min-width: 720px;
-    text-align: left;
-}
-
-</style>
 <!--/ HEADER::END -->

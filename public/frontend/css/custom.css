@@ -132,18 +132,27 @@ footer.home_three_footer .copyright_area .footer_border {
     list-style: block;
 }
 
+/* Top-level nav links: 14px (theme ships 18px, and 15px at 992–1199px).
+   custom.css loads after style.css so this wins at every breakpoint. */
+.header_area .main_menu ul li a {
+    font-size: 14px;
+}
+
 /* Our programs — side flyouts (submenu-flyout avoids theme .submenu conflicts) */
 .header_area .main_menu ul li .submenu.programs-menu {
-    min-width: 220px;
+    width: 234px;
+    min-width: 234px;
     overflow: visible;
+    padding: 4px 0;
 }
 
 .header_area .main_menu ul li .submenu.programs-menu > li.programs-menu__parent {
     position: relative;
 }
 
+/* Tighter rows than the theme's 10px so the 4 categories don't look sparse */
 .header_area .main_menu ul li .submenu.programs-menu > li.programs-menu__parent > a {
-    padding-right: 28px;
+    padding: 7px 28px 7px 20px;
 }
 
 .header_area .main_menu ul li .submenu.programs-menu > li.programs-menu__parent > a::after {
@@ -161,9 +170,9 @@ footer.home_three_footer .copyright_area .footer_border {
     position: absolute;
     left: 100%;
     top: 0;
-    width: 220px;
+    width: 210px;
     margin: 0;
-    padding: 0;
+    padding: 4px 0;
     list-style: none;
     background: #fff;
     text-align: left;
@@ -191,7 +200,7 @@ footer.home_three_footer .copyright_area .footer_border {
     font-weight: 400;
     display: block;
     margin: 0;
-    padding: 10px 20px;
+    padding: 7px 20px;
     transition: 0.3s;
     position: relative;
     text-transform: capitalize;

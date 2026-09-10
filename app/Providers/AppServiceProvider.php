@@ -64,7 +64,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->registerFrontendCoursesConfig();
-        $this->registerFrontendHolidayCampsConfig();
 
         RateLimiter::for('web', function (Request $request) {
             return Limit::perMinute(2)->by(optional($request->user())->id ?: $request->ip());
@@ -161,21 +160,6 @@ class AppServiceProvider extends ServiceProvider
 
         if (is_array($catalog)) {
             Config::set('frontend_courses', $catalog);
-        }
-    }
-
-    protected function registerFrontendHolidayCampsConfig(): void
-    {
-        $path = base_path('config/frontend_holiday_camps.php');
-
-        if (!is_readable($path)) {
-            return;
-        }
-
-        $catalog = require $path;
-
-        if (is_array($catalog)) {
-            Config::set('frontend_holiday_camps', $catalog);
         }
     }
 
