@@ -40,6 +40,8 @@
     </div>
     <!-- BANNER::END  -->
 
+    @include('frontend.partials.home.welcome')
+
     <!-- FACILITES_AREA::START  -->
     <div class="facilites_area">
         <div class="container">
@@ -66,6 +68,11 @@
     </div>
     <!-- FACILITES_AREA::END  -->
 
+    @include('frontend.partials.home.programs')
+
+    @include('frontend.partials.home.how-it-works')
+
+    @include('frontend.partials.home.values')
 
     <!-- STATEMENT_AREA::START  -->
     <div class="statement_area section_padding">
@@ -389,4 +396,6 @@
         </div>
     </div>
     <!-- gallery_area::end  -->
+
+    @include('frontend.partials.home.handbook-cta')
 @endsection

@@ -22,6 +22,7 @@
                             <ul class="footer_links">
                                 <li><a href="{{ route('frontend.home') }}">{{ ___('frontend.Home') }}</a></li>
                                 <li><a href="{{ route('frontend.about') }}">{{ ___('frontend.About') }}</a></li>
+                                <li><a href="{{ route('frontend.our-approach') }}">Our Approach</a></li>
                                 <li><a href="{{ route('frontend.news') }}">{{ ___('frontend.News') }}</a></li>
                                 <li><a href="{{ route('frontend.events') }}">{{ ___('frontend.Events') }}</a></li>
                                 <li><a href="{{ route('frontend.courses') }}">{{ ___('frontend.Courses') }}</a></li>

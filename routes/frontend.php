@@ -22,6 +22,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/pdf-download/{id}/{type}/{class}/{section}', 'downloadPDF')->name('frontend.result.pdf-download');
 
                 Route::get('/about',            'about')->name('frontend.about');
+                Route::get('/our-approach',     'ourApproach')->name('frontend.our-approach');
                 Route::get('/news',             'news')->name('frontend.news');
                 Route::get('/news-detail/{id}', 'newsDetail')->name('frontend.news-detail');
                 Route::get('/events',           'events')->name('frontend.events');

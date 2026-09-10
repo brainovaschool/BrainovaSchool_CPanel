@@ -58,12 +58,19 @@ class FrontendController extends Controller
     public function index()
     {
         $data['sliders']          = $this->repo->sliders();
-        
+
         $data['counters']         = $this->repo->counters();
         $data['galleryCategory']  = $this->repo->galleryCategory();
         $data['gallery']          = $this->repo->gallery();
         $data['latestNews']       = $this->repo->latestNews();
         $data['comingEvents']     = $this->repo->comingEvents();
+
+        $data['programCategories'] = \App\Models\WebsiteSetup\ProgramCategory::query()
+            ->where('status', 1)
+            ->withCount(['focuses as focuses_count' => fn ($q) => $q->where('status', 1)])
+            ->withCount(['programs as programs_count' => fn ($q) => $q->where('status', 1)])
+            ->orderBy('sort_order')->orderBy('name')
+            ->get();
 
         return view('frontend.home', compact('data'));
     }
@@ -122,6 +129,11 @@ class FrontendController extends Controller
         $data = $this->repo->abouts();
 
         return view('frontend.about', compact('data'));
+    }
+
+    public function ourApproach()
+    {
+        return view('frontend.our-approach');
     }
 
     // News / Blog (same table, split by the `type` column)
