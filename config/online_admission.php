@@ -1,10 +1,12 @@
 <?php
 
 return [
+    // Brainova is an online school — these are the paths a family can apply for.
     'programs' => [
-        'Online School',
+        'Homeschooling',
+        'Tutoring',
+        'Electives & Enrichment',
+        'Social Clubs',
         'Online Short Courses',
-        'On-Campus School',
-        'On-Campus After School Clubs',
     ],
 ];

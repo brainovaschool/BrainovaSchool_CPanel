@@ -4,8 +4,9 @@
         <p class="bn-eyebrow">Beyond classrooms &middot; The learning evolution</p>
         <h2 class="bn-welcome-lead">Where curiosity sparks intelligence, and intelligence drives innovation.</h2>
         <p class="bn-welcome-sub">
-            Brainova unlocks every child&rsquo;s cognitive and creative potential through a learner-centric,
-            future-ready curriculum and personalised, AI-enabled instruction &mdash; online and on campus.
+            Brainova is an online school built around your child &mdash; a learner-centric, future-ready
+            curriculum with personalised, AI-enabled teaching, small live groups and weekly progress
+            shared straight to your parent account.
         </p>
         <div class="bn-welcome-cta">
             <a href="{{ route('frontend.book-free-trial') }}" class="bn-btn bn-btn--primary">Book a free trial</a>

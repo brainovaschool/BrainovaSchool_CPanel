@@ -73,34 +73,19 @@
                 <p class="bn-eyebrow">Core values &middot; E&#8310;</p>
                 <h2>E to the power of six</h2>
             </div>
-            <div class="bn-values-grid">
-                @foreach ([
-                    ['Ethics', 'Integrity &amp; Islamic values'],
-                    ['Empathy', 'Compassion &amp; understanding'],
-                    ['Exploration', 'Innovation &amp; curiosity'],
-                    ['Endeavour', 'Purposeful effort &amp; resilience'],
-                    ['Excellence', 'High standards &amp; mastery'],
-                    ['Empowerment', 'Personalisation &amp; wellbeing'],
-                ] as $i => $v)
-                    <div class="bn-value">
-                        <span class="bn-value__e">E<sup>{{ $i + 1 }}</sup></span>
-                        <h3>{{ $v[0] }}</h3>
-                        <p>{!! $v[1] !!}</p>
-                    </div>
-                @endforeach
-            </div>
+            @include('frontend.partials.e6-orbit')
         </section>
 
-        {{-- AI + Curriculum + Campus --}}
+        {{-- AI + Curriculum + Safe online environment --}}
         <section class="bn-home-section" style="padding-top:20px">
             <div class="bn-approach-cols">
                 <div class="bn-approach-col">
                     <p class="bn-eyebrow">E-learning with AI</p>
                     <h3>Technology as a tutor</h3>
                     <ul>
-                        <li><strong>Smart classrooms</strong> — interactive tools, virtual labs and adaptive AI systems.</li>
-                        <li><strong>Digital ecosystem</strong> — integrated student portals and seamless access to resources.</li>
-                        <li><strong>Digital literacy &amp; safety</strong> — responsible technology use, online safety and ethical behaviour.</li>
+                        <li><strong>Adaptive learning</strong> — AI-powered systems and interactive virtual labs that adjust to each learner in real time.</li>
+                        <li><strong>One digital ecosystem</strong> — an integrated student portal, live sessions and seamless access to every resource.</li>
+                        <li><strong>Digital literacy &amp; safety</strong> — responsible technology use, online safety and ethical behaviour taught from the start.</li>
                     </ul>
                 </div>
                 <div class="bn-approach-col">
@@ -110,15 +95,16 @@
                         <li><strong>Balanced curriculum</strong> — literacy, numeracy, STEM, arts, humanities, leadership and life skills.</li>
                         <li><strong>Early years (EYFS-aligned)</strong> — play-based, inquiry-driven, developmentally appropriate.</li>
                         <li><strong>Hybrid approach</strong> — best practice from IB, Cambridge, IPC and IEYC.</li>
-                        <li><strong>Activity-based development</strong> — hands-on work building fine motor skills, coordination and early literacy/numeracy.</li>
+                        <li><strong>Activity-based development</strong> — hands-on tasks that build fine-motor skills, coordination and early literacy and numeracy.</li>
                     </ul>
                 </div>
                 <div class="bn-approach-col">
-                    <p class="bn-eyebrow">Campus &amp; environment</p>
-                    <h3>Built for how children learn</h3>
+                    <p class="bn-eyebrow">A safe online environment</p>
+                    <h3>Structure, care and oversight</h3>
                     <ul>
-                        <li><strong>Future-focused campus</strong> — safe, eco-friendly, child-centred spaces with modern labs, art studios and flexible learning hubs.</li>
-                        <li><strong>Facilities</strong> — STEM and art labs, libraries, playgrounds, sports areas, and safe baby &amp; toddler areas guided by developmental milestones.</li>
+                        <li><strong>Small, moderated groups</strong> — every live session is led by a qualified teacher who knows your child.</li>
+                        <li><strong>Weekly reporting</strong> — progress, effort and next steps shared to your parent account.</li>
+                        <li><strong>Wellbeing built in</strong> — SEL, mindfulness and screen-time balance are part of the schedule, not an add-on.</li>
                     </ul>
                 </div>
             </div>

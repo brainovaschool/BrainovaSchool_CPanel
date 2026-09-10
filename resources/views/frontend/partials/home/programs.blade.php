@@ -15,7 +15,7 @@
                     <h3>{{ $cat->name }}</h3>
                     <p>{{ $cat->tagline ?: 'Explore what this path covers.' }}</p>
                     <span class="bn-program-card__foot">
-                        <span>{{ $cat->programs_count }} {{ \Illuminate\Support\Str::plural('program', $cat->programs_count) }}</span>
+                        <span>{{ $cat->programs_count > 0 ? $cat->programs_count . ' ' . \Illuminate\Support\Str::plural('programme', $cat->programs_count) : 'Now enrolling' }}</span>
                         <span class="bn-program-card__go">Explore &rarr;</span>
                     </span>
                 </a>

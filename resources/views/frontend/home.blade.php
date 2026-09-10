@@ -74,6 +74,8 @@
 
     @include('frontend.partials.home.values')
 
+    @include('frontend.partials.home.mascots')
+
     <!-- STATEMENT_AREA::START  -->
     <div class="statement_area section_padding">
         <div class="container">

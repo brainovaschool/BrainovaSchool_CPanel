@@ -43,9 +43,19 @@ class MigrationRunnerController extends Controller
 
         $perms = $this->syncPermissions();
 
+        // Program catalogue seeder is idempotent (updateOrCreate on slug) — safe to re-run.
+        $seed = 'skipped';
+        try {
+            (new \Database\Seeders\WebsiteSetup\ProgramCatalogSeeder())->run();
+            $seed = 'ok — categories/focuses/programs synced';
+        } catch (\Throwable $e) {
+            $seed = 'error: ' . $e->getMessage();
+        }
+
         return response(
             '<pre style="font:14px/1.5 monospace;padding:24px">'
             . e($migrate) . "\n\nPermissions: " . e($perms)
+            . "\nCatalogue seed: " . e($seed)
             . "</pre>"
         );
     }
