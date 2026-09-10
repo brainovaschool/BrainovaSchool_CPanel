@@ -95,7 +95,7 @@ class ProgramCatalogSeeder extends Seeder
         static $ids = [
             // legacy catalogue
             'basic-to-intermediate-maths'          => '1635070041078-e363dbe005cb',
-            'advanced-maths'                       => '1509228468518-fe40e0506024',
+            'advanced-maths'                       => '1509228627152-72ae9ae6848d',
             'basic-to-intermediate-english'        => '1456513080510-7bf3a84b82f8',
             'advanced-english'                     => '1455390582262-044cdead277a',
             'brainova-stem-discovery'              => '1485827404703-89b55fcc595e',
@@ -119,7 +119,7 @@ class ProgramCatalogSeeder extends Seeder
             'grade-4-programme'                    => '1531482615713-2afd69097998',
             'grade-5-programme'                    => '1497486751825-1233686d5d80',
             'games-trivia-club'                    => '1503945438517-f65904a52ce6',
-            'art-hub'                              => '1524998497720-b78e62e88b48',
+            'art-hub'                              => '1541961017774-22349e4a1262',
         ];
 
         if (empty($ids[$slug])) {

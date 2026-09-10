@@ -1583,3 +1583,37 @@ body::after {
     border-radius: 18px;
 }
 .contact_department_box .icon { width: 54px; height: 54px; }
+
+/* ============================================================
+   EVENTS LIST — calmer card typography (round-5 feedback)
+   ============================================================ */
+.eventList_area { padding: 44px 0 !important; }
+.eventList_widget .eventList_meta { padding: 24px 26px !important; }
+.eventList_widget .eventList_meta .eventList_title h3 { font-size: 15px !important; }
+.eventList_widget .eventList_meta .eventList_title h3 span { font-size: 26px !important; }
+.eventList_widget .eventList_meta h4 { margin: 12px 0 10px !important; }
+.eventList_widget .eventList_meta h4 a {
+    font-family: "Libre Baskerville", serif;
+    font-size: 18px !important;
+    line-height: 1.4 !important;
+    color: var(--bn-ink) !important;
+}
+.eventList_widget .eventList_meta p {
+    font-size: 14px !important;
+    line-height: 1.7 !important;
+    text-transform: none !important;
+    color: var(--bn-body) !important;
+    margin-bottom: 16px !important;
+}
+.eventList_widget .eventList_meta .event_date_location li {
+    font-size: 13px !important;
+    color: var(--bn-primary-strong) !important;
+}
+/* stray heading/inline tags that slip into any card teaser never balloon it */
+.eventList_meta p :is(h1,h2,h3,h4,h5,h6),
+.blog_meta p :is(h1,h2,h3,h4,h5,h6) {
+    font-size: inherit !important;
+    font-weight: 600 !important;
+    display: inline !important;
+    margin: 0 !important;
+}

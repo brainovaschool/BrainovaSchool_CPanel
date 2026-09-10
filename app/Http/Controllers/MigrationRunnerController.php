@@ -52,10 +52,20 @@ class MigrationRunnerController extends Controller
             $seed = 'error: ' . $e->getMessage();
         }
 
+        // Starter testimonials + reviews (idempotent — matched on name + type).
+        $tm = 'skipped';
+        try {
+            (new \Database\Seeders\WebsiteSetup\TestimonialSeeder())->run();
+            $tm = 'ok — testimonials/reviews synced';
+        } catch (\Throwable $e) {
+            $tm = 'error: ' . $e->getMessage();
+        }
+
         return response(
             '<pre style="font:14px/1.5 monospace;padding:24px">'
             . e($migrate) . "\n\nPermissions: " . e($perms)
             . "\nCatalogue seed: " . e($seed)
+            . "\nTestimonials seed: " . e($tm)
             . "</pre>"
         );
     }

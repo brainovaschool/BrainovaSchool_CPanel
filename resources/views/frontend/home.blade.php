@@ -240,7 +240,7 @@
                                         <a
                                             href="{{ route('frontend.news-detail', $item->id) }}">{{ @$item->defaultTranslate->title }}</a>
                                     </h4>
-                                    <p>{!! Str::limit(@$item->defaultTranslate->description, 150) !!}</p>
+                                    <p>{{ Str::limit(trim(html_entity_decode(strip_tags(@$item->defaultTranslate->description))), 150) }}</p>
                                     <div class="blog_bottom d-flex align-items-center justify-content-between">
                                         <a class="blog_readmore d-inline-flex align-items-center gap_10"
                                             href="{{ route('frontend.news-detail', $item->id) }}">
@@ -262,7 +262,7 @@
                                         <a
                                             href="{{ route('frontend.news-detail', $item->id) }}">{{ @$item->defaultTranslate->title }}</a>
                                     </h4>
-                                    <p>{!! Str::limit(@$item->defaultTranslate->description, 150) !!}</p>
+                                    <p>{{ Str::limit(trim(html_entity_decode(strip_tags(@$item->defaultTranslate->description))), 150) }}</p>
                                     <div class="blog_bottom d-flex align-items-center justify-content-between">
                                         <a class="blog_readmore d-inline-flex align-items-center gap_10"
                                             href="{{ route('frontend.news-detail', $item->id) }}">

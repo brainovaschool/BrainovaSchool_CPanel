@@ -39,7 +39,7 @@
                         <h4>
                             <a href="{{ route('frontend.notice-detail',$item->id) }}">{{ @$item->defaultTranslate->title }}</a>
                         </h4>
-                        <p>{!! Str::limit(@$item->defaultTranslate->description,150) !!}</p>
+                        <p>{{ Str::limit(trim(html_entity_decode(strip_tags(@$item->defaultTranslate->description))), 150) }}</p>
                         <div class="blog_page_bottom d-flex align-items-center justify-content-between">
                             <a href="{{ route('frontend.notice-detail',$item->id) }}">{{ ___('frontend.read_more') }} <i class="fas fa-arrow-right"></i></a>
                             <span class="blog_date"> <i class="far fa-calendar"></i>{{ dateFormat($item->date) }}</span>

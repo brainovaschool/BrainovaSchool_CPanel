@@ -42,7 +42,7 @@
                             <h4>
                                 <a href="{{route('frontend.events-detail',$item->id)}}">{{ @$item->defaultTranslate->title }}</a>
                             </h4>
-                            <p>{!! Str::limit(@$item->defaultTranslate->description,135) !!}</p>
+                            <p>{{ Str::limit(trim(html_entity_decode(strip_tags(@$item->defaultTranslate->description))), 135) }}</p>
                             <ul class="event_date_location">
                                 <li><i class="far fa-clock"></i>{{ timeFormat($item->start_time) }} - {{ timeFormat($item->end_time) }}</li>
                                 <li><i class="fas fa-map-marker-alt"></i> {{ @$item->defaultTranslate->address }}</li>
