@@ -1454,3 +1454,132 @@ body::after {
 .about_gallery_wrapper .bn-home-head h2,
 .instractors_wrapper .section__title h3 { color: var(--bn-ink); }
 .services_area .section__title p { color: var(--bn-muted); }
+
+/* ============================================================
+   ABOUT "Why Brainova" + CONTACT page blocks  (round-4 feedback)
+   ============================================================ */
+
+/* --- kill the dark 70%-opacity overlay the theme paints behind
+       .services_area (it was a muddy rectangle on the aurora field) --- */
+.services_area::before,
+.dark-theme .services_area::before { display: none !important; }
+.services_area {
+    background: transparent !important;
+    padding: 46px 0 !important;
+    z-index: auto;
+}
+.services_area .section__title h3 {
+    color: var(--bn-ink) !important;
+    font-size: 26px !important;
+    line-height: 1.35 !important;
+}
+.services_area .section__title p { color: var(--bn-muted) !important; font-size: 15px !important; }
+
+/* --- admin "study_at" icons rendered inside the About feature cards --- */
+.bn-feature__img {
+    display: block;
+    width: 46px;
+    height: 46px;
+    object-fit: contain;
+    margin-bottom: 13px;
+}
+
+/* ---------------- CONTACT PAGE ---------------- */
+
+.contact_section { padding-top: 34px !important; padding-bottom: 0 !important; }
+.contact_department_area { padding: 46px 0 60px !important; }
+
+.contact_section .section__title h3,
+.contact_department_area .section__title h3 {
+    color: var(--bn-ink) !important;
+    font-size: 26px !important;
+    line-height: 1.35 !important;
+}
+.contact_department_area .section__title p { color: var(--bn-muted) !important; font-size: 15px !important; }
+
+/* "Leave a message" heading sits on a light glass card — was white/invisible */
+.contact_form_box .section__title h3.text-white,
+.contact_form_box .section__title h3 { color: var(--bn-ink) !important; }
+
+/* --- Find-our-contact-information cards --- */
+.find_content_widget_wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 22px;
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+.find_content_widget_wrapper .find_content_widget {
+    flex: 0 1 260px;
+    max-width: 280px;
+    padding: 30px 24px !important;
+    border-radius: 18px;
+    background: var(--bn-surface);
+    border: 1px solid var(--bn-line);
+    box-shadow: var(--bn-shadow-near);
+}
+@supports ((backdrop-filter: blur(6px)) or (-webkit-backdrop-filter: blur(6px))) {
+    .find_content_widget_wrapper .find_content_widget {
+        background: var(--bn-glass);
+        -webkit-backdrop-filter: blur(18px) saturate(150%);
+        backdrop-filter: blur(18px) saturate(150%);
+        border-color: var(--bn-glass-brd);
+    }
+}
+.find_content_widget_wrapper .find_content_widget::before { display: none !important; }   /* dashed inner border */
+.find_content_widget_wrapper .find_content_widget .icon::before,
+.contact_department_box .icon::before {
+    background: color-mix(in srgb, var(--bn-primary) 16%, transparent) !important;
+}
+.find_content_widget_wrapper .find_content_widget .icon,
+.contact_department_box .icon {
+    max-width: none;
+    width: 58px;
+    height: 58px;
+    display: grid;
+    place-items: center;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--bn-primary) 12%, var(--bn-surface));
+    border: 1px solid var(--bn-line);
+    margin: 0 auto 4px;
+}
+.find_content_widget_wrapper .find_content_widget .icon img,
+.contact_department_box .icon img {
+    width: 30px;
+    height: 30px;
+    max-width: 30px;
+    object-fit: contain;
+}
+.find_content_widget_wrapper .find_content_widget h3,
+.contact_department_box h3 {
+    font-family: "Libre Baskerville", serif;
+    font-size: 18px !important;
+    line-height: 1.4 !important;
+    color: var(--bn-ink) !important;
+    margin: 14px 0 8px !important;
+}
+.find_content_widget_wrapper .find_content_widget p,
+.contact_department_box p {
+    font-size: 14px !important;
+    line-height: 1.6 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    color: var(--bn-body) !important;
+    word-break: break-word;
+}
+
+/* --- Department cards: centre them, cap the width so one card isn't lonely --- */
+.contact_department_area .row { justify-content: center; }
+.contact_department_box {
+    max-width: 300px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 34px 26px !important;
+    border-radius: 18px;
+}
+.contact_department_box .icon { width: 54px; height: 54px; }

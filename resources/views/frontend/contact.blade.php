@@ -114,10 +114,10 @@
                 </div>
             </div>
         </div>
-        <div class="row">
+        <div class="row justify-content-center">
 
             @foreach ($data['depContact'] as $item)
-                <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="col-xl-3 col-lg-4 col-md-6">
                     <div class="contact_department_box text-center mb_30">
                         <div class="icon">
                             <img src="{{ @globalAsset(@$item->upload->path, '340X340.webp') }}" alt="Image">

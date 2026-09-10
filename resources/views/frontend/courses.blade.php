@@ -59,9 +59,11 @@
                     @php
                         $slug = $cat['slug'] ?? 'all';
                         $isActive = $activeCategory === $slug;
+                        // Category pills go to the full category page (with its sub-focuses),
+                        // the same URL the "Our Programs" nav menu uses.
                         $filterUrl = $slug === 'all'
                             ? route('frontend.courses')
-                            : route('frontend.courses', ['category' => $slug]);
+                            : route('frontend.program-category', $slug);
                     @endphp
                     <a href="{{ $filterUrl }}"
                         class="fe-filter-pill {{ $isActive ? 'fe-is-active' : '' }}"

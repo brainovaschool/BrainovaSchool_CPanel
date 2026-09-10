@@ -84,24 +84,29 @@
             </section>
             @endif
 
-            {{-- WHAT WE STAND FOR — E6 values (deep version lives on /our-approach) --}}
-            <section class="bn-about-block bn-about-values">
+            {{-- WHY FAMILIES CHOOSE BRAINOVA (admin-managed "study_at" section) --- --}}
+            @if (isset($sections['study_at']->defaultTranslate->data) && is_array($sections['study_at']->defaultTranslate->data) && count($sections['study_at']->defaultTranslate->data))
+            <section class="bn-about-block">
                 <div class="bn-home-head">
-                    <p class="bn-eyebrow">Core values &middot; E&#8310;</p>
-                    <h2>Six values behind every Brainova programme</h2>
-                    <p>Our whole approach &mdash; how we teach, assess and care for children &mdash; is built on
-                        <strong>E to the power of six</strong>.</p>
+                    <p class="bn-eyebrow">Why Brainova</p>
+                    <h2>{{ @$sections['study_at']->defaultTranslate->name ?: 'Why families choose Brainova' }}</h2>
+                    @if (@$sections['study_at']->defaultTranslate->description)
+                        <p>{{ $sections['study_at']->defaultTranslate->description }}</p>
+                    @endif
                 </div>
-                <ul class="bn-about-chips">
-                    <li><b>E&sup1;</b> Ethics <span>Integrity &amp; Islamic values</span></li>
-                    <li><b>E&sup2;</b> Empathy <span>Compassion &amp; understanding</span></li>
-                    <li><b>E&sup3;</b> Exploration <span>Innovation &amp; curiosity</span></li>
-                    <li><b>E&#8308;</b> Endeavour <span>Purposeful effort &amp; resilience</span></li>
-                    <li><b>E&#8309;</b> Excellence <span>High standards &amp; mastery</span></li>
-                    <li><b>E&#8310;</b> Empowerment <span>Personalisation &amp; wellbeing</span></li>
-                </ul>
-                <a href="{{ route('frontend.our-approach') }}" class="bn-btn bn-btn--ghost">Read our full approach</a>
+                @php $org = $sections['study_at']->data ?? []; @endphp
+                <div class="bn-feature-grid">
+                    @foreach ($sections['study_at']->defaultTranslate->data as $key => $item)
+                        <article class="bn-feature">
+                            <img class="bn-feature__img"
+                                src="{{ @globalAsset(uploadPath(@$org[$key]['icon']), '90X60.webp') }}" alt="">
+                            <h3>{{ $item['title'] }}</h3>
+                            <p>{{ $item['description'] }}</p>
+                        </article>
+                    @endforeach
+                </div>
             </section>
+            @endif
 
             {{-- INSIDE BRAINOVA — what families get ------------------------------- --}}
             <section class="bn-about-block">
@@ -147,37 +152,6 @@
 
         </div>
     </div>
-
-    {{-- WHY FAMILIES CHOOSE BRAINOVA (admin-managed "study_at" section) --------- --}}
-    @if (!empty($sections['study_at']))
-        <div class="services_area">
-            <div class="container">
-                <div class="row justify-content-center">
-                    <div class="col-xl-7">
-                        <div class="section__title text-center">
-                            <p class="bn-eyebrow">Why Brainova</p>
-                            <h3>{{ @$sections['study_at']->defaultTranslate->name }}</h3>
-                            <p>{{ @$sections['study_at']->defaultTranslate->description }}</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="row justify-content-center">
-                    @foreach (is_array($sections['study_at']->defaultTranslate->data ?? []) ? $sections['study_at']->defaultTranslate->data : [] as $key => $item)
-                        <div class="col-xl-4 col-md-6">
-                            <div class="serevice_box mb_30">
-                                <div class="icon">
-                                    @php $org = $sections['study_at']->data ?? []; @endphp
-                                    <img src="{{ @globalAsset(uploadPath(@$org[$key]['icon']), '90X60.webp') }}" alt="Icon">
-                                </div>
-                                <h3>{{ $item['title'] }}</h3>
-                                <p>{{ $item['description'] }}</p>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    @endif
 
     {{-- OUR STORY (admin-managed "abouts") ----------------------------------- --}}
     @if (count($data['abouts']))

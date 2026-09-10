@@ -86,6 +86,50 @@ class ProgramCatalogSeeder extends Seeder
     }
 
     /**
+     * One distinct thumbnail per programme (matched on slug). These are neutral
+     * hosted photos so no card is ever blank or a duplicate; a real image
+     * uploaded against a Programme in the dashboard always takes precedence.
+     */
+    private function imageFor(string $slug): ?string
+    {
+        static $ids = [
+            // legacy catalogue
+            'basic-to-intermediate-maths'          => '1635070041078-e363dbe005cb',
+            'advanced-maths'                       => '1509228468518-fe40e0506024',
+            'basic-to-intermediate-english'        => '1456513080510-7bf3a84b82f8',
+            'advanced-english'                     => '1455390582262-044cdead277a',
+            'brainova-stem-discovery'              => '1485827404703-89b55fcc595e',
+            'brainova-ai-digital-literacy'         => '1677442136019-21780ecad995',
+            'brainova-math-confidence-pathway'     => '1503676260728-1c00da094a0b',
+            'brainova-math-competition-studio'     => '1519389950473-47ba0277781c',
+            'brainova-english-basic-intermediate'  => '1497633762265-9d179a990aa6',
+            'brainova-english-communication-studio'=> '1475721027785-f74eccf877e2',
+            'brainova-biliteracy-foundations'      => '1513258496099-48168024aec0',
+            'brainova-leadership-voice-studio'     => '1524178232363-1fb2b075b655',
+            'brainova-future-projects-lab'         => '1522071820081-009f0129c71c',
+            'junior-coding-explorers'              => '1516321318423-f06f85e504b3',
+            'science-lab-juniors'                  => '1532094349884-543bc11b234d',
+            'creative-writing-spark'               => '1452860606245-08befc0ff44b',
+            'study-skills-bootcamp'                => '1434030216411-0b793f4b4173',
+            // starter programmes
+            'pre-k-kindergarten-programme'         => '1509062522246-3755977927d7',
+            'grade-1-programme'                    => '1544928147-79a2dbc1f389',
+            'grade-2-programme'                    => '1501504905252-473c47e087f8',
+            'grade-3-programme'                    => '1522202176988-66273c2fd55f',
+            'grade-4-programme'                    => '1531482615713-2afd69097998',
+            'grade-5-programme'                    => '1497486751825-1233686d5d80',
+            'games-trivia-club'                    => '1503945438517-f65904a52ce6',
+            'art-hub'                              => '1524998497720-b78e62e88b48',
+        ];
+
+        if (empty($ids[$slug])) {
+            return null;
+        }
+
+        return 'https://images.unsplash.com/photo-' . $ids[$slug] . '?auto=format&fit=crop&w=1200&q=80';
+    }
+
+    /**
      * Give the categories that had no legacy courses (Homeschooling, Social
      * Clubs) at least one real programme each. Idempotent (matched on slug).
      */
@@ -128,6 +172,7 @@ class ProgramCatalogSeeder extends Seeder
                     'program_category_id' => $categoryId,
                     'program_focus_id'    => $focusIndex[$catSlug . '/' . $focusSlug] ?? null,
                     'title'               => $title,
+                    'image_url'           => $this->imageFor(Str::slug($title)),
                     'badge'               => $catSlug === 'social-clubs' ? 'Club' : 'Homeschooling',
                     'description'         => $desc,
                     'age_range'           => $age,
@@ -211,7 +256,7 @@ class ProgramCatalogSeeder extends Seeder
                     'enrolled'            => $course['enrolled'] ?? null,
                     'price'               => $course['price'] ?? null,
                     'accent'              => $course['accent'] ?? 'teal',
-                    'image_url'           => $course['image'] ?? null,
+                    'image_url'           => $this->imageFor($course['slug']) ?? ($course['image'] ?? null),
                     'meta_description'    => $course['meta_description'] ?? null,
                     'overview'            => isset($course['overview']) && is_array($course['overview']) ? $course['overview'] : [],
                     'highlights'          => isset($course['highlights']) && is_array($course['highlights']) ? $course['highlights'] : [],
