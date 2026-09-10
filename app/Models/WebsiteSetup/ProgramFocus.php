@@ -9,6 +9,8 @@ class ProgramFocus extends Model
 {
     use HasFactory;
 
+    protected $table = 'program_focuses';
+
     protected $guarded = ['id'];
 
     public function category()
