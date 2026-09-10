@@ -1289,3 +1289,168 @@ body::after {
 @media (max-width: 991.98px) {
     .facilites_box .facilites_box_content h4 { font-size: 27px !important; }
 }
+
+/* ============================================================
+   ABOUT US page  (distinct from home; professional layout)
+   ============================================================ */
+
+.bn-about { position: relative; }
+.bn-about-block { padding: 46px 0; }
+.bn-about-block .bn-home-head { margin-bottom: 28px; }
+.bn-about-block .bn-home-head p { color: var(--bn-muted); }
+.bn-about-block .bn-home-head strong { color: var(--bn-ink); }
+
+/* --- Who we are --- */
+.bn-about-intro {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr;
+    gap: 42px;
+    align-items: start;
+    padding: 46px 0 26px;
+}
+.bn-about-intro__text h2 {
+    font-family: "Libre Baskerville", serif;
+    color: var(--bn-ink);
+    font-size: 27px;
+    line-height: 1.32;
+    margin: 6px 0 16px;
+}
+.bn-about-intro__text p {
+    color: var(--bn-body);
+    font-size: 15px;
+    line-height: 1.8;
+    margin: 0 0 14px;
+}
+.bn-about-intro__text strong { color: var(--bn-ink); font-weight: 700; }
+
+.bn-about-facts {
+    list-style: none;
+    margin: 6px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.bn-about-facts li {
+    padding: 16px 18px;
+    border-radius: 14px;
+    background: var(--bn-surface);
+    border: 1px solid var(--bn-line);
+    box-shadow: var(--bn-shadow-near);
+    color: var(--bn-body);
+    font-size: 13.5px;
+    line-height: 1.55;
+}
+.bn-about-facts li span {
+    display: block;
+    font-family: "Libre Baskerville", serif;
+    color: var(--bn-ink);
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 3px;
+}
+@supports ((backdrop-filter: blur(6px)) or (-webkit-backdrop-filter: blur(6px))) {
+    .bn-about-facts li {
+        background: var(--bn-glass);
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
+        backdrop-filter: blur(16px) saturate(150%);
+        border-color: var(--bn-glass-brd);
+    }
+}
+@media (max-width: 900px) {
+    .bn-about-intro { grid-template-columns: 1fr; gap: 28px; }
+}
+
+/* --- E6 values chips --- */
+.bn-about-values { text-align: center; }
+.bn-about-chips {
+    list-style: none;
+    margin: 0 auto 24px;
+    padding: 0;
+    max-width: 940px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+}
+.bn-about-chips li {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 12px 18px;
+    border-radius: 999px;
+    background: var(--bn-surface);
+    border: 1px solid var(--bn-line);
+    box-shadow: var(--bn-shadow-near);
+    font-family: "Libre Baskerville", serif;
+    color: var(--bn-ink);
+    font-size: 14px;
+    white-space: nowrap;
+}
+@supports ((backdrop-filter: blur(6px)) or (-webkit-backdrop-filter: blur(6px))) {
+    .bn-about-chips li {
+        background: var(--bn-glass);
+        -webkit-backdrop-filter: blur(16px) saturate(150%);
+        backdrop-filter: blur(16px) saturate(150%);
+        border-color: var(--bn-glass-brd);
+    }
+}
+.bn-about-chips li b {
+    font-family: "Libre Baskerville", serif;
+    font-weight: 700;
+    font-size: 15px;
+    color: transparent;
+    background: linear-gradient(135deg, var(--bn-primary), var(--bn-accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+.bn-about-chips li span { color: var(--bn-muted); font-size: 12px; }
+@media (max-width: 560px) {
+    .bn-about-chips li { white-space: normal; }
+}
+
+/* --- Inside Brainova: feature grid --- */
+.bn-feature-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+@media (max-width: 860px) { .bn-feature-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 540px) { .bn-feature-grid { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; } }
+.bn-feature {
+    padding: 26px;
+    border-radius: 18px;
+    background: var(--bn-surface);
+    border: 1px solid var(--bn-line);
+    box-shadow: var(--bn-shadow-near);
+}
+@supports ((backdrop-filter: blur(6px)) or (-webkit-backdrop-filter: blur(6px))) {
+    .bn-feature {
+        background: var(--bn-glass);
+        -webkit-backdrop-filter: blur(18px) saturate(150%);
+        backdrop-filter: blur(18px) saturate(150%);
+        border-color: var(--bn-glass-brd);
+    }
+}
+.bn-feature i {
+    display: block;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--bn-primary-strong);
+    margin-bottom: 13px;
+}
+.bn-feature h3 {
+    font-family: "Libre Baskerville", serif;
+    color: var(--bn-ink);
+    font-size: 16px;
+    margin: 0 0 6px;
+}
+.bn-feature p { color: var(--bn-body); font-size: 13.5px; line-height: 1.6; margin: 0; }
+
+/* --- keep the two admin sections that moved here readable on the aurora field --- */
+.about_gallery_wrapper .bn-home-head,
+.instractors_wrapper .section__title { margin-bottom: 34px; }
+.services_area .section__title h3,
+.about_gallery_wrapper .bn-home-head h2,
+.instractors_wrapper .section__title h3 { color: var(--bn-ink); }
+.services_area .section__title p { color: var(--bn-muted); }
