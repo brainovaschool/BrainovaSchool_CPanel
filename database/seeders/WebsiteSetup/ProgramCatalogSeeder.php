@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 
 /**
  * Seeds the 4 program categories + their focus areas, then imports the
- * existing courses from config/frontend_courses.php into the new taxonomy.
+ * starter courses from database/seeders/data/legacy_programs.php.
  * Idempotent — safe to run more than once (matches on slug).
  */
 class ProgramCatalogSeeder extends Seeder
