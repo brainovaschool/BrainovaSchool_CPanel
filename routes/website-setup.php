@@ -16,6 +16,9 @@ use App\Http\Controllers\WebsiteSetup\ContactMessageController;
 use App\Http\Controllers\WebsiteSetup\GalleryCategoryController;
 use App\Http\Controllers\WebsiteSetup\DepartmentContactController;
 use App\Http\Controllers\WebsiteSetup\PagesController;
+use App\Http\Controllers\WebsiteSetup\ProgramController;
+use App\Http\Controllers\WebsiteSetup\ProgramFocusController;
+use App\Http\Controllers\WebsiteSetup\ProgramCategoryController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -83,6 +86,33 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/translate/{id}',                'translate')->name('event.translate')->middleware('PermissionCheck:event_update');
                     Route::put('/translate/update/{id}',                'translateUpdate')->name('event.translate.update')->middleware('PermissionCheck:event_update');
 
+                });
+
+                Route::controller(ProgramCategoryController::class)->prefix('program-category')->name('program-category.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:program_category_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:program_category_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:program_category_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:program_category_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:program_category_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:program_category_delete', 'DemoCheck');
+                });
+
+                Route::controller(ProgramFocusController::class)->prefix('program-focus')->name('program-focus.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:program_focus_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:program_focus_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:program_focus_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:program_focus_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:program_focus_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:program_focus_delete', 'DemoCheck');
+                });
+
+                Route::controller(ProgramController::class)->prefix('program')->name('program.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:program_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:program_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:program_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:program_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:program_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:program_delete', 'DemoCheck');
                 });
 
                 Route::controller(CounterController::class)->prefix('counter')->group(function () {

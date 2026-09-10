@@ -885,10 +885,13 @@
                         hasPermission('contact_info_read') ||
                         hasPermission('dep_contact_read') ||
                         hasPermission('news_read') ||
+                        hasPermission('program_category_read') ||
+                        hasPermission('program_focus_read') ||
+                        hasPermission('program_read') ||
                         hasPermission('event_read')) &&
                         hasFeature('website_setup'))
                     <li
-                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*']) }}">
+                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'program-category*', 'program-focus*', 'program/*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-wrench"></i>
                             <span class="on-half-expanded">{{ ___('settings.Website_setup') }}</span>
@@ -943,6 +946,22 @@
                             @if (hasPermission('event_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['event*']) }}">
                                     <a href="{{ route('event.index') }}">{{ ___('settings.event') }}</a>
+                                </li>
+                            @endif
+
+                            @if (hasPermission('program_category_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['program-category*']) }}">
+                                    <a href="{{ route('program-category.index') }}">{{ ___('settings.program_categories') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('program_focus_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['program-focus*']) }}">
+                                    <a href="{{ route('program-focus.index') }}">{{ ___('settings.program_focus_areas') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('program_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['program', 'program/*']) }}">
+                                    <a href="{{ route('program.index') }}">{{ ___('settings.programs') }}</a>
                                 </li>
                             @endif
 

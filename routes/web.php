@@ -129,9 +129,6 @@ Route::middleware(saasMiddleware())->group(function () {
                 dd('success');
             });
 
-            // One-time Program Catalogue installer (removed after setup is confirmed).
-            Route::get('/program-catalog/install/{key}', [\App\Http\Controllers\ProgramCatalogSetupController::class, 'run']);
-
             Route::controller(LanguageController::class)->prefix('languages')->group(function () {
                 Route::get('/change',                   'changeLanguage')->name('languages.change');
             });
