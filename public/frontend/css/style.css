@@ -536,7 +536,7 @@ label {
   display: block;
   color: #fff;
   line-height: 40px;
-  background: #FF5170;
+  background: var(--bn-primary);
   font-size: 15px;
   border-radius: 30px;
   -webkit-transition: 0.3s;
@@ -544,9 +544,9 @@ label {
   -ms-transition: 0.3s;
   -o-transition: 0.3s;
   transition: 0.3s;
-  -webkit-box-shadow: 0px 10px 20px 0px rgba(251, 17, 89, 0.3);
-  -moz-box-shadow: 0px 10px 20px 0px rgba(251, 17, 89, 0.3);
-  box-shadow: 0px 10px 20px 0px rgba(251, 17, 89, 0.3);
+  -webkit-box-shadow: 0px 10px 20px 0px rgba(0, 117, 133, 0.3);
+  -moz-box-shadow: 0px 10px 20px 0px rgba(0, 117, 133, 0.3);
+  box-shadow: 0px 10px 20px 0px rgba(0, 117, 133, 0.3);
 }
 
 @media (min-width: 1470px) {
@@ -803,12 +803,12 @@ label {
 
 /* line 536, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
 .owl-dots .owl-dot.active span {
-  background: #FF5170;
+  background: var(--bn-primary);
 }
 
 /* line 539, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
 .owl-dots .owl-dot.active span::before {
-  border-color: #FF5170;
+  border-color: var(--bn-primary);
 }
 
 /* line 547, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
@@ -948,7 +948,7 @@ label {
 
 /* line 630, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
 .theme_text {
-  color: #FF5170 !important;
+  color: var(--bn-primary-strong) !important;
 }
 
 /* line 633, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
@@ -963,7 +963,7 @@ label {
 
 /* line 639, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
 .theme_text4 {
-  color: #392C7D !important;
+  color: var(--bn-ink) !important;
 }
 
 /* line 642, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
@@ -1053,7 +1053,7 @@ label {
 .nice-select .nice-select-search-box::after {
   content: "\e610";
   font-family: "themify";
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   font-size: 18px;
   position: absolute;
   left: 50px;
@@ -1115,7 +1115,7 @@ label {
 .nice-select ul.list li.option.focus,
 .nice-select ul.list li.option:hover,
 .nice-select ul.list li.option.selected.focus {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   background: #fff;
 }
 
@@ -1130,7 +1130,7 @@ label {
 /* line 760, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
 .theme_search_field button {
   font-size: 18px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   padding: 0 0 0 15px;
   line-height: 100%;
   box-shadow: none !important;
@@ -1138,7 +1138,7 @@ label {
 
 /* line 766, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
 .theme_search_field button:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 770, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
@@ -1269,7 +1269,7 @@ label {
 /* line 859, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
 .theme_select:focus,
 .theme_select.open {
-  border-color: #392C7D !important;
+  border-color: var(--bn-ink) !important;
 }
 
 /* line 863, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
@@ -1506,9 +1506,9 @@ label {
 /* line 1038, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
 .theme_pagination a.active,
 .theme_pagination a:hover {
-  background: #FF5170;
+  background: var(--bn-primary);
   color: #fff;
-  border-color: #FF5170;
+  border-color: var(--bn-primary);
 }
 
 /* line 1043, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
@@ -1519,18 +1519,18 @@ label {
 
 /* line 1047, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
 .theme_pagination a.next_pagination {
-  border-color: #FF5170;
+  border-color: var(--bn-primary);
 }
 
 /* line 1049, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
 .theme_pagination a.next_pagination i {
   font-size: 20px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 1057, ../../../../../laragon/www/onestschool-frontend/scss/_reset.scss */
 .border_line {
-  background: #392C7D;
+  background: var(--bn-deep);
   height: 2px;
   width: 80px;
   display: inline-block;
@@ -1540,7 +1540,7 @@ label {
 /*----------------------------------------------------*/
 /* line 1, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
 .theme_btn {
-  background: #FF5170;
+  background: var(--bn-primary);
   padding: 10px;
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
@@ -1597,21 +1597,21 @@ label {
 
 /* line 44, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
 .theme_btn:hover {
-  color: #FF5170;
-  border-color: #FF5170;
+  color: var(--bn-primary-strong);
+  border-color: var(--bn-primary);
   background: transparent;
-  box-shadow: 0px 7px 14px rgba(57, 44, 125, 0.25);
+  box-shadow: 0px 7px 14px rgba(15, 41, 55, 0.25);
 }
 
 /* line 51, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
 .theme_btn:hover svg path {
   fill: none;
-  stroke: #FF5170;
+  stroke: var(--bn-primary);
 }
 
 /* line 59, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
 .theme_btn2 {
-  background: #392C7D;
+  background: var(--bn-deep);
   padding: 10px;
   -webkit-border-radius: 4px;
   -moz-border-radius: 4px;
@@ -1669,8 +1669,8 @@ label {
 
 /* line 103, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
 .theme_btn2:hover {
-  color: #392C7D;
-  border-color: #392C7D;
+  color: var(--bn-ink);
+  border-color: var(--bn-ink);
   background: transparent;
 }
 
@@ -1684,7 +1684,7 @@ label {
   display: inline-block;
   font-family: "Libre Baskerville", serif;
   font-size: 14px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   font-weight: 500;
   padding: 7px 25px;
   border: 1px solid transparent;
@@ -1706,8 +1706,8 @@ label {
 /* line 134, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
 .theme_btn_lite:hover {
   color: #fff;
-  border-color: #FF5170;
-  background: #FF5170;
+  border-color: var(--bn-primary);
+  background: var(--bn-primary);
 }
 
 /* line 141, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
@@ -1720,14 +1720,14 @@ label {
   display: inline-block;
   font-family: "Libre Baskerville", serif;
   font-size: 16px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   font-weight: 600;
   padding: 26px 28px;
   border: 1px solid transparent;
   text-transform: capitalize;
   display: inline-block;
   line-height: 1;
-  border-color: #FF5170;
+  border-color: var(--bn-primary);
 }
 
 @media (max-width: 575.98px) {
@@ -1751,8 +1751,8 @@ label {
 /* line 169, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
 .theme_line_btn:hover {
   color: #fff;
-  border-color: #FF5170;
-  background: #FF5170;
+  border-color: var(--bn-primary);
+  background: var(--bn-primary);
 }
 
 /* line 176, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
@@ -1799,7 +1799,7 @@ label {
 /* line 208, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
 .social_btn:hover {
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
 }
 
 /* line 214, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
@@ -1824,13 +1824,13 @@ label {
 /* line 229, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
 .white_btn:hover {
   color: #fff;
-  border-color: #FF5170;
-  background: #FF5170;
+  border-color: var(--bn-primary);
+  background: var(--bn-primary);
 }
 
 /* line 236, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
 .white_btn2 {
-  background: rgba(251, 17, 89, 0.1);
+  background: rgba(0, 117, 133, 0.1);
   padding: 10px;
   -webkit-border-radius: 5px;
   -moz-border-radius: 5px;
@@ -1838,7 +1838,7 @@ label {
   display: inline-block;
   font-family: "Libre Baskerville", serif;
   font-size: 16px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   font-weight: 600;
   padding: 13.5px 26px;
   border: 1px solid transparent;
@@ -1850,8 +1850,8 @@ label {
 /* line 251, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
 .white_btn2:hover {
   color: #fff;
-  border-color: #FF5170;
-  background: #FF5170;
+  border-color: var(--bn-primary);
+  background: var(--bn-primary);
 }
 
 /* line 258, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
@@ -1883,7 +1883,7 @@ label {
 .readMore_btn .btn_text {
   font-size: 18px;
   font-weight: 700;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 286, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
@@ -1893,7 +1893,7 @@ label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #FF5170;
+  background: var(--bn-primary);
   color: #fff;
   border-radius: 50%;
   transition: .3s;
@@ -1901,7 +1901,7 @@ label {
 
 /* line 297, ../../../../../laragon/www/onestschool-frontend/scss/_btn.scss */
 .readMore_btn .btn_icon:hover {
-  box-shadow: 0px 7px 14px rgba(57, 44, 125, 0.25);
+  box-shadow: 0px 7px 14px rgba(15, 41, 55, 0.25);
 }
 
 /*----------------------------------------------------*/
@@ -2148,7 +2148,7 @@ label {
 .section__title4 .subheading_text {
   display: block;
   font-size: 16px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   font-weight: 600;
   margin-bottom: 15px;
 }
@@ -2484,7 +2484,7 @@ label {
 
 /* line 45, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
 .header_area .header_topbar_area {
-  background: #392C7D;
+  background: var(--bn-deep);
 }
 
 /* line 48, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
@@ -2596,7 +2596,7 @@ label {
 
 /* line 102, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
 .header_area .header_topbar_area .header_topbar_wrapper .header_topbar_right .header_topbar_social a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 110, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
@@ -2644,7 +2644,7 @@ label {
 
 /* line 134, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
 .header_area .header_topbar_area .header_topbar_wrapper .header_topbar_right .login__regiter a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 144, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
@@ -2788,12 +2788,12 @@ label {
 
 /* line 238, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
 .header_area .main_menu ul li.submenu_active>a {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 242, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
 .header_area .main_menu ul li a {
-  color: #392C7D;
+  color: var(--bn-ink);
   font-size: 18px;
   font-weight: 400;
   margin: 0px 19px;
@@ -2813,14 +2813,14 @@ label {
   left: auto;
   right: 0;
   z-index: -1;
-  background: #FF5170;
+  background: var(--bn-primary);
   transition: .3s;
 }
 
 /* line 264, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
 .header_area .main_menu ul li a:hover,
 .header_area .main_menu ul li a.active {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 267, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
@@ -2870,7 +2870,7 @@ label {
   position: absolute;
   left: 0;
   top: 120%;
-  background: #fff;
+  background: var(--bn-surface);
   text-align: left;
   box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.04);
   opacity: 0;
@@ -2892,7 +2892,7 @@ label {
 .header_area .main_menu ul li .submenu li a {
   font-size: 14px;
   line-height: 1.2;
-  color: #202e3b;
+  color: var(--bn-ink);
   padding: 0;
   font-weight: 400;
   display: block;
@@ -2911,18 +2911,18 @@ label {
 /* line 323, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
 .header_area .main_menu ul li .submenu li a.active,
 .header_area .main_menu ul li .submenu li a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 328, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
 .header_area .main_menu ul li .submenu li a:hover {
   left: 5px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 337, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
 .header_area .main_menu ul li:hover>a {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 341, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
@@ -2974,7 +2974,7 @@ label {
 
 /* line 377, ../../../../../laragon/www/onestschool-frontend/scss/_header.scss */
 .header_area .contact_wrap .mobile_no p span a {
-  color: #392C7D;
+  color: var(--bn-ink);
 }
 
 @media only screen and (min-width: 1200px) and (max-width: 1440px) {
@@ -3098,7 +3098,7 @@ label {
 
 /* line 54, ../../../../../laragon/www/onestschool-frontend/scss/_mobile_menu.scss */
 .slicknav_nav .slicknav_row:hover {
-  color: #392C7D;
+  color: var(--bn-ink);
 }
 
 /* line 57, ../../../../../laragon/www/onestschool-frontend/scss/_mobile_menu.scss */
@@ -3107,7 +3107,7 @@ label {
   -moz-border-radius: 0px;
   border-radius: 0px;
   background: transparent;
-  color: #392C7D;
+  color: var(--bn-ink);
 }
 
 /* line 65, ../../../../../laragon/www/onestschool-frontend/scss/_mobile_menu.scss */
@@ -3320,7 +3320,7 @@ label {
 
 /* line 51, ../../../../../laragon/www/onestschool-frontend/scss/_banner.scss */
 .banner_area .banner_text h3 span {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 55, ../../../../../laragon/www/onestschool-frontend/scss/_banner.scss */
@@ -3374,7 +3374,7 @@ label {
   content: '';
   left: 0;
   top: 0;
-  background: #392C7D;
+  background: var(--bn-deep);
   opacity: .5;
   width: 100%;
   height: 100%;
@@ -3463,7 +3463,7 @@ label {
   left: 20px;
   border-radius: 50%;
   background: #fff;
-  color: #FB1159;
+  color: var(--bn-primary-strong);
 }
 
 /* line 25, ../../../../../laragon/www/onestschool-frontend/scss/_course.scss */
@@ -3480,7 +3480,7 @@ label {
 
 /* line 31, ../../../../../laragon/www/onestschool-frontend/scss/_course.scss */
 .course_area .single_course .course_content h4:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 35, ../../../../../laragon/www/onestschool-frontend/scss/_course.scss */
@@ -3528,8 +3528,8 @@ label {
 
 /* line 66, ../../../../../laragon/www/onestschool-frontend/scss/_course.scss */
 .course_area .single_course .course_content .rating_cart .cart_store:hover {
-  border-color: #FF5170;
-  color: #FF5170;
+  border-color: var(--bn-primary);
+  color: var(--bn-primary-strong);
 }
 
 /* line 73, ../../../../../laragon/www/onestschool-frontend/scss/_course.scss */
@@ -3613,7 +3613,7 @@ label {
   right: 20px;
   border-radius: 50%;
   background: #fff;
-  color: #FB1159;
+  color: var(--bn-primary-strong);
 }
 
 /* line 136, ../../../../../laragon/www/onestschool-frontend/scss/_course.scss */
@@ -3661,7 +3661,7 @@ label {
 
 /* line 162, ../../../../../laragon/www/onestschool-frontend/scss/_course.scss */
 .quiz_area .single_course .course_content h4:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 166, ../../../../../laragon/www/onestschool-frontend/scss/_course.scss */
@@ -3709,8 +3709,8 @@ label {
 
 /* line 197, ../../../../../laragon/www/onestschool-frontend/scss/_course.scss */
 .quiz_area .single_course .course_content .rating_cart .cart_store:hover {
-  border-color: #FF5170;
-  color: #FF5170;
+  border-color: var(--bn-primary);
+  color: var(--bn-primary-strong);
 }
 
 /* line 204, ../../../../../laragon/www/onestschool-frontend/scss/_course.scss */
@@ -3766,7 +3766,7 @@ label {
   left: 20px;
   border-radius: 50%;
   background: #fff;
-  color: #FB1159;
+  color: var(--bn-primary-strong);
 }
 
 /* line 24, ../../../../../laragon/www/onestschool-frontend/scss/_courses.scss */
@@ -3783,7 +3783,7 @@ label {
 
 /* line 30, ../../../../../laragon/www/onestschool-frontend/scss/_courses.scss */
 .couse_wizged .course_content h4:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 34, ../../../../../laragon/www/onestschool-frontend/scss/_courses.scss */
@@ -3833,8 +3833,8 @@ label {
 
 /* line 67, ../../../../../laragon/www/onestschool-frontend/scss/_courses.scss */
 .couse_wizged .course_content .rating_cart .cart_store:hover {
-  border-color: #FF5170;
-  color: #FF5170;
+  border-color: var(--bn-primary);
+  color: var(--bn-primary-strong);
 }
 
 /* line 74, ../../../../../laragon/www/onestschool-frontend/scss/_courses.scss */
@@ -3888,7 +3888,7 @@ label {
   right: 20px;
   border-radius: 50%;
   background: #fff;
-  color: #FB1159;
+  color: var(--bn-primary-strong);
 }
 
 /* line 120, ../../../../../laragon/www/onestschool-frontend/scss/_courses.scss */
@@ -3936,7 +3936,7 @@ label {
 
 /* line 146, ../../../../../laragon/www/onestschool-frontend/scss/_courses.scss */
 .quiz_wizged .course_content h4:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 150, ../../../../../laragon/www/onestschool-frontend/scss/_courses.scss */
@@ -3986,8 +3986,8 @@ label {
 
 /* line 183, ../../../../../laragon/www/onestschool-frontend/scss/_courses.scss */
 .quiz_wizged .course_content .rating_cart .cart_store:hover {
-  border-color: #FF5170;
-  color: #FF5170;
+  border-color: var(--bn-primary);
+  color: var(--bn-primary-strong);
 }
 
 /* line 190, ../../../../../laragon/www/onestschool-frontend/scss/_courses.scss */
@@ -4280,7 +4280,7 @@ label {
 /* line 46, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
 .blog_widget .blog_meta {
   padding-right: 20px;
-  background: #392c7d;
+  background: var(--bn-deep);
   padding: 30px 22px;
 }
 
@@ -4295,7 +4295,7 @@ label {
 /* line 53, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
 .blog_widget .blog_meta .brand_text {
   margin: 0;
-  background: #FF5170;
+  background: var(--bn-primary);
   font-weight: 400;
   font-size: 16px;
   color: #fff;
@@ -4325,12 +4325,12 @@ label {
 
 /* line 76, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
 .blog_widget .blog_meta h4 a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 80, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
 .blog_widget .blog_meta h4:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 84, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
@@ -4365,7 +4365,7 @@ label {
 /* line 110, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
 .blog_widget .blog_meta .blog_bottom .blog_readmore:hover .blog_readmore_text,
 .blog_widget .blog_meta .blog_bottom .blog_readmore:hover i {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 116, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
@@ -4377,12 +4377,12 @@ label {
 
 /* line 124, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
 .blog_widget.style2 .blog_meta {
-  background: #FF5170;
+  background: var(--bn-primary);
 }
 
 /* line 126, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
 .blog_widget.style2 .blog_meta .brand_text {
-  background: #392C7D;
+  background: var(--bn-deep);
   color: #fff;
 }
 
@@ -4393,12 +4393,12 @@ label {
 
 /* line 133, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
 .blog_widget.style2 .blog_meta h4 a:hover {
-  color: #392C7D;
+  color: var(--bn-ink);
 }
 
 /* line 137, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
 .blog_widget.style2 .blog_meta h4:hover {
-  color: #392C7D;
+  color: var(--bn-ink);
 }
 
 /* line 141, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
@@ -4420,7 +4420,7 @@ label {
 /* line 154, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
 .blog_widget.style2 .blog_meta .blog_bottom .blog_readmore:hover .blog_readmore_text,
 .blog_widget.style2 .blog_meta .blog_bottom .blog_readmore:hover i {
-  color: #392C7D;
+  color: var(--bn-ink);
 }
 
 /* line 164, ../../../../../laragon/www/onestschool-frontend/scss/_blog.scss */
@@ -4545,7 +4545,7 @@ label {
   content: '';
   left: 0;
   top: 0;
-  background: #392C7D;
+  background: var(--bn-deep);
   opacity: .7;
   width: 100%;
   height: 100%;
@@ -4610,7 +4610,7 @@ label {
 
 /* line 65, ../../../../../laragon/www/onestschool-frontend/scss/_services.scss */
 .facilites_area {
-  background: #FF5170;
+  background: var(--bn-primary);
   padding: 43px 0 18px 0;
 }
 
@@ -4714,7 +4714,7 @@ label {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #392C7D;
+  background: var(--bn-deep);
   color: #fff;
   flex-shrink: 0;
 }
@@ -4751,12 +4751,12 @@ label {
 
 /* line 151, ../../../../../laragon/www/onestschool-frontend/scss/_services.scss */
 .teaching_grid .teaching_single:hover {
-  background: #FF5170;
+  background: var(--bn-primary);
 }
 
 /* line 153, ../../../../../laragon/www/onestschool-frontend/scss/_services.scss */
 .teaching_grid .teaching_single:hover .icon {
-  color: #392C7D;
+  color: var(--bn-ink);
   background: #fff;
 }
 
@@ -4857,15 +4857,15 @@ label {
 /* line 51, ../../../../../laragon/www/onestschool-frontend/scss/_category.scss */
 .category_area .category_wiz .thumb .cat_btn:hover {
   color: #fff;
-  border-color: #FF5170;
-  background: #FF5170;
+  border-color: var(--bn-primary);
+  background: var(--bn-primary);
 }
 
 /* line 59, ../../../../../laragon/www/onestschool-frontend/scss/_category.scss */
 .category_area .brouse_cat_btn {
   margin-left: 50px;
   display: block;
-  background: #FB1159;
+  background: var(--bn-primary);
   font-size: 30px;
   font-family: "Libre Baskerville", serif;
   font-weight: 700;
@@ -5111,7 +5111,7 @@ label {
 
 /* line 40, ../../../../../laragon/www/onestschool-frontend/scss/_about.scss */
 .who_we_area .who_we_info .info_right {
-  background: #FB1159;
+  background: var(--bn-primary);
   display: flex;
   align-items: center;
   padding: 70px 65px 70px 70px;
@@ -5476,7 +5476,7 @@ label {
 .counter_area .counter_wrapper .single_counter h3 {
   font-size: 60px;
   font-weight: 900;
-  color: #FB1159;
+  color: var(--bn-primary-strong);
   margin-right: 42px;
   min-width: 150px;
   margin-bottom: 0;
@@ -5586,7 +5586,7 @@ label {
 
 /* line 60, ../../../../../laragon/www/onestschool-frontend/scss/_predefine.scss */
 .primary_checkbox input:checked~.checkmark {
-  background: #FF5170;
+  background: var(--bn-primary);
   transition: 0.3s;
 }
 
@@ -5834,7 +5834,7 @@ label {
   height: 100%;
   transition: 0.3s;
   transform: scale(1);
-  border-color: #FF5170;
+  border-color: var(--bn-primary);
 }
 
 /* line 294, ../../../../../laragon/www/onestschool-frontend/scss/_predefine.scss */
@@ -5850,7 +5850,7 @@ label {
 /* line 303, ../../../../../laragon/www/onestschool-frontend/scss/_predefine.scss */
 .primary_bulet_checkbox .checkmark::before {
   position: absolute;
-  background: #FF5170;
+  background: var(--bn-primary);
   content: "";
   width: 8px;
   height: 8px;
@@ -5883,7 +5883,7 @@ label {
   height: 100px;
   background: #fff;
   border-radius: 50%;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   display: inline-block;
   text-align: center;
   line-height: 100px;
@@ -5895,7 +5895,7 @@ label {
 
 /* line 344, ../../../../../laragon/www/onestschool-frontend/scss/_predefine.scss */
 .play_button:hover {
-  background: #FF5170;
+  background: var(--bn-primary);
   color: #fff;
 }
 
@@ -5953,7 +5953,7 @@ label {
 
 /* line 384, ../../../../../laragon/www/onestschool-frontend/scss/_predefine.scss */
 .lms_tabmenu li a.active {
-  background: #FF5170;
+  background: var(--bn-primary);
   color: #fff;
   border-radius: 10px;
 }
@@ -6705,7 +6705,7 @@ label {
 .course_review_wrapper .course_feedback .course_feedback_left h2 {
   font-size: 60px;
   font-weight: 900;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   margin-bottom: 0;
   line-height: 1;
 }
@@ -6873,7 +6873,7 @@ label {
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background: #FF5170;
+  background: var(--bn-primary);
   flex: 80px 0 0;
   margin-right: 40px;
   color: #fff;
@@ -7204,7 +7204,7 @@ label {
   height: 50px;
   text-align: center;
   line-height: 49px;
-  background: #FF5170;
+  background: var(--bn-primary);
   font-size: 16px;
   font-weight: 700;
   font-family: "Libre Baskerville", serif;
@@ -7237,8 +7237,8 @@ label {
 
 /* line 205, ../../../../../laragon/www/onestschool-frontend/scss/_quiz_details.scss */
 .quiz_questions_wrapper .quiz_test_body .question_list_header .question_list_counters span.skip_qus {
-  border: 2px solid #FF5170;
-  color: #FF5170;
+  border: 2px solid var(--bn-primary);
+  color: var(--bn-primary-strong);
   background: transparent;
 }
 
@@ -7594,7 +7594,7 @@ label {
   height: 50px;
   text-align: center;
   line-height: 49px;
-  background: #FF5170;
+  background: var(--bn-primary);
   font-size: 16px;
   font-weight: 700;
   font-family: "Libre Baskerville", serif;
@@ -7627,8 +7627,8 @@ label {
 
 /* line 434, ../../../../../laragon/www/onestschool-frontend/scss/_quiz_details.scss */
 .question_list_counters span.skip_qus {
-  border: 2px solid #FF5170;
-  color: #FF5170;
+  border: 2px solid var(--bn-primary);
+  color: var(--bn-primary-strong);
   background: transparent;
 }
 
@@ -7659,7 +7659,7 @@ label {
   height: 50px;
   text-align: center;
   line-height: 49px;
-  background: #FF5170;
+  background: var(--bn-primary);
   font-size: 16px;
   font-weight: 700;
   font-family: "Libre Baskerville", serif;
@@ -7672,15 +7672,15 @@ label {
 
 /* line 467, ../../../../../laragon/www/onestschool-frontend/scss/_quiz_details.scss */
 .question_number_lists a.skip_qus {
-  border: 2px solid #FF5170;
-  color: #FF5170;
+  border: 2px solid var(--bn-primary);
+  color: var(--bn-primary-strong);
   background: transparent;
 }
 
 /* line 472, ../../../../../laragon/www/onestschool-frontend/scss/_quiz_details.scss */
 .question_number_lists a.pouse_qus {
   border-color: #f8f8fe;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   background: #f8f8fe;
 }
 
@@ -7858,7 +7858,7 @@ label {
 
 /* line 54, ../../../../../laragon/www/onestschool-frontend/scss/_login.scss */
 .login_wrapper .login_wrapper_left .login_wrapper_content .socail_links a:hover {
-  background: #FF5170 !important;
+  background: var(--bn-primary) !important;
 }
 
 /* line 57, ../../../../../laragon/www/onestschool-frontend/scss/_login.scss */
@@ -8209,7 +8209,7 @@ label {
   font-size: 50px;
   font-weight: 900;
   margin-bottom: 0;
-  color: #fb1159;
+  color: var(--bn-primary-strong);
   position: relative;
   display: inline-block;
   line-height: 1;
@@ -8347,7 +8347,7 @@ label {
   border-radius: 50%;
   font-size: 13px;
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -8356,7 +8356,7 @@ label {
 
 /* line 70, ../../../../../laragon/www/onestschool-frontend/scss/_instractor.scss */
 .single_instractor .instractor_info .instractor_social a:hover {
-  background: #392C7D;
+  background: var(--bn-deep);
 }
 
 /* line 79, ../../../../../laragon/www/onestschool-frontend/scss/_instractor.scss */
@@ -8472,7 +8472,7 @@ label {
 
 /* line 153, ../../../../../laragon/www/onestschool-frontend/scss/_instractor.scss */
 .instractos_details_wrapper .instractos_profile .instractor_meta .social_media a:hover {
-  background: #FF5170;
+  background: var(--bn-primary);
 }
 
 /* line 156, ../../../../../laragon/www/onestschool-frontend/scss/_instractor.scss */
@@ -9102,7 +9102,7 @@ label {
 .contact_section .contact_info .address_lines .single_address_line i {
   font-size: 20px;
   font-weight: 400;
-  color: #fb1159;
+  color: var(--bn-primary-strong);
   margin-right: 20px;
   position: relative;
   top: 7px;
@@ -9122,7 +9122,7 @@ label {
 
 /* line 343, ../../../../../laragon/www/onestschool-frontend/scss/_contact.scss */
 .contact_section .contact_form_box {
-  background: #392C7D;
+  background: var(--bn-deep);
   padding: 70px 45px 60px 45px;
 }
 
@@ -9232,7 +9232,7 @@ label {
   top: 15px;
   bottom: 15px;
   right: 15px;
-  border: 1px dashed #392C7D;
+  border: 1px dashed var(--bn-ink);
   border-radius: 15.56px;
   z-index: -1;
 }
@@ -9807,7 +9807,7 @@ label {
   font-weight: 600;
   font-family: "Libre Baskerville", serif;
   text-transform: uppercase;
-  color: #FB1159;
+  color: var(--bn-primary-strong);
 }
 
 /* line 101, ../../../../../laragon/www/onestschool-frontend/scss/_checkout.scss */
@@ -10151,7 +10151,7 @@ label {
   width: 14px;
   height: 14px;
   border-radius: 50%;
-  background: #FB1159;
+  background: var(--bn-primary);
   font-size: 10px;
   font-weight: 600;
   font-family: "Libre Baskerville", serif;
@@ -10879,7 +10879,7 @@ label {
 
 /* line 107, ../../../../../laragon/www/onestschool-frontend/scss/_dashboard.scss */
 .dashboard_main_wrapper .main_content_iner .dashboard_banner .banner_info .progress .progress-bar {
-  background: #FB1159;
+  background: var(--bn-primary);
   border-radius: 10px;
 }
 
@@ -11398,7 +11398,7 @@ label {
   left: 0;
   width: 100%;
   height: 100%;
-  background: #392C7D;
+  background: var(--bn-deep);
   opacity: 0.8;
   z-index: -1;
 }
@@ -11556,7 +11556,7 @@ label {
 /* line 150, ../../../../../laragon/www/onestschool-frontend/scss/_bradcam.scss */
 .custom_breadcam .breadcrumb-item:hover,
 .custom_breadcam a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 154, ../../../../../laragon/www/onestschool-frontend/scss/_bradcam.scss */
@@ -12064,7 +12064,7 @@ label {
 .instructor_process .single_instructor_icon {
   height: 108px;
   width: 108px;
-  background-color: rgba(255, 81, 112, 0.1);
+  background-color: rgba(0, 151, 178, 0.1);
   line-height: 108px;
   text-align: center;
   margin: 0 auto;
@@ -12182,7 +12182,7 @@ label {
   border-radius: 50%;
   color: #fff;
   font-weight: 700;
-  background-color: #FF5170;
+  background-color: var(--bn-primary);
   position: absolute;
   left: 0;
   top: 0;
@@ -12208,7 +12208,7 @@ label {
   text-align: center;
   border-radius: 50%;
   background-color: #fff;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   top: 50%;
   transform: translateY(-50%);
 }
@@ -12364,7 +12364,7 @@ label {
   align-items: center;
   justify-content: center;
   background: #FFF0F2;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   font-size: 14px;
   font-weight: 700;
 }
@@ -12442,7 +12442,7 @@ label {
 .package_widget .package_footer .prise_tag h4 {
   font-size: 18px;
   font-weight: 900;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   margin-bottom: 0;
   line-height: 1;
   text-align: right;
@@ -12488,7 +12488,7 @@ label {
   text-align: center;
   line-height: 15px;
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
   font-size: 9px;
 }
 
@@ -12538,7 +12538,7 @@ label {
 /*----------------------------------------------------*/
 /* line 1, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
 footer.home_three_footer {
-  background: #392C7D;
+  background: var(--bn-deep);
 }
 
 /* line 3, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
@@ -12593,7 +12593,7 @@ footer.home_three_footer .main_footer_wrap .footer_widget .subscribe_text {
 
 /* line 33, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
 footer.home_three_footer .main_footer_wrap .footer_widget .subscribe_text span {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 38, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
@@ -12617,7 +12617,7 @@ footer.home_three_footer .main_footer_wrap .footer_widget .footer_links li a {
 
 /* line 55, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
 footer.home_three_footer .main_footer_wrap .footer_widget .footer_links li a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 61, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
@@ -12698,7 +12698,7 @@ footer.home_three_footer .main_footer_wrap .footer_widget .help_text p {
 
 /* line 114, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
 footer.home_three_footer .main_footer_wrap .footer_widget .help_text p a {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 119, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
@@ -12721,7 +12721,7 @@ footer.home_three_footer .main_footer_wrap .footer_widget .social__Links {
 
 /* line 132, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
 footer.home_three_footer .main_footer_wrap .footer_widget .social__Links a {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   width: 36px;
   height: 36px;
   display: inline-flex;
@@ -12735,7 +12735,7 @@ footer.home_three_footer .main_footer_wrap .footer_widget .social__Links a {
 /* line 142, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
 footer.home_three_footer .main_footer_wrap .footer_widget .social__Links a:hover {
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
 }
 
 /* line 150, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
@@ -12766,7 +12766,7 @@ footer.home_three_footer .copyright_area .copy_right_text p {
 
 /* line 165, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
 footer.home_three_footer .copyright_area .copy_right_text p a {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 169, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
@@ -12794,7 +12794,7 @@ footer.home_three_footer .copyright_area .copy_right_text .footer_list_links a {
 
 /* line 181, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
 footer.home_three_footer .copyright_area .copy_right_text .footer_list_links a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 187, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
@@ -12815,7 +12815,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 201, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
 .google_play_box:hover {
-  background: #392C7D;
+  background: var(--bn-deep);
 }
 
 /* line 205, ../../../../../laragon/www/onestschool-frontend/scss/_footer.scss */
@@ -12859,8 +12859,8 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .fouram_tabs a.active,
 .fouram_tabs a:hover {
   color: #fff;
-  background: #fb1159;
-  border-color: #fb1159;
+  background: var(--bn-primary);
+  border-color: var(--bn-primary);
 }
 
 /* line 18, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
@@ -12871,7 +12871,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 21, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
 .topic_info {
   border-radius: 3px;
-  background: #fb1159;
+  background: var(--bn-primary);
   font-size: 14px;
   font-weight: 500;
   font-family: "Libre Baskerville", serif;
@@ -12883,7 +12883,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 31, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
 .post_pin {
   border-radius: 5px;
-  background: #fb1159;
+  background: var(--bn-primary);
   font-size: 14px;
   font-weight: 600;
   font-family: "Libre Baskerville", serif;
@@ -12978,7 +12978,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 106, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
 .users_list .single_user.style3 {
-  background: #fb1159;
+  background: var(--bn-primary);
 }
 
 /* line 113, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
@@ -13001,7 +13001,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 126, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
 .lession_lists li a:hover {
-  color: #fb1159;
+  color: var(--bn-primary-strong);
 }
 
 /* line 132, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
@@ -13236,9 +13236,9 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 333, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
 .fourm_pagination a.active,
 .fourm_pagination a:hover {
-  background: #fb1159;
+  background: var(--bn-primary);
   color: #fff;
-  border-color: #fb1159;
+  border-color: var(--bn-primary);
 }
 
 /* line 338, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
@@ -13249,13 +13249,13 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 342, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
 .fourm_pagination a.next_pagination {
-  border-color: #fb1159;
+  border-color: var(--bn-primary);
 }
 
 /* line 344, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
 .fourm_pagination a.next_pagination i {
   font-size: 12px;
-  color: #fb1159;
+  color: var(--bn-primary-strong);
 }
 
 /* line 352, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
@@ -13348,7 +13348,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-size: 40px;
   font-weight: 700;
   font-family: "Libre Baskerville", serif;
-  color: #fb1159;
+  color: var(--bn-primary-strong);
   line-height: 1;
   margin-top: 4px;
 }
@@ -13452,7 +13452,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 506, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
 .new_post_form .label_name {
-  color: #fb1159;
+  color: var(--bn-primary-strong);
   font-weight: 600 !important;
 }
 
@@ -13505,7 +13505,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 548, ../../../../../laragon/www/onestschool-frontend/scss/_forum.scss */
 .forum_replay .forum_replay_single .forum_replay_head .thumb {
-  background: #fb1159;
+  background: var(--bn-primary);
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -13584,7 +13584,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .forum_replay .forum_replay_single .forum_foot .forum_left a {
   font-size: 14px;
   font-weight: 500;
-  color: #fb1159;
+  color: var(--bn-primary-strong);
   font-family: "Libre Baskerville", serif;
 }
 
@@ -13598,7 +13598,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .forum_replay .forum_replay_single .forum_foot .forum_right a {
   font-size: 14px;
   font-weight: 500;
-  color: #fb1159;
+  color: var(--bn-primary-strong);
   font-family: "Libre Baskerville", serif;
   display: flex;
   grid-gap: 10px;
@@ -14696,7 +14696,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .lms_pricing_wized .lms_pricing_hader h3 {
   font-size: 48px;
   font-weight: 700;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   font-family: "Libre Baskerville", serif;
   margin: 18px 0 14px 0;
 }
@@ -14779,8 +14779,8 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 17, ../../../../../laragon/www/onestschool-frontend/scss/_blog_details.scss */
 .keyword_lists a:hover {
-  background: #FF5170;
-  border-color: #FF5170;
+  background: var(--bn-primary);
+  border-color: var(--bn-primary);
   color: #fff;
 }
 
@@ -14805,7 +14805,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 41, ../../../../../laragon/www/onestschool-frontend/scss/_blog_details.scss */
 .news_lists .single_newslist h4:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 45, ../../../../../laragon/www/onestschool-frontend/scss/_blog_details.scss */
@@ -14840,7 +14840,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 64, ../../../../../laragon/www/onestschool-frontend/scss/_blog_details.scss */
 .theme_search_field4 button {
   font-size: 18px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   padding: 0 0 0 20px;
   line-height: 100%;
   box-shadow: none !important;
@@ -14849,7 +14849,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 71, ../../../../../laragon/www/onestschool-frontend/scss/_blog_details.scss */
 .theme_search_field4 button:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 75, ../../../../../laragon/www/onestschool-frontend/scss/_blog_details.scss */
@@ -14896,7 +14896,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 104, ../../../../../laragon/www/onestschool-frontend/scss/_blog_details.scss */
 .theme_search_field4.style2 i {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 107, ../../../../../laragon/www/onestschool-frontend/scss/_blog_details.scss */
@@ -15037,7 +15037,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 197, ../../../../../laragon/www/onestschool-frontend/scss/_blog_details.scss */
 .blog_details_area .single_blog_details .quote_text .horizontal_line {
-  background: #fb1159;
+  background: var(--bn-primary);
   height: 3px;
   width: 90px;
   flex: 90px 0 0;
@@ -15098,7 +15098,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 8, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .social__Links a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 13, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
@@ -15108,7 +15108,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 15, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .social__Links.style2 a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 23, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
@@ -15139,7 +15139,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 39, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .social__Links2 a:hover {
-  background: #FF5170;
+  background: var(--bn-primary);
   color: #fff;
 }
 
@@ -15156,14 +15156,14 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 52, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .social__Links3 a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 58, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .social__Links4 a {
   font-size: 16px;
   color: white;
-  background-color: #FF5170;
+  background-color: var(--bn-primary);
   width: 45px;
   height: 45px;
   display: inline-flex;
@@ -15187,7 +15187,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 74, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .social__Links4 a:hover {
-  background: #392C7D;
+  background: var(--bn-deep);
   color: #fff;
 }
 
@@ -15219,7 +15219,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 102, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .social__Links5 a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 107, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
@@ -15252,7 +15252,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 133, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .instagram_wrapper.style2 .insta_title h3 {
   font-size: 20px;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-family: "Libre Baskerville", serif;
 }
 
@@ -15260,13 +15260,13 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .instagram_wrapper.style2 .insta_title h3 span {
   font-size: 30px;
   font-weight: 700;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 147, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .instagram_wrapper.style3 .insta_title h3 {
   font-size: 20px;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-family: "Libre Baskerville", serif;
 }
 
@@ -15274,13 +15274,13 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .instagram_wrapper.style3 .insta_title h3 span {
   font-size: 30px;
   font-weight: 700;
-  color: #392C7D;
+  color: var(--bn-ink);
 }
 
 /* line 161, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .instagram_wrapper.style4 .insta_title h3 {
   font-size: 20px;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-family: "Libre Baskerville", serif;
 }
 
@@ -15288,13 +15288,13 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .instagram_wrapper.style4 .insta_title h3 span {
   font-size: 30px;
   font-weight: 700;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 174, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .instagram_wrapper .insta_title h3 {
   font-size: 20px;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-family: "Libre Baskerville", serif;
 }
 
@@ -15302,13 +15302,13 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .instagram_wrapper .insta_title h3 span {
   font-size: 30px;
   font-weight: 700;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 186, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .instagram_wrapper .insta_title2 h3 {
   font-size: 20px;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-family: "Libre Baskerville", serif;
 }
 
@@ -15316,7 +15316,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .instagram_wrapper .insta_title2 h3 span {
   font-size: 30px;
   font-weight: 700;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 197, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
@@ -15380,7 +15380,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 233, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .theme_mailChimp .form-control {
   background: #fff;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-weight: 400;
   padding-left: 20px;
   border-radius: 0;
@@ -15417,7 +15417,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-size: 14px;
   font-weight: 500;
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
   text-transform: capitalize;
   border-radius: 0px !important;
   padding: 0 18px;
@@ -15442,7 +15442,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .theme_mailChimp .info {
   font-size: 14px;
   font-weight: 500;
-  color: #392C7D;
+  color: var(--bn-ink);
   position: absolute;
   left: 0;
   top: 110%;
@@ -15479,7 +15479,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 304, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .theme_mailChimp2 .form-control {
   background: transparent;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-weight: 400;
   padding-left: 20px;
   border-radius: 5px;
@@ -15515,7 +15515,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-size: 16px;
   font-weight: 700;
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
   text-transform: capitalize;
   border-radius: 5px !important;
   padding: 0 15px;
@@ -15534,7 +15534,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .theme_mailChimp2 .info {
   font-size: 14px;
   font-weight: 500;
-  color: #392C7D;
+  color: var(--bn-ink);
   position: absolute;
   left: 0;
   bottom: -25px;
@@ -15569,7 +15569,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 372, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .theme_mailChimp3 .form-control {
   background: #fff;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-weight: 400;
   padding-left: 20px;
   border-radius: 5px;
@@ -15606,7 +15606,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-size: 16px;
   font-weight: 700;
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
   text-transform: uppercase;
   border-radius: 5px !important;
   padding: 0 41px;
@@ -15623,7 +15623,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .theme_mailChimp3 .info {
   font-size: 14px;
   font-weight: 500;
-  color: #392C7D;
+  color: var(--bn-ink);
   position: absolute;
   left: 0;
   top: 110%;
@@ -15658,7 +15658,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 439, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .theme_mailChimp4 .form-control {
   background: #fff;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-weight: 400;
   padding-left: 20px;
   border-radius: 0px;
@@ -15695,7 +15695,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-size: 14px;
   font-weight: 700;
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
   text-transform: uppercase;
   border-radius: 0px !important;
   padding: 0 31px;
@@ -15712,7 +15712,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .theme_mailChimp4 .info {
   font-size: 14px;
   font-weight: 500;
-  color: #392C7D;
+  color: var(--bn-ink);
   position: absolute;
   left: 0;
   top: 110%;
@@ -15756,7 +15756,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 509, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .theme_mailChimp5 .form-control {
   background: #fff;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-weight: 400;
   padding-left: 25px;
   border-radius: 0;
@@ -15766,7 +15766,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-size: 16px;
   border: 0;
   border-right: 0;
-  color: #392C7D;
+  color: var(--bn-ink);
 }
 
 @media (max-width: 575.98px) {
@@ -15793,7 +15793,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-size: 14px;
   font-weight: 600;
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
   text-transform: capitalize;
   border-radius: 0px !important;
   padding: 0 18px;
@@ -15853,7 +15853,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 581, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .home_six .theme_mailChimp .form-control {
   background: #fff;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-weight: 400;
   padding-left: 20px;
   border-radius: 0;
@@ -15892,7 +15892,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-size: 14px;
   font-weight: 700;
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
   text-transform: uppercase;
   border-radius: 5px !important;
   padding: 0 18px;
@@ -15917,7 +15917,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .home_six .theme_mailChimp .info {
   font-size: 14px;
   font-weight: 500;
-  color: #392C7D;
+  color: var(--bn-ink);
   position: absolute;
   left: 0;
   top: 110%;
@@ -15951,7 +15951,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 655, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .home_six .home_six_footer .theme_mailChimp .form-control {
   background: #fff;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-weight: 400;
   padding-left: 20px;
   border-radius: 0;
@@ -15989,7 +15989,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-size: 14px;
   font-weight: 700;
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
   text-transform: uppercase;
   border-radius: 5px !important;
   padding: 0 18px;
@@ -16049,7 +16049,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 731, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .home_eight .theme_mailChimp .form-control {
   background: #fff;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-weight: 400;
   padding-left: 20px;
   border-radius: 0;
@@ -16088,7 +16088,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-size: 14px;
   font-weight: 700;
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
   text-transform: uppercase;
   border-radius: 5px !important;
   padding: 0 18px;
@@ -16113,7 +16113,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .home_eight .theme_mailChimp .info {
   font-size: 14px;
   font-weight: 500;
-  color: #392C7D;
+  color: var(--bn-ink);
   position: absolute;
   left: 0;
   top: 110%;
@@ -16147,7 +16147,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 805, ../../../../../laragon/www/onestschool-frontend/scss/_insta.scss */
 .home_eight .home_eight_footer .theme_mailChimp .form-control {
   background: #fff;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-weight: 400;
   padding-left: 20px;
   border-radius: 0;
@@ -16185,7 +16185,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-size: 14px;
   font-weight: 700;
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
   text-transform: uppercase;
   border-radius: 5px !important;
   padding: 0 18px;
@@ -16210,7 +16210,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .home_eight .home_eight_footer .theme_mailChimp .info {
   font-size: 14px;
   font-weight: 500;
-  color: #392C7D;
+  color: var(--bn-ink);
   position: absolute;
   left: 0;
   top: 110%;
@@ -16248,7 +16248,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-weight: 400;
   font-size: 24px;
   line-height: 30px;
-  color: #392C7D;
+  color: var(--bn-ink);
   position: relative;
   display: flex;
   align-items: center;
@@ -16270,7 +16270,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   position: relative;
   width: 8px;
   height: 8px;
-  background: #392C7D;
+  background: var(--bn-deep);
   display: inline-block;
   border-radius: 50%;
 }
@@ -16362,7 +16362,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 52, ../../../../../laragon/www/onestschool-frontend/scss/_statement.scss */
 .accreditation_wrapper .accreditation_wrapper_content {
-  background: #392C7D;
+  background: var(--bn-deep);
   padding: 30px 35px;
 }
 
@@ -16419,7 +16419,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-weight: 400;
   font-size: 24px;
   line-height: 30px;
-  color: #392C7D;
+  color: var(--bn-ink);
   position: relative;
   display: flex;
   align-items: center;
@@ -16444,7 +16444,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #392C7D;
+  background: var(--bn-deep);
   display: inline-block;
 }
 
@@ -16473,12 +16473,12 @@ footer.home_three_footer .copyright_area .payment_imgs {
   height: 1px;
   left: 0;
   bottom: 0;
-  background: #392C7D;
+  background: var(--bn-deep);
 }
 
 /* line 70, ../../../../../laragon/www/onestschool-frontend/scss/_explore.scss */
 .explorer_tabs .nav-item.active {
-  background: #392C7D;
+  background: var(--bn-deep);
   color: #FFFFFF;
 }
 
@@ -16587,7 +16587,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 50, ../../../../../laragon/www/onestschool-frontend/scss/_event.scss */
 .event_wrapper .event_tabs .nav-item .nav-link .icon {
-  background: #ff5170;
+  background: var(--bn-primary);
   width: 125px;
   height: 126px;
   display: inline-flex;
@@ -16724,7 +16724,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .eventList_widget .eventList_meta .eventList_title .eventtag {
   width: 69px;
   height: 40px;
-  background: #ff5170;
+  background: var(--bn-primary);
   font-weight: 400;
   font-size: 16px;
   line-height: 24px;
@@ -16746,7 +16746,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 165, ../../../../../laragon/www/onestschool-frontend/scss/_event.scss */
 .eventList_widget .eventList_meta h4 a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 170, ../../../../../laragon/www/onestschool-frontend/scss/_event.scss */
@@ -16764,7 +16764,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-weight: 400;
   font-size: 16px;
   line-height: 24px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 184, ../../../../../laragon/www/onestschool-frontend/scss/_event.scss */
@@ -16812,9 +16812,9 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 213, ../../../../../laragon/www/onestschool-frontend/scss/_event.scss */
 .portfolio-menu button.active {
-  background: #FF5170;
+  background: var(--bn-primary);
   color: #fff;
-  border-color: #FF5170;
+  border-color: var(--bn-primary);
 }
 
 /*----------------------------------------------------*/
@@ -16850,7 +16850,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-size: 16px;
   line-height: 24px;
   color: #fff;
-  background: #FF5170;
+  background: var(--bn-primary);
   padding: 13px 17px;
 }
 
@@ -16880,7 +16880,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 38, ../../../../../laragon/www/onestschool-frontend/scss/_news.scss */
 .blog_page_widget .blog_page_meta h4 a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 43, ../../../../../laragon/www/onestschool-frontend/scss/_news.scss */
@@ -16898,7 +16898,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-weight: 400;
   font-size: 14px;
   line-height: 24px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 57, ../../../../../laragon/www/onestschool-frontend/scss/_news.scss */
@@ -16911,12 +16911,12 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-weight: 400;
   font-size: 14px;
   line-height: 24px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 66, ../../../../../laragon/www/onestschool-frontend/scss/_news.scss */
 .blog_page_widget .blog_page_meta .blog_page_bottom .blog_date i {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   margin-right: 9px;
 }
 
@@ -16952,7 +16952,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 17, ../../../../../laragon/www/onestschool-frontend/scss/_search_result.scss */
 .search_result_print_view_header {
-  background: #392C7D;
+  background: var(--bn-deep);
   display: flex;
   align-items: center;
   grid-gap: 60px;
@@ -17018,7 +17018,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   font-weight: 500;
   font-size: 24px;
   line-height: 36px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 66, ../../../../../laragon/www/onestschool-frontend/scss/_search_result.scss */
@@ -17144,7 +17144,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 165, ../../../../../laragon/www/onestschool-frontend/scss/_search_result.scss */
 .print_btn_1 {
-  background: #392C7D;
+  background: var(--bn-deep);
   padding: 10px;
   -webkit-border-radius: 8px;
   -moz-border-radius: 8px;
@@ -17163,8 +17163,8 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 179, ../../../../../laragon/www/onestschool-frontend/scss/_search_result.scss */
 .print_btn_1:hover {
-  color: #392C7D;
-  border-color: #392C7D;
+  color: var(--bn-ink);
+  border-color: var(--bn-ink);
   background: transparent;
 }
 
@@ -17177,11 +17177,11 @@ footer.home_three_footer .copyright_area .payment_imgs {
   border-radius: 8px;
   display: inline-block;
   font-family: "Libre Baskerville", serif;
-  color: #392C7D;
+  color: var(--bn-ink);
   font-weight: 500;
   font-size: 18px;
   padding: 15px 16px;
-  border: 1px solid #392C7D;
+  border: 1px solid var(--bn-ink);
   text-transform: capitalize;
   display: inline-block;
   line-height: 1;
@@ -17190,8 +17190,8 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 199, ../../../../../laragon/www/onestschool-frontend/scss/_search_result.scss */
 .print_btn_2:hover {
   color: #fff;
-  border-color: #392C7D;
-  background: #392C7D;
+  border-color: var(--bn-ink);
+  background: var(--bn-deep);
 }
 
 /*----------------------------------------------------*/
@@ -17225,7 +17225,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   top: 0;
   height: 100%;
   width: 78%;
-  background: #FF5170;
+  background: var(--bn-primary);
   z-index: -1;
 }
 
@@ -17311,7 +17311,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 .academic_banner_area .academic_bannerinfo_inner_img {
   max-width: 608px;
   flex-shrink: 0;
-  border: 5px solid #392C7D;
+  border: 5px solid var(--bn-ink);
 }
 
 @media (max-width: 991.98px) {
@@ -17365,8 +17365,8 @@ footer.home_three_footer .copyright_area .payment_imgs {
   text-align: justify;
   letter-spacing: 0.04em;
   text-transform: capitalize;
-  color: #FF5170;
-  border-bottom: 4px solid #FF5170;
+  color: var(--bn-primary-strong);
+  border-bottom: 4px solid var(--bn-primary);
   margin: 50px 0 43px 0;
   padding-bottom: 24px;
 }
@@ -17425,7 +17425,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   text-transform: capitalize;
   color: #333333;
   background: #F7F7F7;
-  border-bottom: 3px solid #FF5170;
+  border-bottom: 3px solid var(--bn-primary);
   padding: 20px 16px;
 }
 
@@ -17437,7 +17437,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   letter-spacing: 0.04em;
   text-transform: capitalize;
   color: #333333;
-  border-bottom: 1.5px solid #FF5170;
+  border-bottom: 1.5px solid var(--bn-primary);
   position: relative;
   padding: 36px 0 20px 58px;
   display: flex;
@@ -17445,7 +17445,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 206, ../../../../../laragon/www/onestschool-frontend/scss/_academic.scss */
 .academic_page_details_info_sidebox .depertmentDetails_list ul li a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 210, ../../../../../laragon/www/onestschool-frontend/scss/_academic.scss */
@@ -17455,7 +17455,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   left: 23px;
   top: 57%;
   font-size: 14px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   font-weight: 900;
   font-family: "Font Awesome 5 Free";
   transform: translateY(-50%);
@@ -17463,7 +17463,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 227, ../../../../../laragon/www/onestschool-frontend/scss/_academic.scss */
 .academic_page_details_info_sidebox .depertmentDetails_contactInfo {
-  background: #392C7D;
+  background: var(--bn-deep);
   padding: 53px 70px;
 }
 
@@ -17542,7 +17542,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 /* line 286, ../../../../../laragon/www/onestschool-frontend/scss/_academic.scss */
 .academic_page_details_info_sidebox .depertmentDetails_contactInfo .social_links a {
   font-size: 20px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   transition: .3s;
 }
 
@@ -17566,7 +17566,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   text-transform: capitalize;
   color: #ffffff;
   padding: 13px 16px;
-  background: #FF5170;
+  background: var(--bn-primary);
   display: inline-flex;
 }
 
@@ -17648,7 +17648,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 85, ../../../../../laragon/www/onestschool-frontend/scss/_event_details.scss */
 .news_page_info .event_posted_header .event_posted_header_right a:hover {
-  background: #FF5170;
+  background: var(--bn-primary);
   color: #fff;
 }
 
@@ -17739,7 +17739,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   text-transform: capitalize;
   color: #333333;
   background: #f7f7f7;
-  border-bottom: 3px solid #ff5170;
+  border-bottom: 3px solid var(--bn-primary);
   padding: 20px 16px;
 }
 
@@ -17751,7 +17751,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   letter-spacing: 0.04em;
   text-transform: capitalize;
   color: #333333;
-  border-bottom: 1.5px solid #ff5170;
+  border-bottom: 1.5px solid var(--bn-primary);
   position: relative;
   padding: 31px 0 20px 58px;
   display: flex;
@@ -17764,7 +17764,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   left: 23px;
   top: 57%;
   font-size: 14px;
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   font-weight: 900;
   font-family: "Font Awesome 5 Free";
   transform: translateY(-50%);
@@ -17772,7 +17772,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 207, ../../../../../laragon/www/onestschool-frontend/scss/_event_details.scss */
 .news_page_right_sidebar_list ul li a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 217, ../../../../../laragon/www/onestschool-frontend/scss/_event_details.scss */
@@ -17822,7 +17822,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 254, ../../../../../laragon/www/onestschool-frontend/scss/_event_details.scss */
 .latest_news_list .single_latest_news_list .content_text h4 a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 260, ../../../../../laragon/www/onestschool-frontend/scss/_event_details.scss */
@@ -17887,7 +17887,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
 
 /* line 315, ../../../../../laragon/www/onestschool-frontend/scss/_event_details.scss */
 .video_box .video_box_inner .video_icon:hover {
-  background: #FF5170;
+  background: var(--bn-primary);
   color: #fff;
 }
 
@@ -18050,7 +18050,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   height: 24px;
   left: 0;
   top: 0;
-  background: #ff5170;
+  background: var(--bn-primary);
   border-radius: 50px;
   display: inline-flex;
   align-items: center;
@@ -18101,7 +18101,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   text-align: justify;
   letter-spacing: 0.04em;
   text-transform: capitalize;
-  color: #ff5170;
+  color: var(--bn-primary-strong);
 }
 
 /* line 522, ../../../../../laragon/www/onestschool-frontend/scss/_event_details.scss */
@@ -18121,7 +18121,7 @@ footer.home_three_footer .copyright_area .payment_imgs {
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #FF5170;
+  background: var(--bn-primary);
 }
 
 /*----------------------------------------------------*/
@@ -18365,7 +18365,7 @@ html[dir="rtl"] a.arrow_btns i {
 }
 
 .theme_dropdown .btn {
-  color: #392C7D;
+  color: var(--bn-ink);
   border: 0;
   box-shadow: none;
 }
@@ -18411,7 +18411,7 @@ html[dir="rtl"] a.arrow_btns i {
 
 .theme_select:focus,
 .theme_select.open {
-  border-color: #392C7D !important;
+  border-color: var(--bn-ink) !important;
 }
 
 .ot-input {
@@ -18463,7 +18463,7 @@ html[dir="rtl"] a.arrow_btns i {
 }
 
 .dark-theme .header_area .header_topbar_area {
-  background: #392C7D;
+  background: var(--bn-deep);
 }
 
 .dark-theme .header_area {
@@ -18497,7 +18497,7 @@ html[dir="rtl"] a.arrow_btns i {
 }
 
 .dark-theme .teaching_grid .teaching_single:hover {
-  background: #FF5170;
+  background: var(--bn-primary);
 }
 
 .dark-theme .teaching_grid .teaching_single:hover p {
@@ -18523,9 +18523,9 @@ html[dir="rtl"] a.arrow_btns i {
 }
 
 .dark-theme .portfolio-menu button.active {
-  background: #FF5170;
+  background: var(--bn-primary);
   color: #fff;
-  border-color: #FF5170;
+  border-color: var(--bn-primary);
 }
 
 .dark-theme .header_area .header_topbar_area .header_topbar_wrapper .header_topbar_left p,
@@ -18623,7 +18623,7 @@ html[dir="rtl"] a.arrow_btns i {
 .dark-theme .nice-select ul.list li.option.focus,
 .dark-theme .nice-select ul.list li.option:hover,
 .dark-theme .nice-select ul.list li.option.selected.focus {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
   background: rgb(255 255 255 / 10%);
 }
 
@@ -18639,7 +18639,7 @@ html[dir="rtl"] a.arrow_btns i {
 
 .dark-theme .header_area .main_menu ul li a:hover,
 .header_area .main_menu ul li a.active {
-  color: #FF5170 !important;
+  color: var(--bn-primary-strong) !important;
 }
 
 .dark-theme .find_content_widget_wrapper .find_content_widget {
@@ -18656,7 +18656,7 @@ html[dir="rtl"] a.arrow_btns i {
 }
 
 .theme_dropdown .btn svg path {
-  fill: #FF5170 !important;
+  fill: var(--bn-primary) !important;
 }
 
 .dark-theme .theme_dropdown .btn svg path {
@@ -18787,7 +18787,7 @@ html[dir="rtl"] a.arrow_btns i {
   color: #F0F0F0;
 }
 .dark-theme  .latest_news_list .single_latest_news_list .content_text h4 a:hover {
-  color: #FF5170;
+  color: var(--bn-primary-strong);
 }
 .dark-theme .event_page_info_details .event_tag {
   color: #fff;

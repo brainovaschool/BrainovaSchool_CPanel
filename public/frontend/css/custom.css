@@ -1,3 +1,40 @@
+/* ============================================================
+   AURORA GLASS — brand colour tokens (turquoise-led, purple accent).
+   style.css and custom.css reference these as var(--bn-*).
+   Light values on :root; dark values on body.dark-theme (the theme's toggle class).
+   ============================================================ */
+:root {
+    --bn-primary:        #0097b2;  /* turquoise — buttons / fills / borders */
+    --bn-primary-strong: #007585;  /* turquoise as text on light; deep hover */
+    --bn-primary-soft:   #e1f6fa;
+    --bn-accent:         #5e17eb;  /* purple — secondary button / decorative fill */
+    --bn-accent-strong:  #4a11c4;  /* purple as text */
+    --bn-accent-soft:    #efe8fd;
+    --bn-ink:            #0f2937;  /* headings, nav text, top-bar text */
+    --bn-deep:           #0f2937;  /* deep brand SURFACE — stays dark in both themes */
+    --bn-body:           #384049;
+    --bn-muted:          #647079;
+    --bn-line:           #dde8eb;
+    --bn-surface:        #ffffff;
+    --bn-sunken:         #f1f8f9;
+}
+
+body.dark-theme {
+    --bn-primary:        #0097b2;
+    --bn-primary-strong: #5ce1e6;
+    --bn-primary-soft:   rgba(92, 225, 230, 0.14);
+    --bn-accent:         #7c3aed;
+    --bn-accent-strong:  #b794ff;
+    --bn-accent-soft:    rgba(140, 82, 255, 0.18);
+    --bn-ink:            #eef5f6;
+    --bn-deep:           #182028;
+    --bn-body:           #adb7bc;
+    --bn-muted:          #7c868c;
+    --bn-line:           #25313a;
+    --bn-surface:        #161e23;
+    --bn-sunken:         #10161a;
+}
+
 body {
     -webkit-print-color-adjust: exact !important;
 }
@@ -7,7 +44,7 @@ body {
 }
 
 .subscribe_message {
-    background: #FF5170;
+    background: var(--bn-primary);
     padding: 10px;
     -webkit-border-radius: 4px;
     -moz-border-radius: 4px;
@@ -27,7 +64,7 @@ body {
 
 .single_instractor .instractor_info .instractor_social p {
     color: #fff;
-    background: #FF5170;
+    background: var(--bn-primary);
     padding: 5px;
     border-radius: 3px;
     transition: .3s;
@@ -60,7 +97,7 @@ footer.home_three_footer .copyright_area .footer_border {
 }
 
 .dark-theme .header_area .header_topbar_area {
-	background: #1f2025;
+	background: var(--bn-deep);
 }
 .theme_dropdown .btn svg path {
 	fill: #FFF !important;
@@ -174,7 +211,7 @@ footer.home_three_footer .copyright_area .footer_border {
     margin: 0;
     padding: 4px 0;
     list-style: none;
-    background: #fff;
+    background: var(--bn-surface);
     text-align: left;
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.1);
     opacity: 0;
@@ -196,7 +233,7 @@ footer.home_three_footer .copyright_area .footer_border {
 .header_area .main_menu ul li .submenu.programs-menu .submenu-flyout li a {
     font-size: 14px;
     line-height: 1.2;
-    color: #202e3b;
+    color: var(--bn-ink);
     font-weight: 400;
     display: block;
     margin: 0;
@@ -208,7 +245,7 @@ footer.home_three_footer .copyright_area .footer_border {
 }
 
 .header_area .main_menu ul li .submenu.programs-menu .submenu-flyout li a:hover {
-    color: #FF5170;
+    color: var(--bn-primary-strong);
     left: 5px;
 }
 
@@ -237,7 +274,7 @@ footer.home_three_footer .copyright_area .footer_border {
     margin: 0;
     padding: 0;
     list-style: none;
-    background: #fff;
+    background: var(--bn-surface);
     text-align: left;
     box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.04);
     opacity: 0;
@@ -263,12 +300,31 @@ footer.home_three_footer .copyright_area .footer_border {
     font-size: 14px;
     line-height: 1.2;
     font-weight: 400;
-    color: #202e3b;
+    color: var(--bn-ink);
     text-transform: capitalize;
     transition: 0.3s;
 }
 
 .header__right .bn-dropdown .bn-dropdown-menu li a:hover {
-    color: #FF5170;
+    color: var(--bn-primary-strong);
 }
 
+
+/* ============================================================
+   AURORA GLASS — brand-role fixes layered on top of the token swap
+   ============================================================ */
+
+/* Secondary button = purple accent.
+   (The #392C7D -> --bn-deep swap left theme_btn2 on the dark surface token.) */
+.theme_btn2,
+.theme_btn2.large_btn,
+.theme_btn2.small_btn2, .theme_btn2.small_btn3, .theme_btn2.small_btn4,
+.theme_btn2.small_btn5, .theme_btn2.small_btn6 {
+    background: var(--bn-accent);
+    border-color: var(--bn-accent);
+}
+.theme_btn2:hover {
+    background: transparent;
+    color: var(--bn-accent-strong);
+    border-color: var(--bn-accent);
+}

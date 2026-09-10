@@ -38,9 +38,9 @@
                                             <svg width="25" height="26" viewBox="0 0 25 26" fill="none"
                                                 xmlns="http://www.w3.org/2000/svg">
                                                 <rect x="12.1931" y="0.806641" width="17.2437" height="17.2437"
-                                                    transform="rotate(45 12.1931 0.806641)" fill="#FF5170" />
+                                                    transform="rotate(45 12.1931 0.806641)" fill="#0097b2" />
                                                 <rect x="14.7651" y="3.37891" width="13.6062" height="13.6062"
-                                                    transform="rotate(45 14.7651 3.37891)" fill="#392C7D" />
+                                                    transform="rotate(45 14.7651 3.37891)" fill="#5e17eb" />
                                             </svg>
                                         </div>
                                         <h4>{{ $item['title'] }}</h4>
