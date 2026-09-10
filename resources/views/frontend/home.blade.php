@@ -72,8 +72,6 @@
 
     @include('frontend.partials.home.how-it-works')
 
-    @include('frontend.partials.home.values')
-
     @include('frontend.partials.home.mascots')
 
     <!-- STATEMENT_AREA::START  -->

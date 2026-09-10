@@ -1159,3 +1159,133 @@ body::after {
 @media (max-width: 480px) {
     .bn-e6-orbit { grid-template-columns: 1fr; max-width: 360px; }
 }
+
+/* ============================================================
+   HOME PAGE — round 3 feedback
+   (welcome strip, counter cards, slider punctuation)
+   ============================================================ */
+
+/* --- slider caption: keep Latin punctuation ordered correctly.
+       A stray direction mark pasted into the slider text was pushing
+       the full stop to the front of the wrapped line. --- */
+.banner_text h3,
+.banner_text p {
+    direction: ltr;
+    unicode-bidi: isolate-override;
+}
+
+/* --- welcome: statement now sits in a glass strip, not a big block --- */
+.bn-welcome { padding: 44px 0 6px; text-align: center; }
+
+.bn-welcome-strip {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 18px;
+    max-width: 700px;
+    margin: 4px auto 22px;
+    padding: 20px 26px 20px 20px;
+    border-radius: 16px;
+    text-align: left;
+    background: var(--bn-surface);
+    border: 1px solid var(--bn-line);
+    box-shadow: var(--bn-shadow-near), var(--bn-shadow-far);
+}
+@supports ((backdrop-filter: blur(6px)) or (-webkit-backdrop-filter: blur(6px))) {
+    .bn-welcome-strip {
+        background: var(--bn-glass);
+        -webkit-backdrop-filter: blur(20px) saturate(160%);
+        backdrop-filter: blur(20px) saturate(160%);
+        border-color: var(--bn-glass-brd);
+    }
+}
+.bn-welcome-strip__bar {
+    flex: none;
+    width: 4px;
+    border-radius: 4px;
+    background: linear-gradient(180deg, var(--bn-primary), var(--bn-accent));
+}
+.bn-welcome-strip__text {
+    margin: 0;
+    align-self: center;
+    font-family: "Libre Baskerville", serif;
+    color: var(--bn-ink);
+    font-size: 20px;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+}
+@media (max-width: 767.98px) {
+    .bn-welcome-strip { gap: 14px; padding: 16px 18px; }
+    .bn-welcome-strip__text { font-size: 16px; }
+}
+
+/* --- counter / facilites cards: even, centred, own box colour --- */
+.facilites_area { padding: 30px 0 8px; }
+.facilites_area .row { display: flex; flex-wrap: wrap; }
+.facilites_area .row > [class*="col-"] { display: flex; }
+
+.facilites_box {
+    width: 100%;
+    flex-direction: column;
+    align-items: center !important;
+    justify-content: flex-start;
+    text-align: center;
+    gap: 12px;
+    padding: 30px 20px 26px;
+    border-radius: 18px;
+    background: var(--bn-surface);
+    border: 1px solid var(--bn-line);
+}
+.dark-theme .facilites_box {
+    background: var(--bn-surface);
+    border-color: color-mix(in srgb, var(--bn-primary) 20%, var(--bn-line));
+}
+
+/* uploaded counter "icon" is a photo — frame it as a tidy rounded chip */
+.facilites_box .facilites_box_icon {
+    max-width: none;
+    width: 54px;
+    height: 54px;
+    flex: none;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--bn-line);
+    box-shadow: var(--bn-shadow-near);
+}
+.facilites_box .facilites_box_icon img {
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.facilites_box .facilites_box_content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.facilites_box .facilites_box_content h4 {
+    font-family: "Libre Baskerville", serif;
+    font-weight: 700;
+    font-size: 34px !important;
+    line-height: 1 !important;
+    margin-bottom: 6px !important;
+    color: transparent !important;
+    background: linear-gradient(135deg, var(--bn-primary-strong), var(--bn-accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+.facilites_box .facilites_box_content p,
+.dark-theme .facilites_box .facilites_box_content p {
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    line-height: 1.4;
+    letter-spacing: .01em;
+    text-transform: none !important;
+    max-width: 18ch;
+    opacity: 1 !important;
+    color: var(--bn-body) !important;
+}
+@media (max-width: 991.98px) {
+    .facilites_box .facilites_box_content h4 { font-size: 27px !important; }
+}
