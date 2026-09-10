@@ -144,230 +144,121 @@ class FrontendController extends Controller
         return view('frontend.events', compact('events'));
     }
 
+    // ---------------------------------------------------------------
+    // Programs / Courses catalogue (DB-driven, WebsiteSetup > Programs)
+    // ---------------------------------------------------------------
+
+    /** All programs, with the 4 categories as filter pills. */
     public function courses(Request $request)
     {
-        $data = $this->normalizeCoursesCatalog($this->frontendCoursesCatalog());
-        $allCourses = collect($data['courses'] ?? []);
+        $categories = \App\Models\WebsiteSetup\ProgramCategory::where('status', 1)
+            ->orderBy('sort_order')->orderBy('name')->get();
 
-        $category = $this->normalizeCourseCategory((string) $request->query('category', 'all'));
-        if ($category === '') {
-            $category = 'all';
+        $activeCategory = trim((string) $request->query('category', 'all')) ?: 'all';
+
+        $query = \App\Models\WebsiteSetup\Program::query()->active()
+            ->with(['category', 'focus'])
+            ->orderBy('sort_order')->orderBy('title');
+
+        if ($activeCategory !== 'all') {
+            $cat = $categories->firstWhere('slug', $activeCategory);
+            if ($cat) {
+                $query->where('program_category_id', $cat->id);
+            } else {
+                $activeCategory = 'all';
+            }
         }
 
-        $filtered = $category === 'all'
-            ? $allCourses
-            : $allCourses->filter(fn (array $course) => ($course['category'] ?? '') === $category);
+        $paginator = $query->paginate(9)->withQueryString();
 
-        $perPage = 9;
-        $page = max(1, (int) $request->query('page', 1));
-        $total = $filtered->count();
-        $items = $filtered->values()->forPage($page, $perPage);
-
-        $query = $category !== 'all' ? ['category' => $category] : [];
-
-        $paginator = new LengthAwarePaginator(
-            $items,
-            $total,
-            $perPage,
-            $page,
-            [
-                'path'  => route('frontend.courses'),
-                'query' => $query,
-            ]
+        $data['hero'] = [
+            'title'         => 'Programs built for curiosity and confidence',
+            'subtitle'      => 'Homeschooling, tutoring, electives and clubs — every path is taught by the same faculty and tracked with the same weekly reporting.',
+            'primary_cta'   => ['label' => 'Talk to admissions', 'route' => 'frontend.contact'],
+            'secondary_cta' => ['label' => 'Start online admission', 'route' => 'frontend.online-admission'],
+        ];
+        $data['categories'] = array_merge(
+            [['slug' => 'all', 'label' => 'All programs']],
+            $categories->map(fn ($c) => ['slug' => $c->slug, 'label' => $c->name])->all()
         );
-
-        $data['courses'] = $items->values()->all();
-        $data['active_category'] = $category;
-        $data['catalog_total'] = $allCourses->count();
+        $data['courses']         = $paginator->getCollection();
+        $data['active_category'] = $activeCategory;
+        $data['catalog_total']   = \App\Models\WebsiteSetup\Program::query()->active()->count();
+        $data['faqs']            = $this->programFaqs();
+        $data['trust']           = $this->programTrust();
 
         return view('frontend.courses', compact('data', 'paginator'));
     }
 
+    /** A single program. */
     public function courseDetail(string $slug)
     {
-        $data = $this->normalizeCoursesCatalog($this->frontendCoursesCatalog());
-        $courses = $data['courses'] ?? [];
-        $course = collect($courses)->firstWhere('slug', $slug);
-        if ($course === null) {
+        $data['course'] = \App\Models\WebsiteSetup\Program::query()->active()
+            ->with(['category', 'focus'])
+            ->where('slug', $slug)->first();
+
+        if (!$data['course']) {
             abort(404);
         }
-        $data['course'] = $course;
+
+        $data['trust'] = $this->programTrust();
 
         return view('frontend.course-detail', compact('data'));
     }
 
-    /**
-     * Public courses catalog. Prefer config(); if courses are missing (stale
-     * config:cache, file not merged, or deploy without the file), load
-     * config/frontend_courses.php from disk, then use a minimal fallback.
-     */
-    protected function frontendCoursesCatalog(): array
+    /** A category landing page (/programs/{slug}) with its focus areas as sub-filters. */
+    public function programCategory(Request $request, string $category)
     {
-        $paths = [
-            base_path('config/frontend_courses.php'),
-            config_path('frontend_courses.php'),
-        ];
+        $model = \App\Models\WebsiteSetup\ProgramCategory::where('status', 1)
+            ->where('slug', $category)->first();
 
-        foreach ($paths as $path) {
-            if (!is_readable($path)) {
-                continue;
-            }
-
-            $data = require $path;
-
-            if (is_array($data) && !empty($data['courses']) && is_array($data['courses'])) {
-                return $this->normalizeCoursesCatalog($data);
-            }
+        if (!$model) {
+            abort(404);
         }
 
-        $cached = config('frontend_courses');
+        $focuses = $model->focuses()->where('status', 1)->get();
 
-        if (is_array($cached) && !empty($cached['courses']) && is_array($cached['courses'])) {
-            return $this->normalizeCoursesCatalog($cached);
+        $activeFocus = trim((string) $request->query('focus', '')) ?: null;
+        $focusModel  = $activeFocus ? $focuses->firstWhere('slug', $activeFocus) : null;
+        if ($activeFocus && !$focusModel) {
+            $activeFocus = null;
         }
 
-        return $this->normalizeCoursesCatalog($this->minimalFrontendCoursesCatalog());
-    }
+        $query = \App\Models\WebsiteSetup\Program::query()->active()->with('focus')
+            ->where('program_category_id', $model->id)
+            ->orderBy('sort_order')->orderBy('title');
 
-    /**
-     * Map legacy / display category labels to filter pill slugs.
-     */
-    protected function normalizeCourseCategory(string $category): string
-    {
-        $category = strtolower(trim($category));
-
-        $map = [
-            'maths'        => 'math',
-            'mathematics'  => 'math',
-            'english'      => 'language',
-            'languages'    => 'language',
-            'stem & computing' => 'stem',
-            'life skills'  => 'skills',
-        ];
-
-        return $map[$category] ?? $category;
-    }
-
-    protected function normalizeCoursesCatalog(array $data): array
-    {
-        if (!empty($data['courses']) && is_array($data['courses'])) {
-            foreach ($data['courses'] as $index => $course) {
-                if (!is_array($course)) {
-                    continue;
-                }
-                $data['courses'][$index]['category'] = $this->normalizeCourseCategory(
-                    (string) ($course['category'] ?? '')
-                );
-            }
+        if ($focusModel) {
+            $query->where('program_focus_id', $focusModel->id);
         }
 
-        return $data;
+        $paginator = $query->paginate(9)->withQueryString();
+
+        $data['category']     = $model;
+        $data['focuses']      = $focuses;
+        $data['active_focus'] = $activeFocus;
+        $data['programs']     = $paginator->getCollection();
+        $data['total']        = \App\Models\WebsiteSetup\Program::query()->active()
+                                    ->where('program_category_id', $model->id)->count();
+        $data['trust']        = $this->programTrust();
+
+        return view('frontend.program-category', compact('data', 'paginator'));
     }
 
-    /**
-     * Last-resort catalog so /courses is never blank (e.g. missing deploy).
-     */
-    protected function minimalFrontendCoursesCatalog(): array
+    protected function programTrust(): array
     {
         return [
-            'hero' => [
-                'title'       => 'Explore our courses',
-                'subtitle'    => 'Programs at Brainova School—contact us for the full catalog and current intake.',
-                'primary_cta' => [
-                    'label' => 'Contact us',
-                    'route' => 'frontend.contact',
-                ],
-                'secondary_cta' => [
-                    'label' => 'Online admission',
-                    'route' => 'frontend.online-admission',
-                ],
-            ],
-            'categories' => [
-                ['slug' => 'all', 'label' => 'All programs'],
-                ['slug' => 'stem', 'label' => 'STEM & computing'],
-                ['slug' => 'math', 'label' => 'Mathematics'],
-                ['slug' => 'language', 'label' => 'Languages'],
-                ['slug' => 'skills', 'label' => 'Life skills'],
-            ],
-            'courses' => [
-                [
-                    'slug'        => 'basic-to-intermediate-maths',
-                    'category'    => 'math',
-                    'badge'       => 'Maths',
-                    'title'       => 'Basic to Intermediate Maths',
-                    'description' => 'Number place value, Arthematics, Fractions, Decimals, Geometry',
-                    'age_range'   => 'Ages 6-9',
-                    'grade'       => 'Grade 2-5',
-                    'lessons'     => '12 sessions',
-                    'duration'    => '6 weeks',
-                    'enrolled'    => 'Open enrollment',
-                    'price'       => 'Contact for fee',
-                    'accent'      => 'indigo',
-                    'image'       => 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1200&q=80',
-                    'overview'    => ['Details available from the school office.'],
-                    'highlights'  => ['Small groups', 'Safe lab practices'],
-                    'format'      => 'Twice weekly',
-                ],
-                [
-                    'slug'        => 'advanced-maths',
-                    'category'    => 'math',
-                    'badge'       => 'Maths',
-                    'title'       => 'Advanced Maths',
-                    'description' => 'Word problem, Arthematic, Geometry and Algebra',
-                    'age_range'   => 'Ages 10-14',
-                    'grade'       => 'Grade 4-7',
-                    'lessons'     => '12 sessions',
-                    'duration'    => '6 weeks',
-                    'enrolled'    => 'Open enrollment',
-                    'price'       => 'Contact for fee',
-                    'accent'      => 'teal',
-                    'image'       => 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?auto=format&fit=crop&w=1200&q=80',
-                    'overview'    => ['Placement by short diagnostic.'],
-                    'highlights'  => ['Growth mindset', 'Weekly feedback'],
-                    'format'      => 'Twice weekly.',
-                ],
-                [
-                    'slug'        => 'basic-to-intermediate-english',
-                    'category'    => 'language',
-                    'badge'       => 'English',
-                    'title'       => 'Basic to Intermediate English',
-                    'description' => 'Reading, writing, listening, and speaking from foundational fluency through confident intermediate use.',
-                    'age_range'   => 'Ages 8–12',
-                    'grade'       => 'Grade 4–6',
-                    'lessons'     => '60 workshops',
-                    'duration'    => 'Academic year',
-                    'enrolled'    => 'Open enrollment',
-                    'price'       => 'Contact for fee',
-                    'accent'      => 'amber',
-                    'image'       => 'https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?auto=format&fit=crop&w=1200&q=80',
-                    'overview'    => ['Placement by short diagnostic.'],
-                    'highlights'  => ['Growth dashboards', 'Weekly feedback'],
-                    'format'      => '3 × 55-minute sessions weekly',
-                ],
-                [
-                    'slug'        => 'advanced-english',
-                    'category'    => 'language',
-                    'badge'       => 'English',
-                    'title'       => 'Advanced English',
-                    'description' => 'Comprehension, Creative Writting, Grammar and Vocabulary, Spoken English',
-                    'age_range'   => 'Ages 10-14',
-                    'grade'       => 'Grade 4-7',
-                    'lessons'     => '12 sessions',
-                    'duration'    => '6 weeks',
-                    'enrolled'    => 'Open enrollment',
-                    'price'       => 'Contact for fee',
-                    'accent'      => 'teal',
-                    'image'       => '/Users/muhammadraza/Projects/BrainovaSchool_CPanel/public/frontend/frontend/assets/images/images/Advanced-English-Vocabulary.jpg',
-                    'overview'    => ['Placement by short diagnostic.'],
-                    'highlights'  => ['Growth mindset', 'Weekly feedback'],
-                    'format'      => 'Twice weekly.',
-                ],
-            ],
-            'faqs' => [],
-            'trust' => [
-                'headline' => 'Need the full program list?',
-                'body'     => 'Our team can share current courses, fees, and start dates. Use Contact or Online admission—we reply within business hours.',
-            ],
+            'headline' => 'Why families choose Brainova programs',
+            'body'     => 'Experienced mentors, transparent reporting, and a culture that treats technology as a tutor — not a replacement for relationships. Your child progresses with adults who notice both effort and mastery.',
+        ];
+    }
+
+    protected function programFaqs(): array
+    {
+        return [
+            ['q' => 'Which program should we start with?', 'a' => 'Share your child’s grade band and weekly availability — admissions will point you to a short diagnostic or straight enrolment when the placement is obvious.'],
+            ['q' => 'Are programs online or on campus?', 'a' => 'Most younger cohorts are face-to-face. Middle and upper programs often blend live sessions with portal tasks; the exact mix is published in each intake letter.'],
+            ['q' => 'Fees, scholarships and payment plans?', 'a' => 'Contact admissions or complete the online admission flow — counsellors share the current fee grid, sibling policies and any term-limited bursaries.'],
         ];
     }
 

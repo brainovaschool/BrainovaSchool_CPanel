@@ -26,6 +26,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/news-detail/{id}', 'newsDetail')->name('frontend.news-detail');
                 Route::get('/events',           'events')->name('frontend.events');
                 Route::get('/courses',          'courses')->name('frontend.courses');
+                Route::get('/programs/{category}', 'programCategory')->name('frontend.program-category');
                 Route::get('/courses/{slug}',   'courseDetail')->name('frontend.course-detail');
                 Route::get('/event-detail/{id}','eventDetail')->name('frontend.events-detail');
 

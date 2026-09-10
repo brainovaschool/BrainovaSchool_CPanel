@@ -124,6 +124,16 @@ class AppServiceProvider extends ServiceProvider
                     'header_pages' => []
                 ]);
             }
+
+            try {
+                $program_nav = \App\Models\WebsiteSetup\ProgramCategory::where('status', 1)
+                    ->with(['focuses' => fn ($q) => $q->where('status', 1)->orderBy('sort_order')->orderBy('name')])
+                    ->orderBy('sort_order')->orderBy('name')
+                    ->get();
+                $view->with(['program_nav' => $program_nav]);
+            } catch (\Throwable $e) {
+                $view->with(['program_nav' => collect()]);
+            }
         });
 
 

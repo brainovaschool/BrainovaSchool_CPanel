@@ -86,52 +86,27 @@
                                     <li><a href="{{ route('frontend.home') }}">{{ ___('frontend.Home') }}</a></li>
                                     <li><a href="{{ route('frontend.about') }}">{{ ___('frontend.About') }}</a></li>
 
-                                    <!-- Our Programs: 4 categories + side flyouts. Uses the theme's working
-                                         .submenu hover pattern (same as Community/Resources) plus the
-                                         pre-built .programs-menu / .submenu-flyout CSS in custom.css.
-                                         Category headings -> /courses (placeholder); sub-items -> # until
-                                         real per-category pages are built in the Course Catalog phase. -->
+                                    <!-- Our Programs: driven by WebsiteSetup > Programs (categories + focus areas).
+                                         Theme .submenu hover + .programs-menu / .submenu-flyout CSS in custom.css.
+                                         Category heading -> /programs/{slug}; focus item -> /programs/{slug}?focus={focus}. -->
                                     <li class="has-programs-menu">
                                         <a href="{{ route('frontend.courses') }}">Our Programs</a>
-                                        <ul class="submenu programs-menu">
-                                            <li class="programs-menu__parent">
-                                                <a href="{{ route('frontend.courses') }}">Homeschooling</a>
-                                                <ul class="submenu-flyout">
-                                                    <li><a href="#">Pre-K &amp; Kindergarten</a></li>
-                                                    <li><a href="#">1st Grade</a></li>
-                                                    <li><a href="#">2nd Grade</a></li>
-                                                    <li><a href="#">3rd Grade</a></li>
-                                                    <li><a href="#">4th Grade</a></li>
-                                                    <li><a href="#">5th Grade</a></li>
-                                                </ul>
-                                            </li>
-                                            <li class="programs-menu__parent">
-                                                <a href="{{ route('frontend.courses') }}">Tutoring</a>
-                                                <ul class="submenu-flyout">
-                                                    <li><a href="#">Academic Subjects</a></li>
-                                                    <li><a href="#">Private Lessons</a></li>
-                                                    <li><a href="#">1-on-1 Coaching</a></li>
-                                                    <li><a href="#">Test Prep</a></li>
-                                                </ul>
-                                            </li>
-                                            <li class="programs-menu__parent">
-                                                <a href="{{ route('frontend.courses') }}">Electives &amp; Enrichment</a>
-                                                <ul class="submenu-flyout">
-                                                    <li><a href="#">Arts</a></li>
-                                                    <li><a href="#">Health &amp; Wellness</a></li>
-                                                    <li><a href="#">Coding &amp; Tech</a></li>
-                                                    <li><a href="#">Life Skills</a></li>
-                                                    <li><a href="#">World Languages</a></li>
-                                                </ul>
-                                            </li>
-                                            <li class="programs-menu__parent">
-                                                <a href="{{ route('frontend.courses') }}">Social Clubs</a>
-                                                <ul class="submenu-flyout">
-                                                    <li><a href="#">Games &amp; Trivia</a></li>
-                                                    <li><a href="#">Art Hub</a></li>
-                                                </ul>
-                                            </li>
-                                        </ul>
+                                        @if (!empty($program_nav) && count($program_nav))
+                                            <ul class="submenu programs-menu">
+                                                @foreach ($program_nav as $bnCat)
+                                                    <li class="programs-menu__parent">
+                                                        <a href="{{ route('frontend.program-category', $bnCat->slug) }}">{{ $bnCat->name }}</a>
+                                                        @if ($bnCat->focuses->count())
+                                                            <ul class="submenu-flyout">
+                                                                @foreach ($bnCat->focuses as $bnFocus)
+                                                                    <li><a href="{{ route('frontend.program-category', ['category' => $bnCat->slug, 'focus' => $bnFocus->slug]) }}">{{ $bnFocus->name }}</a></li>
+                                                                @endforeach
+                                                            </ul>
+                                                        @endif
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        @endif
                                     </li>
 
                                     <li><a href="{{ route('frontend.events') }}">{{ ___('frontend.Events') }}</a></li>
