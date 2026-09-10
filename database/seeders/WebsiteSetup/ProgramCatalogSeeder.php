@@ -81,18 +81,17 @@ class ProgramCatalogSeeder extends Seeder
             }
         }
 
-        $this->importCoursesFromConfig($focusIndex);
+        $this->importLegacyCourses($focusIndex);
     }
 
-    private function importCoursesFromConfig(array $focusIndex): void
+    private function importLegacyCourses(array $focusIndex): void
     {
-        $path = base_path('config/frontend_courses.php');
+        $path = database_path('seeders/data/legacy_programs.php');
         if (!is_readable($path)) {
             return;
         }
 
-        $catalog = require $path;
-        $courses = $catalog['courses'] ?? [];
+        $courses = require $path;
         if (!is_array($courses)) {
             return;
         }
