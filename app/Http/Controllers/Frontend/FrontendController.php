@@ -311,11 +311,36 @@ class FrontendController extends Controller
         return view('frontend.contact', compact('data'));
     }
 
+    // Testimonials & Reviews
+    public function testimonials()
+    {
+        $all = \App\Models\WebsiteSetup\Testimonial::query()->active()
+            ->orderBy('sort_order')->orderBy('id', 'desc')->get();
+
+        $data['testimonials'] = $all->where('type', 'testimonial')->values();
+        $data['reviews']      = $all->where('type', 'review')->values();
+
+        return view('frontend.testimonials', compact('data'));
+    }
+
     // Book a free trial
     public function bookFreeTrial()
     {
-        $data['categories'] = \App\Models\WebsiteSetup\ProgramCategory::where('status', 1)
-            ->orderBy('sort_order')->orderBy('name')->get();
+        $slots = \App\Models\WebsiteSetup\TrialSlot::query()->active()
+            ->whereDate('slot_date', '>=', now()->toDateString())
+            ->orderBy('slot_date')->orderBy('start_time')
+            ->get()
+            ->filter(fn ($s) => $s->remaining > 0);
+
+        $data['slotsByDate'] = $slots->groupBy(fn ($s) => $s->slot_date->format('Y-m-d'))
+            ->map(fn ($group) => $group->map(fn ($s) => [
+                'id'        => $s->id,
+                'label'     => $s->time_label,
+                'remaining' => $s->remaining,
+            ])->values())
+            ->toArray();
+
+        $data['availableDates'] = array_keys($data['slotsByDate']);
 
         return view('frontend.book-a-free-trial', compact('data'));
     }
@@ -323,16 +348,20 @@ class FrontendController extends Controller
     public function storeFreeTrial(Request $request)
     {
         $request->validate([
-            'name'           => 'required|string|max:120',
-            'email'          => 'required|email|max:150',
-            'phone'          => 'required|string|max:40',
-            'child_age'      => 'nullable|string|max:80',
-            'program'        => 'nullable|string|max:150',
-            'preferred_time' => 'nullable|string|max:150',
-            'message'        => 'nullable|string|max:2000',
+            'name'          => 'required|string|max:120',
+            'email'         => 'required|email|max:150',
+            'phone'         => 'required|string|max:40',
+            'child_age'     => 'nullable|string|max:80',
+            'program'       => ['required', 'string', 'max:150', \Illuminate\Validation\Rule::in(array_merge(online_admission_programs(), ['Not sure yet']))],
+            'trial_slot_id' => 'nullable|integer|exists:trial_slots,id',
+            'message'       => 'nullable|string|max:2000',
         ]);
 
-        $this->repo->freeTrial($request);
+        $result = $this->repo->freeTrial($request);
+
+        if ($result === 'slot_full') {
+            return back()->withInput()->with('error', 'Sorry — that time slot just filled up. Please pick another.');
+        }
 
         return redirect()->route('frontend.book-free-trial')
             ->with('message', 'Thanks! Your free-trial request has been received — our team will contact you shortly.');

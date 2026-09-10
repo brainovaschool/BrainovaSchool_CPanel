@@ -888,10 +888,12 @@
                         hasPermission('program_category_read') ||
                         hasPermission('program_focus_read') ||
                         hasPermission('program_read') ||
+                        hasPermission('testimonial_read') ||
+                        hasPermission('trial_slot_read') ||
                         hasPermission('event_read')) &&
                         hasFeature('website_setup'))
                     <li
-                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'program-category*', 'program-focus*', 'program/*']) }}">
+                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'program-category*', 'program-focus*', 'program/*', 'testimonial*', 'trial-slot*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-wrench"></i>
                             <span class="on-half-expanded">{{ ___('settings.Website_setup') }}</span>
@@ -962,6 +964,16 @@
                             @if (hasPermission('program_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['program', 'program/*']) }}">
                                     <a href="{{ route('program.index') }}">{{ ___('settings.programs') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('testimonial_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['testimonial*']) }}">
+                                    <a href="{{ route('testimonial.index') }}">{{ ___('settings.testimonials') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('trial_slot_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['trial-slot*']) }}">
+                                    <a href="{{ route('trial-slot.index') }}">{{ ___('settings.free_trial_slots') }}</a>
                                 </li>
                             @endif
 

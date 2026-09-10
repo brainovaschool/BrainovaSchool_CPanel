@@ -86,6 +86,8 @@ class PermissionSeeder extends Seeder
             'program_category'  => ['read' => 'program_category_read', 'create' => 'program_category_create', 'update' => 'program_category_update', 'delete' => 'program_category_delete'],
             'program_focus'     => ['read' => 'program_focus_read', 'create' => 'program_focus_create', 'update' => 'program_focus_update', 'delete' => 'program_focus_delete'],
             'program'           => ['read' => 'program_read', 'create' => 'program_create', 'update' => 'program_update', 'delete' => 'program_delete'],
+            'testimonial'       => ['read' => 'testimonial_read', 'create' => 'testimonial_create', 'update' => 'testimonial_update', 'delete' => 'testimonial_delete'],
+            'trial_slot'        => ['read' => 'trial_slot_read', 'create' => 'trial_slot_create', 'update' => 'trial_slot_update', 'delete' => 'trial_slot_delete'],
             'subscribe'         => ['read' => 'subscribe_read'],
             'contact_message'   => ['read' => 'contact_message_read'],
             // Settings

@@ -33,6 +33,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/notices',           'notices')->name('frontend.notices');
                 Route::get('/notice-detail/{id}','noticeDetail')->name('frontend.notice-detail');
 
+                Route::get('/testimonials',       'testimonials')->name('frontend.testimonials');
                 Route::get('/book-a-free-trial',  'bookFreeTrial')->name('frontend.book-free-trial');
                 Route::post('/book-a-free-trial', 'storeFreeTrial')->name('frontend.book-free-trial.store');
 

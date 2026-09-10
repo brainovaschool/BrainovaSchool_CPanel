@@ -19,6 +19,8 @@ use App\Http\Controllers\WebsiteSetup\PagesController;
 use App\Http\Controllers\WebsiteSetup\ProgramController;
 use App\Http\Controllers\WebsiteSetup\ProgramFocusController;
 use App\Http\Controllers\WebsiteSetup\ProgramCategoryController;
+use App\Http\Controllers\WebsiteSetup\TestimonialController;
+use App\Http\Controllers\WebsiteSetup\TrialSlotController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -113,6 +115,24 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:program_update');
                     Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:program_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:program_delete', 'DemoCheck');
+                });
+
+                Route::controller(TestimonialController::class)->prefix('testimonial')->name('testimonial.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:testimonial_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:testimonial_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:testimonial_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:testimonial_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:testimonial_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:testimonial_delete', 'DemoCheck');
+                });
+
+                Route::controller(TrialSlotController::class)->prefix('trial-slot')->name('trial-slot.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:trial_slot_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:trial_slot_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:trial_slot_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:trial_slot_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:trial_slot_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:trial_slot_delete', 'DemoCheck');
                 });
 
                 Route::controller(CounterController::class)->prefix('counter')->group(function () {

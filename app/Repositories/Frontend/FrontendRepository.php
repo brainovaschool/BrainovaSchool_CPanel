@@ -282,10 +282,24 @@ class FrontendRepository implements FrontendInterface
     }
 
     public function freeTrial($request){
+        $slotText = 'To be arranged';
+        $slot     = null;
+
+        if ($request->trial_slot_id) {
+            $slot = \App\Models\WebsiteSetup\TrialSlot::find($request->trial_slot_id);
+            if ($slot) {
+                if ($slot->remaining <= 0 || $slot->status != 1) {
+                    return 'slot_full';
+                }
+                $slot->increment('booked_count');
+                $slotText = $slot->slot_date->format('D, d M Y') . ' · ' . $slot->time_label;
+            }
+        }
+
         $lines = [
             'Child age / grade: ' . ($request->child_age ?: '—'),
-            'Interested in: ' . ($request->program ?: '—'),
-            'Preferred days / time: ' . ($request->preferred_time ?: '—'),
+            'Program: ' . ($request->program ?: '—'),
+            'Requested slot: ' . $slotText,
         ];
         if (trim((string) $request->message) !== '') {
             $lines[] = '';
@@ -299,6 +313,8 @@ class FrontendRepository implements FrontendInterface
         $row->subject = 'Free Trial Request';
         $row->message = implode("\n", $lines);
         $row->save();
+
+        return 'ok';
     }
 
     public function contact($request){

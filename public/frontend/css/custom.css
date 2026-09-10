@@ -545,3 +545,93 @@ body::after {
         backdrop-filter: none;
     }
 }
+
+/* ============================================================
+   Testimonials & Reviews page — theme-aware cards (aurora tokens),
+   used by resources/views/frontend/testimonials.blade.php.
+   ============================================================ */
+.bn-tm-section { padding: 20px 0 10px; }
+.bn-tm-section h2 {
+    font-family: "Libre Baskerville", serif;
+    color: var(--bn-ink);
+    margin-bottom: 6px;
+}
+.bn-tm-section .bn-tm-sub { color: var(--bn-muted); margin-bottom: 26px; }
+
+.bn-tm-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+    gap: 22px;
+}
+.bn-tm-card {
+    background: var(--bn-surface);
+    border: 1px solid var(--bn-line);
+    border-left: 4px solid var(--bn-primary);
+    border-radius: 14px;
+    padding: 24px 26px;
+    box-shadow: var(--bn-shadow-near);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.bn-tm-card .bn-tm-stars { color: #f5b301; font-size: 14px; letter-spacing: 2px; }
+.bn-tm-card .bn-tm-quote { color: var(--bn-body); font-size: 15px; line-height: 1.8; margin: 0; }
+.bn-tm-card .bn-tm-who { display: flex; align-items: center; gap: 12px; margin-top: auto; }
+.bn-tm-card .bn-tm-who img { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.bn-tm-card .bn-tm-name { color: var(--bn-primary-strong); font-weight: 600; font-size: 14px; }
+.bn-tm-card .bn-tm-role { color: var(--bn-muted); font-size: 13px; }
+
+.bn-tm-empty { color: var(--bn-muted); }
+@supports ((backdrop-filter: blur(6px)) or (-webkit-backdrop-filter: blur(6px))) {
+    .bn-tm-card {
+        background: var(--bn-glass);
+        -webkit-backdrop-filter: blur(18px) saturate(160%);
+        backdrop-filter: blur(18px) saturate(160%);
+        border-color: var(--bn-glass-brd);
+        border-left-color: var(--bn-primary);
+    }
+}
+
+/* ============================================================
+   Free-trial mini calendar (book-a-free-trial page)
+   ============================================================ */
+.bn-cal {
+    max-width: 380px;
+    margin: 6px 0 18px;
+    border: 1px solid var(--bn-line);
+    border-radius: 14px;
+    padding: 16px;
+    background: var(--bn-surface);
+}
+.bn-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.bn-cal-title { font-family: "Libre Baskerville", serif; font-weight: 700; color: var(--bn-ink); font-size: 15px; }
+.bn-cal-nav {
+    background: transparent; border: 1px solid var(--bn-line); color: var(--bn-ink);
+    width: 30px; height: 30px; border-radius: 8px; cursor: pointer; font-size: 16px; line-height: 1;
+}
+.bn-cal-nav:hover { border-color: var(--bn-primary); color: var(--bn-primary-strong); }
+.bn-cal-dow, .bn-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.bn-cal-dow span { text-align: center; font-size: 11px; color: var(--bn-muted); padding: 4px 0; text-transform: uppercase; letter-spacing: .04em; }
+.bn-cal-day {
+    aspect-ratio: 1; border: 0; border-radius: 8px; background: transparent;
+    color: var(--bn-muted); font-size: 13px; cursor: default;
+}
+.bn-cal-day.is-open {
+    background: color-mix(in srgb, var(--bn-primary) 14%, transparent);
+    color: var(--bn-primary-strong); font-weight: 600; cursor: pointer;
+}
+.bn-cal-day.is-open:hover { background: color-mix(in srgb, var(--bn-primary) 26%, transparent); }
+.bn-cal-day.is-selected { background: var(--bn-primary); color: #fff; }
+.bn-cal-day:disabled { opacity: .45; }
+
+.bn-cal-times { margin-top: 14px; border-top: 1px solid var(--bn-line); padding-top: 12px; }
+.bn-cal-times-label { font-size: 13px; color: var(--bn-muted); margin: 0 0 8px; }
+.bn-cal-times-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.bn-cal-time {
+    border: 1px solid var(--bn-line); background: var(--bn-surface); color: var(--bn-ink);
+    border-radius: 999px; padding: 7px 14px; font-size: 13px; cursor: pointer;
+}
+.bn-cal-time:hover { border-color: var(--bn-primary); }
+.bn-cal-time.is-selected { background: var(--bn-primary); border-color: var(--bn-primary); color: #fff; }
+
+.bn-cal-note { font-size: 12px; color: var(--bn-muted); margin-top: 8px; }
