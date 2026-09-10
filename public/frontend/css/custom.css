@@ -221,3 +221,54 @@ footer.home_three_footer .copyright_area .footer_border {
     font-size: 15px;
 }
 
+/* Contact Us dropdown (right side of header, outside .main_menu).
+   Styled to match the theme's .submenu dropdowns used by Community / Resources.
+   Lives here — not in an inline <style> in menu.blade.php — so a template edit
+   can't drop the styling and leave the menu items showing permanently. */
+.header__right .bn-dropdown {
+    position: relative;
+}
+
+.header__right .bn-dropdown .bn-dropdown-menu {
+    width: 220px;
+    position: absolute;
+    right: 0;
+    top: 120%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: #fff;
+    text-align: left;
+    box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.04);
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s;
+    z-index: 999;
+}
+
+.header__right .bn-dropdown:hover .bn-dropdown-menu {
+    top: 100%;
+    opacity: 1;
+    visibility: visible;
+}
+
+.header__right .bn-dropdown .bn-dropdown-menu li {
+    display: block;
+    margin: 0;
+}
+
+.header__right .bn-dropdown .bn-dropdown-menu li a {
+    display: block;
+    padding: 10px 20px;
+    font-size: 14px;
+    line-height: 1.2;
+    font-weight: 400;
+    color: #202e3b;
+    text-transform: capitalize;
+    transition: 0.3s;
+}
+
+.header__right .bn-dropdown .bn-dropdown-menu li a:hover {
+    color: #FF5170;
+}
+
