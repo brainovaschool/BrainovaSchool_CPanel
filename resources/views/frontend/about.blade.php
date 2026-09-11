@@ -108,6 +108,16 @@
             </section>
             @endif
 
+            {{-- WHAT WE STAND FOR — E6 values, the full orbit -------------------- --}}
+            <section class="bn-about-block bn-values">
+                <div class="bn-home-head">
+                    <p class="bn-eyebrow">Core values &middot; E&#8310;</p>
+                    <h2>E to the power of six</h2>
+                    <p>Our whole approach &mdash; how we teach, assess and care for children &mdash; is built on these six values.</p>
+                </div>
+                @include('frontend.partials.e6-orbit')
+            </section>
+
             {{-- INSIDE BRAINOVA — what families get ------------------------------- --}}
             <section class="bn-about-block">
                 <div class="bn-home-head">

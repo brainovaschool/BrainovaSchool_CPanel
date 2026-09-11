@@ -1747,3 +1747,48 @@ body::after {
         backdrop-filter: none;
     }
 }
+
+/* ============================================================
+   "OUR JOURNEY" gallery — single_about_content was never meant
+   to be a boxed card (theme padding is 30px 0 30px 73px — 0 on
+   the open side, by design, for a photo-beside-text layout). The
+   lit-border pass wrongly boxed it: a tall empty frame with text
+   touching the walls. Undo the box, add real breathing room.
+   ============================================================ */
+.single_about_content {
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+.about_gallery_wrapper .single_about_gallery { gap: 32px; }
+.about_gallery_wrapper .single_about_gallery .single_about_gallery_thumb,
+.about_gallery_wrapper .single_about_gallery .single_about_content {
+    flex-shrink: 1;
+    max-width: calc(50% - 16px);
+}
+.about_gallery_wrapper .single_about_gallery .single_about_content {
+    padding: 8px 6px;
+}
+.about_gallery_wrapper .single_about_gallery .single_about_content h4 {
+    font-family: "Libre Baskerville", serif;
+    font-weight: 700;
+    font-size: 25px;
+    line-height: 1.35;
+    color: var(--bn-ink);
+    margin: 14px 0 10px;
+}
+.about_gallery_wrapper .single_about_gallery .single_about_content p {
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--bn-body);
+    max-width: 52ch;
+}
+@media (max-width: 991.98px) {
+    .about_gallery_wrapper .single_about_gallery .single_about_gallery_thumb,
+    .about_gallery_wrapper .single_about_gallery .single_about_content {
+        max-width: 100%;
+    }
+}
