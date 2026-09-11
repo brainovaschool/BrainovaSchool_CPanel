@@ -326,6 +326,25 @@ class FrontendRepository implements FrontendInterface
             $row->subject = $request->subject;
             $row->message = $request->message;
             $row->save();
+
+            // Notify the school by email. The enquiry is already saved above,
+            // so a mail failure (SMTP not configured, etc.) never blocks the
+            // visitor's confirmation — it only gets logged.
+            try {
+                $to = setting('email');
+                if ($to) {
+                    \Illuminate\Support\Facades\Mail::to($to)->send(new \App\Mail\ContactFormReceived([
+                        'name'    => $row->name,
+                        'email'   => $row->email,
+                        'phone'   => $row->phone,
+                        'subject' => $row->subject,
+                        'message' => $row->message,
+                    ]));
+                }
+            } catch (\Throwable $mailEx) {
+                \Illuminate\Support\Facades\Log::warning('Contact form email notification failed: ' . $mailEx->getMessage());
+            }
+
             return response()->json([___('frontend.Success'), ___('frontend.send_successfully'), 'success', ___('frontend.OK')]);
         } catch (\Throwable $th) {
             return response()->json([___('frontend.Error'), ___('frontend.something_went_wrong'), 'error', ___('frontend.OK')]);

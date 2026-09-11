@@ -13,7 +13,7 @@
             <div class="col-lg-6 col-xl-5">
                 <div class="breadcam_wrap text-center">
                     <h3>{{ ___('frontend.contact_us') }}</h3>
-                    <p>Questions about admissions, programs or a visit? We’re glad to help.</p>
+                    <p>Questions about admissions, programs, a free demo class or a visit?<br>We’re glad to help.</p>
                     <div class="custom_breadcam">
                         <a href="{{url('/')}}" class="breadcrumb-item">{{ ___('frontend.home') }}</a>
                         <a href="#" class="breadcrumb-item">{{ ___('frontend.contact_us') }}</a>
@@ -103,35 +103,8 @@
 </div>
 <!-- CONTACT::END  -->
 
-<!-- contact_department_area::start  -->
-<div class="contact_department_area section_padding4">
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8 col-xl-6">
-                <div class="section__title mb_76 text-center">
-                    <h3 class="text-capitalize">{{ @$sections['department_contact_information']->defaultTranslate->name }}</h3>
-                    <p>{{ @$sections['department_contact_information']->defaultTranslate->description }}</p>
-                </div>
-            </div>
-        </div>
-        <div class="row justify-content-center">
-
-            @foreach ($data['depContact'] as $item)
-                <div class="col-xl-3 col-lg-4 col-md-6">
-                    <div class="contact_department_box text-center mb_30">
-                        <div class="icon">
-                            <img src="{{ @globalAsset(@$item->upload->path, '340X340.webp') }}" alt="Image">
-                        </div>
-                        <h3>{{ @$item->defaultTranslate->name }}</h3>
-                        <p>{{ @$item->defaultTranslate->phone }} <br>
-                            {{ @$item->defaultTranslate->email }}</p>
-                    </div>
-                </div>
-            @endforeach
-
-        </div>
-    </div>
-</div>
-<!-- contact_department_area::end  -->
+{{-- "Contact School Office" department block removed — it only ever showed placeholder
+     copy and a single lonely card. The department list itself ($data['depContact']) is
+     still managed in Website Setup if this section is ever brought back. --}}
 
 @endsection
