@@ -205,8 +205,14 @@ a.fe-filter-pill:hover {
   height: 100%;
   border-radius: 18px;
   overflow: hidden;
-  background: #fff;
-  border: 1px solid rgba(226, 232, 240, 0.95);
+  /* Stays a solid white card in both themes on purpose — every text colour
+     in this file (title, meta, price, badges) is hardcoded dark-on-light,
+     so switching the fill to the dark surface token would make the text
+     unreadable. Only the border gets the lit-border treatment here. */
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    linear-gradient(135deg, var(--bn-primary, #0097b2), var(--bn-accent, #5e17eb)) border-box;
   box-shadow: 0 10px 40px rgba(15, 23, 42, 0.06);
   display: flex;
   flex-direction: column;

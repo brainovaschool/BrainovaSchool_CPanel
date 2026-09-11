@@ -1674,3 +1674,76 @@ body::after {
     object-fit: cover;
     display: block;
 }
+
+/* ============================================================
+   LIT BORDER — card depth pass (chosen option "A" from the
+   Card Depth Studies comparison). A thin turquoise -> purple
+   gradient edge on every card, so each one reads as its own
+   object against the dark (and light) field instead of blending
+   into the background behind it.
+
+   Only the border + fill layering changes here — existing
+   shadows, hover lifts and glow decorations (mascots, E6 ring)
+   are untouched, and .facilites_box keeps the fully-opaque fill
+   from the round-3 dark-mode contrast fix (border only, no glass).
+   ============================================================ */
+
+.bn-glass, .serevice_box, .gallery_box,
+.teaching_grid .teaching_single, .explorer_tab_content, .statement_info,
+.event_wrapper, .blog_page_widget, .eventList_widget,
+.search_result_box, .search_result_form,
+.contact_form_box, .contact_department_box, .find_content_widget,
+.card_visibility_box, .visibility_box,
+.single_about_content, .single_latest_news_list,
+.bn-program-card, .bn-step, .bn-pillar, .bn-mascot,
+.bn-e6-core, .bn-e6-node, .bn-tm-card, .bn-feature,
+.bn-about-facts li,
+.facilites_box {
+    border: 1.5px solid transparent;
+    background:
+        linear-gradient(var(--bn-surface), var(--bn-surface)) padding-box,
+        linear-gradient(135deg, var(--bn-primary), var(--bn-accent)) border-box;
+}
+
+@supports ((backdrop-filter: blur(6px)) or (-webkit-backdrop-filter: blur(6px))) {
+    .bn-glass, .serevice_box, .gallery_box,
+    .teaching_grid .teaching_single, .explorer_tab_content, .statement_info,
+    .event_wrapper, .blog_page_widget, .eventList_widget,
+    .search_result_box, .search_result_form,
+    .contact_form_box, .contact_department_box, .find_content_widget,
+    .card_visibility_box, .visibility_box,
+    .single_about_content, .single_latest_news_list,
+    .bn-program-card, .bn-step, .bn-pillar, .bn-mascot,
+    .bn-e6-core, .bn-e6-node, .bn-tm-card, .bn-feature,
+    .bn-about-facts li {
+        background:
+            linear-gradient(var(--bn-glass), var(--bn-glass)) padding-box,
+            linear-gradient(135deg, var(--bn-primary), var(--bn-accent)) border-box;
+        -webkit-backdrop-filter: blur(20px) saturate(165%);
+        backdrop-filter: blur(20px) saturate(165%);
+    }
+    /* counters: border goes glass-aware too, fill stays opaque on purpose */
+    .facilites_box {
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .bn-glass, .serevice_box, .gallery_box,
+    .teaching_grid .teaching_single, .explorer_tab_content, .statement_info,
+    .event_wrapper, .blog_page_widget, .eventList_widget,
+    .search_result_box, .search_result_form,
+    .contact_form_box, .contact_department_box, .find_content_widget,
+    .card_visibility_box, .visibility_box,
+    .single_about_content, .single_latest_news_list,
+    .bn-program-card, .bn-step, .bn-pillar, .bn-mascot,
+    .bn-e6-core, .bn-e6-node, .bn-tm-card, .bn-feature,
+    .bn-about-facts li {
+        background:
+            linear-gradient(var(--bn-surface), var(--bn-surface)) padding-box,
+            linear-gradient(135deg, var(--bn-primary), var(--bn-accent)) border-box;
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
