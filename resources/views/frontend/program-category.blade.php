@@ -70,8 +70,6 @@
                         @if ($active)
                             <span class="fe-courses-count-filter">({{ $total }} total in {{ $category->name }})</span>
                         @endif
-                    @else
-                        No programs in this section yet.
                     @endif
                 </p>
                 <a href="{{ route('frontend.contact') }}" class="fe-btn-pill fe-btn-ghost fe-mini d-none d-sm-inline-flex">Ask a question</a>
@@ -124,8 +122,8 @@
                 @include('frontend.partials.courses-pagination', ['paginator' => $paginator])
             @else
                 <div class="fe-courses-empty fe-is-visible">
-                    <p>We’re still building out this section. <a href="{{ route('frontend.contact') }}">Contact admissions</a>
-                    to talk through {{ strtolower($category->name) }} options for your child.</p>
+                    <p>This section is coming soon. <a href="{{ route('frontend.contact') }}">Contact our representative</a>
+                    to get the details on {{ strtolower($category->name) }} options for your child.</p>
                 </div>
             @endif
         </div>
