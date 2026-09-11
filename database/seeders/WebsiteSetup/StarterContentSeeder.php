@@ -12,17 +12,29 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Small, specific pieces of real content the school asked for:
+ *  - remove the leftover CodeCanyon demo notices ("exam", "exam2")
  *  - the "coding demo class" notice (idempotent, matched on title)
  *  - the body of the "Cube Root" blog post (only if that post already exists)
- * Everything else on the Notice Board / News is managed in the dashboard;
- * delete the leftover demo notices ("exam", "exam2") there.
+ * Everything else on the Notice Board / News is managed in the dashboard.
  */
 class StarterContentSeeder extends Seeder
 {
     public function run(): void
     {
+        $this->removeDemoNotices();
         $this->codingDemoNotice();
         $this->cubeRootBlog();
+    }
+
+    /** Deletes the CodeCanyon sample notices ("exam" / "exam2") by exact
+     *  title match only — never touches anything the school actually wrote. */
+    private function removeDemoNotices(): void
+    {
+        if (!Schema::hasTable('notice_boards')) {
+            return;
+        }
+
+        NoticeBoard::whereRaw('LOWER(title) IN (?, ?)', ['exam', 'exam2'])->delete();
     }
 
     private function codingDemoNotice(): void

@@ -1804,3 +1804,60 @@ body::after {
         max-width: 100%;
     }
 }
+
+/* ============================================================
+   ROUND-11 fixes: boxed panels with no self-padding, an
+   oversized "Why choose us" checklist, and uncapped admin
+   infographic images.
+   ============================================================ */
+
+/* --- Explore tabs pane: theme never gave this any padding at all
+       (it was designed as an open text panel, not a card) — once it
+       got a border/background the text sat flush against the walls. --- */
+.explorer_tab_content {
+    padding: 28px 30px;
+}
+@media (max-width: 767.98px) {
+    .explorer_tab_content { padding: 22px 20px; }
+}
+
+/* --- E6 centre circle: "TO THE POWER OF SIX" was nearly as wide as
+       the circle itself. A little more room + a forced 2-line wrap. --- */
+.bn-e6-core {
+    width: 184px;
+    height: 184px;
+    margin: -92px 0 0 -92px;
+    padding: 0 16px;
+}
+.bn-e6-core__sub {
+    max-width: 118px;
+    margin: 6px auto 0;
+    letter-spacing: 0.07em;
+}
+@media (max-width: 900px) {
+    .bn-e6-core { margin: 0 auto 10px; }
+}
+
+/* --- "Our journey" photos: admin infographics with no set aspect
+       ratio were rendering at full natural height (sometimes 1000px+).
+       Cap the height; never crop (these are read as whole documents). --- */
+.about_gallery_wrapper .single_about_gallery .single_about_gallery_thumb img {
+    max-height: 460px;
+}
+@media (max-width: 767.98px) {
+    .about_gallery_wrapper .single_about_gallery .single_about_gallery_thumb img {
+        max-height: 300px;
+    }
+}
+
+/* --- "Why choose us" checklist: theme shipped this at 28px bold
+       black — oversized, and invisible in dark mode. --- */
+.teaching_grid .teaching_single p {
+    font-size: 17px !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+    color: var(--bn-ink) !important;
+}
+.teaching_grid .teaching_single:hover p {
+    color: #fff !important;
+}
