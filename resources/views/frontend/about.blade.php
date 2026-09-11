@@ -163,13 +163,13 @@
         </div>
     </div>
 
-    {{-- OUR STORY (admin-managed "abouts") ----------------------------------- --}}
+    {{-- FEATURES (admin-managed "abouts") -------------------------------------- --}}
     @if (count($data['abouts']))
         <div class="about_gallery_wrapper section_padding">
             <div class="container">
                 <div class="bn-home-head">
-                    <p class="bn-eyebrow">Our journey</p>
-                    <h2>How Brainova came together</h2>
+                    <p class="bn-eyebrow">Features</p>
+                    <h2>What makes Brainova special</h2>
                 </div>
                 <div class="row mb_30">
                     <div class="col-12">

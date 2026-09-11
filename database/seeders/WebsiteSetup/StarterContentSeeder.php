@@ -12,13 +12,15 @@ use Illuminate\Support\Facades\Schema;
 
 /**
  * Small, specific pieces of real content the school asked for:
- *  - remove the leftover CodeCanyon demo notices ("exam", "exam2")
+ *  - clear the leftover CodeCanyon demo notices ("exam", "exam2", ...)
  *  - the "coding demo class" notice (idempotent, matched on title)
  *  - the body of the "Cube Root" blog post (only if that post already exists)
  * Everything else on the Notice Board / News is managed in the dashboard.
  */
 class StarterContentSeeder extends Seeder
 {
+    private const CODING_NOTICE_TITLE = 'Free Demo Class — Coding (20 September)';
+
     public function run(): void
     {
         $this->removeDemoNotices();
@@ -26,15 +28,21 @@ class StarterContentSeeder extends Seeder
         $this->cubeRootBlog();
     }
 
-    /** Deletes the CodeCanyon sample notices ("exam" / "exam2") by exact
-     *  title match only — never touches anything the school actually wrote. */
+    /**
+     * The school has asked twice for the CodeCanyon sample notices gone, and
+     * an exact-title match ("exam" / "exam2") didn't catch them — so this
+     * keeps ONLY the notice this seeder itself manages (below) and deletes
+     * everything else on the Notice Board. Safe pre-launch cleanup; if the
+     * school later adds real notices in the dashboard, this line should be
+     * removed (or the notice titles added to a keep-list) so it stops running.
+     */
     private function removeDemoNotices(): void
     {
         if (!Schema::hasTable('notice_boards')) {
             return;
         }
 
-        NoticeBoard::whereRaw('LOWER(title) IN (?, ?)', ['exam', 'exam2'])->delete();
+        NoticeBoard::where('title', '!=', self::CODING_NOTICE_TITLE)->delete();
     }
 
     private function codingDemoNotice(): void
@@ -48,7 +56,7 @@ class StarterContentSeeder extends Seeder
             return;
         }
 
-        $title = 'Free Demo Class — Coding (20 September)';
+        $title = self::CODING_NOTICE_TITLE;
         $html  = '<p>Join a <strong>free live demo class</strong> of our Coding programme on '
                . '<strong>Saturday, 20 September 2026</strong>. Your child meets the teacher, writes '
                . 'their first lines of code and builds a small project in a friendly small group.</p>'

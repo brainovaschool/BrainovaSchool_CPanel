@@ -111,16 +111,24 @@ class ProgramCatalogSeeder extends Seeder
             'science-lab-juniors'                  => '1532094349884-543bc11b234d',
             'creative-writing-spark'               => '1452860606245-08befc0ff44b',
             'study-skills-bootcamp'                => '1434030216411-0b793f4b4173',
-            // starter programmes
-            'pre-k-kindergarten-programme'         => '1509062522246-3755977927d7',
-            'grade-1-programme'                    => '1600880292203-757bb62b4baf',
-            'grade-2-programme'                    => '1501504905252-473c47e087f8',
-            'grade-3-programme'                    => '1522202176988-66273c2fd55f',
-            'grade-4-programme'                    => '1531482615713-2afd69097998',
-            'grade-5-programme'                    => '1497486751825-1233686d5d80',
             'games-trivia-club'                    => '1503945438517-f65904a52ce6',
             'art-hub'                              => '1541961017774-22349e4a1262',
         ];
+
+        // Homeschooling grades — South Asian / Pakistani-context children,
+        // age-matched per grade band (real photo search, not guessed IDs).
+        static $pexelsIds = [
+            'pre-k-kindergarten-programme' => 17639079,  // toddler at a table, colourful kindergarten room
+            'grade-1-programme'            => 38245944,  // young schoolboy, bright blue uniform
+            'grade-2-programme'            => 11697526,  // young student, uniform + tie
+            'grade-3-programme'            => 12714636,  // boy with glasses, classroom, curious
+            'grade-4-programme'            => 28646079,  // girl focused on writing, classroom
+            'grade-5-programme'            => 11445244,  // older primary pupils, focused studying
+        ];
+
+        if (!empty($pexelsIds[$slug])) {
+            return 'https://images.pexels.com/photos/' . $pexelsIds[$slug] . '/pexels-photo-' . $pexelsIds[$slug] . '.jpeg?auto=compress&cs=tinysrgb&w=1200';
+        }
 
         if (empty($ids[$slug])) {
             return null;
