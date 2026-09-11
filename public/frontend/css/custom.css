@@ -1676,16 +1676,17 @@ body::after {
 }
 
 /* ============================================================
-   LIT BORDER — card depth pass (chosen option "A" from the
-   Card Depth Studies comparison). A thin turquoise -> purple
-   gradient edge on every card, so each one reads as its own
-   object against the dark (and light) field instead of blending
-   into the background behind it.
+   RAISED PANEL — card depth pass (switched from "A" to option
+   "B" from the Card Depth Studies comparison). Each card is an
+   actual 3-D box: a lit top edge, a shaded underside and a real
+   drop shadow, so it looks like it's sitting above the page
+   instead of printed on it. Border is back to a plain neutral
+   line — the colour comes from light/shade, not a gradient edge.
 
-   Only the border + fill layering changes here — existing
-   shadows, hover lifts and glow decorations (mascots, E6 ring)
-   are untouched, and .facilites_box keeps the fully-opaque fill
-   from the round-3 dark-mode contrast fix (border only, no glass).
+   .single_about_content is deliberately NOT in this list (round-9
+   fix — it's an open text column beside a photo, not a card).
+   .facilites_box keeps its fully-opaque fill (round-3 contrast
+   fix) — panel + shadow only, no glass blur.
    ============================================================ */
 
 .bn-glass, .serevice_box, .gallery_box,
@@ -1694,15 +1695,22 @@ body::after {
 .search_result_box, .search_result_form,
 .contact_form_box, .contact_department_box, .find_content_widget,
 .card_visibility_box, .visibility_box,
-.single_about_content, .single_latest_news_list,
+.single_latest_news_list,
 .bn-program-card, .bn-step, .bn-pillar, .bn-mascot,
 .bn-e6-core, .bn-e6-node, .bn-tm-card, .bn-feature,
 .bn-about-facts li,
 .facilites_box {
-    border: 1.5px solid transparent;
-    background:
-        linear-gradient(var(--bn-surface), var(--bn-surface)) padding-box,
-        linear-gradient(135deg, var(--bn-primary), var(--bn-accent)) border-box;
+    border: 1px solid var(--bn-line);
+    background: linear-gradient(160deg,
+        color-mix(in srgb, var(--bn-surface) 92%, white 8%) 0%,
+        var(--bn-surface) 55%,
+        color-mix(in srgb, var(--bn-surface) 90%, black 10%) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        inset 0 -10px 18px -16px rgba(0, 0, 0, 0.35),
+        0 1.5px 0 rgba(0, 0, 0, 0.22),
+        var(--bn-shadow-near),
+        var(--bn-shadow-far);
 }
 
 @supports ((backdrop-filter: blur(6px)) or (-webkit-backdrop-filter: blur(6px))) {
@@ -1712,17 +1720,19 @@ body::after {
     .search_result_box, .search_result_form,
     .contact_form_box, .contact_department_box, .find_content_widget,
     .card_visibility_box, .visibility_box,
-    .single_about_content, .single_latest_news_list,
+    .single_latest_news_list,
     .bn-program-card, .bn-step, .bn-pillar, .bn-mascot,
     .bn-e6-core, .bn-e6-node, .bn-tm-card, .bn-feature,
     .bn-about-facts li {
-        background:
-            linear-gradient(var(--bn-glass), var(--bn-glass)) padding-box,
-            linear-gradient(135deg, var(--bn-primary), var(--bn-accent)) border-box;
+        border-color: var(--bn-glass-brd);
+        background: linear-gradient(160deg,
+            color-mix(in srgb, var(--bn-glass) 100%, white 12%) 0%,
+            var(--bn-glass) 55%,
+            color-mix(in srgb, var(--bn-glass) 100%, black 14%) 100%);
         -webkit-backdrop-filter: blur(20px) saturate(165%);
         backdrop-filter: blur(20px) saturate(165%);
     }
-    /* counters: border goes glass-aware too, fill stays opaque on purpose */
+    /* counters: stay opaque on purpose, no blur */
     .facilites_box {
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
@@ -1736,13 +1746,15 @@ body::after {
     .search_result_box, .search_result_form,
     .contact_form_box, .contact_department_box, .find_content_widget,
     .card_visibility_box, .visibility_box,
-    .single_about_content, .single_latest_news_list,
+    .single_latest_news_list,
     .bn-program-card, .bn-step, .bn-pillar, .bn-mascot,
     .bn-e6-core, .bn-e6-node, .bn-tm-card, .bn-feature,
     .bn-about-facts li {
-        background:
-            linear-gradient(var(--bn-surface), var(--bn-surface)) padding-box,
-            linear-gradient(135deg, var(--bn-primary), var(--bn-accent)) border-box;
+        border-color: var(--bn-line);
+        background: linear-gradient(160deg,
+            color-mix(in srgb, var(--bn-surface) 92%, white 8%) 0%,
+            var(--bn-surface) 55%,
+            color-mix(in srgb, var(--bn-surface) 90%, black 10%) 100%);
         -webkit-backdrop-filter: none;
         backdrop-filter: none;
     }
