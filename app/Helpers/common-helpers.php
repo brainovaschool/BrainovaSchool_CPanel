@@ -863,11 +863,14 @@ if (!function_exists('online_admission_programs')) {
             return $programs;
         }
 
+        // Kept in sync with config/online_admission.php — used only if that
+        // config value fails to load (e.g. a stale config cache on the host).
         return [
-            'Online School',
+            'Homeschooling',
+            'Tutoring',
+            'Electives & Enrichment',
+            'Social Clubs',
             'Online Short Courses',
-            'On-Campus School',
-            'On-Campus After School Clubs',
         ];
     }
 }
