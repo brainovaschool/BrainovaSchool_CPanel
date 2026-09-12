@@ -27,10 +27,16 @@
                     @endif
                 </div>
                 <div class="card-body">
+                    @if (hasPermission('trial_slot_delete') || hasPermission('trial_slot_update'))
+                        @include('backend.partials.bulk-actions-bar')
+                    @endif
                     <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead">
                                 <tr>
+                                    @if (hasPermission('trial_slot_delete') || hasPermission('trial_slot_update'))
+                                        <th style="width:36px"><input type="checkbox" id="bulkSelectAll"></th>
+                                    @endif
                                     <th class="serial">{{ ___('common.sr_no') }}</th>
                                     <th>{{ ___('common.Date') }}</th>
                                     <th>{{ ___('settings.time') }}</th>
@@ -45,6 +51,9 @@
                             <tbody class="tbody">
                                 @forelse ($data['slots'] as $key => $row)
                                     <tr id="row_{{ $row->id }}">
+                                        @if (hasPermission('trial_slot_delete') || hasPermission('trial_slot_update'))
+                                            <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
+                                        @endif
                                         <td class="serial">{{ ++$key }}</td>
                                         <td>{{ $row->slot_date?->format('D, d M Y') }}</td>
                                         <td>{{ $row->time_label }}</td>
@@ -99,3 +108,4 @@
 @push('script')
     @include('backend.partials.delete-ajax')
 @endpush
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'trial-slot'])

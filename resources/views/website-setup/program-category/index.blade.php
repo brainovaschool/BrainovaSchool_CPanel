@@ -29,10 +29,16 @@
                     @endif
                 </div>
                 <div class="card-body">
+                    @if (hasPermission('program_category_delete') || hasPermission('program_category_update'))
+                        @include('backend.partials.bulk-actions-bar')
+                    @endif
                     <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead">
                                 <tr>
+                                    @if (hasPermission('program_category_delete') || hasPermission('program_category_update'))
+                                        <th style="width:36px"><input type="checkbox" id="bulkSelectAll"></th>
+                                    @endif
                                     <th class="serial">{{ ___('common.sr_no') }}</th>
                                     <th>{{ ___('common.name') }}</th>
                                     <th>{{ ___('common.slug') }}</th>
@@ -48,6 +54,9 @@
                             <tbody class="tbody">
                                 @forelse ($data['categories'] as $key => $row)
                                     <tr id="row_{{ $row->id }}">
+                                        @if (hasPermission('program_category_delete') || hasPermission('program_category_update'))
+                                            <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
+                                        @endif
                                         <td class="serial">{{ ++$key }}</td>
                                         <td>{{ $row->name }}</td>
                                         <td><code>{{ $row->slug }}</code></td>
@@ -117,3 +126,4 @@
 @push('script')
     @include('backend.partials.delete-ajax')
 @endpush
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'program-category'])

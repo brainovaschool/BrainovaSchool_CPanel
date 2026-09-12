@@ -87,6 +87,26 @@ class ProgramFocusRepository
         }
     }
 
+    public function bulkDestroy(array $ids)
+    {
+        try {
+            $this->focus->whereIn('id', $ids)->delete();
+            return $this->responseWithSuccess(___('alert.deleted_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
+    public function bulkStatus(array $ids, int $status)
+    {
+        try {
+            $this->focus->whereIn('id', $ids)->update(['status' => $status]);
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
     private function uniqueSlug(string $name, $categoryId, $ignoreId = null): string
     {
         $base = Str::slug($name) ?: 'focus';

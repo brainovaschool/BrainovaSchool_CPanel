@@ -112,6 +112,32 @@ class ProgramCategoryRepository
         }
     }
 
+    public function bulkDestroy(array $ids)
+    {
+        DB::beginTransaction();
+        try {
+            foreach ($this->category->whereIn('id', $ids)->get() as $row) {
+                $this->UploadImageDelete($row->upload_id);
+                $row->delete();
+            }
+            DB::commit();
+            return $this->responseWithSuccess(___('alert.deleted_successfully'), []);
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
+    public function bulkStatus(array $ids, int $status)
+    {
+        try {
+            $this->category->whereIn('id', $ids)->update(['status' => $status]);
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
     private function uniqueSlug(string $name, $ignoreId = null): string
     {
         $base = Str::slug($name) ?: 'category';

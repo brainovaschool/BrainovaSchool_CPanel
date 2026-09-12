@@ -7,6 +7,7 @@ use App\Http\Requests\WebsiteSetup\Program\ProgramRequest;
 use App\Models\WebsiteSetup\ProgramFocus;
 use App\Repositories\WebsiteSetup\ProgramCategoryRepository;
 use App\Repositories\WebsiteSetup\ProgramRepository;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 
 class ProgramController extends Controller
@@ -73,6 +74,32 @@ class ProgramController extends Controller
         $result = $this->repo->destroy($id);
         if ($result['status']) {
             return response()->json([$result['message'], 'success', ___('alert.deleted'), ___('alert.OK')]);
+        }
+        return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+        $result = $this->repo->bulkDestroy($ids);
+        if ($result['status']) {
+            return response()->json([$result['message'], 'success', ___('alert.deleted'), ___('alert.OK')]);
+        }
+        return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
+    }
+
+    public function bulkStatus(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+        $result = $this->repo->bulkStatus($ids, (int) $request->input('status', 1));
+        if ($result['status']) {
+            return response()->json([$result['message'], 'success', ___('alert.updated'), ___('alert.OK')]);
         }
         return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
     }

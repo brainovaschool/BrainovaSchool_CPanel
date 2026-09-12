@@ -28,10 +28,16 @@
                     @endif
                 </div>
                 <div class="card-body">
+                    @if (hasPermission('program_focus_delete') || hasPermission('program_focus_update'))
+                        @include('backend.partials.bulk-actions-bar')
+                    @endif
                     <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead">
                                 <tr>
+                                    @if (hasPermission('program_focus_delete') || hasPermission('program_focus_update'))
+                                        <th style="width:36px"><input type="checkbox" id="bulkSelectAll"></th>
+                                    @endif
                                     <th class="serial">{{ ___('common.sr_no') }}</th>
                                     <th>{{ ___('settings.category') }}</th>
                                     <th>{{ ___('common.name') }}</th>
@@ -47,6 +53,9 @@
                             <tbody class="tbody">
                                 @forelse ($data['focuses'] as $key => $row)
                                     <tr id="row_{{ $row->id }}">
+                                        @if (hasPermission('program_focus_delete') || hasPermission('program_focus_update'))
+                                            <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
+                                        @endif
                                         <td class="serial">{{ ++$key }}</td>
                                         <td>{{ @$row->category->name }}</td>
                                         <td>{{ $row->name }}</td>
@@ -116,3 +125,4 @@
 @push('script')
     @include('backend.partials.delete-ajax')
 @endpush
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'program-focus'])

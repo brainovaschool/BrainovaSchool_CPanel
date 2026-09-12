@@ -97,6 +97,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:program_category_update');
                     Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:program_category_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:program_category_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:program_category_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:program_category_update', 'DemoCheck');
                 });
 
                 Route::controller(ProgramFocusController::class)->prefix('program-focus')->name('program-focus.')->group(function () {
@@ -106,6 +108,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:program_focus_update');
                     Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:program_focus_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:program_focus_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:program_focus_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:program_focus_update', 'DemoCheck');
                 });
 
                 Route::controller(ProgramController::class)->prefix('program')->name('program.')->group(function () {
@@ -115,6 +119,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:program_update');
                     Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:program_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:program_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:program_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:program_update', 'DemoCheck');
                 });
 
                 Route::controller(TestimonialController::class)->prefix('testimonial')->name('testimonial.')->group(function () {
@@ -124,6 +130,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:testimonial_update');
                     Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:testimonial_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:testimonial_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:testimonial_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:testimonial_update', 'DemoCheck');
                 });
 
                 Route::controller(TrialSlotController::class)->prefix('trial-slot')->name('trial-slot.')->group(function () {
@@ -133,6 +141,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:trial_slot_update');
                     Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:trial_slot_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:trial_slot_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:trial_slot_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:trial_slot_update', 'DemoCheck');
                 });
 
                 Route::controller(CounterController::class)->prefix('counter')->group(function () {
