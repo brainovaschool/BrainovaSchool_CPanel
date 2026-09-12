@@ -1861,31 +1861,3 @@ body::after {
 .teaching_grid .teaching_single:hover p {
     color: #fff !important;
 }
-
-/* ============================================================
-   LOGO — fixed light plate behind the header + footer logo.
-   The new Brainova crest has a dark "BRAINOVA" wordmark sitting
-   on a transparent background, so it disappears on a dark header
-   or the (always-dark) footer. This gives it its own permanent
-   light surface regardless of site theme, so it stays readable
-   with the current file. Once a white-text variant exists for
-   the "light_logo" dashboard slot, this plate still works fine.
-   ============================================================ */
-.logo_img {
-    display: inline-flex;
-    align-items: center;
-    padding: 8px 14px;
-    border-radius: 14px;
-    background: #ffffff;
-    border: 1px solid rgba(0, 151, 178, 0.16);
-    box-shadow: 0 6px 18px -10px rgba(15, 41, 55, 0.28);
-}
-.logo_img a { display: inline-flex; align-items: center; }
-
-.footer_logo {
-    display: inline-flex;
-    padding: 10px 16px;
-    border-radius: 14px;
-    background: #ffffff;
-}
-.footer_logo a { display: inline-flex; align-items: center; }
