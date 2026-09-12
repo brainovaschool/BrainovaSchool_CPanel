@@ -9,9 +9,21 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 
 /**
- * Seeds the 4 program categories + their focus areas, then imports the
- * starter courses from database/seeders/data/legacy_programs.php.
- * Idempotent — safe to run more than once (matches on slug).
+ * Seeds the 4 program categories + their focus areas, then the starter
+ * courses (legacy catalogue + one programme per empty category).
+ *
+ * IMPORTANT: this runs on every visit to the keyed installer route
+ * (/db/migrate/{key}), because it's the only way this host can apply new
+ * rows without shell access. That means it MUST be safe to re-run forever
+ * — and "safe" means CREATE-ONLY for anything the school can since edit in
+ * the dashboard. A category/focus/program is only ever written here the
+ * first time it's created; once it exists, this seeder never touches its
+ * content again (the one exception: it will fill in a photo, and only a
+ * photo, on a program that still has no image at all — see imageFor()).
+ * Earlier versions of this seeder used updateOrCreate() with the full data
+ * array, which silently overwrote every dashboard edit (title, overview,
+ * description, hero text, ...) back to these hardcoded defaults on every
+ * single installer run. That was the bug — don't reintroduce it.
  */
 class ProgramCatalogSeeder extends Seeder
 {
@@ -66,17 +78,19 @@ class ProgramCatalogSeeder extends Seeder
             $focuses = $catData['focuses'];
             unset($catData['focuses']);
 
-            $category = ProgramCategory::updateOrCreate(
-                ['slug' => $catData['slug']],
-                $catData + ['status' => 1]
-            );
+            $category = ProgramCategory::where('slug', $catData['slug'])->first()
+                ?: ProgramCategory::create($catData + ['status' => 1]);
 
             foreach ($focuses as $i => $focusName) {
                 $focusSlug = Str::slug($focusName);
-                $focus = ProgramFocus::updateOrCreate(
-                    ['program_category_id' => $category->id, 'slug' => $focusSlug],
-                    ['name' => $focusName, 'sort_order' => $i + 1, 'status' => 1]
-                );
+                $focus = ProgramFocus::where('program_category_id', $category->id)->where('slug', $focusSlug)->first()
+                    ?: ProgramFocus::create([
+                        'program_category_id' => $category->id,
+                        'slug'                => $focusSlug,
+                        'name'                => $focusName,
+                        'sort_order'          => $i + 1,
+                        'status'              => 1,
+                    ]);
                 $focusIndex[$category->slug . '/' . $focusSlug] = $focus->id;
             }
         }
@@ -138,8 +152,26 @@ class ProgramCatalogSeeder extends Seeder
     }
 
     /**
+     * If a program still has no photo at all (no dashboard upload, no
+     * image_url), give it one. Never touches a program that already has
+     * either — that's the school's choice at that point, seeded or not.
+     */
+    private function fillBlankImage(Program $program, string $slug): void
+    {
+        if ($program->upload_id || $program->image_url) {
+            return;
+        }
+
+        $img = $this->imageFor($slug);
+        if ($img) {
+            $program->image_url = $img;
+            $program->save();
+        }
+    }
+
+    /**
      * Give the categories that had no legacy courses (Homeschooling, Social
-     * Clubs) at least one real programme each. Idempotent (matched on slug).
+     * Clubs) at least one real programme each. Create-only — see class docblock.
      */
     private function seedStarterPrograms(array $focusIndex): void
     {
@@ -173,34 +205,40 @@ class ProgramCatalogSeeder extends Seeder
             if (!$categoryId) {
                 continue;
             }
+            $slug = Str::slug($title);
 
-            Program::updateOrCreate(
-                ['slug' => Str::slug($title)],
-                [
-                    'program_category_id' => $categoryId,
-                    'program_focus_id'    => $focusIndex[$catSlug . '/' . $focusSlug] ?? null,
-                    'title'               => $title,
-                    'image_url'           => $this->imageFor(Str::slug($title)),
-                    'badge'               => $catSlug === 'social-clubs' ? 'Club' : 'Homeschooling',
-                    'description'         => $desc,
-                    'age_range'           => $age,
-                    'grade'               => $grade,
-                    'lessons'             => $catSlug === 'social-clubs' ? 'Weekly sessions' : 'Full year',
-                    'duration'            => $catSlug === 'social-clubs' ? 'Ongoing' : 'Academic year',
-                    'enrolled'            => 'Open enrolment',
-                    'price'               => 'Contact for fee',
-                    'accent'              => $catSlug === 'social-clubs' ? 'coral' : 'indigo',
-                    'meta_description'    => $title . ' at Brainova School — online.',
-                    'overview'            => [$desc],
-                    'highlights'          => ['Fully online', 'Small groups', 'Weekly progress to your parent account'],
-                    'format'              => $catSlug === 'social-clubs' ? 'One live session weekly.' : 'Daily live sessions + guided independent work on the learning portal.',
-                    'sort_order'          => $i + 1,
-                    'status'              => 1,
-                ]
-            );
+            $existing = Program::where('slug', $slug)->first();
+            if ($existing) {
+                $this->fillBlankImage($existing, $slug);
+                continue;
+            }
+
+            Program::create([
+                'slug'                 => $slug,
+                'program_category_id'  => $categoryId,
+                'program_focus_id'     => $focusIndex[$catSlug . '/' . $focusSlug] ?? null,
+                'title'                => $title,
+                'image_url'            => $this->imageFor($slug),
+                'badge'                => $catSlug === 'social-clubs' ? 'Club' : 'Homeschooling',
+                'description'          => $desc,
+                'age_range'            => $age,
+                'grade'                => $grade,
+                'lessons'              => $catSlug === 'social-clubs' ? 'Weekly sessions' : 'Full year',
+                'duration'             => $catSlug === 'social-clubs' ? 'Ongoing' : 'Academic year',
+                'enrolled'             => 'Open enrolment',
+                'price'                => 'Contact for fee',
+                'accent'               => $catSlug === 'social-clubs' ? 'coral' : 'indigo',
+                'meta_description'     => $title . ' at Brainova School — online.',
+                'overview'             => [$desc],
+                'highlights'           => ['Fully online', 'Small groups', 'Weekly progress to your parent account'],
+                'format'               => $catSlug === 'social-clubs' ? 'One live session weekly.' : 'Daily live sessions + guided independent work on the learning portal.',
+                'sort_order'           => $i + 1,
+                'status'               => 1,
+            ]);
         }
     }
 
+    /** Create-only — see class docblock. */
     private function importLegacyCourses(array $focusIndex): void
     {
         $path = database_path('seeders/data/legacy_programs.php');
@@ -247,32 +285,37 @@ class ProgramCatalogSeeder extends Seeder
             if (!$categoryId) {
                 continue;
             }
+
+            $existing = Program::where('slug', $course['slug'])->first();
+            if ($existing) {
+                $this->fillBlankImage($existing, $course['slug']);
+                continue;
+            }
+
             $focusId = $focusIndex[$catSlug . '/' . $focusSlug] ?? null;
 
-            Program::updateOrCreate(
-                ['slug' => $course['slug']],
-                [
-                    'program_category_id' => $categoryId,
-                    'program_focus_id'    => $focusId,
-                    'title'               => $course['title'],
-                    'badge'               => $course['badge'] ?? null,
-                    'description'         => $course['description'] ?? null,
-                    'age_range'           => $course['age_range'] ?? null,
-                    'grade'               => $course['grade'] ?? null,
-                    'lessons'             => $course['lessons'] ?? null,
-                    'duration'            => $course['duration'] ?? null,
-                    'enrolled'            => $course['enrolled'] ?? null,
-                    'price'               => $course['price'] ?? null,
-                    'accent'              => $course['accent'] ?? 'teal',
-                    'image_url'           => $this->imageFor($course['slug']) ?? ($course['image'] ?? null),
-                    'meta_description'    => $course['meta_description'] ?? null,
-                    'overview'            => isset($course['overview']) && is_array($course['overview']) ? $course['overview'] : [],
-                    'highlights'          => isset($course['highlights']) && is_array($course['highlights']) ? $course['highlights'] : [],
-                    'format'              => $course['format'] ?? null,
-                    'sort_order'          => $i + 1,
-                    'status'              => 1,
-                ]
-            );
+            Program::create([
+                'slug'                 => $course['slug'],
+                'program_category_id'  => $categoryId,
+                'program_focus_id'     => $focusId,
+                'title'                => $course['title'],
+                'badge'                => $course['badge'] ?? null,
+                'description'          => $course['description'] ?? null,
+                'age_range'            => $course['age_range'] ?? null,
+                'grade'                => $course['grade'] ?? null,
+                'lessons'              => $course['lessons'] ?? null,
+                'duration'             => $course['duration'] ?? null,
+                'enrolled'             => $course['enrolled'] ?? null,
+                'price'                => $course['price'] ?? null,
+                'accent'               => $course['accent'] ?? 'teal',
+                'image_url'            => $this->imageFor($course['slug']) ?? ($course['image'] ?? null),
+                'meta_description'     => $course['meta_description'] ?? null,
+                'overview'             => isset($course['overview']) && is_array($course['overview']) ? $course['overview'] : [],
+                'highlights'           => isset($course['highlights']) && is_array($course['highlights']) ? $course['highlights'] : [],
+                'format'               => $course['format'] ?? null,
+                'sort_order'           => $i + 1,
+                'status'               => 1,
+            ]);
         }
     }
 }
