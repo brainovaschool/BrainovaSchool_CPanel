@@ -51,6 +51,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('edit/{id}',         'edit')->name('student_category.edit')->middleware('PermissionCheck:student_category_update');
                     Route::PUT('update/{id}',       'update')->name('student_category.update')->middleware('PermissionCheck:student_category_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('student_category.delete')->middleware('PermissionCheck:student_category_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('student_category.bulk-delete')->middleware('PermissionCheck:student_category_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('student_category.bulk-status')->middleware('PermissionCheck:student_category_update', 'DemoCheck');
                 });
 
                 Route::controller(PromoteStudentController::class)->prefix('promote/students')->group(function () {
@@ -74,6 +76,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('edit/{id}',         'edit')->name('parent.edit')->middleware('PermissionCheck:parent_update');
                     Route::PUT('update/{id}',       'update')->name('parent.update')->middleware('PermissionCheck:parent_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('parent.delete')->middleware('PermissionCheck:parent_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('parent.bulk-delete')->middleware('PermissionCheck:parent_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('parent.bulk-status')->middleware('PermissionCheck:parent_update', 'DemoCheck');
                     Route::get('/get-parent',       'getParent')->middleware('PermissionCheck:parent_read');
                 });
             });

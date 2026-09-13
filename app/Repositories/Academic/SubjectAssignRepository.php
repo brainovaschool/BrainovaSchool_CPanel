@@ -169,6 +169,17 @@ class SubjectAssignRepository implements SubjectAssignInterface
         }
     }
 
+    public function bulkDestroy(array $ids): int
+    {
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($this->destroy($id)['status']) {
+                $deleted++;
+            }
+        }
+        return $deleted;
+    }
+
     public function checkSection($request)
     {
         if ($request->form_type == "update") {

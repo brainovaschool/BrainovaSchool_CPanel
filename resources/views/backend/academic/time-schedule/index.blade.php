@@ -32,10 +32,16 @@
                     @endif
                 </div>
                 <div class="card-body">
+                    @if (hasPermission('time_schedule_delete'))
+                        @include('backend.partials.bulk-actions-bar', ['bulkStatusToggle' => false])
+                    @endif
                     <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead">
                                 <tr>
+                                    @if (hasPermission('time_schedule_delete'))
+                                        <th><input type="checkbox" id="bulkSelectAll"></th>
+                                    @endif
                                     <th class="serial">{{ ___('common.sr_no') }}</th>
                                     <th class="purchase">{{ ___('academic.type') }}</th>
                                     <th class="purchase">{{ ___('academic.start_time') }}</th>
@@ -49,6 +55,9 @@
                             <tbody class="tbody">
                                 @forelse ($data['time_schedule'] as $key => $row)
                                 <tr id="row_{{ $row->id }}">
+                                    @if (hasPermission('time_schedule_delete'))
+                                        <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
+                                    @endif
                                     <td class="serial">{{ ++$key }}</td>
                                     <td>
                                         @if ($row->type == 1)
@@ -134,3 +143,4 @@
 @push('script')
     @include('backend.partials.delete-ajax')
 @endpush
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'time/schedule'])

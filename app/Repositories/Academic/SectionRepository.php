@@ -73,6 +73,17 @@ class SectionRepository implements SectionInterface
         }
     }
 
+    public function bulkDestroy(array $ids): int
+    {
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($this->destroy($id)['status']) {
+                $deleted++;
+            }
+        }
+        return $deleted;
+    }
+
 
     public function translates($id){
 

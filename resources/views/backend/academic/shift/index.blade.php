@@ -32,10 +32,16 @@
                     @endif
                 </div>
                 <div class="card-body">
+                    @if (hasPermission('shift_delete'))
+                        @include('backend.partials.bulk-actions-bar', ['bulkStatusToggle' => false])
+                    @endif
                     <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead">
                                 <tr>
+                                    @if (hasPermission('shift_delete'))
+                                        <th><input type="checkbox" id="bulkSelectAll"></th>
+                                    @endif
                                     <th class="serial">{{ ___('common.sr_no') }}</th>
                                     <th class="purchase">{{ ___('common.name') }}</th>
                                     <th class="purchase">{{ ___('common.status') }}</th>
@@ -47,6 +53,9 @@
                             <tbody class="tbody">
                                 @forelse ($data['shift'] as $key => $row)
                                 <tr id="row_{{ $row->id }}">
+                                    @if (hasPermission('shift_delete'))
+                                        <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
+                                    @endif
                                     <td class="serial">{{ ++$key }}</td>
                                     <td>{{ $row->name }}</td>
                                     <td>
@@ -135,3 +144,4 @@
 @push('script')
     @include('backend.partials.delete-ajax')
 @endpush
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'shift'])

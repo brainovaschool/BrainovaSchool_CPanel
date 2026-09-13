@@ -31,6 +31,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/translateUpdate/{id}',        'translateUpdate')->name('classes.translateUpdate')->middleware('PermissionCheck:classes_update');
                     Route::put('/update/{id}',      'update')->name('classes.update')->middleware('PermissionCheck:classes_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('classes.delete')->middleware('PermissionCheck:classes_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('classes.bulk-delete')->middleware('PermissionCheck:classes_delete', 'DemoCheck');
                 });
 
                 Route::controller(SectionController::class)->prefix('section')->group(function () {
@@ -42,6 +43,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/translateUpdate/{id}',        'translateUpdate')->name('section.translateUpdate')->middleware('PermissionCheck:section_update');
                     Route::put('/update/{id}',      'update')->name('section.update')->middleware('PermissionCheck:section_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('section.delete')->middleware('PermissionCheck:section_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('section.bulk-delete')->middleware('PermissionCheck:section_delete', 'DemoCheck');
                 });
 
                 Route::controller(SubjectController::class)->prefix('subject')->group(function () {
@@ -51,6 +53,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',        'edit')->name('subject.edit')->middleware('PermissionCheck:subject_update');
                     Route::put('/update/{id}',      'update')->name('subject.update')->middleware('PermissionCheck:subject_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('subject.delete')->middleware('PermissionCheck:subject_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('subject.bulk-delete')->middleware('PermissionCheck:subject_delete', 'DemoCheck');
                 });
 
                 Route::controller(ShiftController::class)->prefix('shift')->group(function () {
@@ -62,6 +65,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/translate/{id}',        'translate')->name('shift.translate')->middleware('PermissionCheck:shift_update');
                     Route::post('/translateUpdate/{id}',      'translateUpdate')->name('shift.translateUpdate')->middleware('PermissionCheck:shift_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('shift.delete')->middleware('PermissionCheck:shift_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('shift.bulk-delete')->middleware('PermissionCheck:shift_delete', 'DemoCheck');
                 });
 
                 Route::controller(ClassRoomController::class)->prefix('class-room')->group(function () {
@@ -71,6 +75,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',        'edit')->name('class-room.edit')->middleware('PermissionCheck:class_room_update');
                     Route::put('/update/{id}',      'update')->name('class-room.update')->middleware('PermissionCheck:class_room_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('class-room.delete')->middleware('PermissionCheck:class_room_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('class-room.bulk-delete')->middleware('PermissionCheck:class_room_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('class-room.bulk-status')->middleware('PermissionCheck:class_room_update', 'DemoCheck');
                 });
 
                 Route::controller(ClassSetupController::class)->prefix('class-setup')->group(function () {
@@ -80,6 +86,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',        'edit')->name('class-setup.edit')->middleware('PermissionCheck:class_setup_update');
                     Route::put('/update/{id}',      'update')->name('class-setup.update')->middleware('PermissionCheck:class_setup_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('class-setup.delete')->middleware('PermissionCheck:class_setup_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('class-setup.bulk-delete')->middleware('PermissionCheck:class_setup_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('class-setup.bulk-status')->middleware('PermissionCheck:class_setup_update', 'DemoCheck');
                     Route::get('/get-sections',     'getSections');
                 });
 
@@ -90,6 +98,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',        'edit')->name('assign-subject.edit')->middleware('PermissionCheck:subject_assign_update');
                     Route::put('/update/{id}',      'update')->name('assign-subject.update')->middleware('PermissionCheck:subject_assign_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('assign-subject.delete')->middleware('PermissionCheck:subject_assign_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('assign-subject.bulk-delete')->middleware('PermissionCheck:subject_assign_delete', 'DemoCheck');
                     Route::get('/add-subject-teacher','addSubjectTeacher');
                     Route::get('/show',              'show')->name('assign-subject.show')->middleware('PermissionCheck:subject_assign_read');
                     Route::get('/get-subjects',     'getSubjects');
@@ -104,6 +113,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',        'edit')->name('time_schedule.edit')->middleware('PermissionCheck:time_schedule_update');
                     Route::put('/update/{id}',      'update')->name('time_schedule.update')->middleware('PermissionCheck:time_schedule_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('time_schedule.delete')->middleware('PermissionCheck:time_schedule_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('time_schedule.bulk-delete')->middleware('PermissionCheck:time_schedule_delete', 'DemoCheck');
                 });
             });
         });

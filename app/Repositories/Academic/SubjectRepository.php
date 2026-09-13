@@ -72,4 +72,15 @@ class SubjectRepository implements SubjectInterface
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
     }
+
+    public function bulkDestroy(array $ids): int
+    {
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($this->destroy($id)['status']) {
+                $deleted++;
+            }
+        }
+        return $deleted;
+    }
 }

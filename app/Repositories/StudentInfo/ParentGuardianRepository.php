@@ -188,6 +188,27 @@ class ParentGuardianRepository implements ParentGuardianInterface
         }
     }
 
+    public function bulkDestroy(array $ids): int
+    {
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($this->destroy($id)['status']) {
+                $deleted++;
+            }
+        }
+        return $deleted;
+    }
+
+    public function bulkStatus(array $ids, int $status)
+    {
+        try {
+            $this->model->whereIn('id', $ids)->update(['status' => $status]);
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
     public function getStudentsByParent($parentId)
     {
         $students =  Student::select('id','admission_no', 'roll_no', 'first_name', 'last_name', 'mobile',

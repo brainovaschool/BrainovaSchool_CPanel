@@ -116,6 +116,28 @@ class PageRepository implements PageInterface
         }
     }
 
+    public function bulkDestroy(array $ids): int
+    {
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($this->destroy($id)['status']) {
+                $deleted++;
+            }
+        }
+        return $deleted;
+    }
+
+    /** Pages use "active_status", not "status" — matches this repo's own store()/update(). */
+    public function bulkStatus(array $ids, int $status)
+    {
+        try {
+            $this->page->whereIn('id', $ids)->update(['active_status' => $status]);
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
     public function translates($page_id)
     {
         return $this->page_trans->where('page_id', $page_id)->get()->groupBy('locale');

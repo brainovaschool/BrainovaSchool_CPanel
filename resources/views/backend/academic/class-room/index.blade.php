@@ -32,10 +32,16 @@
                     @endif
                 </div>
                 <div class="card-body">
+                    @if (hasPermission('class_room_update') || hasPermission('class_room_delete'))
+                        @include('backend.partials.bulk-actions-bar')
+                    @endif
                     <div class="table-responsive">
                         <table class="table table-bordered role-table">
                             <thead class="thead">
                                 <tr>
+                                    @if (hasPermission('class_room_update') || hasPermission('class_room_delete'))
+                                        <th><input type="checkbox" id="bulkSelectAll"></th>
+                                    @endif
                                     <th class="serial">{{ ___('common.sr_no') }}</th>
                                     <th class="purchase">{{ ___('academic.room_no') }}</th>
                                     <th class="purchase">{{ ___('academic.capacity') }}</th>
@@ -48,6 +54,9 @@
                             <tbody class="tbody">
                                 @forelse ($data['class_rooms'] as $key => $row)
                                 <tr id="row_{{ $row->id }}">
+                                    @if (hasPermission('class_room_update') || hasPermission('class_room_delete'))
+                                        <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
+                                    @endif
                                     <td class="serial">{{ ++$key }}</td>
                                     <td>{{ $row->room_no }}</td>
                                     <td>{{ $row->capacity }}</td>
@@ -126,3 +135,4 @@
 @push('script')
     @include('backend.partials.delete-ajax')
 @endpush
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'class-room'])

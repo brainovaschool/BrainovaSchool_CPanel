@@ -32,10 +32,16 @@
                     @endif
                 </div>
                 <div class="card-body">
+                    @if (hasPermission('news_delete') || hasPermission('news_update'))
+                        @include('backend.partials.bulk-actions-bar')
+                    @endif
                     <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead">
                                 <tr>
+                                    @if (hasPermission('news_delete') || hasPermission('news_update'))
+                                        <th style="width:36px"><input type="checkbox" id="bulkSelectAll"></th>
+                                    @endif
                                     <th class="serial">{{ ___('common.sr_no') }}</th>
                                     <th class="purchase">{{ ___('common.title') }}</th>
                                     <th class="purchase">{{ ___('settings.post_type') }}</th>
@@ -52,6 +58,9 @@
                             <tbody class="tbody">
                                 @forelse ($data['news'] as $key => $row)
                                 <tr id="row_{{ $row->id }}">
+                                    @if (hasPermission('news_delete') || hasPermission('news_update'))
+                                        <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
+                                    @endif
                                     <td class="serial">{{ ++$key }}</td>
                                     <td>{{ @$row->defaultTranslate->title ?? @$row->title }}</td>
                                     <td>
@@ -153,3 +162,4 @@
 @push('script')
     @include('backend.partials.delete-ajax')
 @endpush
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'admin-news'])

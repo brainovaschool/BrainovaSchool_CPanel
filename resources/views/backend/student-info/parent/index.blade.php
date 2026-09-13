@@ -63,10 +63,16 @@
                 </div>
                 @if (@$data['parents'])
                     <div class="card-body">
+                        @if (hasPermission('parent_delete') || hasPermission('parent_update'))
+                            @include('backend.partials.bulk-actions-bar')
+                        @endif
                         <div class="table-responsive">
                             <table class="table table-bordered role-table">
                                 <thead class="thead">
                                     <tr>
+                                        @if (hasPermission('parent_delete') || hasPermission('parent_update'))
+                                            <th style="width:36px"><input type="checkbox" id="bulkSelectAll"></th>
+                                        @endif
                                         <th class="serial">{{ ___('common.sr_no') }}</th>
                                         <th class="purchase">{{ ___('common.name') }}</th>
                                         <th class="purchase">{{ ___('common.phone') }}</th>
@@ -83,6 +89,9 @@
                                 <tbody class="tbody">
                                     @forelse ($data['parents'] as $key => $row)
                                         <tr id="row_{{ $row->id }}">
+                                            @if (hasPermission('parent_delete') || hasPermission('parent_update'))
+                                                <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
+                                            @endif
                                             <td class="serial">{{ ++$key }}</td>
                                             <td>
                                                 <div class="">
@@ -190,3 +199,4 @@
 @push('script')
     @include('backend.partials.delete-ajax')
 @endpush
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'parent'])

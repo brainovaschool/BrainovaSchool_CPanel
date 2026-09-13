@@ -135,6 +135,27 @@ class SliderRepository implements SliderInterface
         }
     }
 
+    public function bulkDestroy(array $ids): int
+    {
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($this->destroy($id)['status']) {
+                $deleted++;
+            }
+        }
+        return $deleted;
+    }
+
+    public function bulkStatus(array $ids, int $status)
+    {
+        try {
+            $this->slider->whereIn('id', $ids)->update(['status' => $status]);
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
     public function translates($slider_id)
     {
         return $this->slider_trans->where('slider_id', $slider_id)->get()->groupBy('locale');

@@ -47,6 +47,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',                'edit')->name('about.edit')->middleware('PermissionCheck:about_update');
                     Route::put('/update/{id}',              'update')->name('about.update')->middleware('PermissionCheck:about_update', 'DemoCheck');
                     Route::delete('/delete/{id}',           'delete')->name('about.delete')->middleware('PermissionCheck:about_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',             'bulkDelete')->name('about.bulk-delete')->middleware('PermissionCheck:about_delete', 'DemoCheck');
+                    Route::post('/bulk-status',             'bulkStatus')->name('about.bulk-status')->middleware('PermissionCheck:about_update', 'DemoCheck');
 
                     Route::get('/translate/{id}',                'translate')->name('about.translate')->middleware('PermissionCheck:about_update');
                     Route::put('/translate/update/{id}',                'translateUpdate')->name('about.translate.update')->middleware('PermissionCheck:about_update');
@@ -60,6 +62,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',                'edit')->name('slider.edit')->middleware('PermissionCheck:slider_update');
                     Route::put('/update/{id}',              'update')->name('slider.update')->middleware('PermissionCheck:slider_update', 'DemoCheck');
                     Route::delete('/delete/{id}',           'delete')->name('slider.delete')->middleware('PermissionCheck:slider_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',             'bulkDelete')->name('slider.bulk-delete')->middleware('PermissionCheck:slider_delete', 'DemoCheck');
+                    Route::post('/bulk-status',             'bulkStatus')->name('slider.bulk-status')->middleware('PermissionCheck:slider_update', 'DemoCheck');
 
                     Route::get('/translate/{id}',                'translate')->name('slider.translate')->middleware('PermissionCheck:slider_update');
                     Route::put('/translate/update/{id}',                'translateUpdate')->name('slider.translate.update')->middleware('PermissionCheck:slider_update');
@@ -72,6 +76,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',                'edit')->name('news.edit')->middleware('PermissionCheck:news_update');
                     Route::put('/update/{id}',              'update')->name('news.update')->middleware('PermissionCheck:news_update', 'DemoCheck');
                     Route::delete('/delete/{id}',           'delete')->name('news.delete')->middleware('PermissionCheck:news_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',             'bulkDelete')->name('news.bulk-delete')->middleware('PermissionCheck:news_delete', 'DemoCheck');
+                    Route::post('/bulk-status',             'bulkStatus')->name('news.bulk-status')->middleware('PermissionCheck:news_update', 'DemoCheck');
 
                     Route::get('/translate/{id}',                'translate')->name('news.translate')->middleware('PermissionCheck:news_update');
                     Route::put('/translate/update/{id}',                'translateUpdate')->name('news.translate.update')->middleware('PermissionCheck:news_update');
@@ -84,6 +90,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',                'edit')->name('event.edit')->middleware('PermissionCheck:event_update');
                     Route::put('/update/{id}',              'update')->name('event.update')->middleware('PermissionCheck:event_update', 'DemoCheck');
                     Route::delete('/delete/{id}',           'delete')->name('event.delete')->middleware('PermissionCheck:event_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',             'bulkDelete')->name('event.bulk-delete')->middleware('PermissionCheck:event_delete', 'DemoCheck');
+                    Route::post('/bulk-status',             'bulkStatus')->name('event.bulk-status')->middleware('PermissionCheck:event_update', 'DemoCheck');
 
                     Route::get('/translate/{id}',                'translate')->name('event.translate')->middleware('PermissionCheck:event_update');
                     Route::put('/translate/update/{id}',                'translateUpdate')->name('event.translate.update')->middleware('PermissionCheck:event_update');
@@ -152,6 +160,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',                'edit')->name('counter.edit')->middleware('PermissionCheck:counter_update');
                     Route::put('/update/{id}',              'update')->name('counter.update')->middleware('PermissionCheck:counter_update', 'DemoCheck');
                     Route::delete('/delete/{id}',           'delete')->name('counter.delete')->middleware('PermissionCheck:counter_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',             'bulkDelete')->name('counter.bulk-delete')->middleware('PermissionCheck:counter_delete', 'DemoCheck');
+                    Route::post('/bulk-status',             'bulkStatus')->name('counter.bulk-status')->middleware('PermissionCheck:counter_update', 'DemoCheck');
 
                     Route::get('/translate/{id}',                'translate')->name('counter.translate')->middleware('PermissionCheck:counter_update');
                     Route::put('/translate/update/{id}',                'translateUpdate')->name('counter.translate.update')->middleware('PermissionCheck:counter_update');
@@ -166,6 +176,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',                'edit')->name('contact-info.edit')->middleware('PermissionCheck:contact_info_update');
                     Route::put('/update/{id}',              'update')->name('contact-info.update')->middleware('PermissionCheck:contact_info_update', 'DemoCheck');
                     Route::delete('/delete/{id}',           'delete')->name('contact-info.delete')->middleware('PermissionCheck:contact_info_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',             'bulkDelete')->name('contact-info.bulk-delete')->middleware('PermissionCheck:contact_info_delete', 'DemoCheck');
+                    Route::post('/bulk-status',             'bulkStatus')->name('contact-info.bulk-status')->middleware('PermissionCheck:contact_info_update', 'DemoCheck');
 
                     Route::get('/translate/{id}',                'translate')->name('contact-info.translate')->middleware('PermissionCheck:contact_info_update');
                     Route::put('/translate/update/{id}',                'translateUpdate')->name('contact-info.translate.update')->middleware('PermissionCheck:contact_info_update');
@@ -179,6 +191,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',                'edit')->name('department-contact.edit')->middleware('PermissionCheck:dep_contact_update');
                     Route::put('/update/{id}',              'update')->name('department-contact.update')->middleware('PermissionCheck:dep_contact_update', 'DemoCheck');
                     Route::delete('/delete/{id}',           'delete')->name('department-contact.delete')->middleware('PermissionCheck:dep_contact_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',             'bulkDelete')->name('department-contact.bulk-delete')->middleware('PermissionCheck:dep_contact_delete', 'DemoCheck');
+                    Route::post('/bulk-status',             'bulkStatus')->name('department-contact.bulk-status')->middleware('PermissionCheck:dep_contact_update', 'DemoCheck');
 
                     Route::get('/translate/{id}',                'translate')->name('department-contact.translate')->middleware('PermissionCheck:dep_contact_update');
                     Route::put('/translate/update/{id}',                'translateUpdate')->name('department-contact.translate.update')->middleware('PermissionCheck:dep_contact_update');
@@ -225,6 +239,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',                'edit')->name('edit')->middleware('PermissionCheck:page_update');
                     Route::post('/update/{id}',              'update')->name('update')->middleware('PermissionCheck:page_update', 'DemoCheck');
                     Route::delete('/delete/{id}',           'delete')->name('delete')->middleware('PermissionCheck:page_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',             'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:page_delete', 'DemoCheck');
+                    Route::post('/bulk-status',             'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:page_update', 'DemoCheck');
 
                     Route::get('/translate/{id}',                'translate')->name('translate')->middleware('PermissionCheck:page_update');
                     Route::put('/translate/update/{id}',                'translateUpdate')->name('translate.update')->middleware('PermissionCheck:page_update');

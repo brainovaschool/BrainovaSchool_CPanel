@@ -147,6 +147,17 @@ class ClassesRepository implements ClassesInterface
         }
     }
 
+    public function bulkDestroy(array $ids): int
+    {
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($this->destroy($id)['status']) {
+                $deleted++;
+            }
+        }
+        return $deleted;
+    }
+
     public function translates($id){
 
         return $this->classTrans->where('class_id',$id)->get()->groupBy('locale');

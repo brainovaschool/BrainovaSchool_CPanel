@@ -156,6 +156,36 @@ class UserController extends Controller
         return response()->json(["message" => __('Delete successful.')], Response::HTTP_OK);
     }
 
+    /**
+     * These reuse the repository's existing deletes()/status() methods, which
+     * already accept an array of ids — only the response shape here is new,
+     * matching backend.partials.bulk-actions-ajax's expected format.
+     */
+    public function bulkDelete(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+        $request->merge(['ids' => $ids]);
+        $deleted = $this->user->deletes($request);
+        if (!$deleted) {
+            return response()->json([___('alert.something_went_wrong_please_try_again'), 'error', ___('alert.oops'), ___('alert.OK')]);
+        }
+        return response()->json([___('alert.deleted_successfully'), 'success', ___('alert.deleted'), ___('alert.OK')]);
+    }
+
+    public function bulkStatus(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+        $request->merge(['ids' => $ids, 'status' => (int) $request->input('status', 1)]);
+        $this->user->status($request);
+        return response()->json([___('alert.updated_successfully'), 'success', ___('alert.updated'), ___('alert.OK')]);
+    }
+
     public function changePermission($id)
     {
         $staff = Staff::with('role', 'user')->find($id);

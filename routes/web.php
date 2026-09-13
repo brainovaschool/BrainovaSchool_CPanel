@@ -235,6 +235,8 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::get('/edit/{id}',        'edit')->name('users.edit')->middleware('PermissionCheck:user_update');
                         Route::put('/update/{id}',      'update')->name('users.update')->middleware('PermissionCheck:user_update', 'DemoCheck');
                         Route::delete('/delete/{id}',   'delete')->name('users.delete')->middleware('PermissionCheck:user_delete', 'DemoCheck');
+                        Route::post('/bulk-delete',     'bulkDelete')->name('users.bulk-delete')->middleware('PermissionCheck:user_delete', 'DemoCheck');
+                        Route::post('/bulk-status',     'bulkStatus')->name('users.bulk-status')->middleware('PermissionCheck:user_update', 'DemoCheck');
 
                         Route::get('/change-role',      'changeRole')->name('change.role');
                         Route::get('/change-permission/{id}',      'changePermission')->name('user.change.permission');
