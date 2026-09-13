@@ -24,6 +24,9 @@ class AiHelperRepository
                 'ai_helper_page_title',
                 'ai_helper_button_text',
                 'ai_helper_system_prompt',
+                'ai_helper_delivery_mode',
+                'ai_helper_drive_root_folder',
+                'ai_helper_drive_service_account_json',
             ];
 
             foreach ($fields as $field) {

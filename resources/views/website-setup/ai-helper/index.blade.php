@@ -89,6 +89,47 @@
                             @enderror
                         </div>
 
+                        <div class="col-12">
+                            <hr>
+                            <h5 class="mb-3">Delivery — Image &amp; Slides only</h5>
+                            <p class="text-secondary" style="margin-top:-10px">The plain "Generate Lesson Plan" PDF
+                                always downloads directly. This setting only affects the "Generate Visual Lesson
+                                Plan" and "Generate as Slides" buttons.</p>
+                        </div>
+
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label">Delivery Mode</label>
+                            <select name="ai_helper_delivery_mode" class="nice-select niceSelect bordered_style wide @error('ai_helper_delivery_mode') is-invalid @enderror">
+                                <option value="download" {{ Setting('ai_helper_delivery_mode') != 'drive' ? 'selected' : '' }}>Direct Download</option>
+                                <option value="drive" {{ Setting('ai_helper_delivery_mode') == 'drive' ? 'selected' : '' }}>Save to Google Drive</option>
+                            </select>
+                            @error('ai_helper_delivery_mode')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label">Google Drive Root Folder Name</label>
+                            <input type="text" name="ai_helper_drive_root_folder"
+                                class="form-control ot-input @error('ai_helper_drive_root_folder') is-invalid @enderror"
+                                value="{{ Setting('ai_helper_drive_root_folder') ?: 'Brainova Lessons' }}"
+                                placeholder="Brainova Lessons">
+                            @error('ai_helper_drive_root_folder')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Google Service Account JSON</label>
+                            <textarea name="ai_helper_drive_service_account_json" rows="10"
+                                class="form-control ot-textarea @error('ai_helper_drive_service_account_json') is-invalid @enderror"
+                                placeholder='Paste the entire contents of your service account key file here, e.g. {"type": "service_account", "client_email": "...", "private_key": "...", ...}'>{{ Setting('ai_helper_drive_service_account_json') }}</textarea>
+                            <small class="text-secondary">Make sure you have shared your "{{ Setting('ai_helper_drive_root_folder') ?: 'Brainova Lessons' }}" Drive folder with this service account's email address (found inside the JSON as "client_email"), giving it Editor access — otherwise it cannot create files inside it.</small>
+                            @error('ai_helper_drive_service_account_json')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                     </div>
 
                     <div class="col-md-12 mt-3">

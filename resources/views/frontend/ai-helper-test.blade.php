@@ -49,14 +49,25 @@
         margin: 0 8px 10px 0;
         cursor: pointer;
     }
+    .ai-helper-btn:disabled { background: #94a3b8; cursor: not-allowed; }
     .ai-helper-note { color: #475569; font-size: 13px; margin-top: 10px; }
+    .ai-helper-status {
+        margin-top: 14px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 14px;
+        display: none;
+    }
+    .ai-helper-status.is-progress { display: block; background: #eaf2ff; color: #1e40af; }
+    .ai-helper-status.is-success { display: block; background: #e8f7ef; color: #166534; }
+    .ai-helper-status.is-error { display: block; background: #fff1f2; color: #b91c1c; }
 </style>
 
 <div class="section_padding2">
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-7 col-md-9">
-                <form action="{{ route('frontend.ai-helper.generate') }}" method="post">
+                <form id="aiHelperForm" action="{{ route('frontend.ai-helper.generate') }}" method="post">
                     @csrf
                     <div class="ai-helper-card">
                         <h3>{{ $data['title'] }}</h3>
@@ -109,13 +120,98 @@
                         <button type="submit" formaction="{{ route('frontend.ai-helper.generate-slides') }}" class="ai-helper-btn">
                             Generate as Slides
                         </button>
-                        <p class="ai-helper-note">This can take up to a minute — the page will just look like it's
-                            loading, then a PDF will download automatically.</p>
+
+                        <div id="aiHelperStatus" class="ai-helper-status"></div>
+
+                        <p class="ai-helper-note">This can take up to a minute per click.</p>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    (function () {
+        var form    = document.getElementById('aiHelperForm');
+        var status  = document.getElementById('aiHelperStatus');
+        var buttons = form.querySelectorAll('.ai-helper-btn');
+
+        function setStatus(kind, text) {
+            status.className = 'ai-helper-status is-' + kind;
+            status.textContent = text;
+        }
+
+        function setButtonsDisabled(disabled) {
+            buttons.forEach(function (btn) { btn.disabled = disabled; });
+        }
+
+        function filenameFromHeader(header) {
+            if (!header) return 'lesson-plan.pdf';
+            var match = header.match(/filename="?([^"]+)"?/);
+            return match ? match[1] : 'lesson-plan.pdf';
+        }
+
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            var url   = e.submitter ? e.submitter.formAction : form.action;
+            var token = form.querySelector('input[name="_token"]').value;
+
+            setButtonsDisabled(true);
+            setStatus('progress', 'Generating your lesson plan… this can take up to a minute, please wait.');
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': token,
+                    'Accept': 'application/pdf, application/json, text/plain'
+                },
+                body: new FormData(form)
+            })
+            .then(function (response) {
+                var contentType = response.headers.get('Content-Type') || '';
+
+                if (!response.ok) {
+                    return response.text().then(function (text) {
+                        throw new Error(text || 'Something went wrong. Please try again.');
+                    });
+                }
+
+                // Delivery mode = Google Drive: server sends back a plain
+                // text confirmation instead of a PDF — nothing to download.
+                if (contentType.indexOf('application/pdf') === -1) {
+                    return response.text().then(function (text) { return { saved: true, text: text }; });
+                }
+
+                var filename = filenameFromHeader(response.headers.get('Content-Disposition'));
+                return response.blob().then(function (blob) { return { saved: false, blob: blob, filename: filename }; });
+            })
+            .then(function (result) {
+                if (result.saved) {
+                    setStatus('success', result.text || 'Saved to Google Drive!');
+                    setButtonsDisabled(false);
+                    return;
+                }
+
+                var objectUrl = URL.createObjectURL(result.blob);
+                var link = document.createElement('a');
+                link.href = objectUrl;
+                link.download = result.filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                setTimeout(function () { URL.revokeObjectURL(objectUrl); }, 5000);
+
+                setStatus('success', 'Download complete!');
+                setButtonsDisabled(false);
+            })
+            .catch(function (err) {
+                setStatus('error', err.message || 'Something went wrong. Please try again.');
+                setButtonsDisabled(false);
+            });
+        });
+    })();
+</script>
 
 @endsection

@@ -21,6 +21,7 @@ use App\Repositories\Academic\ShiftRepository;
 use App\Repositories\StudentInfo\StudentRepository;
 use App\Repositories\StudentInfo\OnlineAdmissionSettingRepository;
 use App\Repositories\WebsiteSetup\AiHelperRepository;
+use App\Services\GoogleDriveClient;
 
 class FrontendController extends Controller
 {
@@ -33,6 +34,7 @@ class FrontendController extends Controller
     private $admission_setting_repo;
     private $shift_repo;
     private $aiHelperRepo;
+    private $driveClient;
 
     function __construct(
         FrontendRepository $repo,
@@ -44,6 +46,7 @@ class FrontendController extends Controller
         OnlineAdmissionSettingRepository      $admission_setting_repo,
         ShiftRepository      $shift_repo,
         AiHelperRepository      $aiHelperRepo,
+        GoogleDriveClient      $driveClient,
     )
     {
         if (!Schema::hasTable('settings') && !Schema::hasTable('users'))
@@ -57,6 +60,7 @@ class FrontendController extends Controller
         $this->admission_setting_repo        = $admission_setting_repo;
         $this->shift_repo        = $shift_repo;
         $this->aiHelperRepo        = $aiHelperRepo;
+        $this->driveClient        = $driveClient;
     }
 
     public function index()
@@ -328,19 +332,36 @@ class FrontendController extends Controller
         return view('frontend.contact', compact('data'));
     }
 
-    // AI Helper — filename format: grade_subject_term_unit_module_lesson_<suffix>.pdf
+    // AI Helper — filename format: G<grade>_subject_T<term>_unit_module_lesson_<suffix>.pdf
     private function aiHelperFilename(array $fields, string $suffix): string
     {
-        $parts = array_map(fn ($v) => \Illuminate\Support\Str::slug($v, '_'), [
-            $fields['grade'],
+        $parts = [
+            'g' . \Illuminate\Support\Str::slug($fields['grade'], '_'),
+            \Illuminate\Support\Str::slug($fields['subject'], '_'),
+            't' . \Illuminate\Support\Str::slug($fields['term'], '_'),
+            \Illuminate\Support\Str::slug($fields['unit'], '_'),
+            \Illuminate\Support\Str::slug($fields['module'], '_'),
+            \Illuminate\Support\Str::slug($fields['lesson_title'], '_'),
+            $suffix,
+        ];
+        return implode('_', $parts) . '.pdf';
+    }
+
+    // AI Helper — Drive folder path: Root / Grade X / Subject / Term X / Unit / Module / Lesson Title
+    private function aiHelperDriveFolderPath(array $fields): array
+    {
+        $grade = trim($fields['grade']);
+        $term  = trim($fields['term']);
+
+        return [
+            setting('ai_helper_drive_root_folder') ?: 'Brainova Lessons',
+            stripos($grade, 'grade') === 0 ? $grade : 'Grade ' . $grade,
             $fields['subject'],
-            $fields['term'],
+            stripos($term, 'term') === 0 ? $term : 'Term ' . $term,
             $fields['unit'],
             $fields['module'],
             $fields['lesson_title'],
-        ]);
-        $parts[] = $suffix;
-        return implode('_', $parts) . '.pdf';
+        ];
     }
 
     // AI Helper — private preview page, not linked anywhere on the site.
@@ -401,7 +422,17 @@ class FrontendController extends Controller
         $data['plan']   = $result['data'];
         $data['logo']   = globalAsset(setting('dark_logo'), 'favicon.png');
 
-        $pdf      = PDF::loadView('frontend.ai-helper-lesson-visual-pdf', compact('data'));
+        $pdf = PDF::loadView('frontend.ai-helper-lesson-visual-pdf', compact('data'));
+
+        if (setting('ai_helper_delivery_mode') === 'drive') {
+            $path  = $this->aiHelperDriveFolderPath($fields);
+            $drive = $this->driveClient->uploadToPath($path, 'lesson-plan.pdf', $pdf->output());
+            if (!$drive['ok']) {
+                return response($drive['message'], 422);
+            }
+            return response('Saved to Google Drive: ' . implode(' / ', $path) . ' / lesson-plan.pdf');
+        }
+
         $filename = $this->aiHelperFilename($fields, 'lessonplan');
         return $pdf->download($filename);
     }
@@ -427,7 +458,17 @@ class FrontendController extends Controller
         $data['plan']   = $result['data'];
         $data['logo']   = globalAsset(setting('dark_logo'), 'favicon.png');
 
-        $pdf      = PDF::loadView('frontend.ai-helper-lesson-slides-pdf', compact('data'))->setPaper('a4', 'landscape');
+        $pdf = PDF::loadView('frontend.ai-helper-lesson-slides-pdf', compact('data'))->setPaper('a4', 'landscape');
+
+        if (setting('ai_helper_delivery_mode') === 'drive') {
+            $path  = $this->aiHelperDriveFolderPath($fields);
+            $drive = $this->driveClient->uploadToPath($path, 'slides.pdf', $pdf->output());
+            if (!$drive['ok']) {
+                return response($drive['message'], 422);
+            }
+            return response('Saved to Google Drive: ' . implode(' / ', $path) . ' / slides.pdf');
+        }
+
         $filename = $this->aiHelperFilename($fields, 'slide');
         return $pdf->download($filename);
     }
