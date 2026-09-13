@@ -331,17 +331,90 @@ class FrontendController extends Controller
     // AI Helper — private preview page, not linked anywhere on the site.
     public function aiHelperShow()
     {
-        $data['title']          = setting('ai_helper_page_title') ?: 'AI Helper (Preview)';
-        $data['question_label'] = setting('ai_helper_question_label') ?: 'Enter a number';
-        $data['button_text']    = setting('ai_helper_button_text') ?: 'Help';
+        $data['title']       = setting('ai_helper_page_title') ?: 'AI Helper (Preview)';
+        $data['button_text'] = setting('ai_helper_button_text') ?: 'Generate Lesson Plan';
         return view('frontend.ai-helper-test', compact('data'));
     }
 
-    public function aiHelperAsk(Request $request)
+    public function aiHelperGenerate(Request $request)
     {
-        $request->validate(['input' => 'required|string|max:1000']);
-        $result = $this->aiHelperRepo->ask($request->input('input'));
-        return response()->json($result);
+        $fields = $request->validate([
+            'grade'        => 'required|string|max:100',
+            'subject'      => 'required|string|max:100',
+            'term'         => 'required|string|max:100',
+            'unit'         => 'required|string|max:150',
+            'module'       => 'required|string|max:150',
+            'lesson_title' => 'required|string|max:150',
+        ]);
+
+        $result = $this->aiHelperRepo->generateLessonPlan($fields);
+
+        if (!$result['ok']) {
+            return response($result['message'], 422);
+        }
+
+        $html = e($result['text']);
+        $html = preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $html);
+        $html = nl2br($html);
+
+        $data['fields']      = $fields;
+        $data['content_html'] = $html;
+
+        $pdf      = PDF::loadView('frontend.ai-helper-lesson-pdf', compact('data'));
+        $filename = 'lesson-plan_' . \Illuminate\Support\Str::slug($fields['lesson_title']) . '.pdf';
+        return $pdf->download($filename);
+    }
+
+    public function aiHelperGenerateVisual(Request $request)
+    {
+        $fields = $request->validate([
+            'grade'        => 'required|string|max:100',
+            'subject'      => 'required|string|max:100',
+            'term'         => 'required|string|max:100',
+            'unit'         => 'required|string|max:150',
+            'module'       => 'required|string|max:150',
+            'lesson_title' => 'required|string|max:150',
+        ]);
+
+        $result = $this->aiHelperRepo->generateLessonPlanStructured($fields);
+
+        if (!$result['ok']) {
+            return response($result['message'], 422);
+        }
+
+        $data['fields'] = $fields;
+        $data['plan']   = $result['data'];
+        $data['logo']   = globalAsset(setting('dark_logo'), 'favicon.png');
+
+        $pdf      = PDF::loadView('frontend.ai-helper-lesson-visual-pdf', compact('data'));
+        $filename = 'lesson-plan_' . \Illuminate\Support\Str::slug($fields['lesson_title']) . '.pdf';
+        return $pdf->download($filename);
+    }
+
+    public function aiHelperGenerateSlides(Request $request)
+    {
+        $fields = $request->validate([
+            'grade'        => 'required|string|max:100',
+            'subject'      => 'required|string|max:100',
+            'term'         => 'required|string|max:100',
+            'unit'         => 'required|string|max:150',
+            'module'       => 'required|string|max:150',
+            'lesson_title' => 'required|string|max:150',
+        ]);
+
+        $result = $this->aiHelperRepo->generateLessonPlanStructured($fields);
+
+        if (!$result['ok']) {
+            return response($result['message'], 422);
+        }
+
+        $data['fields'] = $fields;
+        $data['plan']   = $result['data'];
+        $data['logo']   = globalAsset(setting('dark_logo'), 'favicon.png');
+
+        $pdf      = PDF::loadView('frontend.ai-helper-lesson-slides-pdf', compact('data'))->setPaper('a4', 'landscape');
+        $filename = 'lesson-plan-slides_' . \Illuminate\Support\Str::slug($fields['lesson_title']) . '.pdf';
+        return $pdf->download($filename);
     }
 
     // Testimonials & Reviews — one method, two routes

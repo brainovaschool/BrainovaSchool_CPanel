@@ -48,8 +48,8 @@
                             <label class="form-label">Model</label>
                             <input type="text" name="ai_helper_model"
                                 class="form-control ot-input @error('ai_helper_model') is-invalid @enderror"
-                                value="{{ Setting('ai_helper_model') ?: 'gemini-2.0-flash' }}"
-                                placeholder="gemini-2.0-flash">
+                                value="{{ Setting('ai_helper_model') ?: 'gemini-3.6-flash' }}"
+                                placeholder="gemini-3.6-flash">
                             <small class="text-secondary">Only change this if Google renames/retires the default
                                 model.</small>
                             @error('ai_helper_model')
@@ -71,29 +71,19 @@
                             <label class="form-label">Button Text</label>
                             <input type="text" name="ai_helper_button_text"
                                 class="form-control ot-input @error('ai_helper_button_text') is-invalid @enderror"
-                                value="{{ Setting('ai_helper_button_text') }}" placeholder="Help">
+                                value="{{ Setting('ai_helper_button_text') }}" placeholder="Generate Lesson Plan">
                             @error('ai_helper_button_text')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
 
                         <div class="col-12 mb-3">
-                            <label class="form-label">Question Label (shown above the input box)</label>
-                            <input type="text" name="ai_helper_question_label"
-                                class="form-control ot-input @error('ai_helper_question_label') is-invalid @enderror"
-                                value="{{ Setting('ai_helper_question_label') }}"
-                                placeholder="Enter a number">
-                            @error('ai_helper_question_label')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                        <div class="col-12 mb-3">
-                            <label class="form-label">Prompt (the instructions sent to the AI, before the visitor's
-                                own input)</label>
-                            <textarea name="ai_helper_system_prompt" rows="6"
+                            <label class="form-label">Prompt (the full instructions sent to the AI — the visitor's
+                                Grade / Subject / Term / Unit / Module / Lesson Title are automatically added after
+                                this text)</label>
+                            <textarea name="ai_helper_system_prompt" rows="16"
                                 class="form-control ot-textarea @error('ai_helper_system_prompt') is-invalid @enderror"
-                                placeholder="You are a helpful assistant. The user will give you a number. Reply with just one short sentence telling them whether it is even or odd.">{{ Setting('ai_helper_system_prompt') }}</textarea>
+                                placeholder="Paste your full lesson-plan generator prompt here.">{{ Setting('ai_helper_system_prompt') }}</textarea>
                             @error('ai_helper_system_prompt')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

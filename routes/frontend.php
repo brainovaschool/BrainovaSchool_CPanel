@@ -50,8 +50,10 @@ Route::middleware(saasMiddleware())->group(function () {
 
                 Route::get('/page/{slug}',          'page')->name('frontend.page');
 
-                Route::get('/homeschool-ai-preview',      'aiHelperShow')->name('frontend.ai-helper.show');
-                Route::post('/homeschool-ai-preview/ask', 'aiHelperAsk')->name('frontend.ai-helper.ask');
+                Route::get('/homeschool-ai-preview',                  'aiHelperShow')->name('frontend.ai-helper.show');
+                Route::post('/homeschool-ai-preview/generate',        'aiHelperGenerate')->name('frontend.ai-helper.generate');
+                Route::post('/homeschool-ai-preview/generate-visual', 'aiHelperGenerateVisual')->name('frontend.ai-helper.generate-visual');
+                Route::post('/homeschool-ai-preview/generate-slides', 'aiHelperGenerateSlides')->name('frontend.ai-helper.generate-slides');
 
             });
         });
