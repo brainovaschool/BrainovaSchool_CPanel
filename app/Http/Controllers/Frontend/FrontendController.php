@@ -259,10 +259,11 @@ class FrontendController extends Controller
 
         $paginator = $query->paginate(9)->withQueryString();
 
-        $data['category']     = $model;
-        $data['focuses']      = $focuses;
-        $data['active_focus'] = $activeFocus;
-        $data['programs']     = $paginator->getCollection();
+        $data['category']           = $model;
+        $data['focuses']            = $focuses;
+        $data['active_focus']       = $activeFocus;
+        $data['active_focus_model'] = $focusModel;
+        $data['programs']           = $paginator->getCollection();
         $data['total']        = \App\Models\WebsiteSetup\Program::query()->active()
                                     ->where('program_category_id', $model->id)->count();
         $data['trust']        = $this->programTrust();

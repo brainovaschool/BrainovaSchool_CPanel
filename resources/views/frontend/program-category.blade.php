@@ -5,6 +5,7 @@
     $focuses    = $data['focuses'] ?? collect();
     $programs   = $data['programs'] ?? collect();
     $active     = $data['active_focus'] ?? null;
+    $activeFocusModel = $data['active_focus_model'] ?? null;
     $total      = $data['total'] ?? 0;
     $trust      = $data['trust'] ?? [];
     $heroImg    = $category->image;
@@ -122,8 +123,11 @@
                 @include('frontend.partials.courses-pagination', ['paginator' => $paginator])
             @else
                 <div class="fe-courses-empty fe-is-visible">
+                    @if ($activeFocusModel && $activeFocusModel->description)
+                        <p>{{ $activeFocusModel->description }}</p>
+                    @endif
                     <p>This section is coming soon. <a href="{{ route('frontend.contact') }}">Contact our representative</a>
-                    to get the details on {{ strtolower($category->name) }} options for your child.</p>
+                    to get the details on {{ $activeFocusModel ? strtolower($activeFocusModel->name) : strtolower($category->name) }} options for your child.</p>
                 </div>
             @endif
         </div>
