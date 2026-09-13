@@ -20,6 +20,7 @@ use App\Models\WebsiteSetup\OnlineAdmission;
 use App\Repositories\Academic\ShiftRepository;
 use App\Repositories\StudentInfo\StudentRepository;
 use App\Repositories\StudentInfo\OnlineAdmissionSettingRepository;
+use App\Repositories\WebsiteSetup\AiHelperRepository;
 
 class FrontendController extends Controller
 {
@@ -31,6 +32,7 @@ class FrontendController extends Controller
     private $pageRepo;
     private $admission_setting_repo;
     private $shift_repo;
+    private $aiHelperRepo;
 
     function __construct(
         FrontendRepository $repo,
@@ -41,6 +43,7 @@ class FrontendController extends Controller
         PageRepository      $pageRepo,
         OnlineAdmissionSettingRepository      $admission_setting_repo,
         ShiftRepository      $shift_repo,
+        AiHelperRepository      $aiHelperRepo,
     )
     {
         if (!Schema::hasTable('settings') && !Schema::hasTable('users'))
@@ -53,6 +56,7 @@ class FrontendController extends Controller
         $this->pageRepo        = $pageRepo;
         $this->admission_setting_repo        = $admission_setting_repo;
         $this->shift_repo        = $shift_repo;
+        $this->aiHelperRepo        = $aiHelperRepo;
     }
 
     public function index()
@@ -322,6 +326,22 @@ class FrontendController extends Controller
         $data['contactInfo']    = $this->repo->contactInfo();
         $data['depContact']     = $this->repo->depContact();
         return view('frontend.contact', compact('data'));
+    }
+
+    // AI Helper — private preview page, not linked anywhere on the site.
+    public function aiHelperShow()
+    {
+        $data['title']          = setting('ai_helper_page_title') ?: 'AI Helper (Preview)';
+        $data['question_label'] = setting('ai_helper_question_label') ?: 'Enter a number';
+        $data['button_text']    = setting('ai_helper_button_text') ?: 'Help';
+        return view('frontend.ai-helper-test', compact('data'));
+    }
+
+    public function aiHelperAsk(Request $request)
+    {
+        $request->validate(['input' => 'required|string|max:1000']);
+        $result = $this->aiHelperRepo->ask($request->input('input'));
+        return response()->json($result);
     }
 
     // Testimonials & Reviews — one method, two routes

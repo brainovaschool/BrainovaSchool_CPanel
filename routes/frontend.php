@@ -50,6 +50,9 @@ Route::middleware(saasMiddleware())->group(function () {
 
                 Route::get('/page/{slug}',          'page')->name('frontend.page');
 
+                Route::get('/homeschool-ai-preview',      'aiHelperShow')->name('frontend.ai-helper.show');
+                Route::post('/homeschool-ai-preview/ask', 'aiHelperAsk')->name('frontend.ai-helper.ask');
+
             });
         });
 

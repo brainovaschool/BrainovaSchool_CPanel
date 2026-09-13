@@ -21,11 +21,17 @@ use App\Http\Controllers\WebsiteSetup\ProgramFocusController;
 use App\Http\Controllers\WebsiteSetup\ProgramCategoryController;
 use App\Http\Controllers\WebsiteSetup\TestimonialController;
 use App\Http\Controllers\WebsiteSetup\TrialSlotController;
+use App\Http\Controllers\WebsiteSetup\AiHelperController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
         Route::group(['middleware' => ['lang', 'CheckSubscription', 'FeatureCheck:website_setup']], function () {
             Route::group(['middleware' => ['auth.routes', 'DenyTeacherAndStudent']], function () {
+
+                Route::controller(AiHelperController::class)->prefix('ai-helper')->group(function () {
+                    Route::get('/',        'index')->name('ai-helper.index')->middleware('PermissionCheck:ai_helper_read');
+                    Route::post('/update', 'update')->name('ai-helper.update')->middleware('PermissionCheck:ai_helper_update', 'DemoCheck');
+                });
 
                 Route::controller(SectionsController::class)->prefix('page-sections')->group(function () {
                     Route::get('/',                         'index')->name('sections.index')->middleware('PermissionCheck:page_sections_read');
