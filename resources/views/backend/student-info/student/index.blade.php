@@ -96,10 +96,16 @@
                 </div>
                 @if (@$data['students'])
                     <div class="card-body">
+                        @if (hasPermission('student_delete') || hasPermission('student_update'))
+                            @include('backend.partials.bulk-actions-bar')
+                        @endif
                         <div class="table-responsive">
                             <table class="table table-bordered role-table">
                                 <thead class="thead">
                                     <tr>
+                                        @if (hasPermission('student_delete') || hasPermission('student_update'))
+                                            <th style="width:36px"><input type="checkbox" id="bulkSelectAll"></th>
+                                        @endif
                                         <th class="serial">{{ ___('common.sr_no') }}</th>
                                         <th class="purchase">{{ ___('student_info.admission_no') }}</th>
                                         <th class="purchase">{{ ___('student_info.roll_no') }}</th>
@@ -118,6 +124,9 @@
                                     {{-- @dd($data['students']) --}}
                                     @forelse ($data['students'] as $key => $row)
                                         <tr id="row_{{ @$row->student->id }}">
+                                            @if (hasPermission('student_delete') || hasPermission('student_update'))
+                                                <td><input type="checkbox" class="bulk-row-checkbox" value="{{ @$row->student_id }}"></td>
+                                            @endif
                                             <td class="serial">{{ ++$key }}</td>
                                             <td class="serial">{{ @$row->student->admission_no }}</td>
                                             <td class="serial">{{ @$row->roll }}</td>
@@ -218,3 +227,4 @@
 
     </div>
 @endsection
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'student'])

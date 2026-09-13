@@ -290,6 +290,28 @@ class StudentRepository implements StudentInterface
         }
     }
 
+    /** Bulk delete — just calls the same destroy() as the single-row delete, once per id. */
+    public function bulkDestroy(array $ids): int
+    {
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($this->destroy($id)['status']) {
+                $deleted++;
+            }
+        }
+        return $deleted;
+    }
+
+    public function bulkStatus(array $ids, int $status)
+    {
+        try {
+            $this->model->whereIn('id', $ids)->update(['status' => $status]);
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
     public function getSiblingsDiscount($parentId)
     {
         $students =  Student::select('id')

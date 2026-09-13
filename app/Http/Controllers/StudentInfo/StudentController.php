@@ -337,6 +337,44 @@ class StudentController extends Controller
         endif;
     }
 
+    /** Selected students a teacher isn't allowed to touch are silently skipped, never bypassed. */
+    private function visibleIds(array $ids): array
+    {
+        $staffId = $this->teacherStaffId();
+        if ($staffId === null) {
+            return $ids;
+        }
+        return array_values(array_filter($ids, fn ($id) => $this->repo->studentVisibleToTeacher((int) $id, $staffId)));
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $ids = $this->visibleIds(array_filter((array) $request->input('ids', [])));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+
+        $deleted = $this->repo->bulkDestroy($ids);
+        if ($deleted === 0) {
+            return response()->json([___('alert.something_went_wrong_please_try_again'), 'error', ___('alert.oops'), ___('alert.OK')]);
+        }
+        return response()->json([___('alert.deleted_successfully'), 'success', ___('alert.deleted'), ___('alert.OK')]);
+    }
+
+    public function bulkStatus(Request $request)
+    {
+        $ids = $this->visibleIds(array_filter((array) $request->input('ids', [])));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+
+        $result = $this->repo->bulkStatus($ids, (int) $request->input('status', 1));
+        if ($result['status']) {
+            return response()->json([$result['message'], 'success', ___('alert.updated'), ___('alert.OK')]);
+        }
+        return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
+    }
+
     public function import()
     {
         $data['title']     = ___('student_info.student_import');

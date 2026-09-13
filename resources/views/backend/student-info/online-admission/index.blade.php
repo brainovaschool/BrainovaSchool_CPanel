@@ -53,10 +53,16 @@
                 </div>
                 @if (@$data['students'])
                 <div class="card-body">
+                    @if (hasPermission('admission_delete'))
+                        @include('backend.partials.bulk-actions-bar', ['bulkStatusToggle' => false])
+                    @endif
                     <div class="table-responsive">
                         <table class="table table-bordered role-table">
                             <thead class="thead">
                                 <tr>
+                                    @if (hasPermission('admission_delete'))
+                                        <th style="width:36px"><input type="checkbox" id="bulkSelectAll"></th>
+                                    @endif
                                     <th class="serial">{{ ___('common.sr_no') }}</th>
                                     <th class="purchase">{{ ___('student_info.student_name') }}</th>
                                     <th class="purchase">Student Age</th>
@@ -73,6 +79,9 @@
                             <tbody class="tbody">
                                 @forelse ($data['students'] as $key => $row)
                                 <tr id="row_{{ $row->id }}">
+                                    @if (hasPermission('admission_delete'))
+                                        <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
+                                    @endif
                                     <td class="serial">{{ ++$key }}</td>
                                     <td>{{ trim(@$row->first_name . ' ' . @$row->last_name) ?: '—' }}</td>
                                     <td>{{ @$row->dob }}</td>
@@ -158,3 +167,4 @@
 @push('script')
     @include('backend.partials.delete-ajax')
 @endpush
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'online-admissions'])

@@ -28,6 +28,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('show/{id}',         'show')->name('student.show')->middleware('PermissionCheck:student_read');
                     Route::PUT('update',            'update')->name('student.update')->middleware('PermissionCheck:student_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('student.delete')->middleware('PermissionCheck:student_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('student.bulk-delete')->middleware('PermissionCheck:student_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('student.bulk-status')->middleware('PermissionCheck:student_update', 'DemoCheck');
                     Route::get('/get-children/{parentId}', 'getChildren')->name('student.getChildren')->middleware('PermissionCheck:student_read');
 
 
@@ -85,6 +87,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('edit/{id}',         'edit')->name('online-admissions.edit')->middleware('PermissionCheck:admission_update');
                     Route::post('/store',           'store')->name('online-admissions.store')->middleware('PermissionCheck:admission_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('online-admissions.delete')->middleware('PermissionCheck:admission_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('online-admissions.bulk-delete')->middleware('PermissionCheck:admission_delete', 'DemoCheck');
                 });
 
                 Route::controller(OnlineAdmissionSettingController::class)->prefix('online-admissions-setting')->group(function () {

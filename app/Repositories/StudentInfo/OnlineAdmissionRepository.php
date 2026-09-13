@@ -224,4 +224,16 @@ class OnlineAdmissionRepository implements OnlineAdmissionInterface
         }
     }
 
+    /** Bulk delete — just calls the same destroy() as the single-row delete, once per id. */
+    public function bulkDestroy(array $ids): int
+    {
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($this->destroy($id)['status']) {
+                $deleted++;
+            }
+        }
+        return $deleted;
+    }
+
 }
