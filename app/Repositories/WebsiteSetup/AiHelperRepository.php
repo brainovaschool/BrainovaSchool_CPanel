@@ -69,7 +69,10 @@ class AiHelperRepository
 
             if (!$response->successful()) {
                 Log::warning('AI Helper (Gemini) error: ' . $response->status() . ' ' . $response->body());
-                return ['ok' => false, 'message' => 'The AI helper could not answer right now. Please try again shortly.'];
+                // TEMPORARY while testing: show the real error so it can be diagnosed
+                // without server/log access. Revert to a generic message before this
+                // page is exposed to real visitors.
+                return ['ok' => false, 'message' => 'DEBUG (' . $response->status() . '): ' . $response->body()];
             }
 
             $text = $response->json('candidates.0.content.parts.0.text');
