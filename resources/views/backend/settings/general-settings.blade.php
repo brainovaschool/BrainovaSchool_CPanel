@@ -310,6 +310,53 @@
                                             </div>
                                             <!--Email End -->
 
+                                            <!--Contact page mode Start -->
+                                            <div class="col-12 col-md-6 col-xl-6 col-lg-6 mb-3 ">
+                                                <label for="inputname" class="form-label">{{ ___('settings.contact_page_mode') }}</label>
+                                                <select name="contact_mode" class="nice-select niceSelect bordered_style wide @error('contact_mode') is-invalid @enderror">
+                                                    <option value="form" {{ Setting('contact_mode') != 'whatsapp' ? 'selected' : '' }}>{{ ___('settings.website_form') }}</option>
+                                                    <option value="whatsapp" {{ Setting('contact_mode') == 'whatsapp' ? 'selected' : '' }}>{{ ___('settings.whatsapp_chat') }}</option>
+                                                </select>
+                                                <small class="text-secondary">{{ ___('settings.contact_page_mode_help') }}</small>
+                                                @error('contact_mode')
+                                                    <div id="validationServer04Feedback" class="invalid-feedback">
+                                                        {{ $message }}
+                                                    </div>
+                                                @enderror
+                                            </div>
+                                            <!--Contact page mode End -->
+
+                                            <!--WhatsApp number Start -->
+                                            <div class="col-12 col-md-6 col-xl-6 col-lg-6 mb-3 ">
+                                                <label for="inputname" class="form-label">{{ ___('settings.whatsapp_number') }}</label>
+                                                <input type="text" name="whatsapp_number"
+                                                    class="form-control ot-input @error('whatsapp_number') is-invalid @enderror"
+                                                    value="{{ Setting('whatsapp_number') }}"
+                                                    placeholder="+923001234567">
+                                                <small class="text-secondary">{{ ___('settings.whatsapp_number_help') }}</small>
+                                                @error('whatsapp_number')
+                                                    <div id="validationServer04Feedback" class="invalid-feedback">
+                                                        {{ $message }}
+                                                    </div>
+                                                @enderror
+                                            </div>
+                                            <!--WhatsApp number End -->
+
+                                            <!--WhatsApp default message Start -->
+                                            <div class="col-12 mb-3">
+                                                <label for="inputname" class="form-label">{{ ___('settings.whatsapp_default_message') }}</label>
+                                                <input type="text" name="whatsapp_default_message"
+                                                    class="form-control ot-input @error('whatsapp_default_message') is-invalid @enderror"
+                                                    value="{{ Setting('whatsapp_default_message') }}"
+                                                    placeholder="{{ ___('settings.whatsapp_default_message_placeholder') }}">
+                                                @error('whatsapp_default_message')
+                                                    <div id="validationServer04Feedback" class="invalid-feedback">
+                                                        {{ $message }}
+                                                    </div>
+                                                @enderror
+                                            </div>
+                                            <!--WhatsApp default message End -->
+
                                             <!--School about Start -->
                                             <div class="col-12">
                                                 <label for="inputname"

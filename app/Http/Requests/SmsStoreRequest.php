@@ -27,7 +27,7 @@ class SmsStoreRequest extends FormRequest
             'twilio_account_sid'  => 'required',
             'twilio_auth_token'   => 'required',
             'twilio_phone_number'   => 'required',
-            
+
         ];
     }
 }

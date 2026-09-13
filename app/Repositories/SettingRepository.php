@@ -169,6 +169,48 @@ class SettingRepository implements SettingInterface
             }
             //Email end
 
+            //Contact mode start (frontend Contact page: website form vs WhatsApp chat)
+            if($request->has('contact_mode')){
+                $setting            = $this->model::where('name', 'contact_mode')->first();
+                if($setting){
+                    $setting->value = $request->contact_mode;
+                }else{
+                    $setting        = new $this->model;
+                    $setting->name  = 'contact_mode';
+                    $setting->value = $request->contact_mode;
+                }
+                $setting->save();
+            }
+            //Contact mode end
+
+            //WhatsApp number start
+            if($request->has('whatsapp_number')){
+                $setting            = $this->model::where('name', 'whatsapp_number')->first();
+                if($setting){
+                    $setting->value = $request->whatsapp_number;
+                }else{
+                    $setting        = new $this->model;
+                    $setting->name  = 'whatsapp_number';
+                    $setting->value = $request->whatsapp_number;
+                }
+                $setting->save();
+            }
+            //WhatsApp number end
+
+            //WhatsApp default message start
+            if($request->has('whatsapp_default_message')){
+                $setting            = $this->model::where('name', 'whatsapp_default_message')->first();
+                if($setting){
+                    $setting->value = $request->whatsapp_default_message;
+                }else{
+                    $setting        = new $this->model;
+                    $setting->name  = 'whatsapp_default_message';
+                    $setting->value = $request->whatsapp_default_message;
+                }
+                $setting->save();
+            }
+            //WhatsApp default message end
+
             //School about start
             if($request->has('school_about')){
                 $setting            = $this->model::where('name', 'school_about')->first();
