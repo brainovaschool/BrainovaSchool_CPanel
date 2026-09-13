@@ -126,8 +126,7 @@
                     @if ($activeFocusModel && $activeFocusModel->description)
                         <p>{{ $activeFocusModel->description }}</p>
                     @endif
-                    <p>This section is coming soon. <a href="{{ route('frontend.contact') }}">Contact our representative</a>
-                    to get the details on {{ $activeFocusModel ? strtolower($activeFocusModel->name) : strtolower($category->name) }} options for your child.</p>
+                    <p>Only Brainova members can avail this facility. For membership, <a href="{{ route('frontend.contact') }}">contact our representative</a>.</p>
                 </div>
             @endif
         </div>
