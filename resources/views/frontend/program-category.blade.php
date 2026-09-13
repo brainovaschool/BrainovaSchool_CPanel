@@ -64,6 +64,9 @@
 
     <section class="fe-courses-grid section_padding pt-4">
         <div class="container">
+            @if ($activeFocusModel && $activeFocusModel->description)
+                <p class="fe-focus-description mb-4">{{ $activeFocusModel->description }}</p>
+            @endif
             <div class="fe-courses-toolbar">
                 <p class="fe-courses-count mb-0">
                     @if ($paginator->total() > 0)
@@ -123,9 +126,6 @@
                 @include('frontend.partials.courses-pagination', ['paginator' => $paginator])
             @else
                 <div class="fe-courses-empty fe-is-visible">
-                    @if ($activeFocusModel && $activeFocusModel->description)
-                        <p>{{ $activeFocusModel->description }}</p>
-                    @endif
                     <p>Only Registered members can avail this facility. For registration, <a href="{{ route('frontend.contact') }}">contact our representative</a>.</p>
                 </div>
             @endif

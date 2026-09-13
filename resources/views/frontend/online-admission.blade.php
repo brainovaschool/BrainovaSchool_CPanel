@@ -57,7 +57,7 @@
                             </div>
                         @else
                             <div class="section__title mb_50">
-                                <h5 class="mb-0 text-warning text-center">
+                                <h5 class="mb-0 text-center" style="color:var(--bn-primary-strong,#007585)">
                                     {{ ___('frontend.please_fill_out_the_form_for_admission_guidance_and_information') }}.
                                 </h5>
                             </div>

@@ -314,6 +314,17 @@ class FrontendRepository implements FrontendInterface
         $row->message = implode("\n", $lines);
         $row->save();
 
+        try {
+            send_web_notification(
+                'New Free Trial Request',
+                $row->name . ' — ' . $slotText,
+                1,
+                route('contact-message.index')
+            );
+        } catch (\Throwable $th) {
+            \Illuminate\Support\Facades\Log::warning('Free trial web notification failed: ' . $th->getMessage());
+        }
+
         return 'ok';
     }
 

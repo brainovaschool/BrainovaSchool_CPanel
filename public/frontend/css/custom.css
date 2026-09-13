@@ -450,6 +450,16 @@ body::after {
     }
 }
 
+/* Our Programs dropdown (and its flyouts) must stay fully opaque — it sits over
+   hero copy on category/admission pages, so the glass effect used elsewhere
+   makes the text behind it bleed through and hurts readability. */
+.header_area .main_menu ul li .submenu.programs-menu,
+.header_area .main_menu ul li .submenu.programs-menu .submenu-flyout {
+    background: var(--bn-surface) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+}
+
 /* soft top rim-light on the bigger panels */
 .bn-glass, .serevice_box, .gallery_box, .teaching_grid .teaching_single,
 .event_wrapper, .blog_page_widget, .eventList_widget, .contact_form_box,
