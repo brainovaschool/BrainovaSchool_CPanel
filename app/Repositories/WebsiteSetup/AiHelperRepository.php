@@ -124,7 +124,7 @@ class AiHelperRepository
     {
         $systemPrompt = setting('ai_helper_system_prompt') ?: 'You are a helpful assistant.';
 
-        $schemaInstruction = "\n\nRespond with ONLY valid JSON (no markdown, no commentary, no code fences) matching exactly this schema — every value must be plain text (no formatting), and every array must have exactly the number of items shown:\n"
+        $schemaInstruction = "\n\nRespond with ONLY valid JSON (no markdown, no commentary, no code fences) matching exactly this schema — every value must be plain text (no formatting), and every array must have exactly the number of items shown. Keep every value SHORT: this must all fit on a single printed page, so write single short sentences or short phrases only, never multi-sentence paragraphs, for every field:\n"
             . '{'
             . '"learning_goals":["...","...","...","..."],'
             . '"essential_question":"...",'

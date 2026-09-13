@@ -328,6 +328,21 @@ class FrontendController extends Controller
         return view('frontend.contact', compact('data'));
     }
 
+    // AI Helper — filename format: grade_subject_term_unit_module_lesson_<suffix>.pdf
+    private function aiHelperFilename(array $fields, string $suffix): string
+    {
+        $parts = array_map(fn ($v) => \Illuminate\Support\Str::slug($v, '_'), [
+            $fields['grade'],
+            $fields['subject'],
+            $fields['term'],
+            $fields['unit'],
+            $fields['module'],
+            $fields['lesson_title'],
+        ]);
+        $parts[] = $suffix;
+        return implode('_', $parts) . '.pdf';
+    }
+
     // AI Helper — private preview page, not linked anywhere on the site.
     public function aiHelperShow()
     {
@@ -361,7 +376,7 @@ class FrontendController extends Controller
         $data['content_html'] = $html;
 
         $pdf      = PDF::loadView('frontend.ai-helper-lesson-pdf', compact('data'));
-        $filename = 'lesson-plan_' . \Illuminate\Support\Str::slug($fields['lesson_title']) . '.pdf';
+        $filename = $this->aiHelperFilename($fields, 'text');
         return $pdf->download($filename);
     }
 
@@ -387,7 +402,7 @@ class FrontendController extends Controller
         $data['logo']   = globalAsset(setting('dark_logo'), 'favicon.png');
 
         $pdf      = PDF::loadView('frontend.ai-helper-lesson-visual-pdf', compact('data'));
-        $filename = 'lesson-plan_' . \Illuminate\Support\Str::slug($fields['lesson_title']) . '.pdf';
+        $filename = $this->aiHelperFilename($fields, 'lessonplan');
         return $pdf->download($filename);
     }
 
@@ -413,7 +428,7 @@ class FrontendController extends Controller
         $data['logo']   = globalAsset(setting('dark_logo'), 'favicon.png');
 
         $pdf      = PDF::loadView('frontend.ai-helper-lesson-slides-pdf', compact('data'))->setPaper('a4', 'landscape');
-        $filename = 'lesson-plan-slides_' . \Illuminate\Support\Str::slug($fields['lesson_title']) . '.pdf';
+        $filename = $this->aiHelperFilename($fields, 'slide');
         return $pdf->download($filename);
     }
 

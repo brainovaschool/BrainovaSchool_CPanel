@@ -3,41 +3,48 @@
 <head>
     <title>Lesson Plan</title>
     <style>
+        @page {
+            margin: 16px 20px;
+        }
         body {
             font-family: 'Poppins', sans-serif;
-            font-size: 11px;
+            font-size: 9.5px;
             color: #1e293b;
         }
-        .outer {
-            border: 2px solid #0f1b3d;
-            border-radius: 12px;
-            padding: 14px;
-        }
+
+        /*
+         * No outer bordered wrapper here on purpose: dompdf renders a
+         * border/border-radius badly on a container that has to split across
+         * a page break (stray border lines, blank pages). Each section below
+         * carries its own background/border instead, and page-break-inside:
+         * avoid keeps a section from being sliced mid-box if it ever does
+         * need a second page.
+         */
 
         /* header */
-        .head-table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+        .head-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
         .head-table td { vertical-align: middle; }
-        .brand-logo { width: 60px; }
-        .head-title { padding-left: 14px; }
-        .head-title h1 { margin: 0; font-size: 26px; color: #0f1b3d; letter-spacing: 1px; }
+        .brand-logo { width: 44px; }
+        .head-title { padding-left: 12px; }
+        .head-title h1 { margin: 0; font-size: 20px; color: #0f1b3d; letter-spacing: 1px; }
         .ribbon {
             display: inline-block;
             background: #0097b2;
             color: #ffffff;
-            padding: 3px 14px;
+            padding: 2px 12px;
             border-radius: 4px;
-            font-size: 11px;
+            font-size: 9px;
             letter-spacing: 2px;
-            margin-top: 4px;
+            margin-top: 3px;
         }
 
         /* info bar */
-        .info-table { width: 100%; border-collapse: collapse; border: 1px solid #0f1b3d; border-radius: 10px; margin-bottom: 14px; }
-        .info-table td { border-right: 1px solid #cbd5e1; padding: 8px 10px; vertical-align: top; }
+        .info-table { width: 100%; border-collapse: collapse; border: 1px solid #0f1b3d; border-radius: 8px; margin-bottom: 8px; page-break-inside: avoid; }
+        .info-table td { border-right: 1px solid #cbd5e1; padding: 6px 8px; vertical-align: top; }
         .info-table td:last-child { border-right: none; }
-        .info-box-label { background: #0f1b3d; color: #fff; font-size: 9px; letter-spacing: 1px; padding: 3px 8px; border-radius: 4px; display: inline-block; margin-bottom: 4px; }
-        .info-box-value { font-size: 12px; font-weight: bold; }
-        .info-line { font-size: 11px; margin-bottom: 6px; }
+        .info-box-label { background: #0f1b3d; color: #fff; font-size: 8px; letter-spacing: 1px; padding: 2px 7px; border-radius: 4px; display: inline-block; margin-bottom: 3px; }
+        .info-box-value { font-size: 10.5px; font-weight: bold; }
+        .info-line { font-size: 9.5px; margin-bottom: 4px; }
         .info-line b { color: #0f1b3d; }
 
         /* two-column layout */
@@ -47,12 +54,12 @@
         .col-right-cell { padding-left: 7px; }
 
         /* left column boxes */
-        .box { border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
-        .box-title { font-size: 12px; font-weight: bold; margin-bottom: 6px; }
-        .badge { display: inline-block; width: 18px; height: 18px; border-radius: 50%; color: #fff; text-align: center; font-size: 10px; font-weight: bold; line-height: 18px; margin-right: 6px; }
-        .box p { margin: 0 0 4px 0; font-size: 10.5px; line-height: 1.5; }
-        .box ul { margin: 4px 0 0 0; padding-left: 16px; }
-        .box li { font-size: 10.5px; line-height: 1.6; margin-bottom: 2px; }
+        .box { border-radius: 6px; padding: 6px 9px; margin-bottom: 5px; page-break-inside: avoid; }
+        .box-title { font-size: 9.5px; font-weight: bold; margin-bottom: 4px; }
+        .badge { display: inline-block; width: 15px; height: 15px; border-radius: 50%; color: #fff; text-align: center; font-size: 8.5px; font-weight: bold; line-height: 15px; margin-right: 5px; }
+        .box p { margin: 0 0 3px 0; font-size: 9px; line-height: 1.35; }
+        .box ul { margin: 3px 0 0 0; padding-left: 14px; }
+        .box li { font-size: 9px; line-height: 1.4; margin-bottom: 1px; }
 
         .box-goals { background: #e8f7ef; }
         .badge-goals { background: #16a34a; }
@@ -66,10 +73,13 @@
         .badge-reflection { background: #c026d3; }
 
         /* right column numbered sections */
-        .step { border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; }
-        .step-head-table { width: 100%; border-collapse: collapse; margin-bottom: 6px; }
-        .step-title { font-size: 12px; font-weight: bold; }
-        .time-pill { float: right; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 20px; padding: 2px 10px; font-size: 9.5px; }
+        .step { border-radius: 6px; padding: 6px 9px; margin-bottom: 5px; page-break-inside: avoid; }
+        .step-head-table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+        .step-title { font-size: 9.5px; font-weight: bold; }
+        .time-pill { float: right; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 20px; padding: 1px 8px; font-size: 8px; }
+        .step p { margin: 0 0 3px 0; font-size: 9px; line-height: 1.35; }
+        .step ul { margin: 3px 0 0 0; padding-left: 14px; }
+        .step li { font-size: 9px; line-height: 1.4; margin-bottom: 1px; }
 
         .step-wonder { background: #fff1f2; }
         .badge-wonder { background: #ef4444; }
@@ -82,26 +92,24 @@
         .step-beyond { background: #e6fbfd; }
         .badge-beyond { background: #0097b2; }
 
-        .option-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
-        .option-table td { width: 25%; background: #ffffff; border: 1px solid #d1d5db; border-radius: 6px; padding: 6px; vertical-align: top; font-size: 9.5px; }
-        .option-label { font-weight: bold; display: block; margin-bottom: 3px; }
+        .option-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+        .option-table td { width: 25%; background: #ffffff; border: 1px solid #d1d5db; border-radius: 6px; padding: 5px; vertical-align: top; font-size: 8.5px; }
+        .option-label { font-weight: bold; display: block; margin-bottom: 2px; }
 
         /* footer */
-        .footer-table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-        .footer-table td { width: 50%; vertical-align: top; padding: 10px 12px; border-radius: 8px; }
+        .footer-table { width: 100%; border-collapse: collapse; margin-top: 5px; page-break-inside: avoid; }
+        .footer-table td { width: 50%; vertical-align: top; padding: 7px 9px; font-size: 9px; line-height: 1.35; border-radius: 6px; }
         .footer-notes { background: #f1f5f9; }
         .footer-misconceptions { background: #fff1f2; }
-        .footer-title { font-size: 11px; font-weight: bold; margin-bottom: 4px; }
+        .footer-title { font-size: 9.5px; font-weight: bold; margin-bottom: 3px; }
 
-        .journey-bar { background: #0f1b3d; border-radius: 8px; margin-top: 10px; padding: 10px; }
+        .journey-bar { background: #0f1b3d; border-radius: 6px; margin-top: 6px; padding: 7px; page-break-inside: avoid; }
         .journey-table { width: 100%; border-collapse: collapse; }
-        .journey-table td { width: 16.6%; text-align: center; color: #ffffff; font-size: 8.5px; vertical-align: top; }
-        .journey-badge { display: inline-block; width: 20px; height: 20px; border-radius: 50%; background: #0097b2; color: #fff; line-height: 20px; font-size: 10px; font-weight: bold; margin-bottom: 4px; }
+        .journey-table td { width: 16.6%; text-align: center; color: #ffffff; font-size: 7.5px; line-height: 1.3; vertical-align: top; }
+        .journey-badge { display: inline-block; width: 16px; height: 16px; border-radius: 50%; background: #0097b2; color: #fff; line-height: 16px; font-size: 8.5px; font-weight: bold; margin-bottom: 3px; }
     </style>
 </head>
 <body>
-
-<div class="outer">
 
     <table class="head-table">
         <tr>
@@ -271,8 +279,6 @@
             </tr>
         </table>
     </div>
-
-</div>
 
 </body>
 </html>
