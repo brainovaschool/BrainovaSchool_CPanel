@@ -23,7 +23,7 @@
                         @csrf
                         <div class="col-auto">
                             <label class="form-label mb-1">Public "Book a Free Trial" page shows</label>
-                            <select name="free_trial_page_mode" class="nice-select niceSelect bordered_style wide">
+                            <select name="free_trial_page_mode" class="form-control" style="min-width:280px">
                                 <option value="trial" {{ Setting('free_trial_page_mode') != 'demo' ? 'selected' : '' }}>Trial Class (date/time slots below)</option>
                                 <option value="demo" {{ Setting('free_trial_page_mode') == 'demo' ? 'selected' : '' }}>Demo Class (simple sign-up form)</option>
                             </select>
