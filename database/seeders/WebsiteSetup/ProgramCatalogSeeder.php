@@ -267,6 +267,8 @@ class ProgramCatalogSeeder extends Seeder
             'brainova-leadership-voice-studio'      => ['electives-enrichment', 'life-skills'],
             'brainova-future-projects-lab'          => ['electives-enrichment', 'life-skills'],
             'junior-coding-explorers'               => ['electives-enrichment', 'coding-tech'],
+            'ai-sparklab'                            => ['electives-enrichment', 'coding-tech'],
+            'canva-digital-content-creation'        => ['electives-enrichment', 'coding-tech'],
             'science-lab-juniors'                   => ['electives-enrichment', 'coding-tech'],
             'creative-writing-spark'                => ['electives-enrichment', 'arts'],
             'study-skills-bootcamp'                 => ['tutoring', 'test-prep'],
