@@ -31,6 +31,9 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::controller(AiHelperController::class)->prefix('ai-helper')->group(function () {
                     Route::get('/',        'index')->name('ai-helper.index')->middleware('PermissionCheck:ai_helper_read');
                     Route::post('/update', 'update')->name('ai-helper.update')->middleware('PermissionCheck:ai_helper_update', 'DemoCheck');
+                    Route::get('/drive/connect',  'driveConnect')->name('ai-helper.drive-connect')->middleware('PermissionCheck:ai_helper_update');
+                    Route::get('/drive/callback', 'driveCallback')->name('ai-helper.drive-callback')->middleware('PermissionCheck:ai_helper_update');
+                    Route::post('/drive/disconnect', 'driveDisconnect')->name('ai-helper.drive-disconnect')->middleware('PermissionCheck:ai_helper_update', 'DemoCheck');
                 });
 
                 Route::controller(SectionsController::class)->prefix('page-sections')->group(function () {

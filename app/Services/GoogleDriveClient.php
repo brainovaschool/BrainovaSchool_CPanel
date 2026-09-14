@@ -7,58 +7,46 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 /**
- * Minimal Google Drive v3 client using a service account, built entirely on
- * plain HTTP calls + PHP's built-in openssl extension — no Google SDK
- * package required, so it doesn't depend on anything that needs a fresh
- * `composer install` on the server.
+ * Minimal Google Drive v3 client using standard OAuth 2.0 user delegation
+ * (the site owner authorizes once via a normal Google sign-in screen; we
+ * store the resulting refresh token and use it to keep getting fresh access
+ * tokens). This uploads AS the owner's real Google account, so it has real
+ * storage quota — a plain service account cannot create files in a personal
+ * Drive at all (Google returns storageQuotaExceeded for that), which is why
+ * this isn't built as a service-account integration.
+ *
+ * Built entirely on plain HTTP calls — no Google SDK package required, so it
+ * doesn't depend on anything that needs a fresh `composer install`.
  */
 class GoogleDriveClient
 {
-    private array $credentials;
-
-    public function __construct()
-    {
-        $json = setting('ai_helper_drive_service_account_json');
-        $this->credentials = $json ? (json_decode($json, true) ?: []) : [];
-    }
-
     public function isConfigured(): bool
     {
-        return !empty($this->credentials['client_email']) && !empty($this->credentials['private_key']);
-    }
-
-    private function base64UrlEncode(string $data): string
-    {
-        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
+        return (bool) setting('ai_helper_drive_client_id')
+            && (bool) setting('ai_helper_drive_client_secret')
+            && (bool) setting('ai_helper_drive_refresh_token');
     }
 
     private function getAccessToken(): ?string
     {
-        $cacheKey = 'google_drive_token_' . md5($this->credentials['client_email'] ?? '');
+        $clientId     = setting('ai_helper_drive_client_id');
+        $clientSecret = setting('ai_helper_drive_client_secret');
+        $refreshToken = setting('ai_helper_drive_refresh_token');
 
-        return Cache::remember($cacheKey, 3000, function () {
-            $header = $this->base64UrlEncode(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
-            $now    = time();
-            $claims = $this->base64UrlEncode(json_encode([
-                'iss'   => $this->credentials['client_email'],
-                'scope' => 'https://www.googleapis.com/auth/drive',
-                'aud'   => $this->credentials['token_uri'] ?? 'https://oauth2.googleapis.com/token',
-                'iat'   => $now,
-                'exp'   => $now + 3600,
-            ]));
+        if (!$clientId || !$clientSecret || !$refreshToken) {
+            return null;
+        }
 
-            $signInput = $header . '.' . $claims;
-            $signature = '';
-            openssl_sign($signInput, $signature, $this->credentials['private_key'], 'sha256');
-            $jwt = $signInput . '.' . $this->base64UrlEncode($signature);
-
-            $response = Http::asForm()->post($this->credentials['token_uri'] ?? 'https://oauth2.googleapis.com/token', [
-                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
-                'assertion'  => $jwt,
+        return Cache::remember('ai_helper_drive_access_token', 3000, function () use ($clientId, $clientSecret, $refreshToken) {
+            $response = Http::asForm()->post('https://oauth2.googleapis.com/token', [
+                'client_id'     => $clientId,
+                'client_secret' => $clientSecret,
+                'refresh_token' => $refreshToken,
+                'grant_type'    => 'refresh_token',
             ]);
 
             if (!$response->successful()) {
-                Log::warning('Google Drive auth failed: ' . $response->body());
+                Log::warning('Google Drive token refresh failed: ' . $response->body());
                 return null;
             }
 
@@ -66,8 +54,8 @@ class GoogleDriveClient
         });
     }
 
-    /** Search only — will NOT create it if missing, since a root folder the
-     *  service account creates itself would be invisible to the human owner. */
+    /** Search only — will NOT create it if missing, since a root folder our
+     *  app creates itself could end up somewhere the owner doesn't expect. */
     private function findRootFolder(string $name, string $token): ?string
     {
         $escaped = str_replace("'", "\\'", $name);
@@ -83,9 +71,6 @@ class GoogleDriveClient
         return null;
     }
 
-    /** Safe to auto-create: always nested inside a folder the service
-     *  account already has access to, so anything it creates here is
-     *  automatically visible to the human who shared that parent folder. */
     private function findOrCreateFolder(string $name, string $parentId, string $token): ?string
     {
         $escaped = str_replace("'", "\\'", $name);
@@ -115,24 +100,24 @@ class GoogleDriveClient
     /**
      * $folderPath: folder names from top to bottom, e.g.
      * ['Brainova Lessons', 'Grade 4', 'Science', 'Term 1', 'Space', 'Celestial Bodies', 'Black Hole']
-     * The FIRST entry must already exist and be shared with the service account.
+     * The FIRST entry must already exist in the connected account's Drive.
      */
     public function uploadToPath(array $folderPath, string $filename, string $fileContent, string $mimeType = 'application/pdf'): array
     {
         if (!$this->isConfigured()) {
-            return ['ok' => false, 'message' => 'Google Drive has not been set up yet — add the service account JSON in Website Setup → AI Helper.'];
+            return ['ok' => false, 'message' => 'Google Drive has not been connected yet — go to Website Setup → AI Helper and click "Connect Google Drive".'];
         }
 
         $token = $this->getAccessToken();
         if (!$token) {
-            return ['ok' => false, 'message' => 'Could not authenticate with Google Drive. Please check the service account JSON.'];
+            return ['ok' => false, 'message' => 'Could not authenticate with Google Drive. Try disconnecting and reconnecting it in Website Setup → AI Helper.'];
         }
 
         try {
             $rootName = array_shift($folderPath);
             $parentId = $this->findRootFolder($rootName, $token);
             if (!$parentId) {
-                return ['ok' => false, 'message' => 'Could not find the "' . $rootName . '" folder in Google Drive. Make sure it exists and is shared with the service account (Editor access).'];
+                return ['ok' => false, 'message' => 'Could not find the "' . $rootName . '" folder in Google Drive. Make sure it exists in the Drive of the account you connected.'];
             }
 
             foreach ($folderPath as $folderName) {

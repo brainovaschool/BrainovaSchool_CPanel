@@ -26,20 +26,13 @@ class AiHelperRepository
                 'ai_helper_system_prompt',
                 'ai_helper_delivery_mode',
                 'ai_helper_drive_root_folder',
-                'ai_helper_drive_service_account_json',
+                'ai_helper_drive_client_id',
+                'ai_helper_drive_client_secret',
             ];
 
             foreach ($fields as $field) {
                 if ($request->has($field)) {
-                    $setting = $this->model::where('name', $field)->first();
-                    if ($setting) {
-                        $setting->value = $request->$field;
-                    } else {
-                        $setting        = new $this->model;
-                        $setting->name  = $field;
-                        $setting->value = $request->$field;
-                    }
-                    $setting->save();
+                    $this->setSetting($field, $request->$field);
                 }
             }
 
@@ -47,6 +40,19 @@ class AiHelperRepository
         } catch (\Throwable $th) {
             return false;
         }
+    }
+
+    public function setSetting(string $name, ?string $value): void
+    {
+        $setting = $this->model::where('name', $name)->first();
+        if ($setting) {
+            $setting->value = $value;
+        } else {
+            $setting        = new $this->model;
+            $setting->name  = $name;
+            $setting->value = $value;
+        }
+        $setting->save();
     }
 
     private function inputBlock(array $fields): string

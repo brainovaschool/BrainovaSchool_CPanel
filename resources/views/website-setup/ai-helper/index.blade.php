@@ -119,15 +119,38 @@
                             @enderror
                         </div>
 
-                        <div class="col-12 mb-3">
-                            <label class="form-label">Google Service Account JSON</label>
-                            <textarea name="ai_helper_drive_service_account_json" rows="10"
-                                class="form-control ot-textarea @error('ai_helper_drive_service_account_json') is-invalid @enderror"
-                                placeholder='Paste the entire contents of your service account key file here, e.g. {"type": "service_account", "client_email": "...", "private_key": "...", ...}'>{{ Setting('ai_helper_drive_service_account_json') }}</textarea>
-                            <small class="text-secondary">Make sure you have shared your "{{ Setting('ai_helper_drive_root_folder') ?: 'Brainova Lessons' }}" Drive folder with this service account's email address (found inside the JSON as "client_email"), giving it Editor access — otherwise it cannot create files inside it.</small>
-                            @error('ai_helper_drive_service_account_json')
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label">Google Drive Client ID</label>
+                            <input type="text" name="ai_helper_drive_client_id"
+                                class="form-control ot-input @error('ai_helper_drive_client_id') is-invalid @enderror"
+                                value="{{ Setting('ai_helper_drive_client_id') }}" placeholder="xxxxxxxx.apps.googleusercontent.com">
+                            @error('ai_helper_drive_client_id')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
+                        </div>
+
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label">Google Drive Client Secret</label>
+                            <input type="text" name="ai_helper_drive_client_secret"
+                                class="form-control ot-input @error('ai_helper_drive_client_secret') is-invalid @enderror"
+                                value="{{ Setting('ai_helper_drive_client_secret') }}" placeholder="GOCSPX-...">
+                            @error('ai_helper_drive_client_secret')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <small class="text-secondary d-block mb-2">In Google Cloud Console → APIs &amp; Services →
+                                Credentials, create an "OAuth client ID" (type: Web application) with this exact
+                                Authorized redirect URI:
+                                <code>{{ route('ai-helper.drive-callback') }}</code>.
+                                Save the Client ID/Secret above first, then connect below.</small>
+
+                            @if (Setting('ai_helper_drive_refresh_token'))
+                                <span class="badge-basic-success-text">Connected</span>
+                            @else
+                                <span class="badge-basic-danger-text">Not connected</span>
+                            @endif
                         </div>
 
                     </div>
@@ -142,6 +165,19 @@
                         </div>
                     </div>
                 </form>
+
+                @if (hasPermission('ai_helper_update'))
+                    <div class="mt-3">
+                        @if (Setting('ai_helper_drive_refresh_token'))
+                            <form action="{{ route('ai-helper.drive-disconnect') }}" method="post" class="d-inline">
+                                @csrf
+                                <button class="btn btn-outline-danger">Disconnect Google Drive</button>
+                            </form>
+                        @else
+                            <a href="{{ route('ai-helper.drive-connect') }}" class="btn ot-btn-primary">Connect Google Drive</a>
+                        @endif
+                    </div>
+                @endif
             </div>
         </div>
     </div>
