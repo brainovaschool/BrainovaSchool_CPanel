@@ -160,6 +160,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:trial_slot_delete', 'DemoCheck');
                     Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:trial_slot_delete', 'DemoCheck');
                     Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:trial_slot_update', 'DemoCheck');
+                    Route::post('/page-mode',       'updatePageMode')->name('page-mode')->middleware('PermissionCheck:trial_slot_update', 'DemoCheck');
                 });
 
                 Route::controller(CounterController::class)->prefix('counter')->group(function () {

@@ -32,7 +32,11 @@ class AiHelperRepository
 
             foreach ($fields as $field) {
                 if ($request->has($field)) {
-                    $this->setSetting($field, $request->$field);
+                    $value = $request->$field;
+                    if (in_array($field, ['ai_helper_drive_client_id', 'ai_helper_drive_client_secret'], true)) {
+                        $value = trim((string) $value);
+                    }
+                    $this->setSetting($field, $value);
                 }
             }
 

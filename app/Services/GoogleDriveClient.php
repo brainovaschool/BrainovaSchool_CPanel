@@ -29,9 +29,9 @@ class GoogleDriveClient
 
     private function getAccessToken(): ?string
     {
-        $clientId     = setting('ai_helper_drive_client_id');
-        $clientSecret = setting('ai_helper_drive_client_secret');
-        $refreshToken = setting('ai_helper_drive_refresh_token');
+        $clientId     = trim((string) setting('ai_helper_drive_client_id'));
+        $clientSecret = trim((string) setting('ai_helper_drive_client_secret'));
+        $refreshToken = trim((string) setting('ai_helper_drive_refresh_token'));
 
         if (!$clientId || !$clientSecret || !$refreshToken) {
             return null;

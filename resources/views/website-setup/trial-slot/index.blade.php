@@ -16,6 +16,29 @@
             </div>
         </div>
 
+        @if (hasPermission('trial_slot_update'))
+            <div class="card ot-card mb-3">
+                <div class="card-body">
+                    <form action="{{ route('trial-slot.page-mode') }}" method="post" class="row align-items-end g-2">
+                        @csrf
+                        <div class="col-auto">
+                            <label class="form-label mb-1">Public "Book a Free Trial" page shows</label>
+                            <select name="free_trial_page_mode" class="nice-select niceSelect bordered_style wide">
+                                <option value="trial" {{ Setting('free_trial_page_mode') != 'demo' ? 'selected' : '' }}>Trial Class (date/time slots below)</option>
+                                <option value="demo" {{ Setting('free_trial_page_mode') == 'demo' ? 'selected' : '' }}>Demo Class (simple sign-up form)</option>
+                            </select>
+                        </div>
+                        <div class="col-auto">
+                            <button class="btn ot-btn-primary">{{ ___('common.update') }}</button>
+                        </div>
+                    </form>
+                    <p class="text-secondary mb-0 mt-2" style="font-size:13px">This switches what visitors see at
+                        <code>{{ url('/book-a-free-trial') }}</code>. The trial slots you manage below always stay
+                        saved here — switching to Demo Class just hides them from visitors until you switch back.</p>
+                </div>
+            </div>
+        @endif
+
         <div class="table-content table-basic mt-20">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">

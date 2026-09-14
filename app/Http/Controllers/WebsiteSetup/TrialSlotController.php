@@ -95,4 +95,22 @@ class TrialSlotController extends Controller
         }
         return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
     }
+
+    // Which form the public "/book-a-free-trial" page shows: the slot-based
+    // Trial Class form, or the simpler Demo Class form.
+    public function updatePageMode(Request $request)
+    {
+        $mode    = $request->input('free_trial_page_mode') === 'demo' ? 'demo' : 'trial';
+        $setting = \App\Models\Setting::where('name', 'free_trial_page_mode')->first();
+        if ($setting) {
+            $setting->value = $mode;
+        } else {
+            $setting        = new \App\Models\Setting();
+            $setting->name  = 'free_trial_page_mode';
+            $setting->value = $mode;
+        }
+        $setting->save();
+
+        return redirect()->route('trial-slot.index')->with('success', ___('alert.updated_successfully'));
+    }
 }

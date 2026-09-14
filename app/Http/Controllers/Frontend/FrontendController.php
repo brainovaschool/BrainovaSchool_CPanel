@@ -498,6 +498,10 @@ class FrontendController extends Controller
     // Book a free trial
     public function bookFreeTrial()
     {
+        if (setting('free_trial_page_mode') === 'demo') {
+            return view('frontend.demo-class');
+        }
+
         $slots = \App\Models\WebsiteSetup\TrialSlot::query()->active()
             ->whereDate('slot_date', '>=', now()->toDateString())
             ->orderBy('slot_date')->orderBy('start_time')
@@ -519,6 +523,21 @@ class FrontendController extends Controller
 
     public function storeFreeTrial(Request $request)
     {
+        if (setting('free_trial_page_mode') === 'demo') {
+            $request->validate([
+                'student_name'    => 'required|string|max:120',
+                'father_name'     => 'required|string|max:120',
+                'whatsapp_number' => 'required|string|max:40',
+                'email'           => 'required|email|max:150',
+                'student_age'     => 'required|string|max:40',
+            ]);
+
+            $this->repo->demoClass($request);
+
+            return redirect()->route('frontend.book-free-trial')
+                ->with('message', 'Thanks! Your demo class request has been received — our team will contact you shortly.');
+        }
+
         $request->validate([
             'name'          => 'required|string|max:120',
             'email'         => 'required|email|max:150',

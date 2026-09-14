@@ -328,6 +328,29 @@ class FrontendRepository implements FrontendInterface
         return 'ok';
     }
 
+    public function demoClass($request){
+        $row          = new Contact();
+        $row->name    = $request->student_name;
+        $row->phone   = $request->whatsapp_number;
+        $row->email   = $request->email;
+        $row->subject = 'Demo Class Request';
+        $row->message = "Father Name: {$request->father_name}\nStudent Age: {$request->student_age}";
+        $row->save();
+
+        try {
+            send_web_notification(
+                'New Demo Class Request',
+                $row->name . ' — Age ' . $request->student_age,
+                1,
+                route('contact-message.index')
+            );
+        } catch (\Throwable $th) {
+            \Illuminate\Support\Facades\Log::warning('Demo class web notification failed: ' . $th->getMessage());
+        }
+
+        return 'ok';
+    }
+
     public function contact($request){
         try {
             $row          = new Contact();

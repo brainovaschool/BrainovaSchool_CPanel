@@ -36,7 +36,7 @@ class AiHelperController extends Controller
     // (without them Google only hands back a short-lived access token).
     public function driveConnect()
     {
-        $clientId = setting('ai_helper_drive_client_id');
+        $clientId = trim((string) setting('ai_helper_drive_client_id'));
         if (!$clientId) {
             return redirect()->back()->with('danger', 'Add the Google Drive Client ID and Client Secret first, then save, before connecting.');
         }
@@ -65,8 +65,8 @@ class AiHelperController extends Controller
         }
 
         $response = Http::asForm()->post('https://oauth2.googleapis.com/token', [
-            'client_id'     => setting('ai_helper_drive_client_id'),
-            'client_secret' => setting('ai_helper_drive_client_secret'),
+            'client_id'     => trim((string) setting('ai_helper_drive_client_id')),
+            'client_secret' => trim((string) setting('ai_helper_drive_client_secret')),
             'redirect_uri'  => route('ai-helper.drive-callback'),
             'code'          => $code,
             'grant_type'    => 'authorization_code',
