@@ -31,9 +31,16 @@
                                 <h5 class="mb-0 text-success text-center">{{ session('message') }}</h5>
                             </div>
                         @else
-                            <div class="section__title mb_40 text-center">
-                                <h3 class="mb-2">Welcome to Brainova</h3>
-                                <p class="mb-0">Preparing your child for life — not just for tests.</p>
+                            <div class="mb_30" style="background:linear-gradient(135deg,#f0fbfd,#eaf2ff);border:1px solid #d8ecf0;border-radius:12px;padding:18px 22px;text-align:center;">
+                                <h4 style="color:#0f1b3d;margin:0 0 4px 0;font-size:19px;">What is your child doing after school that actually builds future skills?</h4>
+                                <p style="color:#0097b2;font-weight:600;margin:0 0 12px 0;font-size:14px;">One afternoon. Three future skills. Beyond Classroom Discovery Day — 20 September.</p>
+                                <div style="display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-bottom:10px;">
+                                    <span style="background:#0097b2;color:#fff;padding:5px 14px;border-radius:20px;font-size:13px;">Coding — build something real</span>
+                                    <span style="background:#0097b2;color:#fff;padding:5px 14px;border-radius:20px;font-size:13px;">AI Skills — create, not just consume</span>
+                                    <span style="background:#0097b2;color:#fff;padding:5px 14px;border-radius:20px;font-size:13px;">Digital Design — design like a pro</span>
+                                </div>
+                                <p style="margin:0 0 8px 0;font-size:13px;color:#334155;">Every child rotates through all 3 stations · Only 12 seats per station — hands-on time guaranteed</p>
+                                <p style="margin:0;font-size:13px;font-weight:600;color:#0f1b3d;">📅 20 September 2026 &nbsp;·&nbsp; 🕔 5:00 PM (Pakistan Time)</p>
                             </div>
                         @endif
 
