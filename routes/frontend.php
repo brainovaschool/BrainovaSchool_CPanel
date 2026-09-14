@@ -36,8 +36,8 @@ Route::middleware(saasMiddleware())->group(function () {
 
                 Route::get('/testimonials',       'testimonialsPage')->name('frontend.testimonials');
                 Route::get('/reviews',            'testimonialsPage')->name('frontend.reviews');
-                Route::get('/book-a-free-trial',  'bookFreeTrial')->name('frontend.book-free-trial');
-                Route::post('/book-a-free-trial', 'storeFreeTrial')->name('frontend.book-free-trial.store');
+                Route::get('/demo-class',  'bookFreeTrial')->name('frontend.book-free-trial');
+                Route::post('/demo-class', 'storeFreeTrial')->name('frontend.book-free-trial.store');
 
                 Route::get('/contact',          'contact')->name('frontend.contact');
                 Route::get('/online-admission', 'onlineAdmission')->name('frontend.online-admission');

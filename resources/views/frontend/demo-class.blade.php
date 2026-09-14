@@ -1,6 +1,6 @@
 @extends('frontend.master')
 @section('title')
-    Book a Demo Class
+    Demo Class
 @endsection
 
 @section('main')
@@ -10,10 +10,10 @@
             <div class="row justify-content-center">
                 <div class="col-lg-6 col-xl-5">
                     <div class="breadcam_wrap text-center">
-                        <h3>Book a Demo Class</h3>
+                        <h3>Demo Class</h3>
                         <div class="custom_breadcam">
                             <a href="{{ url('/') }}" class="breadcrumb-item">{{ ___('frontend.home') }}</a>
-                            <a href="#" class="breadcrumb-item">Book a Demo Class</a>
+                            <a href="#" class="breadcrumb-item">Demo Class</a>
                         </div>
                     </div>
                 </div>
@@ -32,9 +32,8 @@
                             </div>
                         @else
                             <div class="section__title mb_40 text-center">
-                                <h3 class="mb-2">Book a free demo class</h3>
-                                <p class="mb-0">Share a few details about your child and our admissions team will
-                                    reach out to schedule a demo class.</p>
+                                <h3 class="mb-2">Welcome to Brainova</h3>
+                                <p class="mb-0">Preparing your child for life — not just for tests.</p>
                             </div>
                         @endif
 

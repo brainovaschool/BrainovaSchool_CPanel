@@ -1,6 +1,6 @@
 @extends('frontend.master')
 @section('title')
-    Book a Free Trial
+    Demo Class
 @endsection
 
 @section('main')
@@ -10,10 +10,10 @@
             <div class="row justify-content-center">
                 <div class="col-lg-6 col-xl-5">
                     <div class="breadcam_wrap text-center">
-                        <h3>Book a Free Trial</h3>
+                        <h3>Demo Class</h3>
                         <div class="custom_breadcam">
                             <a href="{{ url('/') }}" class="breadcrumb-item">{{ ___('frontend.home') }}</a>
-                            <a href="#" class="breadcrumb-item">Book a Free Trial</a>
+                            <a href="#" class="breadcrumb-item">Demo Class</a>
                         </div>
                     </div>
                 </div>
