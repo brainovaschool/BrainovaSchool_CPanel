@@ -136,6 +136,9 @@ Route::middleware(saasMiddleware())->group(function () {
             // One-off: create a dummy student login for testing (admin-only + key).
             Route::get('/db/create-demo-student/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'createDemoStudent']);
 
+            // View the tail of the Laravel error log from the browser (admin-only + key) — for hosts without SSH/file-manager log access.
+            Route::get('/db/logs/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'viewLogs']);
+
             Route::controller(LanguageController::class)->prefix('languages')->group(function () {
                 Route::get('/change',                   'changeLanguage')->name('languages.change');
             });

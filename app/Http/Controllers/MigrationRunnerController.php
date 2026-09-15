@@ -140,6 +140,40 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /** Shows the tail of storage/logs/laravel.log in the browser, newest first —
+     *  for a host with no SSH and no confirmed file-manager access to logs. */
+    public function viewLogs(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $path = storage_path('logs/laravel.log');
+        if (!file_exists($path)) {
+            return response('No log file found yet at ' . $path);
+        }
+
+        $size = filesize($path);
+        $tail = $size > 60000
+            ? file_get_contents($path, false, null, $size - 60000)
+            : file_get_contents($path);
+
+        // Newest entries last in the file — reverse by blank-line-separated
+        // blocks so the most recent error is the first thing visible.
+        $blocks = preg_split('/\n(?=\[\d{4}-\d{2}-\d{2})/', $tail);
+        $blocks = array_reverse($blocks);
+
+        return response(
+            '<pre style="font:12px/1.5 monospace;padding:24px;white-space:pre-wrap;word-break:break-word">'
+            . e(implode("\n\n", $blocks))
+            . '</pre>'
+        );
+    }
+
     private function syncPermissions(): string
     {
         $added      = [];

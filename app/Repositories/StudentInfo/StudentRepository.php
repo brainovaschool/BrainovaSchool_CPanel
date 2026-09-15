@@ -185,6 +185,7 @@ class StudentRepository implements StudentInterface
             return $this->responseWithSuccess(___('alert.created_successfully'), []);
         } catch (\Throwable $th) {
             DB::rollback();
+            \Illuminate\Support\Facades\Log::error('Student store failed: ' . $th->getMessage());
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
     }
