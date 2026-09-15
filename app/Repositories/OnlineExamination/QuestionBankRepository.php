@@ -55,6 +55,7 @@ class QuestionBankRepository implements QuestionBankInterface
 
             $row->session_id        = setting('session');
             $row->question_group_id = $request->question_group;
+            $row->skill_id          = $request->skill_id != "" ? $request->skill_id : null;
             $row->type              = $request->type;
             $row->question          = $request->question;
             $row->mark              = $request->mark;
@@ -104,6 +105,7 @@ class QuestionBankRepository implements QuestionBankInterface
         try {
             $row                    = $this->model->findOrfail($id);
             $row->question_group_id = $request->question_group;
+            $row->skill_id          = $request->skill_id != "" ? $request->skill_id : null;
             $row->type              = $request->type;
             $row->question          = $request->question;
             $row->mark              = $request->mark;

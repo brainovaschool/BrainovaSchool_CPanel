@@ -12,15 +12,18 @@ use App\Models\OnlineExamination\AnswerChildren;
 use App\Interfaces\OnlineExamination\OnlineExamInterface;
 use App\Models\OnlineExamination\OnlineExamChildrenStudents;
 use App\Models\OnlineExamination\OnlineExamChildrenQuestions;
+use App\Repositories\LearningEngine\LearningEventRepository;
 
 class OnlineExamRepository implements OnlineExamInterface
 {
     use ReturnFormatTrait;
     private $model;
+    private $learningEvents;
 
-    public function __construct(OnlineExam $model)
+    public function __construct(OnlineExam $model, LearningEventRepository $learningEvents)
     {
-        $this->model = $model;
+        $this->model          = $model;
+        $this->learningEvents = $learningEvents;
     }
 
     public function all()
@@ -163,11 +166,13 @@ class OnlineExamRepository implements OnlineExamInterface
             DB::transaction(function () use ($request) {
                 $totalMark = 0;
                 foreach ($request->answer_ids as $key => $value) {
-                    $row                = AnswerChildren::find($value);
-                    if ($row) {
-                        $row->evaluation_mark = array_key_exists($key, $request->marks) ? (int) $request->marks[$key][0] : 0;
-                        $row->save();
-                        $totalMark      += $row->evaluation_mark;
+                    $answerChild = AnswerChildren::find($value);
+                    if ($answerChild) {
+                        $answerChild->evaluation_mark = array_key_exists($key, $request->marks) ? (int) $request->marks[$key][0] : 0;
+                        $answerChild->save();
+                        $totalMark += $answerChild->evaluation_mark;
+
+                        $this->logSkillEvent($answerChild, (int) $request->student_id);
                     }
                 }
 
@@ -180,5 +185,25 @@ class OnlineExamRepository implements OnlineExamInterface
         } catch (\Throwable $th) {
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
+    }
+
+    /** A question tagged with a skill (Website Setup → Skills) rolls its grading
+     *  result into that skill's mastery for this student. Untagged questions are
+     *  graded as normal but don't feed the skill-tracking system. */
+    private function logSkillEvent(AnswerChildren $answerChild, int $studentId): void
+    {
+        $questionBank = QuestionBank::find($answerChild->question_bank_id);
+        if (!$questionBank || !$questionBank->skill_id) {
+            return;
+        }
+
+        $correct = $questionBank->mark > 0 && $answerChild->evaluation_mark >= $questionBank->mark;
+
+        $this->learningEvents->record(
+            $studentId,
+            LearningEventRepository::EVENT_ANSWER_SUBMITTED,
+            $questionBank->skill_id,
+            ['correct' => $correct, 'source' => 'online_exam']
+        );
     }
 }

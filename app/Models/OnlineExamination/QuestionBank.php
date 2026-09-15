@@ -7,6 +7,7 @@ use App\Models\Academic\Classes;
 use App\Models\Academic\Section;
 use App\Models\Academic\Subject;
 use App\Models\BaseModel;
+use App\Models\LearningEngine\Skill;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\OnlineExamination\QuestionGroup;
 use App\Models\OnlineExamination\QuestionBankChildren;
@@ -26,11 +27,17 @@ class QuestionBank extends BaseModel
         'section_id',
         'subject_id',
         'question_group_id',
+        'skill_id',
         'type',
         'question',
         'answer',
         'status'
     ];
+
+    public function skill()
+    {
+        return $this->belongsTo(Skill::class, 'skill_id', 'id');
+    }
 
     public function scopeActive($query)
     {

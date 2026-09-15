@@ -99,6 +99,19 @@
                                         </div>
                                     @enderror
                                 </div>
+
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">{{ ___('settings.skill_optional') }}</label>
+                                    <select class="form-control ot-input" name="skill_id">
+                                        <option value="">{{ ___('settings.not_linked_to_a_skill') }}</option>
+                                        @foreach (\App\Models\LearningEngine\Skill::active()->with(['subject', 'classroom'])->orderBy('title')->get() as $skill)
+                                            <option value="{{ $skill->id }}" {{ old('skill_id') == $skill->id ? 'selected' : '' }}>
+                                                {{ $skill->title }} — {{ $skill->subject->name ?? '' }} ({{ $skill->classroom->class_tran ?? '' }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-secondary">{{ ___('settings.tag_a_skill_to_track_progress_note') }}</small>
+                                </div>
                                 {{-- second row --}}
 
 
