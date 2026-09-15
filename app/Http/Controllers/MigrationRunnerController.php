@@ -122,6 +122,7 @@ class MigrationRunnerController extends Controller
             'status'         => 1,
             'class'          => $class->id,
             'section'        => $section->id ?? '',
+            'siblings_discount' => 0,
         ]);
 
         $result = $students->store($fake);
