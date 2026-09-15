@@ -152,10 +152,21 @@ class MigrationRunnerController extends Controller
             abort(403, 'Log in as the main administrator first, then reload this page.');
         }
 
-        $path = storage_path('logs/laravel.log');
-        if (!file_exists($path)) {
-            return response('No log file found yet at ' . $path);
+        // The default 'single' file is laravel.log, but a 'daily' log channel
+        // (common on shared hosting) writes dated files instead — check both
+        // and use whichever log file was modified most recently.
+        $candidates = array_merge(
+            [storage_path('logs/laravel.log')],
+            glob(storage_path('logs/laravel-*.log')) ?: []
+        );
+        $candidates = array_filter($candidates, 'file_exists');
+
+        if (empty($candidates)) {
+            return response('No log file found yet in ' . storage_path('logs'));
         }
+
+        usort($candidates, fn ($a, $b) => filemtime($b) <=> filemtime($a));
+        $path = $candidates[0];
 
         $size = filesize($path);
         $tail = $size > 60000
@@ -169,6 +180,7 @@ class MigrationRunnerController extends Controller
 
         return response(
             '<pre style="font:12px/1.5 monospace;padding:24px;white-space:pre-wrap;word-break:break-word">'
+            . e('Showing: ' . basename($path) . "\n\n")
             . e(implode("\n\n", $blocks))
             . '</pre>'
         );
