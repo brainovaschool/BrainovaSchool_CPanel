@@ -73,20 +73,27 @@ class LearningEventRepository
     /**
      * The rule-based "what should this student do next" answer every later
      * AI-assisted feature must be able to fall back to: the least-mastered
-     * active skill for this student in a subject/grade, sorted the same way
+     * active skills for this student in a subject/grade, sorted the same way
      * an admin ordered them. No AI call involved.
      */
-    public function nextSkillFor(int $studentId, ?int $subjectId = null, ?int $classesId = null): ?Skill
+    public function nextSkills(int $studentId, ?int $subjectId = null, ?int $classesId = null, int $limit = 5)
     {
         $mastered = StudentSkillMastery::where('student_id', $studentId)
             ->where('mastery_level', 'advanced')
             ->pluck('skill_id');
 
         return Skill::active()
+            ->with('subject')
             ->when($subjectId, fn ($q) => $q->where('subject_id', $subjectId))
             ->when($classesId, fn ($q) => $q->where('classes_id', $classesId))
             ->whereNotIn('id', $mastered)
             ->orderBy('sort_order')
-            ->first();
+            ->take($limit)
+            ->get();
+    }
+
+    public function nextSkillFor(int $studentId, ?int $subjectId = null, ?int $classesId = null): ?Skill
+    {
+        return $this->nextSkills($studentId, $subjectId, $classesId, 1)->first();
     }
 }

@@ -12,19 +12,31 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\StudentInfo\SessionClassStudent;
 use App\Repositories\StudentPanel\DashboardRepository;
+use App\Repositories\LearningEngine\LearningHomeRepository;
 
 class DashboardController extends Controller
 {
     private $repo;
+    private $learningHome;
 
-    function __construct(DashboardRepository $repo)
+    function __construct(DashboardRepository $repo, LearningHomeRepository $learningHome)
     {
-        $this->repo = $repo;
+        $this->repo         = $repo;
+        $this->learningHome = $learningHome;
     }
 
     public function index()
     {
         $data = $this->repo->index();
+
+        if ($data && !empty($data['student'])) {
+            try {
+                $data['learning_home'] = $this->learningHome->forStudent($data['student']);
+            } catch (\Throwable $th) {
+                report($th);
+            }
+        }
+
         return view('student-panel.dashboard', compact('data'));
     }
 

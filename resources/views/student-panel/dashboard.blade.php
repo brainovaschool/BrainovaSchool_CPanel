@@ -31,6 +31,49 @@
 @section('content')
 <div class="page-content">
 
+    @if (!empty($data['learning_home']))
+        @php $lh = $data['learning_home']; @endphp
+        <div class="card ot-card mb-24">
+            <div class="card-body">
+                <div class="d-flex align-items-center flex-wrap gap-3">
+                    <img src="{{ global_asset('frontend') }}/img/mascots/{{ $lh['greeting_character'] }}.png"
+                        alt="{{ $lh['greeting_name'] }}" style="height:72px;width:auto;flex-shrink:0;">
+                    <div style="min-width:0;">
+                        <h5 class="mb-1">{{ $lh['greeting_name'] }} says:</h5>
+                        <p class="mb-0 gray-color">{{ $lh['greeting_line'] }}</p>
+                    </div>
+                </div>
+
+                <hr class="my-3">
+
+                <div class="row g-3">
+                    <div class="col-lg-7">
+                        <h6 class="mb-2">{{ ___('common.whats_next') }}</h6>
+                        @forelse ($lh['next_skills'] as $skill)
+                            <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2">
+                                <div>
+                                    <div class="fw-bold">{{ $skill->title }}</div>
+                                    <small class="gray-color">{{ $skill->subject->name ?? '' }}</small>
+                                </div>
+                            </div>
+                        @empty
+                            <p class="gray-color mb-0">{{ ___('common.no_skills_set_up_yet_for_your_grade') }}</p>
+                        @endforelse
+                    </div>
+                    <div class="col-lg-5">
+                        <h6 class="mb-2">{{ ___('common.your_skill_snapshot') }}</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge-basic-warning-text">{{ ___('common.not_started') }}: {{ $lh['mastery_counts']['not_started'] }}</span>
+                            <span class="badge-basic-info-text">{{ ___('common.developing') }}: {{ $lh['mastery_counts']['developing'] }}</span>
+                            <span class="badge-basic-primary-text">{{ ___('common.proficient') }}: {{ $lh['mastery_counts']['proficient'] }}</span>
+                            <span class="badge-basic-success-text">{{ ___('common.advanced') }}: {{ $lh['mastery_counts']['advanced'] }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-5 g-3 mb-24">
         <div class="col">
             <div class="ot_crm_summeryBox d-flex align-items-center h-100">

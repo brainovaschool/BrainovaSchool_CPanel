@@ -1,0 +1,71 @@
+<?php
+
+namespace App\Repositories\LearningEngine;
+
+use App\Support\Character;
+use App\Models\StudentInfo\Student;
+use App\Models\LearningEngine\LearningEvent;
+use App\Models\StudentInfo\SessionClassStudent;
+use App\Models\LearningEngine\StudentSkillMastery;
+
+/**
+ * Builds the "Personal Learning Home" panel shown at the top of the student
+ * dashboard: a character greeting (welcome-back aware), a short "what's
+ * next" list, and a skill-mastery snapshot. Entirely rule-based — no AI
+ * call here — so the dashboard always has something real to show even
+ * before any AI-assisted feature is layered on top of it.
+ */
+class LearningHomeRepository
+{
+    private const COMEBACK_GAP_DAYS = 3;
+
+    private $events;
+
+    public function __construct(LearningEventRepository $events)
+    {
+        $this->events = $events;
+    }
+
+    public function forStudent(Student $student): array
+    {
+        $classesId = SessionClassStudent::where('session_id', setting('session'))
+            ->where('student_id', $student->id)
+            ->value('classes_id');
+
+        $lastEvent = LearningEvent::where('student_id', $student->id)->latest('created_at')->first();
+
+        $isFirstVisit = !$lastEvent;
+        $isComeback   = $lastEvent && $lastEvent->created_at->diffInDays(now()) >= self::COMEBACK_GAP_DAYS;
+
+        if ($isFirstVisit) {
+            $character = 'kea';
+            $context   = 'welcome';
+        } elseif ($isComeback) {
+            $character = 'kea';
+            $context   = 'comeback';
+        } else {
+            $character = 'brainbot';
+            $context   = 'welcome';
+        }
+
+        $counts = StudentSkillMastery::where('student_id', $student->id)
+            ->selectRaw('mastery_level, count(*) as c')
+            ->groupBy('mastery_level')
+            ->pluck('c', 'mastery_level');
+
+        return [
+            'greeting_character' => $character,
+            'greeting_name'      => Character::name($character),
+            'greeting_image'     => Character::image($character),
+            'greeting_line'      => Character::line($character, $context),
+            'is_comeback'        => $isComeback,
+            'next_skills'        => $this->events->nextSkills($student->id, null, $classesId, 3),
+            'mastery_counts'     => [
+                'not_started' => (int) ($counts['not_started'] ?? 0),
+                'developing'  => (int) ($counts['developing'] ?? 0),
+                'proficient'  => (int) ($counts['proficient'] ?? 0),
+                'advanced'    => (int) ($counts['advanced'] ?? 0),
+            ],
+        ];
+    }
+}
