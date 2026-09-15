@@ -334,13 +334,13 @@ class FrontendRepository implements FrontendInterface
         $row->phone   = $request->whatsapp_number;
         $row->email   = $request->email;
         $row->subject = 'Demo Class Request';
-        $row->message = "Father Name: {$request->father_name}\nStudent Age: {$request->student_age}";
+        $row->message = "Father Name: {$request->father_name}\nStudent Age: {$request->student_age}\nCity: {$request->city}\nCountry: {$request->country}";
         $row->save();
 
         try {
             send_web_notification(
                 'New Demo Class Request',
-                $row->name . ' — Age ' . $request->student_age,
+                $row->name . ' — Age ' . $request->student_age . ' — ' . $request->city . ', ' . $request->country,
                 1,
                 route('contact-message.index')
             );

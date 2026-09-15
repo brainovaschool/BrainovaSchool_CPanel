@@ -530,6 +530,8 @@ class FrontendController extends Controller
                 'whatsapp_number' => 'required|string|max:40',
                 'email'           => 'required|email|max:150',
                 'student_age'     => 'required|string|max:40',
+                'city'            => 'required|string|max:100',
+                'country'         => 'required|string|max:100',
             ]);
 
             $this->repo->demoClass($request);

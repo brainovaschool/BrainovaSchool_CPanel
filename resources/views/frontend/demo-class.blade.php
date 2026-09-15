@@ -82,6 +82,20 @@
                                         placeholder="e.g. 8 years">
                                     @error('student_age')<small class="text-danger d-block mb_20">{{ $message }}</small>@enderror
                                 </div>
+                                <div class="col-xl-6">
+                                    <label class="primary_label2">City <span class="text-danger">*</span></label>
+                                    <input name="city" value="{{ old('city') }}" required type="text"
+                                        class="form-control ot-input mb_30 @error('city') is-invalid @enderror"
+                                        placeholder="e.g. Islamabad">
+                                    @error('city')<small class="text-danger d-block mb_20">{{ $message }}</small>@enderror
+                                </div>
+                                <div class="col-xl-6">
+                                    <label class="primary_label2">Country <span class="text-danger">*</span></label>
+                                    <input name="country" value="{{ old('country') }}" required type="text"
+                                        class="form-control ot-input mb_30 @error('country') is-invalid @enderror"
+                                        placeholder="e.g. Pakistan">
+                                    @error('country')<small class="text-danger d-block mb_20">{{ $message }}</small>@enderror
+                                </div>
                                 <div class="col-xl-12">
                                     <button type="submit" class="theme_btn small_btn3 min_windth_200 text-center">Request my demo class</button>
                                 </div>
