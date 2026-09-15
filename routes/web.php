@@ -133,6 +133,9 @@ Route::middleware(saasMiddleware())->group(function () {
             // Run pending tenant migrations from the browser (admin-only + key).
             Route::get('/db/migrate/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'run']);
 
+            // One-off: create a dummy student login for testing (admin-only + key).
+            Route::get('/db/create-demo-student/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'createDemoStudent']);
+
             Route::controller(LanguageController::class)->prefix('languages')->group(function () {
                 Route::get('/change',                   'changeLanguage')->name('languages.change');
             });

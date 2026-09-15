@@ -1,0 +1,246 @@
+[33mee11914[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m 66
+[33m2e4dd60[m 65
+[33ma659568[m 64
+[33m37955e1[m 63
+[33mefe94cd[m 62
+[33mcbfe090[m 61
+[33mfd72b20[m 60
+[33m0067eef[m 59
+[33m1dba16b[m 58
+[33m0176c75[m 57
+[33m7566d2c[m 56
+[33m5a3c069[m 55
+[33m3f3ef48[m 54
+[33m2114c94[m 53
+[33mb32684f[m 52
+[33mf47042f[m 51
+[33m6e2e9ae[m 50
+[33m7a0eb45[m 49
+[33mff8ba7f[m 48
+[33me3a4fdd[m 47
+[33m19f8a60[m 46
+[33mc397a62[m 45
+[33md52702e[m 44
+[33mcfe0b0e[m 43
+[33m3b87abe[m 42
+[33m4e32f24[m 41
+[33mf0d9e46[m 40
+[33m2435d80[m 38
+[33m28b6c1a[m 37
+[33mcf1e6c6[m 36
+[33m79eaf09[m 35
+[33m3df549f[m 34
+[33mbd56128[m 33
+[33md990d0a[m 32
+[33me81b6e9[m 31
+[33me2d526c[m 30
+[33md100753[m 27
+[33m03cd581[m 2828
+[33m727ac2d[m 26
+[33m7d536ef[m 25
+[33mc48e32c[m 24
+[33m9e0251a[m 23
+[33m65f3551[m 22
+[33m8f852d4[m 21
+[33me68ceb6[m 20
+[33m3ae58b8[m 19
+[33m73b50b6[m 18
+[33m006102c[m 17
+[33m9c874c2[m 16
+[33m5f288cc[m 15
+[33md937ffc[m 14
+[33m055b058[m 13
+[33mbc511e0[m 12
+[33md687c15[m 11
+[33m003f663[m 10
+[33mb6310a0[m 10
+[33m10768fc[m 9
+[33mc2b9173[m 8
+[33m5b6f1ae[m 7
+[33m874b5f7[m 4
+[33m5e68235[m 6
+[33m41646df[m 5
+[33m009ff8d[m 3
+[33me80387a[m 2
+[33m1bac87b[m 1
+[33m6fa8a02[m addition in menu blade
+[33me708d13[m titok icon in header.blade
+[33me1fc80b[m socialmedia
+[33m886907f[m added teacher para in about page
+[33mb920554[m fix address on website
+[33ma7ed710[m fix errors on website
+[33m2d2df46[m fix errors on website
+[33mddbfe05[m open admission form changes
+[33mefad704[m open admission form changes
+[33md253cf1[m Fixed daily attendance and subject attendance bugs
+[33m0b7faa2[m improved evalutation submission task UI
+[33mb987260[m modified holiday camp
+[33m93ff491[m added summer camp courses data
+[33mf9192ec[m added pagination to view all courses
+[33me5e21b6[m  Fixed courses view
+[33mc6e5b36[m added courses filter
+[33ma930900[m added more dummy courses
+[33mf6dc928[m fixed holiday club link
+[33m83bfbad[m Added real courses data
+[33me445483[m fixed sub menu categories
+[33m4ab6f25[m fixed sub menu categories
+[33m1fff953[m menu and sub menu alignment resolve
+[33m946fc63[m menu and sub menu alignment resolve
+[33m6dbccad[m Added sub categories menu in the main tabs
+[33m9f14f82[m Improved heading of the courses page
+[33mcf8e6e0[m full restructure of the courses page
+[33ma6aba9d[m Fixed frontend controller to display courses
+[33maab7d08[m Added dummy course data
+[33m502d9ae[m Added courses tab in frontend
+[33mb054c14[m Added courses tab in frontend
+[33mf9a3903[m Restrict all roles except admin to access website setting and layout
+[33mec2fcd1[m Added ice blue theme to create homework
+[33m60e50d3[m Improved the overall asthetics of quiz analytics page with the same homework theme
+[33m85df366[m Improved layout of parent portal homework page
+[33me177ba5[m Fixed live chat user image and guardian connectivity with Admin and super admin
+[33mc2b4e98[m fix live chat
+[33m7f1971b[m fix live chat
+[33m370a188[m Fixed live chat
+[33m5bcfaa8[m Filter subject scoring graph based on selected subject
+[33mf104573[m Fixed alignment issue in scoring graph on homework dashboard
+[33m79dc4f0[m Added homework status in evaulation list
+[33mc98b8fd[m Added homework status in evaulation list
+[33m59c05ee[m only active homeworks should be visible to students
+[33mf3e1236[m Restrict teachers to only view assigned classes, sections
+[33m8578d12[m teacher are restricted to only view assigned subject data for both view and create homework
+[33m66e781c[m fixed quiz analytics with getting data from homework, student and question answered
+[33m3000927[m Fixed teachers permission for question group and list
+[33m51d28b5[m fixed view subject assigned button
+[33me18f231[m clear cache
+[33md87babd[m Fixed assigned subject layout and redirection from dashboard
+[33md6b6dfb[m Roles are restricted for teachers
+[33m19414d8[m added subject on teacher dashboard
+[33md501009[m change score progress graph for average overall scores
+[33mb5c0a89[m fixed styling of homework page, removal of csv tempate button
+[33mf8a4a62[m student_homework_sumit1
+[33m0ca8db8[m student_homework_sumit
+[33mab13d67[m fixed 500 internal server error on quiz submission
+[33mf0ff664[m Adding marking for the homework pending evaluation
+[33ma19fe63[m Added new css to gamified the homework page in lighter mode
+[33m71e903b[m Pretified the homework result containers and filters
+[33m1d46511[m Removed homework-gamified css
+[33m6833860[m Chnaging homework light theme page
+[33m546d5d3[m Chnaging homework light theme page
+[33m0662e7a[m Chnaging homework light theme page
+[33m8432f48[m Chnaging homework light theme page
+[33m0c8ce57[m changed homework page theme into lighter tone
+[33m8d18470[m changed homework page theme into lighter tone
+[33mcadc5c8[m changed homework page theme into lighter tone
+[33m6a00c53[m Improved text readability for evaulation score
+[33m9d6358d[m Improved text readability for evaulation score
+[33mc287206[m Improved text readability for evaulation score
+[33mcf52661[m removed graphical representation of evaluation score and add stats in quest logs instead
+[33m897496b[m added Pie chart data representation for evaluated scores based on submission
+[33m6de16ae[m fixed homework description for student
+[33m7084fb6[m added Pie chart data representation for evaluated scores
+[33m60636ed[m added sorting in quest logs
+[33mfa4fab4[m added sorting in quest logs
+[33m454315a[m added sorting in quest logs
+[33m6142095[m removal of player stats from homework
+[33m73dba2e[m changed colour of deploy
+[33m42b00f0[m changed colour of deploy
+[33m95ba0b1[m fix the extra gap between filter labels and drop downs
+[33mfcf7b34[m fix the extra gap between filter labels and drop downs
+[33mcb3ca22[m fix the extra gap between filter labels and drop downs
+[33mb96e71e[m score added in parent dashboard
+[33m5a9fce8[m fixed spellings of student in the side bar menu
+[33mee7899a[m changed marks into scores for student dashboard
+[33m94c5b24[m removed extra drop down filters
+[33m990eb54[m fixed the error of missing class in homework page
+[33meb18f7a[m modifies the css of the homework page
+[33m35e2910[m fix issue in assigned classes to logged in teacher
+[33mc637961[m Removed unnecessary Parent, teacher and student data from teacher dashboard
+[33ma294354[m changed session into classes on teacher dashboard
+[33m20298a6[m sessions link is fixed for teacher dashboard
+[33med05f03[m Fix alignment of the marks on dashboard
+[33md7d3f0f[m Display score on student dashboard
+[33mf5de83b[m Fix overall asthetics of the homework page
+[33m457cfb8[m Fix overall asthetics of the homework page
+[33mc797c4a[m fix the alignment of filter labels
+[33m6a2b8aa[m fix csv template download
+[33m55bf99b[m Fix evaluation submission button
+[33m2297ffd[m Homework UI: filtered table edit link, chart/action tweaks
+[33mff942fc[m fix for score trend when marks are exists
+[33m185cf28[m fixing pie chart and score trend graphs
+[33m51ee71f[m Fix subject dropdown in homework
+[33mdea6bb6[m Fix subject dropdown in the homework
+[33mfc814d8[m checking2
+[33m9fd1494[m checking1
+[33m8d9d969[m Revert "fixing dropdown"
+[33ma0c2d4b[m fixing dropdown3
+[33mbd0f64f[m fixing dropdown
+[33m11986c6[m fixing index1
+[33m58d3346[m fixing repo
+[33me3deef1[m fixing index
+[33m6985e9b[m fixing nice select4
+[33m7e32fa3[m fixing nice select2
+[33m72c57d4[m fixing nice select2
+[33md85a0b2[m fixing nice select1
+[33madc3fe4[m fixing nice select
+[33m62407ee[m homework-overview.blade
+[33mdbbbc83[m homework-index-blade6
+[33m286497f[m homework-index-blade5
+[33ma77ed81[m homework-index-blade4
+[33m38751e7[m homework-index-blade3
+[33mb488a42[m homework-index-blade2
+[33mad17093[m homework-index-blade1
+[33m2851542[m homework-index-blade
+[33m39ab4f1[m homework-file-search1
+[33m91e4a3e[m homework-file-search
+[33m1f89d32[m fixing routes
+[33me10482e[m fixing route homewok-export-results
+[33m255bd96[m fixing route homework-quiz
+[33ma141704[m check1
+[33m0338d64[m question list
+[33ma78b188[m testing again2
+[33m85b8d66[m testing again1
+[33mb338d05[m fixed deployment
+[33m75e43da[m fixed permissions
+[33m13b2dcf[m exlude .git folder
+[33mc4ae692[m deleted inner public_html
+[33m93ae419[m fixed cpanel file
+[33mfdab61e[m updated view score button index.php
+[33ma373ab5[m q1
+[33mf0ed160[m Merge branch 'main' of https://github.com/msulemanshafqat/BrainovaSchool_CPanel
+[33m10724a2[m system update testing q1
+[33m68ff6d5[m deployment test
+[33mc7c61e9[m system_check_p2
+[33m310681e[m system checking p1
+[33mdf05a42[m system update p4 and p5
+[33me89ebd2[m test after update 2 revert
+[33mbf14081[m system updat part 2
+[33me904abb[m system update-part1
+[33md44733d[m complete system update
+[33m11a1b84[m comment added for testing again
+[33m6e28971[m add comment for testing
+[33me35be76[m Update .gitignore to exclude Laravel cache, sessions and system files
+[33m96097fe[m Sync Nazish manual changes - homework views and config
+[33m336e5ec[m Test 3
+[33m9b7ba84[m Test No 2
+[33meee1f1f[m Test file
+[33mccbcc81[m Test file
+[33m11cc1cc[m Testing
+[33m69d7b1c[m Test file
+[33mdb63f68[m Test file
+[33m351d3d3[m Fix deployment path in .cpanel.yml
+[33m51416cf[m Test auto deploy
+[33m8ba6cbb[m Update Test and package-lock.json
+[33m8d92928[m Merge branch 'main' of https://github.com/msulemanshafqat/BrainovaSchool_CPanel
+[33mae9677e[m Remove sensitive files and zip from tracking
+[33m30f1c63[m Add AutoUpdateTest.txt for auto push testing
+[33me5c670e[m Add cPanel auto-deployment configuration
+[33meaf6585[m Sync homework feature changes made directly in cPanel by Naz
+[33m101be02[m Remove broken FTP workflow - pending SSH setup
+[33m48b538d[m Add GitHub Actions FTP deployment workflow
+[33m6207dd6[m Add GitHub Actions FTP deployment workflow
+[33me506380[m Add GitHub Actions FTP deployment workflow
+[33maa84227[m Add GitHub Actions FTP deployment workflow
+[33mfb84106[m Remove app.zip and ignore large archive files
+[33mbaffd4d[m Merge branch 'main' of https://github.com/msulemanshafqat/BrainovaSchool_CPanel
+[33m7e7b6b0[m Initial commit - full Laravel LMS codebase
+[33m8d53da5[m Add test file with initial content

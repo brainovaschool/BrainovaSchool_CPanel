@@ -6,6 +6,9 @@ use App\Models\Permission;
 use App\Models\Role;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Academic\Classes;
+use App\Models\Academic\Section;
+use App\Repositories\StudentInfo\StudentRepository;
 
 /**
  * Runs pending tenant migrations from the browser, for hosts without shell /
@@ -76,6 +79,62 @@ class MigrationRunnerController extends Controller
             . "\nCatalogue seed: " . e($seed)
             . "\nTestimonials seed: " . e($tm)
             . "\nNotice seed: " . e($notice)
+            . "</pre>"
+        );
+    }
+
+    /** One-off: create a dummy student login for testing, reusing the real
+     *  student-creation logic so every required relationship is set up
+     *  correctly (user account, class/section assignment, etc). Safe to
+     *  visit more than once — each visit makes a new, separate dummy student. */
+    public function createDemoStudent(string $key, StudentRepository $students)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $class = Classes::first();
+        if (!$class) {
+            return response('No class exists yet — create at least one Class (Academic → Classes) before generating a demo student.', 422);
+        }
+        $section = Section::first();
+
+        $suffix   = now()->format('YmdHis');
+        $email    = "demo.student.{$suffix}@brainovaschool.com";
+        $password = 'Demo@' . substr($suffix, -6);
+
+        $fake = new \Illuminate\Http\Request();
+        $fake->merge([
+            'first_name'     => 'Demo',
+            'last_name'      => 'Student',
+            'email'          => $email,
+            'mobile'         => '03000000000',
+            'admission_no'   => 'DEMO-' . $suffix,
+            'password_type'  => 'custom',
+            'password'       => $password,
+            'date_of_birth'  => '2015-01-01',
+            'admission_date' => now()->format('Y-m-d'),
+            'status'         => 1,
+            'class'          => $class->id,
+            'section'        => $section->id ?? '',
+        ]);
+
+        $result = $students->store($fake);
+
+        if (!$result['status']) {
+            return response('Could not create the demo student: ' . $result['message'], 422);
+        }
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Demo student created.\n\n"
+            . "Email: {$email}\n"
+            . "Password: {$password}\n\n"
+            . "Log in at the normal login page with these details."
             . "</pre>"
         );
     }
