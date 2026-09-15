@@ -24,13 +24,15 @@
         <div class="card ot-card">
             <div class="card-header">
                 <h4>{{ ___('settings.ai_helper') }}</h4>
-                <p class="text-secondary mb-0">This is a private test page — it is not linked anywhere on the
-                    site. Visit it directly at:
+                <p class="text-secondary mb-0">The lesson-plan generator is also available to logged-in teachers in
+                    their dashboard sidebar, and the study helper to logged-in students in theirs. This unlinked
+                    test link still works too:
                     <code>{{ url('/homeschool-ai-preview') }}</code>
                 </p>
+                <a href="{{ route('ai-helper.logs') }}" class="btn ot-btn-primary mt-2">View AI Usage Log</a>
             </div>
             <div class="card-body">
-                <form action="{{ route('ai-helper.update') }}" method="post" id="visitForm">
+                <form action="{{ route('ai-helper.update') }}" method="post" id="visitForm" enctype="multipart/form-data">
                     @csrf
                     <div class="row mb-3">
 
@@ -85,6 +87,106 @@
                                 class="form-control ot-textarea @error('ai_helper_system_prompt') is-invalid @enderror"
                                 placeholder="Paste your full lesson-plan generator prompt here.">{{ Setting('ai_helper_system_prompt') }}</textarea>
                             @error('ai_helper_system_prompt')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-12">
+                            <hr>
+                            <h5 class="mb-3">Mascots</h5>
+                        </div>
+
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label">Teacher AI Help Mascot (e.g. Brainbot)</label>
+                            @if (Setting('ai_helper_teacher_mascot'))
+                                <div class="mb-2"><img src="{{ globalAsset(Setting('ai_helper_teacher_mascot')) }}" style="height:70px;"></div>
+                            @endif
+                            <input type="file" name="ai_helper_teacher_mascot" class="form-control ot-input" accept="image/*">
+                        </div>
+
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label">Student AI Help Mascot (e.g. Kea)</label>
+                            @if (Setting('ai_helper_student_mascot'))
+                                <div class="mb-2"><img src="{{ globalAsset(Setting('ai_helper_student_mascot')) }}" style="height:70px;"></div>
+                            @endif
+                            <input type="file" name="ai_helper_student_mascot" class="form-control ot-input" accept="image/*">
+                        </div>
+
+                        <div class="col-12">
+                            <hr>
+                            <h5 class="mb-3">Usage Limits</h5>
+                            <p class="text-secondary" style="margin-top:-10px">Leave the count at 0 for unlimited.</p>
+                        </div>
+
+                        <div class="col-12 col-md-3 mb-3">
+                            <label class="form-label">Teacher limit period</label>
+                            <select name="ai_helper_teacher_limit_period" class="form-control">
+                                <option value="day" {{ Setting('ai_helper_teacher_limit_period') != 'week' ? 'selected' : '' }}>Per day</option>
+                                <option value="week" {{ Setting('ai_helper_teacher_limit_period') == 'week' ? 'selected' : '' }}>Per week</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3 mb-3">
+                            <label class="form-label">Teacher max requests</label>
+                            <input type="number" min="0" name="ai_helper_teacher_limit_count"
+                                class="form-control ot-input" value="{{ Setting('ai_helper_teacher_limit_count') ?: 0 }}">
+                        </div>
+                        <div class="col-12 col-md-3 mb-3">
+                            <label class="form-label">Student limit period</label>
+                            <select name="ai_help_student_limit_period" class="form-control">
+                                <option value="day" {{ Setting('ai_help_student_limit_period') != 'week' ? 'selected' : '' }}>Per day</option>
+                                <option value="week" {{ Setting('ai_help_student_limit_period') == 'week' ? 'selected' : '' }}>Per week</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-3 mb-3">
+                            <label class="form-label">Student max requests</label>
+                            <input type="number" min="0" name="ai_help_student_limit_count"
+                                class="form-control ot-input" value="{{ Setting('ai_help_student_limit_count') ?: 0 }}">
+                        </div>
+
+                        <div class="col-12">
+                            <hr>
+                            <h5 class="mb-3">Student AI Help</h5>
+                            <p class="text-secondary" style="margin-top:-10px">Controls the separate homework/study
+                                helper tool students see after logging into their own student portal.</p>
+                        </div>
+
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label">Page Title</label>
+                            <input type="text" name="ai_help_student_page_title"
+                                class="form-control ot-input @error('ai_help_student_page_title') is-invalid @enderror"
+                                value="{{ Setting('ai_help_student_page_title') }}" placeholder="AI Study Helper">
+                            @error('ai_help_student_page_title')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label">Button Text</label>
+                            <input type="text" name="ai_help_student_button_text"
+                                class="form-control ot-input @error('ai_help_student_button_text') is-invalid @enderror"
+                                value="{{ Setting('ai_help_student_button_text') }}" placeholder="Ask">
+                            @error('ai_help_student_button_text')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Question Box Label</label>
+                            <input type="text" name="ai_help_student_question_label"
+                                class="form-control ot-input @error('ai_help_student_question_label') is-invalid @enderror"
+                                value="{{ Setting('ai_help_student_question_label') }}" placeholder="What are you stuck on?">
+                            @error('ai_help_student_question_label')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Prompt (instructions sent to the AI before the student's own
+                                question)</label>
+                            <textarea name="ai_help_student_system_prompt" rows="6"
+                                class="form-control ot-textarea @error('ai_help_student_system_prompt') is-invalid @enderror"
+                                placeholder="You are a friendly, patient study helper for a school student. Explain things simply, step by step, and never just give a final homework answer without helping the student understand it.">{{ Setting('ai_help_student_system_prompt') }}</textarea>
+                            @error('ai_help_student_system_prompt')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>

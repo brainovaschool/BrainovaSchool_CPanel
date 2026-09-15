@@ -31,6 +31,7 @@ use App\Http\Controllers\Backend\MyProfileController;
 use App\Http\Controllers\Settings\ReligionController;
 use App\Http\Controllers\WebsiteSetup\AboutController;
 use App\Http\Controllers\Settings\BloodGroupController;
+use App\Http\Controllers\Backend\AiHelperTeacherController;
 
 /*
 |--------------------------------------------------------------------------
@@ -252,6 +253,13 @@ Route::middleware(saasMiddleware())->group(function () {
 
                         Route::get('/password/update',      'passwordUpdate')->name('passwordUpdate');
                         Route::put('/password/update/store', 'passwordUpdateStore')->name('passwordUpdateStore')->middleware('DemoCheck');
+                    });
+
+                    Route::controller(AiHelperTeacherController::class)->prefix('ai-help-teacher')->name('ai-help-teacher.')->group(function () {
+                        Route::get('/',                       'index')->name('index');
+                        Route::post('/generate',              'generate')->name('generate');
+                        Route::post('/generate-visual',       'generateVisual')->name('generate-visual');
+                        Route::post('/generate-slides',       'generateSlides')->name('generate-slides');
                     });
 
                     Route::controller(LanguageController::class)->middleware(['FeatureCheck:language', 'DenyTeacherAndStudent'])->prefix('languages')->group(function () {

@@ -3,8 +3,11 @@
 namespace App\Repositories\WebsiteSetup;
 
 use App\Models\Setting;
+use Illuminate\Support\Str;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\WebsiteSetup\AiHelperLog;
 
 class AiHelperRepository
 {
@@ -28,6 +31,14 @@ class AiHelperRepository
                 'ai_helper_drive_root_folder',
                 'ai_helper_drive_client_id',
                 'ai_helper_drive_client_secret',
+                'ai_help_student_page_title',
+                'ai_help_student_button_text',
+                'ai_help_student_question_label',
+                'ai_help_student_system_prompt',
+                'ai_helper_teacher_limit_period',
+                'ai_helper_teacher_limit_count',
+                'ai_help_student_limit_period',
+                'ai_help_student_limit_count',
             ];
 
             foreach ($fields as $field) {
@@ -40,10 +51,34 @@ class AiHelperRepository
                 }
             }
 
+            $this->uploadMascot($request, 'ai_helper_teacher_mascot');
+            $this->uploadMascot($request, 'ai_helper_student_mascot');
+
             return true;
         } catch (\Throwable $th) {
             return false;
         }
+    }
+
+    private function uploadMascot($request, string $field): void
+    {
+        if (!$request->hasFile($field) || !$request->file($field)->isValid()) {
+            return;
+        }
+
+        $path      = 'backend/uploads/settings';
+        $file      = $request->file($field);
+        $extension = $file->guessExtension();
+        $filename  = Str::random(6) . '_' . time() . '.' . $extension;
+
+        if (setting('file_system') == 's3') {
+            $value = s3Upload($path, $file);
+        } else {
+            $file->move($path, $filename);
+            $value = $path . '/' . $filename;
+        }
+
+        $this->setSetting($field, $value);
     }
 
     public function setSetting(string $name, ?string $value): void
@@ -207,5 +242,63 @@ class AiHelperRepository
         }
 
         return ['ok' => true, 'data' => $merged];
+    }
+
+    /**
+     * Student homework/study helper — a single free-text question, one plain
+     * answer back. Returns ['ok' => true, 'text' => string] or ['ok' => false, 'message' => string].
+     */
+    public function askStudentHelper(string $question): array
+    {
+        $systemPrompt = setting('ai_help_student_system_prompt')
+            ?: 'You are a friendly, patient study helper for a school student. Explain things simply, step by step, and never just give a final homework answer without helping the student understand it.';
+
+        return $this->callGemini($systemPrompt . "\n\nStudent's question: " . $question);
+    }
+
+    /**
+     * $role: 'teacher' or 'student'. Reads that role's configured limit and
+     * counts how many requests this user has already made in the current
+     * period. Returns ['allowed' => true] or ['allowed' => false, 'message' => string].
+     * An empty/zero limit setting means unlimited.
+     */
+    public function checkLimit(int $userId, string $role): array
+    {
+        $count  = (int) ($role === 'teacher' ? setting('ai_helper_teacher_limit_count') : setting('ai_help_student_limit_count'));
+        $period = $role === 'teacher' ? setting('ai_helper_teacher_limit_period') : setting('ai_help_student_limit_period');
+        $period = $period === 'week' ? 'week' : 'day';
+
+        if ($count <= 0) {
+            return ['allowed' => true];
+        }
+
+        $since = $period === 'week' ? Carbon::now()->startOfWeek() : Carbon::now()->startOfDay();
+
+        $used = AiHelperLog::where('user_id', $userId)
+            ->where('user_role', $role)
+            ->where('created_at', '>=', $since)
+            ->count();
+
+        if ($used >= $count) {
+            $periodLabel = $period === 'week' ? 'this week' : 'today';
+            return ['allowed' => false, 'message' => "You've reached your limit of {$count} AI requests {$periodLabel}. Please try again " . ($period === 'week' ? 'next week.' : 'tomorrow.')];
+        }
+
+        return ['allowed' => true];
+    }
+
+    public function logUsage(?int $userId, ?string $userName, string $role, string $tool, string $summary): void
+    {
+        try {
+            AiHelperLog::create([
+                'user_id'   => $userId,
+                'user_name' => $userName,
+                'user_role' => $role,
+                'tool'      => $tool,
+                'summary'   => \Illuminate\Support\Str::limit($summary, 500),
+            ]);
+        } catch (\Throwable $th) {
+            Log::warning('AI Helper usage log failed: ' . $th->getMessage());
+        }
     }
 }

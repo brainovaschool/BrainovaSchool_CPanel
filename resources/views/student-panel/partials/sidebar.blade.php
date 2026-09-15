@@ -15,6 +15,12 @@
                         <span class="on-half-expanded">{{ ___('common.dashboard') }}</span>
                     </a>
                 </li>
+                <li class="sidebar-menu-item {{ set_menu(['student-panel-ai-help*']) }}">
+                    <a href="{{ route('student-panel-ai-help.index') }}" class="parent-item-content">
+                        <i class="las la-robot"></i>
+                        <span class="on-half-expanded">{{ ___('settings.ai_help_student') }}</span>
+                    </a>
+                </li>
                 @if (hasFeature('academic'))
                     <li class="sidebar-menu-item {{ set_menu(['student-panel-subject-list*']) }}">
                         <a href="{{ route('student-panel-subject-list.index') }}" class="parent-item-content">

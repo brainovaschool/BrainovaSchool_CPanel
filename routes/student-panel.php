@@ -7,6 +7,7 @@ use App\Http\Controllers\Library\IssueBookController;
 use App\Http\Controllers\StudentPanel\FeesController;
 use App\Repositories\StudentPanel\AttendanceRepository;
 use App\Http\Controllers\StudentPanel\ProfileController;
+use App\Http\Controllers\StudentPanel\AiHelpController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use App\Http\Controllers\StudentPanel\HomeworkController;
 use App\Http\Controllers\StudentPanel\DashboardController;
@@ -29,6 +30,11 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::controller(DashboardController::class)->prefix('student-panel-dashboard')->group(function () {
                         Route::get('/', 'index')->name('student-panel-dashboard.index');
                         Route::post('search-student-menu-data', 'searchStudentMenuData')->name('search-student-menu-data');
+                    });
+
+                    Route::controller(AiHelpController::class)->prefix('student-panel-ai-help')->group(function () {
+                        Route::get('/',       'index')->name('student-panel-ai-help.index');
+                        Route::post('/ask',   'ask')->name('student-panel-ai-help.ask');
                     });
 
                     Route::controller(ProfileController::class)->prefix('student-panel')->group(function () {

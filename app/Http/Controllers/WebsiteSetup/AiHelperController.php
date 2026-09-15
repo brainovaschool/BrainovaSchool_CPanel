@@ -86,4 +86,11 @@ class AiHelperController extends Controller
         $this->repo->setSetting('ai_helper_drive_refresh_token', null);
         return redirect()->route('ai-helper.index')->with('success', 'Google Drive disconnected.');
     }
+
+    public function logs()
+    {
+        $data['title'] = 'AI Helper Usage Log';
+        $data['logs']  = \App\Models\WebsiteSetup\AiHelperLog::latest()->paginate(30);
+        return view('website-setup.ai-helper.logs', compact('data'));
+    }
 }

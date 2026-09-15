@@ -524,6 +524,15 @@
                     </li>
                 @endif
 
+                @if (auth()->check() && in_array((int) auth()->user()->role_id, [1, 5]))
+                    <li class="sidebar-menu-item {{ set_menu(['ai-help-teacher*']) }}">
+                        <a href="{{ route('ai-help-teacher.index') }}" class="parent-item-content">
+                            <i class="las la-robot"></i>
+                            <span class="on-half-expanded">{{ ___('settings.ai_help_teacher') }}</span>
+                        </a>
+                    </li>
+                @endif
+
                 @if(hasModule('StudyMaterial'))
                     @include('studymaterial::admin_sidebar_menu')
                 @endif
