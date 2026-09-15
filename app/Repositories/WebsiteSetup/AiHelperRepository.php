@@ -126,30 +126,44 @@ class AiHelperRepository
             $body['generationConfig'] = ['responseMimeType' => 'application/json'];
         }
 
-        try {
-            $response = Http::timeout(60)->post(
-                "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}",
-                $body
-            );
+        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
 
-            if (!$response->successful()) {
+        // Gemini occasionally returns 503 "model is overloaded" under heavy public
+        // demand — that's transient on Google's side, so retry a couple of times
+        // with a short pause before giving up, instead of failing on the first hit.
+        $maxAttempts = 3;
+
+        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+            try {
+                $response = Http::timeout(60)->post($url, $body);
+
+                if ($response->successful()) {
+                    $text = $response->json('candidates.0.content.parts.0.text');
+                    if (!$text) {
+                        return ['ok' => false, 'message' => 'The AI helper did not return an answer. Please try again.'];
+                    }
+                    return ['ok' => true, 'text' => trim($text)];
+                }
+
                 Log::warning('AI Helper (Gemini) error: ' . $response->status() . ' ' . $response->body());
-                // TEMPORARY while testing: show the real error so it can be diagnosed
-                // without server/log access. Revert to a generic message before this
-                // page is exposed to real visitors.
-                return ['ok' => false, 'message' => 'DEBUG (' . $response->status() . '): ' . $response->body()];
-            }
 
-            $text = $response->json('candidates.0.content.parts.0.text');
-            if (!$text) {
-                return ['ok' => false, 'message' => 'The AI helper did not return an answer. Please try again.'];
-            }
+                if ($response->status() === 503 && $attempt < $maxAttempts) {
+                    sleep(2);
+                    continue;
+                }
 
-            return ['ok' => true, 'text' => trim($text)];
-        } catch (\Throwable $th) {
-            Log::warning('AI Helper (Gemini) exception: ' . $th->getMessage());
-            return ['ok' => false, 'message' => 'The AI helper is temporarily unavailable.'];
+                if ($response->status() === 503) {
+                    return ['ok' => false, 'message' => 'The AI is currently handling a lot of requests. Please wait a minute and try again.'];
+                }
+
+                return ['ok' => false, 'message' => 'The AI helper could not generate an answer right now. Please try again shortly.'];
+            } catch (\Throwable $th) {
+                Log::warning('AI Helper (Gemini) exception: ' . $th->getMessage());
+                return ['ok' => false, 'message' => 'The AI helper is temporarily unavailable.'];
+            }
         }
+
+        return ['ok' => false, 'message' => 'The AI is currently handling a lot of requests. Please wait a minute and try again.'];
     }
 
     /**
