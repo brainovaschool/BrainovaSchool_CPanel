@@ -22,6 +22,7 @@ use App\Http\Controllers\WebsiteSetup\ProgramCategoryController;
 use App\Http\Controllers\WebsiteSetup\TestimonialController;
 use App\Http\Controllers\WebsiteSetup\TrialSlotController;
 use App\Http\Controllers\WebsiteSetup\AiHelperController;
+use App\Http\Controllers\WebsiteSetup\SkillController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -35,6 +36,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/drive/callback', 'driveCallback')->name('ai-helper.drive-callback')->middleware('PermissionCheck:ai_helper_update');
                     Route::post('/drive/disconnect', 'driveDisconnect')->name('ai-helper.drive-disconnect')->middleware('PermissionCheck:ai_helper_update', 'DemoCheck');
                     Route::get('/logs',    'logs')->name('ai-helper.logs')->middleware('PermissionCheck:ai_helper_read');
+                    Route::post('/logs/bulk-delete', 'bulkDeleteLogs')->name('ai-helper.logs.bulk-delete')->middleware('PermissionCheck:ai_helper_update', 'DemoCheck');
                 });
 
                 Route::controller(SectionsController::class)->prefix('page-sections')->group(function () {
@@ -150,6 +152,17 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:testimonial_delete', 'DemoCheck');
                     Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:testimonial_delete', 'DemoCheck');
                     Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:testimonial_update', 'DemoCheck');
+                });
+
+                Route::controller(SkillController::class)->prefix('skill')->name('skill.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:skill_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:skill_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:skill_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:skill_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:skill_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:skill_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:skill_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:skill_update', 'DemoCheck');
                 });
 
                 Route::controller(TrialSlotController::class)->prefix('trial-slot')->name('trial-slot.')->group(function () {

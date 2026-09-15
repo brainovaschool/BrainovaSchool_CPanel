@@ -903,7 +903,7 @@
                         hasPermission('event_read')) &&
                         hasFeature('website_setup'))
                     <li
-                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'program-category*', 'program-focus*', 'program/*', 'testimonial*', 'trial-slot*', 'ai-helper*']) }}">
+                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'program-category*', 'program-focus*', 'program/*', 'testimonial*', 'trial-slot*', 'ai-helper*', 'skill*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-wrench"></i>
                             <span class="on-half-expanded">{{ ___('settings.Website_setup') }}</span>
@@ -990,6 +990,12 @@
                             @if (hasPermission('ai_helper_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['ai-helper*']) }}">
                                     <a href="{{ route('ai-helper.index') }}">{{ ___('settings.ai_helper') }}</a>
+                                </li>
+                            @endif
+
+                            @if (hasPermission('skill_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['skill*']) }}">
+                                    <a href="{{ route('skill.index') }}">{{ ___('settings.skills') }}</a>
                                 </li>
                             @endif
 

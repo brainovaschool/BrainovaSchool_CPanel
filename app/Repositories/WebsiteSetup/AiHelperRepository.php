@@ -315,4 +315,9 @@ class AiHelperRepository
             Log::warning('AI Helper usage log failed: ' . $th->getMessage());
         }
     }
+
+    public function bulkDestroyLogs(array $ids): int
+    {
+        return AiHelperLog::whereIn('id', $ids)->delete();
+    }
 }

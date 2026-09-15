@@ -27,10 +27,12 @@
                     <a href="{{ route('ai-helper.index') }}" class="btn ot-btn-primary">Back to AI Helper Settings</a>
                 </div>
                 <div class="card-body">
+                    @include('backend.partials.bulk-actions-bar', ['bulkStatusToggle' => false])
                     <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead">
                                 <tr>
+                                    <th><input type="checkbox" id="bulkSelectAll"></th>
                                     <th>{{ ___('common.sr_no') }}</th>
                                     <th>Date &amp; Time</th>
                                     <th>User</th>
@@ -41,7 +43,8 @@
                             </thead>
                             <tbody class="tbody">
                                 @forelse ($data['logs'] as $key => $row)
-                                    <tr>
+                                    <tr id="row_{{ $row->id }}">
+                                        <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
                                         <td>{{ $data['logs']->firstItem() + $key }}</td>
                                         <td>{{ $row->created_at->format('d M Y, h:i A') }}</td>
                                         <td>{{ $row->user_name ?: '—' }}</td>
@@ -78,3 +81,4 @@
         </div>
     </div>
 @endsection
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'ai-helper/logs'])

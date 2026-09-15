@@ -93,4 +93,17 @@ class AiHelperController extends Controller
         $data['logs']  = \App\Models\WebsiteSetup\AiHelperLog::latest()->paginate(30);
         return view('website-setup.ai-helper.logs', compact('data'));
     }
+
+    public function bulkDeleteLogs(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+        $deleted = $this->repo->bulkDestroyLogs($ids);
+        if ($deleted === 0) {
+            return response()->json([___('alert.something_went_wrong_please_try_again'), 'error', ___('alert.oops'), ___('alert.OK')]);
+        }
+        return response()->json([___('alert.deleted_successfully'), 'success', ___('alert.deleted'), ___('alert.OK')]);
+    }
 }
