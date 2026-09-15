@@ -335,10 +335,15 @@ class FrontendController extends Controller
     // AI Helper — filename format: G<grade>_subject_T<term>_unit_module_lesson_<suffix>.pdf
     private function aiHelperFilename(array $fields, string $suffix): string
     {
+        // Grade/Term now come from dropdowns as "Grade 4" / "Term 1" — pull just
+        // the number so filenames stay clean ("g4", "t1") instead of "ggrade_4".
+        preg_match('/\d+/', $fields['grade'], $gradeMatch);
+        preg_match('/\d+/', $fields['term'], $termMatch);
+
         $parts = [
-            'g' . \Illuminate\Support\Str::slug($fields['grade'], '_'),
+            'g' . ($gradeMatch[0] ?? \Illuminate\Support\Str::slug($fields['grade'], '_')),
             \Illuminate\Support\Str::slug($fields['subject'], '_'),
-            't' . \Illuminate\Support\Str::slug($fields['term'], '_'),
+            't' . ($termMatch[0] ?? \Illuminate\Support\Str::slug($fields['term'], '_')),
             \Illuminate\Support\Str::slug($fields['unit'], '_'),
             \Illuminate\Support\Str::slug($fields['module'], '_'),
             \Illuminate\Support\Str::slug($fields['lesson_title'], '_'),

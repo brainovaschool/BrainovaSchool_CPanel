@@ -26,7 +26,8 @@
         margin-bottom: 6px;
         font-size: 14px;
     }
-    .ai-helper-field input {
+    .ai-helper-field input,
+    .ai-helper-field select {
         width: 100%;
         box-sizing: border-box;
         padding: 12px 14px;
@@ -76,19 +77,34 @@
                             <div class="col-md-6">
                                 <div class="ai-helper-field">
                                     <label>Grade</label>
-                                    <input type="text" name="grade" placeholder="e.g. 4th Grade" required>
+                                    <select name="grade" required>
+                                        <option value="">— Select Grade —</option>
+                                        @for ($g = 1; $g <= 8; $g++)
+                                            <option value="Grade {{ $g }}">Grade {{ $g }}</option>
+                                        @endfor
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="ai-helper-field">
                                     <label>Subject</label>
-                                    <input type="text" name="subject" placeholder="e.g. Science" required>
+                                    <select name="subject" required>
+                                        <option value="">— Select Subject —</option>
+                                        @foreach (['English', 'Urdu', 'Maths', 'Science', 'History', 'Geography', 'Islamiyat', 'Others'] as $subjectOption)
+                                            <option value="{{ $subjectOption }}">{{ $subjectOption }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="ai-helper-field">
                                     <label>Term</label>
-                                    <input type="text" name="term" placeholder="e.g. Term 1" required>
+                                    <select name="term" required>
+                                        <option value="">— Select Term —</option>
+                                        @for ($t = 1; $t <= 6; $t++)
+                                            <option value="Term {{ $t }}">Term {{ $t }}</option>
+                                        @endfor
+                                    </select>
                                 </div>
                             </div>
                             <div class="col-md-6">

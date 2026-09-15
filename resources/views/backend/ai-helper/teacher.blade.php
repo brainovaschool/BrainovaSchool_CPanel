@@ -37,15 +37,30 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Grade</label>
-                            <input type="text" name="grade" class="form-control ot-input" placeholder="e.g. 4th Grade" required>
+                            <select name="grade" class="form-control ot-input" required>
+                                <option value="">— Select Grade —</option>
+                                @for ($g = 1; $g <= 8; $g++)
+                                    <option value="Grade {{ $g }}">Grade {{ $g }}</option>
+                                @endfor
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Subject</label>
-                            <input type="text" name="subject" class="form-control ot-input" placeholder="e.g. Science" required>
+                            <select name="subject" class="form-control ot-input" required>
+                                <option value="">— Select Subject —</option>
+                                @foreach (['English', 'Urdu', 'Maths', 'Science', 'History', 'Geography', 'Islamiyat', 'Others'] as $subjectOption)
+                                    <option value="{{ $subjectOption }}">{{ $subjectOption }}</option>
+                                @endforeach
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Term</label>
-                            <input type="text" name="term" class="form-control ot-input" placeholder="e.g. Term 1" required>
+                            <select name="term" class="form-control ot-input" required>
+                                <option value="">— Select Term —</option>
+                                @for ($t = 1; $t <= 6; $t++)
+                                    <option value="Term {{ $t }}">Term {{ $t }}</option>
+                                @endfor
+                            </select>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Unit</label>

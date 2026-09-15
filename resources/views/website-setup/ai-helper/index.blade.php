@@ -48,12 +48,14 @@
 
                         <div class="col-12 col-md-6 mb-3">
                             <label class="form-label">Model</label>
-                            <input type="text" name="ai_helper_model"
-                                class="form-control ot-input @error('ai_helper_model') is-invalid @enderror"
-                                value="{{ Setting('ai_helper_model') ?: 'gemini-3.6-flash' }}"
-                                placeholder="gemini-3.6-flash">
-                            <small class="text-secondary">Only change this if Google renames/retires the default
-                                model.</small>
+                            @php $currentModel = Setting('ai_helper_model') ?: 'gemini-3.6-flash'; @endphp
+                            <select name="ai_helper_model" class="form-control @error('ai_helper_model') is-invalid @enderror">
+                                @foreach (['gemini-3.6-flash', 'gemini-3.6-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'] as $modelOption)
+                                    <option value="{{ $modelOption }}" {{ $currentModel == $modelOption ? 'selected' : '' }}>{{ $modelOption }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-secondary">If one shows "high demand" errors often, try another —
+                                the lite/older ones are usually less crowded.</small>
                             @error('ai_helper_model')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
