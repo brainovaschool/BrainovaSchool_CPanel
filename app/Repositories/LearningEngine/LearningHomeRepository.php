@@ -3,6 +3,7 @@
 namespace App\Repositories\LearningEngine;
 
 use App\Support\Character;
+use App\Models\LearningEngine\Skill;
 use App\Models\StudentInfo\Student;
 use App\Models\LearningEngine\LearningEvent;
 use App\Models\StudentInfo\SessionClassStudent;
@@ -53,6 +54,13 @@ class LearningHomeRepository
             ->groupBy('mastery_level')
             ->pluck('c', 'mastery_level');
 
+        // A skill nobody has attempted yet has no mastery row at all (rows are
+        // only created on a first attempt), so "not started" has to be derived
+        // from the skill catalogue, not just counted from existing rows.
+        $totalSkills   = Skill::active()->when($classesId, fn ($q) => $q->where('classes_id', $classesId))->count();
+        $touchedSkills = StudentSkillMastery::where('student_id', $student->id)->count();
+        $notStarted    = max(0, $totalSkills - $touchedSkills);
+
         $needsReview = StudentSkillMastery::where('student_id', $student->id)
             ->whereIn('mastery_level', ['not_started', 'developing'])
             ->whereColumn('correct_count', '<', 'attempts_count')
@@ -73,7 +81,7 @@ class LearningHomeRepository
             'needs_review'       => $needsReview,
             'review_line'        => Character::line('brainbot', 'mistake_review'),
             'mastery_counts'     => [
-                'not_started' => (int) ($counts['not_started'] ?? 0),
+                'not_started' => $notStarted,
                 'developing'  => (int) ($counts['developing'] ?? 0),
                 'proficient'  => (int) ($counts['proficient'] ?? 0),
                 'advanced'    => (int) ($counts['advanced'] ?? 0),
