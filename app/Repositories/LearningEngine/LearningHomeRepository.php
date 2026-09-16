@@ -74,7 +74,7 @@ class LearningHomeRepository
         return [
             'greeting_character' => $character,
             'greeting_name'      => Character::name($character),
-            'greeting_image'     => Character::image($character),
+            'greeting_image'     => $this->mascotUrl($character),
             'greeting_line'      => Character::line($character, $context),
             'is_comeback'        => $isComeback,
             'next_skills'        => $this->events->nextSkills($student->id, null, $classesId, 3),
@@ -87,5 +87,16 @@ class LearningHomeRepository
                 'advanced'    => (int) ($counts['advanced'] ?? 0),
             ],
         ];
+    }
+
+    /** Reuses the mascot artwork already uploaded in Website Setup -> AI Helper,
+     *  instead of depending on static image files that were never actually
+     *  added to public/frontend/img/mascots/. Returns null if not uploaded. */
+    private function mascotUrl(string $character): ?string
+    {
+        $settingKey = $character === 'brainbot' ? 'ai_helper_teacher_mascot' : 'ai_helper_student_mascot';
+        $path       = setting($settingKey);
+
+        return $path ? globalAsset($path) : null;
     }
 }

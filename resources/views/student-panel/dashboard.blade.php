@@ -36,8 +36,10 @@
         <div class="card ot-card mb-24">
             <div class="card-body">
                 <div class="d-flex align-items-center flex-wrap gap-3">
-                    <img src="{{ asset('frontend/img/mascots/' . $lh['greeting_character'] . '.png') }}"
-                        alt="{{ $lh['greeting_name'] }}" style="height:72px;width:auto;flex-shrink:0;">
+                    @if ($lh['greeting_image'])
+                        <img src="{{ $lh['greeting_image'] }}"
+                            alt="{{ $lh['greeting_name'] }}" style="height:72px;width:auto;flex-shrink:0;">
+                    @endif
                     <div style="min-width:0;">
                         <h5 class="mb-1">{{ $lh['greeting_name'] }} says:</h5>
                         <p class="mb-0 gray-color">{{ $lh['greeting_line'] }}</p>
