@@ -864,6 +864,59 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /** One-off: prints the exact numbers HomeworkRepository::index() and the
+     *  dashboard's marks query use, side by side with what the seeded
+     *  homework rows actually have — so a mismatch (class/section/session)
+     *  is visible directly instead of guessed at. Read-only, changes nothing. */
+    public function inspectHomeworkDemo(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $student = Student::where('email', 'like', 'demo.student.%')->latest('id')->first();
+        if (!$student) {
+            return response('No demo student found.', 422);
+        }
+
+        $scs = SessionClassStudent::where('session_id', setting('session'))
+            ->where('student_id', $student->id)
+            ->first();
+
+        $rows = DB::table('homework')
+            ->where('title', 'like', 'Demo %')
+            ->select('id', 'title', 'classes_id', 'section_id', 'subject_id', 'session_id', 'status', 'task_type')
+            ->get();
+
+        $homeworkStudentCount = DB::table('homework_students')->where('student_id', $student->id)->count();
+
+        // The exact query StudentPanel\Homework\HomeworkRepository::index() runs.
+        $visibleCount = \App\Models\Homework::active()
+            ->where('classes_id', @$scs->classes_id)
+            ->where('section_id', @$scs->section_id)
+            ->where('session_id', setting('session'))
+            ->count();
+
+        $lines = [];
+        $lines[] = "Demo student: {$student->first_name} {$student->last_name} (student_id {$student->id})";
+        $lines[] = "Student's session_class_student -> classes_id: " . (@$scs->classes_id ?? 'MISSING') . ", section_id: " . (@$scs->section_id ?? 'MISSING') . ", session used: " . setting('session');
+        $lines[] = '';
+        $lines[] = 'Seeded "Demo *" homework rows (' . $rows->count() . ' found):';
+        foreach ($rows as $r) {
+            $lines[] = "  #{$r->id} \"{$r->title}\" [{$r->task_type}] classes_id={$r->classes_id} section_id={$r->section_id} subject_id={$r->subject_id} session_id={$r->session_id} status={$r->status}";
+        }
+        $lines[] = '';
+        $lines[] = "homework_students rows for this student: {$homeworkStudentCount}";
+        $lines[] = '';
+        $lines[] = "Homework page's exact query (active + matching classes_id/section_id/session_id) would show: {$visibleCount} row(s)";
+
+        return response('<pre style="font:14px/1.5 monospace;padding:24px">' . e(implode("\n", $lines)) . '</pre>');
+    }
+
     /** Shows the tail of storage/logs/laravel.log in the browser, newest first —
      *  for a host with no SSH and no confirmed file-manager access to logs. */
     public function viewLogs(string $key)

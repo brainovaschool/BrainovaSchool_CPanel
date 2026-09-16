@@ -154,6 +154,9 @@ Route::middleware(saasMiddleware())->group(function () {
             // One-off: seed a demo Quiz (skill-tagged), Project, and Assignment with real marks, linked to the skill/mastery system (admin-only + key).
             Route::get('/db/seed-homework-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedHomeworkDemo']);
 
+            // One-off, read-only: prints the exact class/section/session numbers behind why homework may not be showing (admin-only + key).
+            Route::get('/db/inspect-homework-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectHomeworkDemo']);
+
             Route::controller(LanguageController::class)->prefix('languages')->group(function () {
                 Route::get('/change',                   'changeLanguage')->name('languages.change');
             });
