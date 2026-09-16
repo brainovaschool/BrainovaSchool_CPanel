@@ -15,6 +15,12 @@ use App\Models\LearningEngine\StudentSkillMastery;
  * next" list, and a skill-mastery snapshot. Entirely rule-based — no AI
  * call here — so the dashboard always has something real to show even
  * before any AI-assisted feature is layered on top of it.
+ *
+ * Query-budget note: every method here fetches each student's/class's
+ * mastery rows ONCE and derives counts/needs-review/milestone from that one
+ * collection in memory, instead of issuing a separate query per figure (or,
+ * in classSnapshot's case, per student) — that pattern was a real N+1 and a
+ * measurable contributor to slow dashboard loads.
  */
 class LearningHomeRepository
 {
@@ -49,27 +55,31 @@ class LearningHomeRepository
             $context   = 'welcome';
         }
 
-        $counts = StudentSkillMastery::where('student_id', $student->id)
-            ->selectRaw('mastery_level, count(*) as c')
-            ->groupBy('mastery_level')
-            ->pluck('c', 'mastery_level');
-
-        // A skill nobody has attempted yet has no mastery row at all (rows are
-        // only created on a first attempt), so "not started" has to be derived
-        // from the skill catalogue, not just counted from existing rows.
-        $totalSkills   = Skill::active()->when($classesId, fn ($q) => $q->where('classes_id', $classesId))->count();
-        $touchedSkills = StudentSkillMastery::where('student_id', $student->id)->count();
-        $notStarted    = max(0, $totalSkills - $touchedSkills);
-
-        $needsReview = StudentSkillMastery::where('student_id', $student->id)
-            ->whereIn('mastery_level', ['not_started', 'developing'])
-            ->whereColumn('correct_count', '<', 'attempts_count')
+        // One fetch for all of this student's mastery rows — counts,
+        // needs-review, "what's next", and the milestone check are all
+        // derived from this single collection below.
+        $masteries = StudentSkillMastery::where('student_id', $student->id)
             ->with('skill.subject')
-            ->orderByDesc('last_practiced_at')
+            ->get();
+
+        $totalSkills = Skill::active()->when($classesId, fn ($q) => $q->where('classes_id', $classesId))->count();
+        $notStarted  = max(0, $totalSkills - $masteries->count());
+
+        $needsReview = $masteries
+            ->filter(fn ($m) => in_array($m->mastery_level, ['not_started', 'developing'], true) && $m->correct_count < $m->attempts_count)
+            ->sortByDesc('last_practiced_at')
             ->take(3)
-            ->get()
             ->pluck('skill')
             ->filter();
+
+        $masteredIds = $masteries->where('mastery_level', 'advanced')->pluck('skill_id');
+        $nextSkills  = Skill::active()
+            ->with('subject')
+            ->when($classesId, fn ($q) => $q->where('classes_id', $classesId))
+            ->whereNotIn('id', $masteredIds)
+            ->orderBy('sort_order')
+            ->take(3)
+            ->get();
 
         return [
             'greeting_character' => $character,
@@ -77,15 +87,15 @@ class LearningHomeRepository
             'greeting_image'     => $this->mascotUrl($character),
             'greeting_line'      => Character::line($character, $context),
             'is_comeback'        => $isComeback,
-            'next_skills'        => $this->events->nextSkills($student->id, null, $classesId, 3),
+            'next_skills'        => $nextSkills,
             'needs_review'       => $needsReview,
             'review_line'        => Character::line('brainbot', 'mistake_review'),
-            'milestone'          => $this->claimMilestone($student->id),
+            'milestone'          => $this->claimMilestone($masteries),
             'mastery_counts'     => [
                 'not_started' => $notStarted,
-                'developing'  => (int) ($counts['developing'] ?? 0),
-                'proficient'  => (int) ($counts['proficient'] ?? 0),
-                'advanced'    => (int) ($counts['advanced'] ?? 0),
+                'developing'  => $masteries->where('mastery_level', 'developing')->count(),
+                'proficient'  => $masteries->where('mastery_level', 'proficient')->count(),
+                'advanced'    => $masteries->where('mastery_level', 'advanced')->count(),
             ],
         ];
     }
@@ -106,19 +116,27 @@ class LearningHomeRepository
             ->filter()
             ->values();
 
+        $studentIds  = $students->pluck('id');
         $totalSkills = Skill::active()->where('classes_id', $classesId)->count();
 
-        $rows = $students->map(function ($student) use ($totalSkills) {
-            $counts = StudentSkillMastery::where('student_id', $student->id)
-                ->selectRaw('mastery_level, count(*) as c')
-                ->groupBy('mastery_level')
-                ->pluck('c', 'mastery_level');
+        // One query for every student's mastery counts, one for needs-review
+        // — not two queries per student, which was a real N+1 for a full class.
+        $countsByStudent = StudentSkillMastery::whereIn('student_id', $studentIds)
+            ->selectRaw('student_id, mastery_level, count(*) as c')
+            ->groupBy('student_id', 'mastery_level')
+            ->get()
+            ->groupBy('student_id');
 
-            $touched          = (int) $counts->sum();
-            $needsReviewCount = StudentSkillMastery::where('student_id', $student->id)
-                ->whereIn('mastery_level', ['not_started', 'developing'])
-                ->whereColumn('correct_count', '<', 'attempts_count')
-                ->count();
+        $needsReviewByStudent = StudentSkillMastery::whereIn('student_id', $studentIds)
+            ->whereIn('mastery_level', ['not_started', 'developing'])
+            ->whereColumn('correct_count', '<', 'attempts_count')
+            ->selectRaw('student_id, count(*) as c')
+            ->groupBy('student_id')
+            ->pluck('c', 'student_id');
+
+        $rows = $students->map(function ($student) use ($totalSkills, $countsByStudent, $needsReviewByStudent) {
+            $counts  = optional($countsByStudent->get($student->id))->pluck('c', 'mastery_level') ?? collect();
+            $touched = (int) $counts->sum();
 
             return [
                 'student'      => $student,
@@ -126,7 +144,7 @@ class LearningHomeRepository
                 'developing'   => (int) ($counts['developing'] ?? 0),
                 'proficient'   => (int) ($counts['proficient'] ?? 0),
                 'advanced'     => (int) ($counts['advanced'] ?? 0),
-                'needs_review' => $needsReviewCount,
+                'needs_review' => (int) ($needsReviewByStudent[$student->id] ?? 0),
             ];
         });
 
@@ -137,16 +155,12 @@ class LearningHomeRepository
      * The "notification" piece of Phase 1: a one-time celebration the moment a
      * skill first reaches Advanced. Shown exactly once (marked seen here, on
      * the same request that returns it) — a real event, not a manufactured
-     * streak, and never repeated into a nag.
+     * streak, and never repeated into a nag. Takes the already-loaded
+     * mastery collection instead of querying again.
      */
-    private function claimMilestone(int $studentId): ?array
+    private function claimMilestone($masteries): ?array
     {
-        $mastery = StudentSkillMastery::where('student_id', $studentId)
-            ->whereNotNull('mastered_at')
-            ->whereNull('milestone_seen_at')
-            ->with('skill')
-            ->orderBy('mastered_at')
-            ->first();
+        $mastery = $masteries->first(fn ($m) => $m->mastered_at && !$m->milestone_seen_at);
 
         if (!$mastery || !$mastery->skill) {
             return null;

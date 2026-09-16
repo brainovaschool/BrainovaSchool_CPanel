@@ -3,6 +3,7 @@
     {{ @$data['title'] }}
 @endsection
 @section('content')
+    @include('backend.partials.learning-engine-styles')
     <div class="page-content">
 
         <div class="page-header">
@@ -76,13 +77,13 @@
                                         <tr>
                                             <td>{{ ++$key }}</td>
                                             <td>{{ $row['student']->first_name }} {{ $row['student']->last_name }}</td>
-                                            <td><span class="badge-basic-warning-text">{{ $row['not_started'] }}</span></td>
-                                            <td><span class="badge-basic-info-text">{{ $row['developing'] }}</span></td>
-                                            <td><span class="badge-basic-primary-text">{{ $row['proficient'] }}</span></td>
-                                            <td><span class="badge-basic-success-text">{{ $row['advanced'] }}</span></td>
+                                            <td><span class="bn-pill bn-pill--not-started">{{ $row['not_started'] }}</span></td>
+                                            <td><span class="bn-pill bn-pill--developing">{{ $row['developing'] }}</span></td>
+                                            <td><span class="bn-pill bn-pill--proficient">{{ $row['proficient'] }}</span></td>
+                                            <td><span class="bn-pill bn-pill--advanced">{{ $row['advanced'] }}</span></td>
                                             <td>
                                                 @if ($row['needs_review'] > 0)
-                                                    <span class="badge-basic-danger-text">{{ $row['needs_review'] }}</span>
+                                                    <span class="bn-pill bn-pill--review">{{ $row['needs_review'] }}</span>
                                                 @else
                                                     —
                                                 @endif

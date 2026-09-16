@@ -112,47 +112,60 @@
         </div>
     </div>
 
-    @if (!empty($data['learning_home']))
-        @php $lh = $data['learning_home']; @endphp
-        <div class="row">
-            <div class="col-12">
-                <div class="ot-card mb-24">
-                    <div class="card-header card_header_border">
-                        <h4 class="mb-0">{{ ___('common.learning_snapshot') }}</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-3">
-                            <div class="col-lg-7">
-                                <h6 class="mb-2">{{ ___('common.currently_working_on') }}</h6>
-                                @forelse ($lh['next_skills'] as $skill)
-                                    <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2">
-                                        <div>
-                                            <div class="fw-bold">{{ $skill->title }}</div>
-                                            <small class="gray-color">{{ $skill->subject->name ?? '' }}</small>
-                                        </div>
-                                    </div>
-                                @empty
-                                    <p class="gray-color mb-0">{{ ___('common.no_skills_set_up_yet_for_your_grade') }}</p>
-                                @endforelse
+    @include('backend.partials.learning-engine-styles')
 
-                                @if (!empty($lh['needs_review']) && count($lh['needs_review']))
-                                    <h6 class="mb-2 mt-3">{{ ___('common.could_use_another_look') }}</h6>
-                                    <div class="d-flex flex-wrap gap-2">
-                                        @foreach ($lh['needs_review'] as $skill)
-                                            <span class="badge-basic-danger-text">{{ $skill->title }}@if($skill->subject) — {{ $skill->subject->name }}@endif</span>
-                                        @endforeach
-                                    </div>
-                                @endif
-                            </div>
-                            <div class="col-lg-5">
-                                <h6 class="mb-2">{{ ___('common.skill_mastery_overview') }}</h6>
-                                <div class="d-flex flex-wrap gap-2">
-                                    <span class="badge-basic-warning-text">{{ ___('common.not_started') }}: {{ $lh['mastery_counts']['not_started'] }}</span>
-                                    <span class="badge-basic-info-text">{{ ___('common.developing') }}: {{ $lh['mastery_counts']['developing'] }}</span>
-                                    <span class="badge-basic-primary-text">{{ ___('common.proficient') }}: {{ $lh['mastery_counts']['proficient'] }}</span>
-                                    <span class="badge-basic-success-text">{{ ___('common.advanced') }}: {{ $lh['mastery_counts']['advanced'] }}</span>
+    @if (!empty($data['learning_home']))
+        @php
+            $lh = $data['learning_home'];
+            $mc = $lh['mastery_counts'];
+            $mcTotal = max(1, array_sum($mc));
+        @endphp
+        <div class="bn-panel">
+            <div class="bn-panel__body">
+                <p class="bn-panel__eyebrow">{{ ___('common.learning_snapshot') }}</p>
+                <p class="bn-panel__title" style="margin-bottom:16px;">{{ @$data['student']->first_name }} {{ @$data['student']->last_name }}</p>
+
+                <div class="row g-4">
+                    <div class="col-lg-7">
+                        <div class="bn-section-label"><i class="fa-solid fa-route"></i> {{ ___('common.currently_working_on') }}</div>
+                        @forelse ($lh['next_skills'] as $skill)
+                            <div class="bn-skill-tile">
+                                <div>
+                                    <div class="bn-skill-tile__title">{{ $skill->title }}</div>
+                                    <div class="bn-skill-tile__meta">{{ $skill->subject->name ?? '' }}</div>
                                 </div>
                             </div>
+                        @empty
+                            <p class="bn-empty-note">{{ ___('common.no_skills_set_up_yet_for_your_grade') }}</p>
+                        @endforelse
+
+                        @if (!empty($lh['needs_review']) && count($lh['needs_review']))
+                            <div class="bn-section-label" style="margin-top:16px;"><i class="fa-solid fa-magnifying-glass"></i> {{ ___('common.could_use_another_look') }}</div>
+                            @foreach ($lh['needs_review'] as $skill)
+                                <div class="bn-skill-tile bn-skill-tile--review">
+                                    <div>
+                                        <div class="bn-skill-tile__title">{{ $skill->title }}</div>
+                                        @if ($skill->subject)
+                                            <div class="bn-skill-tile__meta">{{ $skill->subject->name }}</div>
+                                        @endif
+                                    </div>
+                                </div>
+                            @endforeach
+                        @endif
+                    </div>
+                    <div class="col-lg-5">
+                        <div class="bn-section-label"><i class="fa-solid fa-chart-simple"></i> {{ ___('common.skill_mastery_overview') }}</div>
+                        <div class="bn-progress">
+                            <div class="bn-progress__seg bn-progress__seg--not-started" style="width:{{ $mc['not_started'] / $mcTotal * 100 }}%"></div>
+                            <div class="bn-progress__seg bn-progress__seg--developing" style="width:{{ $mc['developing'] / $mcTotal * 100 }}%"></div>
+                            <div class="bn-progress__seg bn-progress__seg--proficient" style="width:{{ $mc['proficient'] / $mcTotal * 100 }}%"></div>
+                            <div class="bn-progress__seg bn-progress__seg--advanced" style="width:{{ $mc['advanced'] / $mcTotal * 100 }}%"></div>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="bn-pill bn-pill--not-started">{{ ___('common.not_started') }} · {{ $mc['not_started'] }}</span>
+                            <span class="bn-pill bn-pill--developing">{{ ___('common.developing') }} · {{ $mc['developing'] }}</span>
+                            <span class="bn-pill bn-pill--proficient">{{ ___('common.proficient') }} · {{ $mc['proficient'] }}</span>
+                            <span class="bn-pill bn-pill--advanced">{{ ___('common.advanced') }} · {{ $mc['advanced'] }}</span>
                         </div>
                     </div>
                 </div>

@@ -31,75 +31,85 @@
 @section('content')
 <div class="page-content">
 
+    @include('backend.partials.learning-engine-styles')
+
     @if (!empty($data['learning_home']))
-        @php $lh = $data['learning_home']; @endphp
+        @php
+            $lh = $data['learning_home'];
+            $mc = $lh['mastery_counts'];
+            $mcTotal = max(1, array_sum($mc));
+        @endphp
 
         @if (!empty($lh['milestone']))
-            <div class="card ot-card mb-24" style="border-left:4px solid #2f8f5b;">
-                <div class="card-body d-flex align-items-center gap-3">
-                    <i class="fa-solid fa-star" style="color:#2f8f5b;font-size:1.6rem;"></i>
-                    <div>
-                        <h5 class="mb-1">{{ ___('common.milestone_reached') }}: {{ $lh['milestone']['skill_title'] }}</h5>
-                        <p class="mb-0 gray-color">{{ $lh['milestone']['line'] }}</p>
-                    </div>
+            <div class="bn-milestone">
+                <div class="bn-milestone__icon"><i class="fa-solid fa-star"></i></div>
+                <div>
+                    <p class="bn-milestone__title">{{ ___('common.milestone_reached') }}: {{ $lh['milestone']['skill_title'] }}</p>
+                    <p class="bn-milestone__line">{{ $lh['milestone']['line'] }}</p>
                 </div>
             </div>
         @endif
 
-        <div class="card ot-card mb-24">
-            <div class="card-body">
-                <div class="d-flex align-items-center flex-wrap gap-3">
+        <div class="bn-panel">
+            <div class="bn-panel__body">
+                <div class="bn-panel__header">
                     @if ($lh['greeting_image'])
-                        <img src="{{ $lh['greeting_image'] }}"
-                            alt="{{ $lh['greeting_name'] }}" style="height:72px;width:auto;flex-shrink:0;">
+                        <div class="bn-mascot-badge"><img src="{{ $lh['greeting_image'] }}" alt="{{ $lh['greeting_name'] }}"></div>
                     @endif
                     <div style="min-width:0;">
-                        <h5 class="mb-1">{{ $lh['greeting_name'] }} says:</h5>
-                        <p class="mb-0 gray-color">{{ $lh['greeting_line'] }}</p>
+                        <p class="bn-panel__eyebrow">{{ $lh['greeting_name'] }}</p>
+                        <p class="bn-panel__line">{{ $lh['greeting_line'] }}</p>
                     </div>
                 </div>
 
-                <hr class="my-3">
+                <hr class="bn-divider">
 
-                <div class="row g-3">
+                <div class="row g-4">
                     <div class="col-lg-7">
-                        <h6 class="mb-2">{{ ___('common.whats_next') }}</h6>
+                        <div class="bn-section-label"><i class="fa-solid fa-route"></i> {{ ___('common.whats_next') }}</div>
                         @forelse ($lh['next_skills'] as $skill)
-                            <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2">
+                            <div class="bn-skill-tile">
                                 <div>
-                                    <div class="fw-bold">{{ $skill->title }}</div>
-                                    <small class="gray-color">{{ $skill->subject->name ?? '' }}</small>
+                                    <div class="bn-skill-tile__title">{{ $skill->title }}</div>
+                                    <div class="bn-skill-tile__meta">{{ $skill->subject->name ?? '' }}</div>
                                 </div>
                             </div>
                         @empty
-                            <p class="gray-color mb-0">{{ ___('common.no_skills_set_up_yet_for_your_grade') }}</p>
+                            <p class="bn-empty-note">{{ ___('common.no_skills_set_up_yet_for_your_grade') }}</p>
                         @endforelse
                     </div>
                     <div class="col-lg-5">
-                        <h6 class="mb-2">{{ ___('common.your_skill_snapshot') }}</h6>
+                        <div class="bn-section-label"><i class="fa-solid fa-chart-simple"></i> {{ ___('common.your_skill_snapshot') }}</div>
+                        <div class="bn-progress">
+                            <div class="bn-progress__seg bn-progress__seg--not-started" style="width:{{ $mc['not_started'] / $mcTotal * 100 }}%"></div>
+                            <div class="bn-progress__seg bn-progress__seg--developing" style="width:{{ $mc['developing'] / $mcTotal * 100 }}%"></div>
+                            <div class="bn-progress__seg bn-progress__seg--proficient" style="width:{{ $mc['proficient'] / $mcTotal * 100 }}%"></div>
+                            <div class="bn-progress__seg bn-progress__seg--advanced" style="width:{{ $mc['advanced'] / $mcTotal * 100 }}%"></div>
+                        </div>
                         <div class="d-flex flex-wrap gap-2">
-                            <span class="badge-basic-warning-text">{{ ___('common.not_started') }}: {{ $lh['mastery_counts']['not_started'] }}</span>
-                            <span class="badge-basic-info-text">{{ ___('common.developing') }}: {{ $lh['mastery_counts']['developing'] }}</span>
-                            <span class="badge-basic-primary-text">{{ ___('common.proficient') }}: {{ $lh['mastery_counts']['proficient'] }}</span>
-                            <span class="badge-basic-success-text">{{ ___('common.advanced') }}: {{ $lh['mastery_counts']['advanced'] }}</span>
+                            <span class="bn-pill bn-pill--not-started">{{ ___('common.not_started') }} · {{ $mc['not_started'] }}</span>
+                            <span class="bn-pill bn-pill--developing">{{ ___('common.developing') }} · {{ $mc['developing'] }}</span>
+                            <span class="bn-pill bn-pill--proficient">{{ ___('common.proficient') }} · {{ $mc['proficient'] }}</span>
+                            <span class="bn-pill bn-pill--advanced">{{ ___('common.advanced') }} · {{ $mc['advanced'] }}</span>
                         </div>
                     </div>
                 </div>
 
                 @if (!empty($lh['needs_review']) && count($lh['needs_review']))
-                    <hr class="my-3">
-                    <div class="d-flex align-items-start gap-2">
-                        <i class="fa-solid fa-magnifying-glass mt-1" style="color:#e8664f;"></i>
-                        <div style="min-width:0;">
-                            <h6 class="mb-1">{{ ___('common.lets_investigate') }}</h6>
-                            <p class="gray-color mb-2">{{ $lh['review_line'] }}</p>
-                            <div class="d-flex flex-wrap gap-2">
-                                @foreach ($lh['needs_review'] as $skill)
-                                    <span class="badge-basic-danger-text">{{ $skill->title }}@if($skill->subject) — {{ $skill->subject->name }}@endif</span>
-                                @endforeach
+                    <hr class="bn-divider">
+                    <div class="bn-section-label"><i class="fa-solid fa-magnifying-glass"></i> {{ ___('common.lets_investigate') }}</div>
+                    <p class="bn-panel__line" style="margin-bottom:12px;">{{ $lh['review_line'] }}</p>
+                    @foreach ($lh['needs_review'] as $skill)
+                        <div class="bn-skill-tile bn-skill-tile--review">
+                            <div>
+                                <div class="bn-skill-tile__title">{{ $skill->title }}</div>
+                                @if ($skill->subject)
+                                    <div class="bn-skill-tile__meta">{{ $skill->subject->name }}</div>
+                                @endif
                             </div>
+                            <span class="bn-pill bn-pill--review"><i class="fa-solid fa-arrow-rotate-left"></i></span>
                         </div>
-                    </div>
+                    @endforeach
                 @endif
             </div>
         </div>
