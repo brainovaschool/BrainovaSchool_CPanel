@@ -27,13 +27,33 @@
                 @endif
             </ul>
         </div>
+        @if (!empty($data['learning_home']['brain_level']))
+            @php $bl = $data['learning_home']['brain_level']; @endphp
+            <div class="bn-level-badge">
+                <div class="bn-level-badge__top">
+                    <i class="fa-solid fa-brain"></i>
+                    <span class="bn-level-badge__num">{{ $bl['level'] }}</span>
+                    <span class="bn-level-badge__label">{{ ___('common.brain_level') }}</span>
+                </div>
+                <div class="bn-level-badge__bar">
+                    <div class="bn-level-badge__fill" style="width:{{ $bl['progress_pct'] }}%"></div>
+                </div>
+                <div class="bn-level-badge__xp">{{ $bl['xp_into_level'] }} / {{ $bl['xp_for_level'] }} XP {{ ___('common.to_next_level') }}</div>
+            </div>
+        @endif
     </div>
 
-    {{-- Real figures only — Class/Subject/Teacher/Event/Marks are actual data;
-         no points, XP or rank here since that data doesn't exist yet (Brain
-         Level/XP is Phase 3, and a leaderboard is deliberately on hold until
-         there are real per-grade headcounts to make ranking meaningful). --}}
+    {{-- Real figures only — no fabricated rank here: a leaderboard is
+         deliberately on hold until there are real per-grade headcounts to
+         make ranking meaningful, even though Brain Level/XP now exist. --}}
     <div class="bn-stat-row">
+        @if (!empty($data['learning_home']['knowledge_tree']))
+            @php $kt = $data['learning_home']['knowledge_tree']; @endphp
+            <div class="bn-stat-tile bn-stat-tile--tree">
+                <div class="bn-stat-tile__emoji">{{ $kt['emoji'] }}</div>
+                <div><div class="bn-stat-tile__value" style="font-size:0.95rem;">{{ $kt['label'] }}</div><div class="bn-stat-tile__label">{{ $kt['active_days'] }} {{ ___('common.days_growing') }}</div></div>
+            </div>
+        @endif
         <div class="bn-stat-tile">
             <div class="bn-stat-tile__icon" style="background:#2563eb;"><i class="fa-solid fa-chalkboard"></i></div>
             <div><div class="bn-stat-tile__value">{{ $data['totalClass'] }}</div><div class="bn-stat-tile__label">{{ ___('academic.class') }}</div></div>

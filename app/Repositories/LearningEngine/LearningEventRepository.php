@@ -23,10 +23,19 @@ class LearningEventRepository
     public const EVENT_HINT_USED        = 'hint_used';
     public const EVENT_QUEST_CLAIMED    = 'quest_claimed';
 
+    // Phase 3, idea #8: reward the behavior, not just raw correctness — fixing
+    // a past mistake and mastering a skill earn far more than a routine
+    // correct answer, on purpose, so the incentive is "learn", not "click
+    // fast". These three numbers are the entire XP formula — no AI, no
+    // hidden weighting, easy to explain to a parent or a student.
+    private const XP_CORRECT_ANSWER = 5;
+    private const XP_RECOVERY_BONUS = 15;
+    private const XP_MASTERY_BONUS  = 50;
+
     public function record(int $studentId, string $eventType, ?int $skillId = null, array $payload = []): void
     {
         try {
-            LearningEvent::create([
+            $event = LearningEvent::create([
                 'student_id' => $studentId,
                 'skill_id'   => $skillId,
                 'event_type' => $eventType,
@@ -34,21 +43,47 @@ class LearningEventRepository
             ]);
 
             if ($eventType === self::EVENT_ANSWER_SUBMITTED && $skillId) {
-                $this->updateMastery($studentId, $skillId, (bool) ($payload['correct'] ?? false));
+                $correct = (bool) ($payload['correct'] ?? false);
+                $result  = $this->updateMastery($studentId, $skillId, $correct);
+
+                $event->xp = $this->xpFor($correct, $result['was_recovery'], $result['newly_mastered']);
+                $event->save();
             }
         } catch (\Throwable $th) {
             Log::warning('Learning event record failed: ' . $th->getMessage());
         }
     }
 
-    private function updateMastery(int $studentId, int $skillId, bool $correct): void
+    private function xpFor(bool $correct, bool $wasRecovery, bool $newlyMastered): int
+    {
+        if (!$correct) {
+            return 0;
+        }
+
+        $xp = self::XP_CORRECT_ANSWER;
+        $xp += $wasRecovery ? self::XP_RECOVERY_BONUS : 0;
+        $xp += $newlyMastered ? self::XP_MASTERY_BONUS : 0;
+
+        return $xp;
+    }
+
+    /** Total XP a student has earned — Brain Level (LearningHomeRepository)
+     *  is derived entirely from this one number, always recomputable from
+     *  the event log rather than kept in a separate ledger that could drift. */
+    public function totalXp(int $studentId): int
+    {
+        return (int) LearningEvent::where('student_id', $studentId)->sum('xp');
+    }
+
+    private function updateMastery(int $studentId, int $skillId, bool $correct): array
     {
         $mastery = StudentSkillMastery::firstOrNew([
             'student_id' => $studentId,
             'skill_id'   => $skillId,
         ]);
 
-        $wasAdvanced = $mastery->mastery_level === 'advanced';
+        $wasAdvanced           = $mastery->mastery_level === 'advanced';
+        $hadOutstandingMistake = ($mastery->attempts_count ?? 0) > 0 && ($mastery->correct_count ?? 0) < $mastery->attempts_count;
 
         $mastery->attempts_count    = ($mastery->attempts_count ?? 0) + 1;
         $mastery->correct_count     = ($mastery->correct_count ?? 0) + ($correct ? 1 : 0);
@@ -65,7 +100,9 @@ class LearningEventRepository
             $mastery->mastery_level = 'developing';
         }
 
-        if ($previousLevel !== 'advanced' && $mastery->mastery_level === 'advanced') {
+        $newlyMastered = $previousLevel !== 'advanced' && $mastery->mastery_level === 'advanced';
+
+        if ($newlyMastered) {
             $mastery->mastered_at          = now();
             $mastery->review_interval_days = 7;
             $mastery->next_review_at       = now()->addDays(7);
@@ -82,6 +119,11 @@ class LearningEventRepository
         }
 
         $mastery->save();
+
+        return [
+            'was_recovery'   => $correct && $hadOutstandingMistake,
+            'newly_mastered' => $newlyMastered,
+        ];
     }
 
     /**

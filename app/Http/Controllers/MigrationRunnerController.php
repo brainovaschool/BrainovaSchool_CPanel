@@ -536,6 +536,77 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /** One-off: backfills a simple 5 XP per pre-existing correct answer (the
+     *  XP column didn't exist when those were logged, so they'd otherwise
+     *  show as 0 forever), then seeds two fresh skills mastered cleanly so
+     *  Brain Level and the Knowledge Tree have something real to show beyond
+     *  Level 1 / Seed. Safe to re-visit — backfill only touches xp=0 rows,
+     *  and the fresh skills seed independently like the rest of Phase 2/3. */
+    public function seedPhase3Demo(string $key, LearningEventRepository $events)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $student = Student::where('email', 'like', 'demo.student.%')->latest('id')->first();
+        if (!$student) {
+            return response('No demo student found yet — visit /db/create-demo-student/' . self::KEY . ' first.', 422);
+        }
+
+        // Simple backfill: 5 XP per correct answer logged before the XP
+        // column existed. Deliberately skips the recovery/mastery bonuses
+        // here (replaying exact historical order to know which of those
+        // applied isn't worth the complexity for a backfill) — the fresh
+        // skills below demonstrate those bonuses properly instead.
+        $backfilled = LearningEvent::where('student_id', $student->id)
+            ->where('event_type', LearningEventRepository::EVENT_ANSWER_SUBMITTED)
+            ->where('xp', 0)
+            ->where('payload->correct', true)
+            ->update(['xp' => 5]);
+
+        $classSection = SessionClassStudent::where('session_id', setting('session'))
+            ->where('student_id', $student->id)
+            ->first();
+        $subject = Subject::first();
+
+        $freshlySeeded = [];
+        if ($classSection && $subject) {
+            $seeded = fn ($skillId) => LearningEvent::where('student_id', $student->id)->where('skill_id', $skillId)->exists();
+
+            foreach (['Long Division' => 9, 'Reading Comprehension' => 10] as $title => $sortOrder) {
+                $skill = Skill::firstOrCreate(
+                    ['title' => $title, 'classes_id' => $classSection->classes_id, 'subject_id' => $subject->id],
+                    ['slug' => 'demo-' . \Illuminate\Support\Str::slug($title) . '-' . $classSection->classes_id, 'sort_order' => $sortOrder, 'status' => 1]
+                );
+
+                if (!$seeded($skill->id)) {
+                    for ($i = 0; $i < 8; $i++) {
+                        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skill->id, ['correct' => true, 'source' => 'demo_seed']);
+                    }
+                    $freshlySeeded[] = $title;
+                }
+            }
+        }
+
+        $totalXp = $events->totalXp($student->id);
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Phase 3 demo data ready for: {$student->first_name} {$student->last_name} ({$student->email})\n\n"
+            . "Backfilled XP on {$backfilled} pre-existing correct answers (5 XP each)\n"
+            . (count($freshlySeeded) ? 'Freshly mastered: ' . implode(', ', $freshlySeeded) . " (8/8 correct each — 40 base + 50 mastery bonus = 90 XP apiece)\n" : "Long Division / Reading Comprehension already seeded — skipped\n")
+            . "\nTotal XP now: {$totalXp}\n\n"
+            . "Expected on the dashboard:\n"
+            . "  Brain Level badge (top of hero) and the Knowledge Tree tile (first stat tile)\n"
+            . "  should both reflect this XP total — reload and check the numbers moved.\n"
+            . "</pre>"
+        );
+    }
+
     /** Shows the tail of storage/logs/laravel.log in the browser, newest first —
      *  for a host with no SSH and no confirmed file-manager access to logs. */
     public function viewLogs(string $key)

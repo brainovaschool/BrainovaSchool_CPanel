@@ -383,6 +383,57 @@
 
     .bn-hero__meta i { opacity: 0.85; width: 14px; text-align: center; }
 
+    /* Brain Level badge — lives in the hero, next to the name */
+    .bn-level-badge {
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.16);
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 14px;
+        padding: 10px 16px;
+        min-width: 150px;
+    }
+
+    .bn-level-badge__top {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        color: #fff;
+        margin-bottom: 6px;
+    }
+
+    .bn-level-badge__num {
+        font-size: 1.4rem;
+        font-weight: 800;
+        line-height: 1;
+    }
+
+    .bn-level-badge__label {
+        font-size: 0.72rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        opacity: 0.85;
+    }
+
+    .bn-level-badge__bar {
+        height: 6px;
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.25);
+        overflow: hidden;
+    }
+
+    .bn-level-badge__fill {
+        height: 100%;
+        background: #fff;
+        border-radius: 4px;
+        transition: width 0.4s ease;
+    }
+
+    .bn-level-badge__xp {
+        font-size: 0.68rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin-top: 4px;
+    }
+
     /* Stat tiles — real figures only; no fabricated points/rank here */
     .bn-stat-row {
         display: grid;
@@ -427,6 +478,21 @@
         color: #7a8790;
         text-transform: uppercase;
         letter-spacing: 0.03em;
+    }
+
+    .bn-stat-tile--tree {
+        background: linear-gradient(135deg, var(--bn-advanced-soft), #fff 70%);
+        border-color: rgba(22, 163, 74, 0.18);
+    }
+
+    .bn-stat-tile__emoji {
+        flex-shrink: 0;
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
     }
 
     @media (max-width: 576px) {

@@ -114,6 +114,8 @@ class LearningHomeRepository
             ->pluck('skill')
             ->filter();
 
+        $brainLevel = $this->brainLevel($this->events->totalXp($student->id));
+
         return [
             'greeting_character' => $character,
             'greeting_name'      => Character::name($character),
@@ -127,6 +129,8 @@ class LearningHomeRepository
             'due_for_review'     => $dueForReview,
             'refresher_line'     => Character::line('kea', 'refresher'),
             'milestone'          => $this->claimMilestone($masteries),
+            'brain_level'        => $brainLevel,
+            'knowledge_tree'     => $this->knowledgeTree($student->id, $brainLevel['level']),
             'mastery_counts'     => [
                 'not_started' => $notStarted,
                 'developing'  => $masteries->where('mastery_level', 'developing')->count(),
@@ -134,6 +138,57 @@ class LearningHomeRepository
                 'advanced'    => $masteries->where('mastery_level', 'advanced')->count(),
             ],
         ];
+    }
+
+    /**
+     * Phase 3, idea #14: "Brain Level," not Grade Level — a number built
+     * entirely from XP earned through mastery-weighted behavior (see
+     * LearningEventRepository's XP formula), never from age or grade. A
+     * simple, fully transparent curve: level N starts at 25*(N-1)^2 XP, so
+     * each level takes a bit more than the last — no AI, no black box, easy
+     * to explain to a parent or a student.
+     */
+    private function brainLevel(int $totalXp): array
+    {
+        $level          = (int) floor(sqrt($totalXp / 25)) + 1;
+        $xpAtLevelStart = 25 * ($level - 1) ** 2;
+        $xpAtNextLevel  = 25 * $level ** 2;
+        $xpIntoLevel    = $totalXp - $xpAtLevelStart;
+        $xpForLevel     = max(1, $xpAtNextLevel - $xpAtLevelStart);
+
+        return [
+            'level'         => $level,
+            'total_xp'      => $totalXp,
+            'xp_into_level' => $xpIntoLevel,
+            'xp_for_level'  => $xpForLevel,
+            'progress_pct'  => min(100, (int) round($xpIntoLevel / $xpForLevel * 100)),
+            'next_level_at' => $xpAtNextLevel,
+        ];
+    }
+
+    /**
+     * Phase 3: the Knowledge Tree — replaces the streak. Grows with points
+     * (via Brain Level, which is itself XP-driven) and with days actually
+     * spent learning. The critical difference from a streak: it has no way
+     * to go backward. A quiet week just means growth pauses; it can never
+     * "break," so there's nothing here to lose sleep over.
+     */
+    private function knowledgeTree(int $studentId, int $brainLevel): array
+    {
+        $stage = match (true) {
+            $brainLevel >= 17 => ['emoji' => '🌳', 'label' => 'Ancient Tree'],
+            $brainLevel >= 12 => ['emoji' => '🌳', 'label' => 'Flourishing Tree'],
+            $brainLevel >= 8  => ['emoji' => '🌲', 'label' => 'Young Tree'],
+            $brainLevel >= 5  => ['emoji' => '🌳', 'label' => 'Sapling'],
+            $brainLevel >= 3  => ['emoji' => '🌿', 'label' => 'Sprout'],
+            default           => ['emoji' => '🌱', 'label' => 'Seed'],
+        };
+
+        $activeDays = (int) (LearningEvent::where('student_id', $studentId)
+            ->selectRaw('COUNT(DISTINCT DATE(created_at)) as c')
+            ->value('c') ?? 0);
+
+        return array_merge($stage, ['active_days' => $activeDays]);
     }
 
     /**

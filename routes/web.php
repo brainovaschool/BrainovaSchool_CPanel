@@ -148,6 +148,9 @@ Route::middleware(saasMiddleware())->group(function () {
             // One-off: seed Phase 2 Mistake Bank demo data (Needs practice / First recovery / Second recovery) for the latest demo student (admin-only + key).
             Route::get('/db/seed-phase2-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedPhase2Demo']);
 
+            // One-off: backfill XP on pre-existing events + seed fresh mastered skills so Brain Level/Knowledge Tree show real growth (admin-only + key).
+            Route::get('/db/seed-phase3-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedPhase3Demo']);
+
             Route::controller(LanguageController::class)->prefix('languages')->group(function () {
                 Route::get('/change',                   'changeLanguage')->name('languages.change');
             });
