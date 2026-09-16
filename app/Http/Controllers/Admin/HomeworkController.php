@@ -261,7 +261,13 @@ class HomeworkController extends Controller
                 ->orderBy('id')
                 ->get();
 
-            return view('backend.homework.quiz_questions_modal', compact('homework', 'questions'));
+            $skills = \App\Models\LearningEngine\Skill::active()
+                ->where('classes_id', $homework->classes_id)
+                ->where('subject_id', $homework->subject_id)
+                ->orderBy('title')
+                ->get();
+
+            return view('backend.homework.quiz_questions_modal', compact('homework', 'questions', 'skills'));
         }
 
         // Standard homework: fall back to the existing online-exam view
@@ -470,5 +476,24 @@ class HomeworkController extends Controller
             'sections' => DB::table('sections')->select('id', 'name')->where('status', 1)->get(),
             'subjects' => DB::table('subjects')->select('id', 'name')->where('status', 1)->get(),
         ]);
+    }
+
+    /** Tags one homework quiz question with a Skill (or clears it) — this is
+     *  what lets a graded answer to that question feed the skill-mastery
+     *  system the same way a tagged Online Exam question already does. */
+    public function updateQuizQuestionSkill(Request $request)
+    {
+        $questionId = (int) $request->input('question_id');
+        $skillId    = $request->input('skill_id');
+
+        if ($questionId < 1) {
+            return response()->json(['status' => 'error', 'message' => 'Invalid question.'], 422);
+        }
+
+        DB::table('homework_quiz_questions')
+            ->where('id', $questionId)
+            ->update(['skill_id' => $skillId ?: null]);
+
+        return response()->json(['status' => 'success']);
     }
 }

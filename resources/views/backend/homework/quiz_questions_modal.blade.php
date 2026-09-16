@@ -23,6 +23,7 @@
             </div>
         @else
             <div class="table-responsive">
+                <p class="text-muted small mb-3">Tagging a question with a Skill lets it feed the skill-mastery system when a student answers it — optional, and doesn't change how the quiz is scored.</p>
                 <table class="table ot-table-bg table-bordered">
                     <thead class="thead">
                         <tr>
@@ -31,6 +32,7 @@
                             <th>Options</th>
                             <th>Correct Answer</th>
                             <th>Hint</th>
+                            <th style="width:200px;">Skill</th>
                         </tr>
                     </thead>
                     <tbody class="tbody">
@@ -54,6 +56,14 @@
                             <td class="text-muted small">
                                 {{ $q->hint ?? '—' }}
                             </td>
+                            <td>
+                                <select class="form-control form-control-sm quiz-question-skill" data-question-id="{{ $q->id }}">
+                                    <option value="">Not tagged</option>
+                                    @foreach ($skills ?? [] as $skill)
+                                        <option value="{{ $skill->id }}" {{ ($q->skill_id ?? null) == $skill->id ? 'selected' : '' }}>{{ $skill->title }}</option>
+                                    @endforeach
+                                </select>
+                            </td>
                         </tr>
                         @endforeach
                     </tbody>
@@ -66,3 +76,26 @@
                 data-bs-dismiss="modal">Close</button>
     </div>
 </div>
+
+<script>
+(function () {
+    // Inline (not @push) since this modal's content is loaded as an AJAX
+    // fragment, not part of the main page's initial Blade render.
+    document.querySelectorAll('.quiz-question-skill').forEach(function (select) {
+        select.addEventListener('change', function () {
+            fetch('{{ route("homework.quiz-question.skill") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify({
+                    question_id: select.getAttribute('data-question-id'),
+                    skill_id: select.value,
+                }),
+            });
+        });
+    });
+})();
+</script>
+

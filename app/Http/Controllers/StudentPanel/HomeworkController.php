@@ -11,14 +11,17 @@ use App\Http\Controllers\Controller;
 use App\Models\HomeworkStudent;
 use App\Http\Requests\StudentPanel\HomeworkSubmit;
 use App\Repositories\StudentPanel\Homework\HomeworkInterface;
+use App\Repositories\LearningEngine\LearningEventRepository;
 
 class HomeworkController extends Controller
 {
     private $repo;
+    private $learningEvents;
 
-    public function __construct(HomeworkInterface $repo)
+    public function __construct(HomeworkInterface $repo, LearningEventRepository $learningEvents)
     {
-        $this->repo = $repo;
+        $this->repo           = $repo;
+        $this->learningEvents = $learningEvents;
     }
 
     // =========================================================================
@@ -199,6 +202,7 @@ class HomeworkController extends Controller
             ->get();
 
         $quizAnswerRows = [];
+        $skillEvents    = [];
         $now            = now();
 
         foreach ($allQuestionRows as $question) {
@@ -218,6 +222,19 @@ class HomeworkController extends Controller
                     $points *= 0.5;
                 }
                 $earnedMarks += $points;
+            }
+
+            // If this question is tagged with a Skill (Website Setup → Skills,
+            // tagged in the "View Questions" modal), a real answer here feeds
+            // the same skill-mastery system Online Exam grading already does
+            // — Brain Level, Mistake Bank, Badges etc. all pick it up for
+            // free since they all read from the same shared event log.
+            // Left-blank answers don't count as an attempt either way. Queued
+            // here, recorded after the transaction commits below, so a failed
+            // submission can never leave mastery data ahead of the official
+            // homework record.
+            if ($selected !== '' && !empty($question->skill_id)) {
+                $skillEvents[] = ['skill_id' => (int) $question->skill_id, 'correct' => $isCorrect];
             }
 
             if (Schema::hasTable('homework_quiz_answers')) {
@@ -263,6 +280,20 @@ class HomeworkController extends Controller
             }
 
             DB::commit();
+
+            // Only recorded once the real submission is safely committed —
+            // record() does its own error handling internally anyway, so it
+            // can't roll back this transaction; running it after commit is
+            // what actually keeps skill-mastery data honest with what's
+            // officially on the books.
+            foreach ($skillEvents as $event) {
+                $this->learningEvents->record(
+                    $student->id,
+                    LearningEventRepository::EVENT_ANSWER_SUBMITTED,
+                    $event['skill_id'],
+                    ['correct' => $event['correct'], 'source' => 'homework_quiz']
+                );
+            }
 
             return response()->json([
                 'status'    => 'success',

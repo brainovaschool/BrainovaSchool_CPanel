@@ -37,6 +37,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     
                     Route::get('homework-answer-sheet/{id}/{student_id}',  'viewAnswerSheet')->name('homework.answer.sheet')->middleware('PermissionCheck:homework_read');
                     Route::get('homework/view-questions',  'viewQuestions')->name('homework.view-questions')->middleware('PermissionCheck:homework_read');
+                    Route::post('homework/quiz-question/skill', 'updateQuizQuestionSkill')->name('homework.quiz-question.skill')->middleware('PermissionCheck:homework_update', 'DemoCheck');
                     Route::any('homework/search',           'search')->name('homework.search')->middleware('PermissionCheck:homework_read');
                     Route::get('homework/create',           'create')->name('homework.create')->middleware('PermissionCheck:homework_create');
                     Route::post('homework/store',           'store')->name('homework.store')->middleware('PermissionCheck:homework_create', 'DemoCheck');
