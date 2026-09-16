@@ -391,3 +391,72 @@ input.form-check-input:checked {
 .sidebar_full_logo {
     max-height: 50px !important;
 }
+
+
+/* ==========================================================================
+   Brainova brand pass — turquoise/purple, the same tokens as the public
+   site's "Aurora Glass" redesign. This file loads after style.css/style2.css
+   on every page in all three panels (backend/student/parent), so this is
+   the one place a change here reaches the whole product at once, without
+   touching the vendor theme files or any blade template. Deliberately
+   scoped to the most-repeated, most-visible components — buttons, cards,
+   sidebar, badges — not a full theme rewrite.
+   ========================================================================== */
+
+.default-theme {
+  --primary-color: #0097b2;
+}
+
+/* Primary buttons and the sidebar's active-item state both render this
+   exact hardcoded vendor gradient in several places — redeclaring it here
+   is the one lever that rebrands every Add/Save/Submit button and the nav
+   highlight at once. */
+.ot-btn-primary,
+.sidebar .sidebar-menu .sidebar-menu-section .mm-active > a,
+.sidebar .sidebar-menu .sidebar-menu-section .mm-active > a::before {
+  background: linear-gradient(130.57deg, #0097b2 -0.48%, #5e17eb 71.79%) !important;
+}
+.ot-btn-primary:hover {
+  background: linear-gradient(90deg, #007585 0%, #5e17eb 90%) !important;
+}
+.sidebar .sidebar-menu .sidebar-menu-section .mm-active > a {
+  background-color: rgba(0, 151, 178, 0.1) !important;
+}
+.sidebar .sidebar-menu .sidebar-menu-section .mm-active ul {
+  background: rgba(0, 151, 178, 0.06) !important;
+}
+
+/* Cards: bigger radius + a softer, wider shadow reads as a modern SaaS
+   product instead of the vendor's flat 5px-radius default — zero template
+   changes needed since every page already wraps content in .ot-card. */
+.ot-card {
+  border-radius: 16px !important;
+  filter: none !important;
+  box-shadow: 0 4px 20px rgba(15, 27, 61, 0.06), 0 1px 3px rgba(15, 27, 61, 0.04) !important;
+}
+
+/* Primary/info badges nudged toward brand turquoise. Success/danger/warning
+   deliberately keep their conventional colours — that's a usability signal
+   (green=good, red=bad), not a branding opportunity. */
+.badge-basic-primary-text,
+.badge-basic-info-text {
+  background: #e1f6fa !important;
+  color: #007585 !important;
+}
+
+/* A little motion so clicking a button feels acknowledged immediately,
+   instead of the flat instant colour-swap the vendor theme ships with. */
+.ot-btn-primary,
+.ot-btn-success,
+.ot-btn-danger,
+.ot-btn-warning,
+.ot-btn-info {
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.ot-btn-primary:active,
+.ot-btn-success:active,
+.ot-btn-danger:active,
+.ot-btn-warning:active,
+.ot-btn-info:active {
+  transform: scale(0.97);
+}
