@@ -495,6 +495,72 @@
         font-size: 1.4rem;
     }
 
+    /* Badges — tiered, tied to real evidence, never arbitrary */
+    .bn-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border-radius: 12px;
+        padding: 8px 14px;
+        font-size: 0.86rem;
+        font-weight: 700;
+        border: 1px solid;
+    }
+
+    .bn-badge--bronze { background: #fdf1e7; color: #a15c2e; border-color: rgba(161, 92, 46, 0.25); }
+    .bn-badge--silver { background: #f1f4f7; color: #5b6b7a; border-color: rgba(91, 107, 122, 0.25); }
+    .bn-badge--gold    { background: #fef8e3; color: #a1750a; border-color: rgba(161, 117, 10, 0.3); }
+
+    .bn-badge__count {
+        font-size: 0.72rem;
+        font-weight: 600;
+        opacity: 0.75;
+    }
+
+    /* Personal Best — the default comparison, never a rank */
+    .bn-personal-best {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        background: #fff;
+        border: 1px solid rgba(15, 41, 55, 0.08);
+        border-radius: 14px;
+        padding: 14px 18px;
+    }
+
+    .bn-personal-best__figure {
+        text-align: center;
+    }
+
+    .bn-personal-best__num {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--bn-ink);
+        line-height: 1.1;
+    }
+
+    .bn-personal-best__label {
+        font-size: 0.68rem;
+        color: #7a8790;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
+    .bn-personal-best__arrow {
+        color: #c3cbd1;
+        font-size: 1.1rem;
+    }
+
+    .bn-personal-best__delta {
+        margin-left: auto;
+        font-size: 0.9rem;
+        font-weight: 700;
+    }
+
+    .bn-personal-best__delta--up { color: var(--bn-advanced); }
+    .bn-personal-best__delta--down { color: var(--bn-not-started); }
+    .bn-personal-best__delta--flat { color: #7a8790; }
+
     @media (max-width: 576px) {
         .bn-panel__body { padding: 18px; }
         .bn-milestone { flex-direction: column; text-align: center; }

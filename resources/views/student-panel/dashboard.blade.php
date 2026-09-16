@@ -158,6 +158,45 @@
                     </div>
                 </div>
 
+                @if (!empty($lh['badges']) || !empty($lh['personal_best']))
+                    <hr class="bn-divider">
+                    <div class="row g-4">
+                        @if (!empty($lh['badges']))
+                            <div class="col-lg-7">
+                                <div class="bn-section-label"><i class="fa-solid fa-award"></i> {{ ___('common.badges') }}</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach ($lh['badges'] as $badge)
+                                        <span class="bn-badge bn-badge--{{ $badge['tier'] }}">
+                                            <i class="fa-solid fa-medal"></i> {{ ucfirst($badge['tier']) }} {{ $badge['subject'] }} Explorer
+                                            <span class="bn-badge__count">· {{ $badge['count'] }}</span>
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                        @if (!empty($lh['personal_best']))
+                            @php $pb = $lh['personal_best']; @endphp
+                            <div class="col-lg-5">
+                                <div class="bn-section-label"><i class="fa-solid fa-chart-line"></i> {{ ___('common.personal_best') }}</div>
+                                <div class="bn-personal-best">
+                                    <div class="bn-personal-best__figure">
+                                        <div class="bn-personal-best__num">{{ $pb['last_week'] }}%</div>
+                                        <div class="bn-personal-best__label">{{ ___('common.last_week') }}</div>
+                                    </div>
+                                    <i class="fa-solid fa-arrow-right bn-personal-best__arrow"></i>
+                                    <div class="bn-personal-best__figure">
+                                        <div class="bn-personal-best__num">{{ $pb['this_week'] }}%</div>
+                                        <div class="bn-personal-best__label">{{ ___('common.this_week') }}</div>
+                                    </div>
+                                    <span class="bn-personal-best__delta @if($pb['delta'] > 0) bn-personal-best__delta--up @elseif($pb['delta'] < 0) bn-personal-best__delta--down @else bn-personal-best__delta--flat @endif">
+                                        {{ $pb['delta'] > 0 ? '+' : '' }}{{ $pb['delta'] }}%
+                                    </span>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
                 @if (!empty($lh['needs_review']) && count($lh['needs_review']))
                     <hr class="bn-divider">
                     <div class="bn-section-label"><i class="fa-solid fa-magnifying-glass"></i> {{ ___('common.lets_investigate') }}</div>

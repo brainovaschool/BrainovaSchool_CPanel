@@ -131,6 +131,8 @@ class LearningHomeRepository
             'milestone'          => $this->claimMilestone($masteries),
             'brain_level'        => $brainLevel,
             'knowledge_tree'     => $this->knowledgeTree($student->id, $brainLevel['level']),
+            'badges'             => $this->badges($masteries),
+            'personal_best'      => $this->personalBest($student->id),
             'mastery_counts'     => [
                 'not_started' => $notStarted,
                 'developing'  => $masteries->where('mastery_level', 'developing')->count(),
@@ -189,6 +191,69 @@ class LearningHomeRepository
             ->value('c') ?? 0);
 
         return array_merge($stage, ['active_days' => $activeDays]);
+    }
+
+    /**
+     * Phase 3, idea #15: badges tied to real evidence — skills actually
+     * mastered in a subject — not arbitrary unlocks. One badge type per
+     * subject with three honest tiers, rather than 200 meaningless ones.
+     */
+    private function badges($masteries): array
+    {
+        return $masteries
+            ->where('mastery_level', 'advanced')
+            ->groupBy(fn ($m) => optional($m->skill->subject ?? null)->name ?? 'General')
+            ->map(function ($group, $subjectName) {
+                $count = $group->count();
+                $tier  = match (true) {
+                    $count >= 10 => 'gold',
+                    $count >= 6  => 'silver',
+                    $count >= 3  => 'bronze',
+                    default      => null,
+                };
+
+                return $tier ? ['subject' => $subjectName, 'tier' => $tier, 'count' => $count] : null;
+            })
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Phase 3, idea #11: Personal Best — this week's accuracy vs last week's,
+     * the default comparison instead of a leaderboard. Returns null (not a
+     * fabricated 0%) when there isn't a full week on each side to compare.
+     */
+    private function personalBest(int $studentId): ?array
+    {
+        $thisWeek = $this->accuracyBetween($studentId, now()->startOfWeek(), now());
+        $lastWeek = $this->accuracyBetween($studentId, now()->subWeek()->startOfWeek(), now()->startOfWeek());
+
+        if ($thisWeek === null || $lastWeek === null) {
+            return null;
+        }
+
+        return ['this_week' => $thisWeek, 'last_week' => $lastWeek, 'delta' => $thisWeek - $lastWeek];
+    }
+
+    private function accuracyBetween(int $studentId, $start, $end): ?int
+    {
+        $total = LearningEvent::where('student_id', $studentId)
+            ->where('event_type', LearningEventRepository::EVENT_ANSWER_SUBMITTED)
+            ->whereBetween('created_at', [$start, $end])
+            ->count();
+
+        if ($total === 0) {
+            return null;
+        }
+
+        $correct = LearningEvent::where('student_id', $studentId)
+            ->where('event_type', LearningEventRepository::EVENT_ANSWER_SUBMITTED)
+            ->whereBetween('created_at', [$start, $end])
+            ->where('payload->correct', true)
+            ->count();
+
+        return (int) round($correct / $total * 100);
     }
 
     /**

@@ -592,6 +592,35 @@ class MigrationRunnerController extends Controller
             }
         }
 
+        // Personal Best compares this week's accuracy to last week's, but
+        // everything seeded so far happened today — there's no "last week"
+        // to compare against yet. Backdated raw rows purely for that
+        // comparison (mastery/XP untouched — these bypass record() on
+        // purpose) so the feature has something to show without waiting a
+        // real week. 7 correct / 3 wrong = 70% last week, for a real student
+        // to beat. Eloquent overwrites created_at on create() regardless of
+        // what's passed, so the rows are inserted first, then backdated via
+        // a plain query-builder update (which doesn't touch timestamps).
+        $personalBestBackfilled = false;
+        if ($classSection) {
+            $anySkill = Skill::where('classes_id', $classSection->classes_id)->first();
+            if ($anySkill && !LearningEvent::where('student_id', $student->id)->where('created_at', '<', now()->startOfWeek())->exists()) {
+                $ids = [];
+                for ($i = 0; $i < 10; $i++) {
+                    $ids[] = LearningEvent::create([
+                        'student_id' => $student->id,
+                        'skill_id'   => $anySkill->id,
+                        'event_type' => LearningEventRepository::EVENT_ANSWER_SUBMITTED,
+                        'payload'    => ['correct' => $i < 7, 'source' => 'demo_seed'],
+                        'xp'         => $i < 7 ? 5 : 0,
+                    ])->id;
+                }
+                $lastWeek = now()->subWeek()->startOfWeek()->addDays(2);
+                LearningEvent::whereIn('id', $ids)->update(['created_at' => $lastWeek, 'updated_at' => $lastWeek]);
+                $personalBestBackfilled = true;
+            }
+        }
+
         $totalXp = $events->totalXp($student->id);
 
         return response(
@@ -600,9 +629,12 @@ class MigrationRunnerController extends Controller
             . "Backfilled XP on {$backfilled} pre-existing correct answers (5 XP each)\n"
             . (count($freshlySeeded) ? 'Freshly mastered: ' . implode(', ', $freshlySeeded) . " (8/8 correct each — 40 base + 50 mastery bonus = 90 XP apiece)\n" : "Long Division / Reading Comprehension already seeded — skipped\n")
             . "\nTotal XP now: {$totalXp}\n\n"
-            . "Expected on the dashboard:\n"
+            . ($personalBestBackfilled ? "Backdated 10 answers to last week (7 correct = 70%) so Personal Best has something to compare against\n" : "Personal Best baseline already present — skipped\n")
+            . "\nExpected on the dashboard:\n"
             . "  Brain Level badge (top of hero) and the Knowledge Tree tile (first stat tile)\n"
             . "  should both reflect this XP total — reload and check the numbers moved.\n"
+            . "  Badges section should show a Bronze " . ($subject->name ?? 'subject') . " Explorer (4 skills mastered in one subject)\n"
+            . "  Personal Best should show Last Week 70% -> This Week (your real accuracy today)\n"
             . "</pre>"
         );
     }
