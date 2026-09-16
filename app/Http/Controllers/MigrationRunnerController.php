@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Academic\Classes;
 use App\Models\Academic\Section;
 use App\Models\Academic\Subject;
+use App\Models\Academic\SubjectAssign;
+use App\Models\Academic\SubjectAssignChildren;
 use App\Models\LearningEngine\Skill;
 use App\Models\OnlineExamination\Answer;
 use App\Models\OnlineExamination\AnswerChildren;
@@ -18,10 +20,16 @@ use App\Models\OnlineExamination\OnlineExamChildrenStudents;
 use App\Models\OnlineExamination\QuestionBank;
 use App\Models\OnlineExamination\QuestionBankChildren;
 use App\Models\OnlineExamination\QuestionGroup;
+use App\Models\Staff\Department;
+use App\Models\Staff\Designation;
+use App\Models\Staff\Staff;
+use App\Models\StudentInfo\ParentGuardian;
 use App\Models\StudentInfo\SessionClassStudent;
 use App\Models\StudentInfo\Student;
 use App\Repositories\LearningEngine\LearningEventRepository;
+use App\Repositories\StudentInfo\ParentGuardianRepository;
 use App\Repositories\StudentInfo\StudentRepository;
+use App\Repositories\UserRepository;
 
 /**
  * Runs pending tenant migrations from the browser, for hosts without shell /
@@ -150,6 +158,123 @@ class MigrationRunnerController extends Controller
             . "Email: {$email}\n"
             . "Password: {$password}\n\n"
             . "Log in at the normal login page with these details."
+            . "</pre>"
+        );
+    }
+
+    /** One-off: creates a demo Parent (linked to the latest demo student) and
+     *  a demo Teacher (assigned to that student's class/section/subject), for
+     *  checking the Parent Learning Snapshot and the Skill Mastery Report as
+     *  real logins instead of just as the super admin. Reuses the real
+     *  ParentGuardianRepository/UserRepository creation logic. Safe to
+     *  revisit — each visit makes a new, separate parent and teacher. */
+    public function createDemoFamily(string $key, ParentGuardianRepository $parents, UserRepository $users)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $student = Student::where('email', 'like', 'demo.student.%')->latest('id')->first();
+        if (!$student) {
+            return response('No demo student found yet — visit /db/create-demo-student/' . self::KEY . ' first.', 422);
+        }
+
+        $classSection = SessionClassStudent::where('session_id', setting('session'))
+            ->where('student_id', $student->id)
+            ->first();
+        if (!$classSection) {
+            return response('The demo student has no class/section assignment yet.', 422);
+        }
+
+        $subject = Subject::first();
+        if (!$subject) {
+            return response('No subject exists yet — create at least one Subject (Academic → Subjects) first.', 422);
+        }
+
+        $designation = Designation::first();
+        $department  = Department::first();
+        if (!$designation || !$department) {
+            return response('Create at least one Designation and Department (Staff → Designations / Departments) before generating a demo teacher.', 422);
+        }
+
+        $suffix = now()->format('YmdHis');
+
+        // ---- Parent, linked to the demo student ----
+        $parentEmail    = "demo.parent.{$suffix}@brainovaschool.com";
+        $parentPassword = 'Demo@' . substr($suffix, -6);
+
+        $fakeParent = new \Illuminate\Http\Request();
+        $fakeParent->merge([
+            'guardian_name'     => 'Demo Parent',
+            'guardian_email'    => $parentEmail,
+            'guardian_mobile'   => '03000000001',
+            'guardian_relation' => 'Father',
+            'password_type'     => 'custom',
+            'password'          => $parentPassword,
+            'status'            => 1,
+        ]);
+
+        $parentResult = $parents->store($fakeParent);
+        if (!$parentResult['status']) {
+            return response('Could not create the demo parent: ' . $parentResult['message'], 422);
+        }
+
+        $parentGuardian = ParentGuardian::where('guardian_email', $parentEmail)->latest('id')->first();
+        $student->parent_guardian_id = $parentGuardian->id;
+        $student->save();
+
+        // ---- Teacher, assigned to the demo student's class/section/subject ----
+        $teacherEmail = "demo.teacher.{$suffix}@brainovaschool.com";
+
+        $fakeTeacher = new \Illuminate\Http\Request();
+        $fakeTeacher->merge([
+            'first_name'  => 'Demo',
+            'last_name'   => 'Teacher',
+            'email'       => $teacherEmail,
+            'phone'       => '03000000002',
+            'role'        => 5, // Teacher role id
+            'designation' => $designation->id,
+            'department'  => $department->id,
+            'staff_id'    => 'DEMOT-' . $suffix,
+            'status'      => 1,
+        ]);
+
+        $teacherResult = $users->store($fakeTeacher);
+        if ($teacherResult !== 1) {
+            return response('Could not create the demo teacher (code ' . $teacherResult . ' — 2 means the staff subscription limit was reached).', 422);
+        }
+
+        $teacherStaff = Staff::where('email', $teacherEmail)->latest('id')->first();
+
+        $assign               = new SubjectAssign();
+        $assign->session_id   = setting('session');
+        $assign->classes_id   = $classSection->classes_id;
+        $assign->section_id   = $classSection->section_id;
+        $assign->status       = 1;
+        $assign->save();
+
+        $assignChild                    = new SubjectAssignChildren();
+        $assignChild->subject_assign_id = $assign->id;
+        $assignChild->subject_id        = $subject->id;
+        $assignChild->staff_id          = $teacherStaff->id;
+        $assignChild->status            = 1;
+        $assignChild->save();
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Demo parent and teacher created and linked to: {$student->first_name} {$student->last_name}\n\n"
+            . "PARENT LOGIN\n"
+            . "  Email: {$parentEmail}\n"
+            . "  Password: {$parentPassword}\n\n"
+            . "TEACHER LOGIN\n"
+            . "  Email: {$teacherEmail}\n"
+            . "  Password: 123456   (staff accounts always start with this password, unrelated to this tool)\n\n"
+            . "The teacher is now assigned to teach {$subject->name} in the demo student's class/section,\n"
+            . "so Skill Mastery Report -> that class should show the demo student's real data."
             . "</pre>"
         );
     }
