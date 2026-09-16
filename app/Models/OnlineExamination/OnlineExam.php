@@ -28,6 +28,7 @@ class OnlineExam extends BaseModel
         'start',
         'end',
         'published',
+        'question_group_id',
         'status'
     ];
 
