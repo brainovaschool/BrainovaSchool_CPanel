@@ -8,6 +8,19 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Academic\Classes;
 use App\Models\Academic\Section;
+use App\Models\Academic\Subject;
+use App\Models\LearningEngine\Skill;
+use App\Models\OnlineExamination\Answer;
+use App\Models\OnlineExamination\AnswerChildren;
+use App\Models\OnlineExamination\OnlineExam;
+use App\Models\OnlineExamination\OnlineExamChildrenQuestions;
+use App\Models\OnlineExamination\OnlineExamChildrenStudents;
+use App\Models\OnlineExamination\QuestionBank;
+use App\Models\OnlineExamination\QuestionBankChildren;
+use App\Models\OnlineExamination\QuestionGroup;
+use App\Models\StudentInfo\SessionClassStudent;
+use App\Models\StudentInfo\Student;
+use App\Repositories\LearningEngine\LearningEventRepository;
 use App\Repositories\StudentInfo\StudentRepository;
 
 /**
@@ -137,6 +150,139 @@ class MigrationRunnerController extends Controller
             . "Email: {$email}\n"
             . "Password: {$password}\n\n"
             . "Log in at the normal login page with these details."
+            . "</pre>"
+        );
+    }
+
+    /** One-off: builds a full test fixture for the Phase 1 learning-engine
+     *  work — 3 skills, a real graded exam (visible in Online Examination →
+     *  Question Bank / Online Exam like any other), and enough additional
+     *  practice history (via the same LearningEventRepository::record() every
+     *  real grading action uses) to show all four mastery states on the
+     *  dashboard. Finds the most recently created demo student. Safe to
+     *  re-visit — reuses existing rows by name instead of duplicating them. */
+    public function seedDemoExam(string $key, LearningEventRepository $events)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $student = Student::where('email', 'like', 'demo.student.%')->latest('id')->first();
+        if (!$student) {
+            return response('No demo student found yet — visit /db/create-demo-student/' . self::KEY . ' first.', 422);
+        }
+
+        $classSection = SessionClassStudent::where('session_id', setting('session'))
+            ->where('student_id', $student->id)
+            ->first();
+        if (!$classSection) {
+            return response('The demo student has no class/section assignment yet.', 422);
+        }
+
+        $subject = Subject::first();
+        if (!$subject) {
+            return response('No subject exists yet — create at least one Subject (Academic → Subjects) first.', 422);
+        }
+
+        $skillA = Skill::firstOrCreate(
+            ['title' => 'Two-Digit Addition', 'classes_id' => $classSection->classes_id, 'subject_id' => $subject->id],
+            ['slug' => 'demo-two-digit-addition-' . $classSection->classes_id, 'description' => 'Add two two-digit numbers with regrouping.', 'sort_order' => 1, 'status' => 1]
+        );
+        $skillB = Skill::firstOrCreate(
+            ['title' => 'Fractions Basics', 'classes_id' => $classSection->classes_id, 'subject_id' => $subject->id],
+            ['slug' => 'demo-fractions-basics-' . $classSection->classes_id, 'description' => 'Identify and compare simple fractions.', 'sort_order' => 2, 'status' => 1]
+        );
+        Skill::firstOrCreate(
+            ['title' => 'Multiplication Tables', 'classes_id' => $classSection->classes_id, 'subject_id' => $subject->id],
+            ['slug' => 'demo-multiplication-tables-' . $classSection->classes_id, 'description' => 'Recall multiplication facts up to 12x12.', 'sort_order' => 3, 'status' => 1]
+        );
+
+        $group = QuestionGroup::firstOrCreate(
+            ['name' => 'Demo Skill Test', 'session_id' => setting('session')],
+            ['status' => 1]
+        );
+
+        $q1 = QuestionBank::firstOrCreate(
+            ['question' => 'True or False: 27 + 15 = 42', 'question_group_id' => $group->id],
+            ['session_id' => setting('session'), 'skill_id' => $skillA->id, 'type' => 3, 'answer' => 1, 'mark' => 10, 'status' => 1]
+        );
+
+        $q2 = QuestionBank::firstOrCreate(
+            ['question' => 'What is 1/2 + 1/4?', 'question_group_id' => $group->id],
+            ['session_id' => setting('session'), 'skill_id' => $skillB->id, 'type' => 1, 'total_option' => 4, 'answer' => '3/4', 'mark' => 10, 'status' => 1]
+        );
+        if ($q2->wasRecentlyCreated) {
+            foreach (['3/4', '1/6', '2/6', '1/2'] as $option) {
+                QuestionBankChildren::create(['question_bank_id' => $q2->id, 'option' => $option]);
+            }
+        }
+
+        $exam = OnlineExam::firstOrCreate(
+            ['name' => 'Demo Skill Test', 'classes_id' => $classSection->classes_id, 'section_id' => $classSection->section_id],
+            [
+                'session_id'        => setting('session'),
+                'subject_id'        => $subject->id,
+                'total_mark'        => 20,
+                'start'             => now()->subDay(),
+                'end'               => now()->addDay(),
+                'published'         => now()->subHour(),
+                'question_group_id' => $group->id,
+                'status'            => 1,
+            ]
+        );
+
+        OnlineExamChildrenQuestions::firstOrCreate(['online_exam_id' => $exam->id, 'question_bank_id' => $q1->id]);
+        OnlineExamChildrenQuestions::firstOrCreate(['online_exam_id' => $exam->id, 'question_bank_id' => $q2->id]);
+        OnlineExamChildrenStudents::firstOrCreate(['online_exam_id' => $exam->id, 'student_id' => $student->id]);
+
+        // A real submitted + graded attempt — right answer on Q1, wrong on Q2 —
+        // visible and re-gradeable in the admin UI like any other exam.
+        $answer = Answer::firstOrCreate(
+            ['online_exam_id' => $exam->id, 'student_id' => $student->id],
+            ['result' => 10]
+        );
+        $ac1 = AnswerChildren::firstOrCreate(
+            ['answer_id' => $answer->id, 'question_bank_id' => $q1->id],
+            ['answer' => '1', 'evaluation_mark' => 10]
+        );
+        $ac2 = AnswerChildren::firstOrCreate(
+            ['answer_id' => $answer->id, 'question_bank_id' => $q2->id],
+            ['answer' => '1/6', 'evaluation_mark' => 0]
+        );
+
+        if ($ac1->wasRecentlyCreated) {
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillA->id, ['correct' => true, 'source' => 'online_exam']);
+        }
+        if ($ac2->wasRecentlyCreated) {
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillB->id, ['correct' => false, 'source' => 'online_exam']);
+        }
+
+        // Extra practice history so the dashboard shows every mastery state,
+        // not just "developing" — same record() call any real grading uses.
+        if ($ac1->wasRecentlyCreated) {
+            for ($i = 0; $i < 8; $i++) {
+                $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillA->id, ['correct' => $i !== 3, 'source' => 'demo_seed']);
+            }
+        }
+        if ($ac2->wasRecentlyCreated) {
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillB->id, ['correct' => false, 'source' => 'demo_seed']);
+        }
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Demo exam fixture ready for: {$student->first_name} {$student->last_name} ({$student->email})\n\n"
+            . "Skills created: Two-Digit Addition, Fractions Basics, Multiplication Tables\n"
+            . "Online Exam: \"Demo Skill Test\" — published, assigned, one attempt submitted and graded.\n\n"
+            . "Expected dashboard state:\n"
+            . "  Two-Digit Addition  -> advanced (won't appear in \"what's next\")\n"
+            . "  Fractions Basics    -> developing, appears in \"Let's Investigate\"\n"
+            . "  Multiplication Tables -> not started, appears in \"what's next\"\n\n"
+            . "Also visible in the admin panel under Online Examination -> Question Bank / Online Exam,\n"
+            . "so you can re-grade it by hand there too if you want to see that flow."
             . "</pre>"
         );
     }

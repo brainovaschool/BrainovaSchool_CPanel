@@ -70,6 +70,22 @@
                         </div>
                     </div>
                 </div>
+
+                @if (!empty($lh['needs_review']) && count($lh['needs_review']))
+                    <hr class="my-3">
+                    <div class="d-flex align-items-start gap-2">
+                        <i class="fa-solid fa-magnifying-glass mt-1" style="color:#e8664f;"></i>
+                        <div style="min-width:0;">
+                            <h6 class="mb-1">{{ ___('common.lets_investigate') }}</h6>
+                            <p class="gray-color mb-2">{{ $lh['review_line'] }}</p>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach ($lh['needs_review'] as $skill)
+                                    <span class="badge-basic-danger-text">{{ $skill->title }}@if($skill->subject) — {{ $skill->subject->name }}@endif</span>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                @endif
             </div>
         </div>
     @endif

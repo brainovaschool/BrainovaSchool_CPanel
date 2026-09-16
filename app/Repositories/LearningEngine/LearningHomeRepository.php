@@ -53,6 +53,16 @@ class LearningHomeRepository
             ->groupBy('mastery_level')
             ->pluck('c', 'mastery_level');
 
+        $needsReview = StudentSkillMastery::where('student_id', $student->id)
+            ->whereIn('mastery_level', ['not_started', 'developing'])
+            ->whereColumn('correct_count', '<', 'attempts_count')
+            ->with('skill.subject')
+            ->orderByDesc('last_practiced_at')
+            ->take(3)
+            ->get()
+            ->pluck('skill')
+            ->filter();
+
         return [
             'greeting_character' => $character,
             'greeting_name'      => Character::name($character),
@@ -60,6 +70,8 @@ class LearningHomeRepository
             'greeting_line'      => Character::line($character, $context),
             'is_comeback'        => $isComeback,
             'next_skills'        => $this->events->nextSkills($student->id, null, $classesId, 3),
+            'needs_review'       => $needsReview,
+            'review_line'        => Character::line('brainbot', 'mistake_review'),
             'mastery_counts'     => [
                 'not_started' => (int) ($counts['not_started'] ?? 0),
                 'developing'  => (int) ($counts['developing'] ?? 0),

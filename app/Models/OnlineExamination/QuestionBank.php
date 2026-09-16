@@ -30,6 +30,8 @@ class QuestionBank extends BaseModel
         'skill_id',
         'type',
         'question',
+        'total_option',
+        'mark',
         'answer',
         'status'
     ];
