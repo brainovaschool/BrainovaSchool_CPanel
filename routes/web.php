@@ -145,6 +145,9 @@ Route::middleware(saasMiddleware())->group(function () {
             // One-off: build a full test fixture (skills, exam, questions, graded attempt) for the latest demo student (admin-only + key).
             Route::get('/db/seed-demo-exam/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedDemoExam']);
 
+            // One-off: seed Phase 2 Mistake Bank demo data (Needs practice / First recovery / Second recovery) for the latest demo student (admin-only + key).
+            Route::get('/db/seed-phase2-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedPhase2Demo']);
+
             Route::controller(LanguageController::class)->prefix('languages')->group(function () {
                 Route::get('/change',                   'changeLanguage')->name('languages.change');
             });

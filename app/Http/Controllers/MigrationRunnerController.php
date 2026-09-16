@@ -12,6 +12,7 @@ use App\Models\Academic\Subject;
 use App\Models\Academic\SubjectAssign;
 use App\Models\Academic\SubjectAssignChildren;
 use App\Models\LearningEngine\Skill;
+use App\Models\LearningEngine\LearningEvent;
 use App\Models\OnlineExamination\Answer;
 use App\Models\OnlineExamination\AnswerChildren;
 use App\Models\OnlineExamination\OnlineExam;
@@ -408,6 +409,85 @@ class MigrationRunnerController extends Controller
             . "  Multiplication Tables -> not started, appears in \"what's next\"\n\n"
             . "Also visible in the admin panel under Online Examination -> Question Bank / Online Exam,\n"
             . "so you can re-grade it by hand there too if you want to see that flow."
+            . "</pre>"
+        );
+    }
+
+    /** One-off: seeds three more skills, each parked in a different Mistake
+     *  Bank recovery stage (Phase 2), for the latest demo student — so all
+     *  three stages are visible on the dashboard at once instead of having
+     *  to manually grade your way into each one. Safe to re-visit; skips any
+     *  skill that's already been seeded. */
+    public function seedPhase2Demo(string $key, LearningEventRepository $events)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $student = Student::where('email', 'like', 'demo.student.%')->latest('id')->first();
+        if (!$student) {
+            return response('No demo student found yet — visit /db/create-demo-student/' . self::KEY . ' first.', 422);
+        }
+
+        $classSection = SessionClassStudent::where('session_id', setting('session'))
+            ->where('student_id', $student->id)
+            ->first();
+        if (!$classSection) {
+            return response('The demo student has no class/section assignment yet.', 422);
+        }
+
+        $subject = Subject::first();
+        if (!$subject) {
+            return response('No subject exists yet — create at least one Subject first.', 422);
+        }
+
+        $skillNeedsPractice = Skill::firstOrCreate(
+            ['title' => 'Subtraction With Borrowing', 'classes_id' => $classSection->classes_id, 'subject_id' => $subject->id],
+            ['slug' => 'demo-subtraction-borrowing-' . $classSection->classes_id, 'description' => 'Subtract two numbers that require regrouping.', 'sort_order' => 4, 'status' => 1]
+        );
+        $skillFirstRecovery = Skill::firstOrCreate(
+            ['title' => 'Place Value', 'classes_id' => $classSection->classes_id, 'subject_id' => $subject->id],
+            ['slug' => 'demo-place-value-' . $classSection->classes_id, 'description' => 'Identify the value of a digit by its position.', 'sort_order' => 5, 'status' => 1]
+        );
+        $skillSecondRecovery = Skill::firstOrCreate(
+            ['title' => 'Number Patterns', 'classes_id' => $classSection->classes_id, 'subject_id' => $subject->id],
+            ['slug' => 'demo-number-patterns-' . $classSection->classes_id, 'description' => 'Continue a sequence by identifying its rule.', 'sort_order' => 6, 'status' => 1]
+        );
+
+        $alreadySeeded = LearningEvent::where('student_id', $student->id)
+            ->whereIn('skill_id', [$skillNeedsPractice->id, $skillFirstRecovery->id, $skillSecondRecovery->id])
+            ->exists();
+
+        if ($alreadySeeded) {
+            return response('Phase 2 demo skills already seeded for this student — nothing more to do. Re-run /db/create-demo-student/' . self::KEY . ' first if you want a clean slate.', 200);
+        }
+
+        // Seeded in this order (Second recovery skill first, "needs practice"
+        // last) so the most urgent one — a fresh, unrecovered mistake — is
+        // also the most RECENT event, making it the one the "Next Best
+        // Action" card picks out automatically.
+        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillSecondRecovery->id, ['correct' => false, 'source' => 'demo_seed']);
+        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillSecondRecovery->id, ['correct' => true, 'source' => 'demo_seed']);
+        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillSecondRecovery->id, ['correct' => true, 'source' => 'demo_seed']);
+
+        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillFirstRecovery->id, ['correct' => false, 'source' => 'demo_seed']);
+        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillFirstRecovery->id, ['correct' => true, 'source' => 'demo_seed']);
+
+        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillNeedsPractice->id, ['correct' => false, 'source' => 'demo_seed']);
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Phase 2 demo data ready for: {$student->first_name} {$student->last_name} ({$student->email})\n\n"
+            . "Subtraction With Borrowing -> Needs practice   (fresh miss, no recovery yet)\n"
+            . "Place Value                -> First recovery    (one correct since the last miss)\n"
+            . "Number Patterns             -> Second recovery   (two correct in a row since the last miss)\n\n"
+            . "Expected on the dashboard:\n"
+            . "  \"Your Next Best Action\" -> Subtraction With Borrowing (the freshest, unrecovered miss)\n"
+            . "  \"Let's Investigate\" -> Place Value (First recovery), Number Patterns (Second recovery)\n"
             . "</pre>"
         );
     }
