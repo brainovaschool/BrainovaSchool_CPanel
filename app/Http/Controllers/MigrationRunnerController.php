@@ -413,11 +413,13 @@ class MigrationRunnerController extends Controller
         );
     }
 
-    /** One-off: seeds three more skills, each parked in a different Mistake
-     *  Bank recovery stage (Phase 2), for the latest demo student — so all
-     *  three stages are visible on the dashboard at once instead of having
-     *  to manually grade your way into each one. Safe to re-visit; skips any
-     *  skill that's already been seeded. */
+    /** One-off: seeds Phase 2 demo data for the latest demo student — three
+     *  skills in different Mistake Bank recovery stages, plus one mastered
+     *  skill with its spaced review deliberately backdated to "overdue" —
+     *  so every Phase 2 feature is visible on the dashboard at once instead
+     *  of manually grading through each one or waiting a real week for a
+     *  review to come due. Safe to re-visit; each skill seeds independently
+     *  and skips itself if it's already there. */
     public function seedPhase2Demo(string $key, LearningEventRepository $events)
     {
         if (!hash_equals(self::KEY, $key)) {
@@ -457,37 +459,61 @@ class MigrationRunnerController extends Controller
             ['title' => 'Number Patterns', 'classes_id' => $classSection->classes_id, 'subject_id' => $subject->id],
             ['slug' => 'demo-number-patterns-' . $classSection->classes_id, 'description' => 'Continue a sequence by identifying its rule.', 'sort_order' => 6, 'status' => 1]
         );
+        $skillDueForReview = Skill::firstOrCreate(
+            ['title' => 'Telling Time', 'classes_id' => $classSection->classes_id, 'subject_id' => $subject->id],
+            ['slug' => 'demo-telling-time-' . $classSection->classes_id, 'description' => 'Read an analogue clock to the nearest five minutes.', 'sort_order' => 7, 'status' => 1]
+        );
 
-        $alreadySeeded = LearningEvent::where('student_id', $student->id)
-            ->whereIn('skill_id', [$skillNeedsPractice->id, $skillFirstRecovery->id, $skillSecondRecovery->id])
-            ->exists();
-
-        if ($alreadySeeded) {
-            return response('Phase 2 demo skills already seeded for this student — nothing more to do. Re-run /db/create-demo-student/' . self::KEY . ' first if you want a clean slate.', 200);
-        }
+        // Each skill seeds independently — re-visiting this page only fills
+        // in whatever hasn't been seeded yet, instead of an all-or-nothing
+        // guard that would block new skills added here later.
+        $seeded = fn ($skillId) => LearningEvent::where('student_id', $student->id)->where('skill_id', $skillId)->exists();
 
         // Seeded in this order (Second recovery skill first, "needs practice"
         // last) so the most urgent one — a fresh, unrecovered mistake — is
         // also the most RECENT event, making it the one the "Next Best
         // Action" card picks out automatically.
-        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillSecondRecovery->id, ['correct' => false, 'source' => 'demo_seed']);
-        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillSecondRecovery->id, ['correct' => true, 'source' => 'demo_seed']);
-        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillSecondRecovery->id, ['correct' => true, 'source' => 'demo_seed']);
+        if (!$seeded($skillSecondRecovery->id)) {
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillSecondRecovery->id, ['correct' => false, 'source' => 'demo_seed']);
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillSecondRecovery->id, ['correct' => true, 'source' => 'demo_seed']);
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillSecondRecovery->id, ['correct' => true, 'source' => 'demo_seed']);
+        }
 
-        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillFirstRecovery->id, ['correct' => false, 'source' => 'demo_seed']);
-        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillFirstRecovery->id, ['correct' => true, 'source' => 'demo_seed']);
+        if (!$seeded($skillFirstRecovery->id)) {
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillFirstRecovery->id, ['correct' => false, 'source' => 'demo_seed']);
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillFirstRecovery->id, ['correct' => true, 'source' => 'demo_seed']);
+        }
 
-        $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillNeedsPractice->id, ['correct' => false, 'source' => 'demo_seed']);
+        if (!$seeded($skillNeedsPractice->id)) {
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillNeedsPractice->id, ['correct' => false, 'source' => 'demo_seed']);
+        }
+
+        // Telling Time: 8 correct answers reaches Advanced through the same
+        // record() path real grading uses, which schedules its first spaced
+        // review 7 days out. Backdating next_review_at is the one thing we
+        // can't do through record() (it always schedules from "now") — done
+        // directly here so "Refresh Time" has something to show immediately
+        // instead of waiting a real week.
+        if (!$seeded($skillDueForReview->id)) {
+            for ($i = 0; $i < 8; $i++) {
+                $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillDueForReview->id, ['correct' => true, 'source' => 'demo_seed']);
+            }
+            \App\Models\LearningEngine\StudentSkillMastery::where('student_id', $student->id)
+                ->where('skill_id', $skillDueForReview->id)
+                ->update(['next_review_at' => now()->subDays(3)]);
+        }
 
         return response(
             '<pre style="font:14px/1.5 monospace;padding:24px">'
             . "Phase 2 demo data ready for: {$student->first_name} {$student->last_name} ({$student->email})\n\n"
             . "Subtraction With Borrowing -> Needs practice   (fresh miss, no recovery yet)\n"
             . "Place Value                -> First recovery    (one correct since the last miss)\n"
-            . "Number Patterns             -> Second recovery   (two correct in a row since the last miss)\n\n"
+            . "Number Patterns             -> Second recovery   (two correct in a row since the last miss)\n"
+            . "Telling Time                -> Advanced, review overdue by 3 days (backdated for testing)\n\n"
             . "Expected on the dashboard:\n"
             . "  \"Your Next Best Action\" -> Subtraction With Borrowing (the freshest, unrecovered miss)\n"
             . "  \"Let's Investigate\" -> Place Value (First recovery), Number Patterns (Second recovery)\n"
+            . "  \"Refresh Time\" -> Telling Time (mastered, review overdue)\n"
             . "</pre>"
         );
     }
