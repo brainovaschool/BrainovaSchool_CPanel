@@ -640,4 +640,141 @@
         .bn-hero { flex-direction: column; text-align: center; align-items: center; }
         .bn-hero__meta { justify-content: center; }
     }
+
+    /* Floating voice widget — taps to hear a real, spoken summary via the
+       browser's own text-to-speech. Never autoplays (browsers block that
+       anyway) and never depends on any AI service being reachable. */
+    .bn-voice-widget {
+        position: fixed;
+        right: 22px;
+        bottom: 22px;
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-direction: row-reverse;
+    }
+
+    .bn-voice-widget__btn {
+        position: relative;
+        width: 58px;
+        height: 58px;
+        border-radius: 50%;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        background: linear-gradient(135deg, var(--bn-primary), var(--bn-accent));
+        box-shadow: 0 6px 20px rgba(0, 151, 178, 0.35);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: visible;
+    }
+
+    .bn-voice-widget__btn img {
+        width: 76%;
+        height: 76%;
+        object-fit: contain;
+        border-radius: 50%;
+    }
+
+    .bn-voice-widget__btn i { color: #fff; font-size: 1.4rem; }
+
+    .bn-voice-widget__pulse {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        border: 2px solid var(--bn-primary);
+        animation: bnVoicePulse 2.4s ease-out infinite;
+        pointer-events: none;
+    }
+
+    .bn-voice-widget--speaking .bn-voice-widget__pulse {
+        animation-duration: 1s;
+        border-color: var(--bn-accent);
+    }
+
+    .bn-voice-widget--speaking .bn-voice-widget__btn {
+        box-shadow: 0 6px 24px rgba(94, 23, 235, 0.5);
+    }
+
+    @keyframes bnVoicePulse {
+        0%   { transform: scale(1); opacity: 0.7; }
+        100% { transform: scale(1.55); opacity: 0; }
+    }
+
+    .bn-voice-widget__bubble {
+        background: #fff;
+        color: var(--bn-ink);
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 8px 14px;
+        border-radius: 20px;
+        box-shadow: 0 4px 14px rgba(15, 41, 55, 0.12);
+        white-space: nowrap;
+    }
+
+    @media (max-width: 576px) {
+        .bn-voice-widget__bubble { display: none; }
+        .bn-voice-widget { right: 16px; bottom: 16px; }
+    }
+
+    /* Inline voice avatar — the hero-placed version of the same tap-to-hear
+       Kea, using the same Web Speech API approach as the floating widget. */
+    .bn-voice-avatar {
+        position: relative;
+        flex-shrink: 0;
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        border: 3px solid rgba(255, 255, 255, 0.7);
+        padding: 0;
+        cursor: pointer;
+        background: rgba(255, 255, 255, 0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: bnVoiceAvatarPulse 2.6s ease-in-out infinite;
+    }
+
+    .bn-voice-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .bn-voice-avatar i { color: #fff; font-size: 1.6rem; }
+
+    .bn-voice-avatar__icon {
+        position: absolute;
+        bottom: -2px;
+        right: -2px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: var(--bn-accent);
+        border: 2px solid #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .bn-voice-avatar__icon i { color: #fff; font-size: 0.62rem; }
+
+    .bn-voice-avatar--speaking {
+        animation: bnVoiceAvatarSpeaking 0.7s ease-in-out infinite;
+    }
+
+    .bn-voice-avatar--speaking .bn-voice-avatar__icon { background: var(--bn-advanced); }
+
+    @keyframes bnVoiceAvatarPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.35); }
+        50%      { box-shadow: 0 0 0 8px rgba(255, 255, 255, 0); }
+    }
+
+    @keyframes bnVoiceAvatarSpeaking {
+        0%, 100% { transform: scale(1); }
+        50%      { transform: scale(1.06); }
+    }
 </style>

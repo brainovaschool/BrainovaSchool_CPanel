@@ -9,6 +9,27 @@
 
     @include('backend.partials.learning-engine-styles')
 
+    @php
+        $keaSpeakText = null;
+        if (!empty($data['learning_home'])) {
+            $lhForSpeech  = $data['learning_home'];
+            $pendingGoals = collect($data['daily_goals'] ?? [])->where('completed', false)->count();
+
+            // Kea speaks her own line here regardless of which character
+            // the greeting card further down is showing today (that one
+            // can be Brainbot) — the avatar in the hero is always her.
+            $speakParts   = [\App\Support\Character::line('kea', $lhForSpeech['is_comeback'] ? 'comeback' : 'welcome')];
+            $speakParts[] = 'You are Brain Level ' . ($lhForSpeech['brain_level']['level'] ?? 1) . '.';
+            if (!empty($lhForSpeech['next_action']['reason'])) {
+                $speakParts[] = $lhForSpeech['next_action']['reason'];
+            }
+            $speakParts[] = 'You have ' . ($lhForSpeech['mastery_counts']['advanced'] ?? 0) . ' ' . ___('common.skills_mastered_so_far') . ($pendingGoals ? ', and ' . $pendingGoals . ' ' . ___('common.goals_left_today') : '') . '.';
+
+            $keaSpeakText = implode(' ', $speakParts);
+        }
+        $keaImage = setting('ai_helper_student_mascot') ? globalAsset(setting('ai_helper_student_mascot')) : null;
+    @endphp
+
     {{-- Profile hero — who this is, at a glance, always at the top --}}
     <div class="bn-hero">
         <img class="bn-hero__avatar" src="{{ @globalAsset(@$data['student']->user->upload->path, '100X100.webp') }}" alt="{{ @$data['student']->first_name }}">
@@ -27,6 +48,9 @@
                 @endif
             </ul>
         </div>
+        @if ($keaSpeakText)
+            @include('backend.partials.character-voice-avatar', ['image' => $keaImage, 'name' => 'Kea', 'speakText' => $keaSpeakText])
+        @endif
         @if (!empty($data['learning_home']['brain_level']))
             @php $bl = $data['learning_home']['brain_level']; @endphp
             <div class="bn-level-badge">
@@ -303,5 +327,10 @@
     </div>
 
 </div>
+
+{{-- The floating version of this widget (backend.partials.character-voice-widget)
+     is built and ready, just not used here for now — Kea's tap-to-speak
+     avatar lives in the hero above instead. Swap it back in later by
+     including that partial with $keaImage/$keaSpeakText from above. --}}
 
 @endsection
