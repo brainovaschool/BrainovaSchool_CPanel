@@ -62,6 +62,20 @@
                     </div>
                 </div>
 
+                @if (!empty($lh['next_action']))
+                    @php $na = $lh['next_action']; @endphp
+                    <div class="bn-next-action @if($na['type'] === 'caught_up') bn-next-action--caught-up @endif">
+                        <div class="bn-next-action__icon">
+                            <i class="fa-solid @if($na['type'] === 'caught_up') fa-champagne-glasses @elseif($na['type'] === 'review') fa-magnifying-glass @else fa-compass @endif"></i>
+                        </div>
+                        <div>
+                            <p class="bn-next-action__eyebrow">{{ ___('common.your_next_best_action') }}</p>
+                            <p class="bn-next-action__title">{{ optional($na['skill'])->title ?? ___('common.all_caught_up') }}</p>
+                            <p class="bn-next-action__reason">{{ $na['reason'] }}</p>
+                        </div>
+                    </div>
+                @endif
+
                 <hr class="bn-divider">
 
                 <div class="row g-4">

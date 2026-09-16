@@ -78,8 +78,18 @@ class LearningHomeRepository
             ->when($classesId, fn ($q) => $q->where('classes_id', $classesId))
             ->whereNotIn('id', $masteredIds)
             ->orderBy('sort_order')
-            ->take(3)
+            ->take(4)
             ->get();
+
+        $nextAction = $this->nextBestAction($masteries, $needsReview, $nextSkills);
+
+        // Don't show the same skill twice — once as THE featured next
+        // action, and again in the supporting lists right below it.
+        if ($nextAction['skill']) {
+            $needsReview = $needsReview->reject(fn ($s) => $s->id === $nextAction['skill']->id)->values();
+            $nextSkills  = $nextSkills->reject(fn ($s) => $s->id === $nextAction['skill']->id)->values();
+        }
+        $nextSkills = $nextSkills->take(3)->values();
 
         return [
             'greeting_character' => $character,
@@ -87,6 +97,7 @@ class LearningHomeRepository
             'greeting_image'     => $this->mascotUrl($character),
             'greeting_line'      => Character::line($character, $context),
             'is_comeback'        => $isComeback,
+            'next_action'        => $nextAction,
             'next_skills'        => $nextSkills,
             'needs_review'       => $needsReview,
             'review_line'        => Character::line('brainbot', 'mistake_review'),
@@ -149,6 +160,41 @@ class LearningHomeRepository
         });
 
         return ['total_skills' => $totalSkills, 'rows' => $rows];
+    }
+
+    /**
+     * Phase 2, idea #3 + #34: one clear next action instead of a menu of 7
+     * options, with a plain-language, honest reason attached — never a bare
+     * recommendation with no explanation. Priority: a skill actively being
+     * gotten wrong beats an unstarted one, which beats "you're caught up."
+     * Entirely rule-based, reusing data already computed above.
+     */
+    private function nextBestAction($masteries, $needsReview, $nextSkills): array
+    {
+        $reviewTarget = $needsReview->first();
+        if ($reviewTarget) {
+            return [
+                'skill'  => $reviewTarget,
+                'reason' => "You've gotten a few {$reviewTarget->title} questions wrong recently — let's take another look before moving on.",
+                'type'   => 'review',
+            ];
+        }
+
+        $target = $nextSkills->first();
+        if ($target) {
+            $mastery = $masteries->firstWhere('skill_id', $target->id);
+            $reason  = $mastery
+                ? "You're partway through {$target->title} — a bit more practice and it's mastered."
+                : "You haven't started {$target->title} yet — it's next up" . ($target->subject ? " in {$target->subject->name}" : '') . '.';
+
+            return ['skill' => $target, 'reason' => $reason, 'type' => 'next'];
+        }
+
+        return [
+            'skill'  => null,
+            'reason' => "You've worked through everything set up for your grade right now — nice work. Ask your teacher what's next.",
+            'type'   => 'caught_up',
+        ];
     }
 
     /**
