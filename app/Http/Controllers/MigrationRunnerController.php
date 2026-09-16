@@ -917,6 +917,77 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:14px/1.5 monospace;padding:24px">' . e(implode("\n", $lines)) . '</pre>');
     }
 
+    /** One-off: seeds two "Teach Kea" events (one fully understood, one a
+     *  genuine attempt) for the latest demo student, so the XP/Brain Level
+     *  impact is visible immediately without needing a live Gemini call —
+     *  the live "Teach Kea" form on /student-panel-ai-help still needs a
+     *  real AI Helper API key configured (Website Setup -> AI Helper) to
+     *  work when the demo student actually types into it themselves. */
+    public function seedTeachKeaDemo(string $key, LearningEventRepository $events)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $student = Student::where('email', 'like', 'demo.student.%')->latest('id')->first();
+        if (!$student) {
+            return response('No demo student found yet — visit /db/create-demo-student/' . self::KEY . ' first.', 422);
+        }
+
+        $classSection = SessionClassStudent::where('session_id', setting('session'))
+            ->where('student_id', $student->id)
+            ->first();
+        if (!$classSection) {
+            return response('The demo student has no class/section assignment yet.', 422);
+        }
+
+        $skill = Skill::where('classes_id', $classSection->classes_id)->orderBy('sort_order')->first();
+        if (!$skill) {
+            return response('No skills exist yet for the demo student\'s class — visit /db/seed-phase3-demo/' . self::KEY . ' first.', 422);
+        }
+
+        $alreadySeeded = LearningEvent::where('student_id', $student->id)
+            ->where('event_type', LearningEventRepository::EVENT_TAUGHT_KEA)
+            ->exists();
+
+        if (!$alreadySeeded) {
+            $events->record($student->id, LearningEventRepository::EVENT_TAUGHT_KEA, $skill->id, [
+                'understood' => true,
+                'explanation' => "Demo explanation: {$skill->title} is when you break it down step by step and check your answer at the end.",
+                'feedback'    => 'Kea says: "You explained the key steps clearly — nice work!"',
+                'source'      => 'demo_seed',
+            ]);
+            $events->record($student->id, LearningEventRepository::EVENT_TAUGHT_KEA, $skill->id, [
+                'understood' => false,
+                'explanation' => "Demo explanation: {$skill->title} is just something you memorise.",
+                'feedback'    => 'Kea says: "Good try, but you missed the main idea — want to have another go?"',
+                'source'      => 'demo_seed',
+            ]);
+        }
+
+        $apiKeyConfigured = (bool) setting('ai_helper_api_key');
+        $totalXp          = $events->totalXp($student->id);
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Teach Kea demo data for: {$student->first_name} {$student->last_name} ({$student->email})\n\n"
+            . ($alreadySeeded
+                ? "Already seeded — skipped (2 Teach Kea events already exist for this student)\n"
+                : "Seeded 2 Teach Kea events on skill \"{$skill->title}\": 1 understood (+30 XP), 1 attempt (+10 XP)\n")
+            . "\nTotal XP now: {$totalXp}\n\n"
+            . "AI Helper API key configured: " . ($apiKeyConfigured ? 'YES' : 'NO — the live Teach Kea form will show an error until one is added in Website Setup -> AI Helper') . "\n\n"
+            . "To try it live as the demo student:\n"
+            . "  1. Log in as the demo student\n"
+            . "  2. Go to AI Study Helper in the student menu (/student-panel-ai-help)\n"
+            . "  3. Scroll to \"Teach Kea\", pick a skill, and type an explanation\n"
+            . "</pre>"
+        );
+    }
+
     /** Shows the tail of storage/logs/laravel.log in the browser, newest first —
      *  for a host with no SSH and no confirmed file-manager access to logs. */
     public function viewLogs(string $key)
