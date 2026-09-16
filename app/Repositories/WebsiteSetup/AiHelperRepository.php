@@ -271,6 +271,46 @@ class AiHelperRepository
     }
 
     /**
+     * "Teach Kea" (Phase 4): the student explains a skill in their own words
+     * and Kea checks it for gaps, in Kea's own encouraging, curious-bird
+     * voice. Structured JSON (not free text) so the UI can show a clear
+     * "Kea's got it!" state instead of parsing prose.
+     * Returns ['ok' => true, 'understood' => bool, 'feedback' => string] or ['ok' => false, 'message' => string].
+     */
+    public function teachKea(string $skillTitle, string $explanation): array
+    {
+        $prompt = <<<PROMPT
+You are Kea, a curious, friendly bird mascot on a school learning app. A student is trying to teach YOU about a skill, in their own words, because explaining something out loud is one of the best ways to find out if you really understand it.
+
+Skill they are explaining: "{$skillTitle}"
+
+What the student said:
+"{$explanation}"
+
+Read their explanation like a curious learner, not a strict examiner. Decide if the core idea is basically correct (small wording issues are fine — focus on whether the underlying understanding is right). Then reply as Kea would: warm, encouraging, a little playful, never condescending. If something important is missing or wrong, say so kindly and name what it is — don't just say "good job" if it's incomplete. Keep the feedback to 2-3 short sentences, talking directly to the student ("you").
+
+Respond with ONLY valid JSON (no markdown, no code fences) matching exactly this schema:
+{"understood": true or false, "feedback": "..."}
+PROMPT;
+
+        $result = $this->callGemini($prompt, true);
+        if (!$result['ok']) {
+            return $result;
+        }
+
+        $decoded = json_decode($result['text'], true);
+        if (!is_array($decoded) || !array_key_exists('feedback', $decoded)) {
+            return ['ok' => false, 'message' => 'Kea got a little confused reading that. Please try again.'];
+        }
+
+        return [
+            'ok'        => true,
+            'understood' => (bool) ($decoded['understood'] ?? false),
+            'feedback'  => (string) $decoded['feedback'],
+        ];
+    }
+
+    /**
      * $role: 'teacher' or 'student'. Reads that role's configured limit and
      * counts how many requests this user has already made in the current
      * period. Returns ['allowed' => true] or ['allowed' => false, 'message' => string].

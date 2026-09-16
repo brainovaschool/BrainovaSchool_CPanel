@@ -22,6 +22,7 @@ class LearningEventRepository
     public const EVENT_ANSWER_SUBMITTED = 'answer_submitted';
     public const EVENT_HINT_USED        = 'hint_used';
     public const EVENT_QUEST_CLAIMED    = 'quest_claimed';
+    public const EVENT_TAUGHT_KEA       = 'taught_kea';
 
     // Phase 3, idea #8: reward the behavior, not just raw correctness — fixing
     // a past mistake and mastering a skill earn far more than a routine
@@ -31,6 +32,12 @@ class LearningEventRepository
     private const XP_CORRECT_ANSWER = 5;
     private const XP_RECOVERY_BONUS = 15;
     private const XP_MASTERY_BONUS  = 50;
+
+    // Phase 4, idea #7 "Teach Kea": explaining a skill in your own words is
+    // harder than answering a multiple-choice question, so it pays more than
+    // a routine correct answer even on a partial attempt.
+    private const XP_TEACH_KEA_UNDERSTOOD = 30;
+    private const XP_TEACH_KEA_ATTEMPT    = 10;
 
     public function record(int $studentId, string $eventType, ?int $skillId = null, array $payload = []): void
     {
@@ -48,6 +55,12 @@ class LearningEventRepository
                 $payload['was_recovery']   = $result['was_recovery'];
                 $payload['newly_mastered'] = $result['newly_mastered'];
                 $xp = $this->xpFor($correct, $result['was_recovery'], $result['newly_mastered']);
+            } elseif ($eventType === self::EVENT_TAUGHT_KEA) {
+                // Teaching Kea doesn't touch mastery — it's a separate,
+                // reflective way of practicing, not a graded answer — so it
+                // earns XP on its own track instead of running through
+                // updateMastery().
+                $xp = ($payload['understood'] ?? false) ? self::XP_TEACH_KEA_UNDERSTOOD : self::XP_TEACH_KEA_ATTEMPT;
             }
 
             LearningEvent::create([

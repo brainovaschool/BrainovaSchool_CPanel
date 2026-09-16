@@ -34,8 +34,9 @@ Route::middleware(saasMiddleware())->group(function () {
                     });
 
                     Route::controller(AiHelpController::class)->prefix('student-panel-ai-help')->group(function () {
-                        Route::get('/',       'index')->name('student-panel-ai-help.index');
-                        Route::post('/ask',   'ask')->name('student-panel-ai-help.ask');
+                        Route::get('/',            'index')->name('student-panel-ai-help.index');
+                        Route::post('/ask',        'ask')->name('student-panel-ai-help.ask');
+                        Route::post('/teach-kea',  'teachKea')->name('student-panel-ai-help.teach-kea');
                     });
 
                     Route::controller(ProfileController::class)->prefix('student-panel')->group(function () {
