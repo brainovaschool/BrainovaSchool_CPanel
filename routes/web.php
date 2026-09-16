@@ -151,6 +151,9 @@ Route::middleware(saasMiddleware())->group(function () {
             // One-off: backfill XP on pre-existing events + seed fresh mastered skills so Brain Level/Knowledge Tree show real growth (admin-only + key).
             Route::get('/db/seed-phase3-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedPhase3Demo']);
 
+            // One-off: seed a demo Quiz (skill-tagged), Project, and Assignment with real marks, linked to the skill/mastery system (admin-only + key).
+            Route::get('/db/seed-homework-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedHomeworkDemo']);
+
             Route::controller(LanguageController::class)->prefix('languages')->group(function () {
                 Route::get('/change',                   'changeLanguage')->name('languages.change');
             });

@@ -31,6 +31,7 @@ use App\Repositories\LearningEngine\LearningEventRepository;
 use App\Repositories\StudentInfo\ParentGuardianRepository;
 use App\Repositories\StudentInfo\StudentRepository;
 use App\Repositories\UserRepository;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Runs pending tenant migrations from the browser, for hosts without shell /
@@ -635,6 +636,230 @@ class MigrationRunnerController extends Controller
             . "  should both reflect this XP total — reload and check the numbers moved.\n"
             . "  Badges section should show a Bronze " . ($subject->name ?? 'subject') . " Explorer (4 skills mastered in one subject)\n"
             . "  Personal Best should show Last Week 70% -> This Week (your real accuracy today)\n"
+            . "</pre>"
+        );
+    }
+
+    /** One-off: seeds a demo Quiz (skill-tagged questions, submitted and
+     *  graded), a demo Project, and a demo Assignment — all graded with real
+     *  marks — for the latest demo student, created by the latest demo
+     *  teacher. The quiz submission goes through the exact same skill-event
+     *  recording the real student-facing quiz submit uses, so Brain Level,
+     *  Badges, Mistake Bank etc. all pick it up like any other source. Safe
+     *  to re-visit — each piece checks for its own existing title first. */
+    public function seedHomeworkDemo(string $key, LearningEventRepository $events)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $student = Student::where('email', 'like', 'demo.student.%')->latest('id')->first();
+        if (!$student) {
+            return response('No demo student found yet — visit /db/create-demo-student/' . self::KEY . ' first.', 422);
+        }
+
+        $classSection = SessionClassStudent::where('session_id', setting('session'))
+            ->where('student_id', $student->id)
+            ->first();
+        if (!$classSection) {
+            return response('The demo student has no class/section assignment yet.', 422);
+        }
+
+        $subject = Subject::first();
+        if (!$subject) {
+            return response('No subject exists yet — create at least one Subject first.', 422);
+        }
+
+        $teacher   = Staff::where('email', 'like', 'demo.teacher.%')->latest('id')->first();
+        $createdBy = $teacher->user_id ?? null;
+        $sessionId = setting('session');
+        $today     = now()->format('Y-m-d');
+
+        $skillA = Skill::where('title', 'Two-Digit Addition')->where('classes_id', $classSection->classes_id)->first();
+        $skillB = Skill::where('title', 'Fractions Basics')->where('classes_id', $classSection->classes_id)->first();
+
+        $report = [];
+
+        // ---- Quiz ----
+        $quizId = DB::table('homework')->where('title', 'Demo Math Quiz')->where('classes_id', $classSection->classes_id)->value('id');
+        if (!$quizId) {
+            $quizId = DB::table('homework')->insertGetId([
+                'session_id'      => $sessionId,
+                'classes_id'      => $classSection->classes_id,
+                'section_id'      => $classSection->section_id,
+                'subject_id'      => $subject->id,
+                'title'           => 'Demo Math Quiz',
+                'topic'           => 'Addition & Fractions',
+                'task_type'       => 'quiz',
+                'date'            => $today,
+                'submission_date' => now()->addDays(3)->format('Y-m-d'),
+                'marks'           => 30,
+                'description'     => 'A short demo quiz covering two skills, for testing the homework-to-skill integration.',
+                'status'          => 1,
+                'created_by'      => $createdBy,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+
+            $skillAId = optional($skillA)->id;
+            $skillBId = optional($skillB)->id;
+
+            $questions = [
+                ['question' => 'What is 27 + 15?', 'option_a' => '42', 'option_b' => '32', 'option_c' => '45', 'option_d' => '52', 'correct_answer' => 'A', 'skill_id' => $skillAId],
+                ['question' => 'What is 48 + 36?', 'option_a' => '74', 'option_b' => '84', 'option_c' => '94', 'option_d' => '64', 'correct_answer' => 'B', 'skill_id' => $skillAId],
+                ['question' => 'What is 1/2 + 1/4?', 'option_a' => '1/6', 'option_b' => '2/6', 'option_c' => '3/4', 'option_d' => '1/2', 'correct_answer' => 'C', 'skill_id' => $skillBId],
+                ['question' => 'Which country has the most population?', 'option_a' => 'USA', 'option_b' => 'India', 'option_c' => 'Brazil', 'option_d' => 'Russia', 'correct_answer' => 'B', 'skill_id' => null],
+            ];
+
+            $questionIds = [];
+            foreach ($questions as $q) {
+                $questionIds[] = DB::table('homework_quiz_questions')->insertGetId([
+                    'homework_id'    => $quizId,
+                    'skill_id'       => $q['skill_id'],
+                    'question'       => $q['question'],
+                    'option_a'       => $q['option_a'],
+                    'option_b'       => $q['option_b'],
+                    'option_c'       => $q['option_c'],
+                    'option_d'       => $q['option_d'],
+                    'correct_answer' => $q['correct_answer'],
+                    'created_at'     => now(),
+                    'updated_at'     => now(),
+                ]);
+            }
+
+            // Simulate the student submitting — 3 of 4 correct — through the
+            // exact same steps submitInteractiveQuiz() takes: grade, insert
+            // homework_students + homework_quiz_answers, then record skill
+            // events only after that "submission" is in.
+            $studentAnswers = ['A', 'B', 'C', 'D']; // question 4 wrong on purpose
+            $earnedMarks    = 0;
+            $marksPerQ      = 30 / count($questions);
+            $answerRows     = [];
+            $skillEvents    = [];
+
+            foreach ($questions as $i => $q) {
+                $isCorrect = strtoupper($studentAnswers[$i]) === strtoupper($q['correct_answer']);
+                if ($isCorrect) {
+                    $earnedMarks += $marksPerQ;
+                }
+                $answerRows[] = [
+                    'homework_id'     => $quizId,
+                    'student_id'      => $student->id,
+                    'question_id'     => $questionIds[$i],
+                    'selected_answer' => $studentAnswers[$i],
+                    'is_correct'      => $isCorrect ? 1 : 0,
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
+                ];
+                if ($q['skill_id']) {
+                    $skillEvents[] = ['skill_id' => $q['skill_id'], 'correct' => $isCorrect];
+                }
+            }
+
+            DB::table('homework_students')->insert([
+                'student_id'  => $student->id,
+                'homework_id' => $quizId,
+                'homework'    => null,
+                'marks'       => round($earnedMarks, 2),
+                'date'        => $today,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+            DB::table('homework_quiz_answers')->insert($answerRows);
+
+            foreach ($skillEvents as $event) {
+                $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $event['skill_id'], ['correct' => $event['correct'], 'source' => 'homework_quiz']);
+            }
+
+            $report[] = "Demo Math Quiz: 4 questions (2 tagged with skills), submitted 3/4 correct, {$earnedMarks}/30 marks";
+        } else {
+            $report[] = "Demo Math Quiz already exists — skipped";
+        }
+
+        // ---- Project ----
+        $projectId = DB::table('homework')->where('title', 'Demo Science Project')->where('classes_id', $classSection->classes_id)->value('id');
+        if (!$projectId) {
+            $projectId = DB::table('homework')->insertGetId([
+                'session_id'      => $sessionId,
+                'classes_id'      => $classSection->classes_id,
+                'section_id'      => $classSection->section_id,
+                'subject_id'      => $subject->id,
+                'title'           => 'Demo Science Project',
+                'topic'           => 'Water Cycle Model',
+                'task_type'       => 'project',
+                'date'            => $today,
+                'submission_date' => now()->addDays(7)->format('Y-m-d'),
+                'marks'           => 50,
+                'description'     => 'Build a simple water-cycle model and explain each stage.',
+                'status'          => 1,
+                'created_by'      => $createdBy,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+
+            DB::table('homework_students')->insert([
+                'student_id'  => $student->id,
+                'homework_id' => $projectId,
+                'homework'    => null,
+                'marks'       => 42,
+                'date'        => $today,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+
+            $report[] = "Demo Science Project: graded 42/50 marks";
+        } else {
+            $report[] = "Demo Science Project already exists — skipped";
+        }
+
+        // ---- Assignment ----
+        $assignmentId = DB::table('homework')->where('title', 'Demo Reading Assignment')->where('classes_id', $classSection->classes_id)->value('id');
+        if (!$assignmentId) {
+            $assignmentId = DB::table('homework')->insertGetId([
+                'session_id'      => $sessionId,
+                'classes_id'      => $classSection->classes_id,
+                'section_id'      => $classSection->section_id,
+                'subject_id'      => $subject->id,
+                'title'           => 'Demo Reading Assignment',
+                'topic'           => 'Chapter 4 Summary',
+                'task_type'       => 'assignment',
+                'date'            => $today,
+                'submission_date' => now()->addDays(2)->format('Y-m-d'),
+                'marks'           => 20,
+                'description'     => 'Write a one-page summary of chapter 4.',
+                'status'          => 1,
+                'created_by'      => $createdBy,
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+
+            DB::table('homework_students')->insert([
+                'student_id'  => $student->id,
+                'homework_id' => $assignmentId,
+                'homework'    => null,
+                'marks'       => 18,
+                'date'        => $today,
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+
+            $report[] = "Demo Reading Assignment: graded 18/20 marks";
+        } else {
+            $report[] = "Demo Reading Assignment already exists — skipped";
+        }
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Homework demo data for: {$student->first_name} {$student->last_name} ({$student->email})\n\n"
+            . implode("\n", $report) . "\n\n"
+            . "Check as the demo TEACHER: Homework & Tasks -> should show 3 new tasks (quiz/project/assignment) with real marks,\n"
+            . "  and \"View Questions\" on Demo Math Quiz should show the Skill column already tagged on 2 of 4 questions.\n"
+            . "Check as the demo STUDENT: dashboard should reflect the quiz's 2 tagged skills in mastery/XP —\n"
+            . "  Two-Digit Addition and Fractions Basics both got one more real attempt each from this quiz.\n"
             . "</pre>"
         );
     }
