@@ -61,6 +61,10 @@ return [
                 "That's worth celebrating — you actually own that skill now.",
                 "Look at that. You couldn't do that a few weeks ago.",
             ],
+            'refresher' => [
+                "It's been a little while since you practiced this one — quick refresh?",
+                "This skill's been resting a bit. Let's make sure it's still solid.",
+            ],
         ],
     ],
 

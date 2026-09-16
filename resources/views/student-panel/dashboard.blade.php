@@ -125,6 +125,23 @@
                         </div>
                     @endforeach
                 @endif
+
+                @if (!empty($lh['due_for_review']) && count($lh['due_for_review']))
+                    <hr class="bn-divider">
+                    <div class="bn-section-label"><i class="fa-solid fa-rotate"></i> {{ ___('common.refresh_time') }}</div>
+                    <p class="bn-panel__line" style="margin-bottom:12px;">{{ $lh['refresher_line'] }}</p>
+                    @foreach ($lh['due_for_review'] as $skill)
+                        <div class="bn-skill-tile bn-skill-tile--refresh">
+                            <div>
+                                <div class="bn-skill-tile__title">{{ $skill->title }}</div>
+                                @if ($skill->subject)
+                                    <div class="bn-skill-tile__meta">{{ $skill->subject->name }}</div>
+                                @endif
+                            </div>
+                            <span class="bn-pill bn-pill--refresh">{{ ___('common.quick_refresh') }}</span>
+                        </div>
+                    @endforeach
+                @endif
             </div>
         </div>
     @endif

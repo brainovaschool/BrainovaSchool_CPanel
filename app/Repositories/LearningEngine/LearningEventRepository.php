@@ -48,6 +48,8 @@ class LearningEventRepository
             'skill_id'   => $skillId,
         ]);
 
+        $wasAdvanced = $mastery->mastery_level === 'advanced';
+
         $mastery->attempts_count    = ($mastery->attempts_count ?? 0) + 1;
         $mastery->correct_count     = ($mastery->correct_count ?? 0) + ($correct ? 1 : 0);
         $mastery->last_practiced_at = now();
@@ -64,7 +66,19 @@ class LearningEventRepository
         }
 
         if ($previousLevel !== 'advanced' && $mastery->mastery_level === 'advanced') {
-            $mastery->mastered_at = now();
+            $mastery->mastered_at          = now();
+            $mastery->review_interval_days = 7;
+            $mastery->next_review_at       = now()->addDays(7);
+        } elseif ($wasAdvanced && $mastery->mastery_level === 'advanced') {
+            // Practiced again after already being mastered — a spaced-review
+            // check-in, not ordinary practice. Correct: push the next check
+            // further out (classic spaced-repetition backoff, capped at 60
+            // days). Wrong: this is "I forgot this" — schedule a refresher
+            // soon, but mastery itself isn't revoked; they did master it once.
+            $mastery->review_interval_days = $correct
+                ? min(60, ($mastery->review_interval_days ?: 7) * 2)
+                : 2;
+            $mastery->next_review_at = now()->addDays($mastery->review_interval_days);
         }
 
         $mastery->save();

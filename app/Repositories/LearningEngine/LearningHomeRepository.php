@@ -100,6 +100,17 @@ class LearningHomeRepository
             'stage' => $this->recoveryStage($student->id, $skill->id),
         ]);
 
+        // Spaced Review Engine (idea #13) + "I forgot this" (idea #32): a
+        // mastered skill that's gone stale — computed from next_review_at,
+        // which updateMastery() schedules and backs off automatically.
+        // Genuinely mastered skills stay mastered; this just flags upkeep.
+        $dueForReview = $masteries
+            ->filter(fn ($m) => $m->mastery_level === 'advanced' && $m->next_review_at && $m->next_review_at->isPast())
+            ->sortBy('next_review_at')
+            ->take(2)
+            ->pluck('skill')
+            ->filter();
+
         return [
             'greeting_character' => $character,
             'greeting_name'      => Character::name($character),
@@ -110,6 +121,8 @@ class LearningHomeRepository
             'next_skills'        => $nextSkills,
             'needs_review'       => $needsReviewDisplay,
             'review_line'        => Character::line('brainbot', 'mistake_review'),
+            'due_for_review'     => $dueForReview,
+            'refresher_line'     => Character::line('kea', 'refresher'),
             'milestone'          => $this->claimMilestone($masteries),
             'mastery_counts'     => [
                 'not_started' => $notStarted,

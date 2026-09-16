@@ -151,6 +151,19 @@
         background: var(--bn-review-soft);
     }
 
+    .bn-skill-tile--refresh {
+        border-left-color: var(--bn-advanced);
+        background: var(--bn-advanced-soft);
+    }
+
+    .bn-pill--refresh {
+        background: var(--bn-advanced-soft);
+        color: var(--bn-advanced);
+    }
+    .bn-pill--refresh::before {
+        background: var(--bn-advanced);
+    }
+
     .bn-empty-note {
         color: #7a8790;
         font-size: 0.9rem;
