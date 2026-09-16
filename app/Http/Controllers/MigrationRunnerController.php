@@ -13,6 +13,7 @@ use App\Models\Academic\SubjectAssign;
 use App\Models\Academic\SubjectAssignChildren;
 use App\Models\LearningEngine\Skill;
 use App\Models\LearningEngine\LearningEvent;
+use App\Models\LearningEngine\StudentSkillMastery;
 use App\Models\OnlineExamination\Answer;
 use App\Models\OnlineExamination\AnswerChildren;
 use App\Models\OnlineExamination\OnlineExam;
@@ -984,6 +985,51 @@ class MigrationRunnerController extends Controller
             . "  1. Log in as the demo student\n"
             . "  2. Go to AI Study Helper in the student menu (/student-panel-ai-help)\n"
             . "  3. Scroll to \"Teach Kea\", pick a skill, and type an explanation\n"
+            . "</pre>"
+        );
+    }
+
+    /** One-off: backdates one of the demo student's not-yet-mastered skills
+     *  so it looks untouched for 6 days, to demonstrate Kea's inactivity
+     *  nudge ("You haven't practiced X in N days") without waiting a real
+     *  week. Only touches last_practiced_at — attempts/correct counts and
+     *  mastery level are untouched, so this can't fake a mastery it didn't
+     *  earn. */
+    public function seedInactivityNudgeDemo(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $student = Student::where('email', 'like', 'demo.student.%')->latest('id')->first();
+        if (!$student) {
+            return response('No demo student found yet — visit /db/create-demo-student/' . self::KEY . ' first.', 422);
+        }
+
+        $mastery = StudentSkillMastery::where('student_id', $student->id)
+            ->where('mastery_level', '!=', 'advanced')
+            ->whereNotNull('last_practiced_at')
+            ->with('skill')
+            ->first();
+
+        if (!$mastery || !$mastery->skill) {
+            return response('The demo student has no not-yet-mastered practiced skill to backdate yet — visit /db/seed-phase2-demo/' . self::KEY . ' or /db/seed-phase3-demo/' . self::KEY . ' first.', 422);
+        }
+
+        $mastery->last_practiced_at = now()->subDays(6);
+        $mastery->save();
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Inactivity nudge demo data for: {$student->first_name} {$student->last_name} ({$student->email})\n\n"
+            . "Backdated \"{$mastery->skill->title}\" to look last practiced 6 days ago.\n\n"
+            . "Expected: log in as the demo student, go to the dashboard, and tap the Kea avatar —\n"
+            . "she should now mention \"{$mastery->skill->title}\" hasn't been practiced in 6 days,\n"
+            . "in addition to her usual welcome/Brain Level/next-action lines.\n"
             . "</pre>"
         );
     }

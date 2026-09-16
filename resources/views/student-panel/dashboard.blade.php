@@ -23,6 +23,14 @@
             if (!empty($lhForSpeech['next_action']['reason'])) {
                 $speakParts[] = $lhForSpeech['next_action']['reason'];
             }
+            // Phase 4, idea #6: a separate, proactive nudge about a specific
+            // neglected skill — skipped when it's the same skill the Next
+            // Best Action reason above already mentions, so Kea doesn't
+            // repeat herself.
+            $nudge = $lhForSpeech['inactivity_nudge'] ?? null;
+            if ($nudge && (empty($lhForSpeech['next_action']['skill']) || $lhForSpeech['next_action']['skill']->id !== $nudge['skill']->id)) {
+                $speakParts[] = $nudge['line'];
+            }
             $speakParts[] = 'You have ' . ($lhForSpeech['mastery_counts']['advanced'] ?? 0) . ' ' . ___('common.skills_mastered_so_far') . ($pendingGoals ? ', and ' . $pendingGoals . ' ' . ___('common.goals_left_today') : '') . '.';
 
             $keaSpeakText = implode(' ', $speakParts);

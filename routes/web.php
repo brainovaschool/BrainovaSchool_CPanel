@@ -160,6 +160,9 @@ Route::middleware(saasMiddleware())->group(function () {
             // One-off: seed 2 "Teach Kea" events (understood + attempt) for the latest demo student, so the XP impact shows without a live AI call (admin-only + key).
             Route::get('/db/seed-teach-kea-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedTeachKeaDemo']);
 
+            // One-off: backdate one not-yet-mastered skill's last_practiced_at 6 days for the demo student, to demonstrate Kea's inactivity nudge (admin-only + key).
+            Route::get('/db/seed-inactivity-nudge-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedInactivityNudgeDemo']);
+
             Route::controller(LanguageController::class)->prefix('languages')->group(function () {
                 Route::get('/change',                   'changeLanguage')->name('languages.change');
             });

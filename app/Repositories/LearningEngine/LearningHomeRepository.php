@@ -24,7 +24,8 @@ use App\Models\LearningEngine\StudentSkillMastery;
  */
 class LearningHomeRepository
 {
-    private const COMEBACK_GAP_DAYS = 3;
+    private const COMEBACK_GAP_DAYS    = 3;
+    private const INACTIVITY_GAP_DAYS  = 5;
 
     private $events;
 
@@ -134,6 +135,7 @@ class LearningHomeRepository
             'badges'             => $this->badges($masteries),
             'personal_best'      => $this->personalBest($student->id),
             'verified_skills'    => $this->verifiedSkills($masteries),
+            'inactivity_nudge'   => $this->inactivityNudge($masteries),
             'mastery_counts'     => [
                 'not_started' => $notStarted,
                 'developing'  => $masteries->where('mastery_level', 'developing')->count(),
@@ -441,6 +443,38 @@ class LearningHomeRepository
         }
 
         return ($mastery->correct_count / $mastery->attempts_count) < 0.4;
+    }
+
+    /**
+     * Phase 4, idea #6: Kea as an observant companion — "You haven't
+     * practiced X in N days," for one specific skill the student has
+     * started but drifted away from. Distinct from the comeback greeting
+     * above: comeback fires on overall inactivity; this fires even on an
+     * active day, for a skill the student is otherwise quietly avoiding.
+     * Entirely rule-based off last_practiced_at — no AI call, always
+     * available even if an AI service is down.
+     */
+    private function inactivityNudge($masteries): ?array
+    {
+        $stale = $masteries
+            ->filter(fn ($m) => $m->mastery_level !== 'advanced'
+                && $m->last_practiced_at
+                && $m->skill
+                && $m->last_practiced_at->diffInDays(now()) >= self::INACTIVITY_GAP_DAYS)
+            ->sortByDesc(fn ($m) => $m->last_practiced_at->diffInDays(now()))
+            ->first();
+
+        if (!$stale) {
+            return null;
+        }
+
+        $days = (int) $stale->last_practiced_at->diffInDays(now());
+
+        return [
+            'skill' => $stale->skill,
+            'days'  => $days,
+            'line'  => "I noticed you haven't practiced {$stale->skill->title} in {$days} days — want to pick it back up?",
+        ];
     }
 
     /**
