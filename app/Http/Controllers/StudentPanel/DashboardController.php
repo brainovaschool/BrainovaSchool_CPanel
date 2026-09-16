@@ -13,16 +13,19 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\StudentInfo\SessionClassStudent;
 use App\Repositories\StudentPanel\DashboardRepository;
 use App\Repositories\LearningEngine\LearningHomeRepository;
+use App\Repositories\LearningEngine\DailyGoalRepository;
 
 class DashboardController extends Controller
 {
     private $repo;
     private $learningHome;
+    private $dailyGoals;
 
-    function __construct(DashboardRepository $repo, LearningHomeRepository $learningHome)
+    function __construct(DashboardRepository $repo, LearningHomeRepository $learningHome, DailyGoalRepository $dailyGoals)
     {
         $this->repo         = $repo;
         $this->learningHome = $learningHome;
+        $this->dailyGoals   = $dailyGoals;
     }
 
     public function index()
@@ -33,12 +36,25 @@ class DashboardController extends Controller
             try {
                 $data['learning_home'] = $this->learningHome->forStudent($data['student']);
                 $data['weekly_wins']   = $this->learningHome->weeklyWins($data['student']);
+                $data['daily_goals']   = $this->dailyGoals->forStudent($data['student']->id);
             } catch (\Throwable $th) {
                 report($th);
             }
         }
 
         return view('student-panel.dashboard', compact('data'));
+    }
+
+    public function saveDailyGoals(Request $request)
+    {
+        $student = optional(Auth::user())->student;
+        if (!$student) {
+            return redirect()->route('student-panel-dashboard.index');
+        }
+
+        $this->dailyGoals->setGoals($student->id, (array) $request->input('goals', []));
+
+        return redirect()->route('student-panel-dashboard.index')->with('success', ___('alert.updated_successfully'));
     }
 
     public function searchStudentMenuData(Request $request)

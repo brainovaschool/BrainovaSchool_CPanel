@@ -127,6 +127,26 @@
 
                 <hr class="bn-divider">
 
+                <div class="bn-section-label"><i class="fa-solid fa-flag-checkered"></i> {{ ___('common.todays_goals') }}</div>
+                <form action="{{ route('student-panel-dashboard.save-daily-goals') }}" method="post" style="margin-bottom:8px;">
+                    @csrf
+                    @php $chosenKeys = collect($data['daily_goals'] ?? [])->pluck('key')->all(); @endphp
+                    @foreach (\App\Repositories\LearningEngine\DailyGoalRepository::CATALOGUE as $key => $meta)
+                        @php
+                            $chosenRow = collect($data['daily_goals'] ?? [])->firstWhere('key', $key);
+                            $isDone    = $chosenRow['completed'] ?? false;
+                        @endphp
+                        <label class="bn-goal-option @if($isDone) bn-goal-option--done @endif">
+                            <input type="checkbox" name="goals[]" value="{{ $key }}" @if(in_array($key, $chosenKeys)) checked @endif onchange="this.form.submit()">
+                            <i class="fa-solid @if($isDone) fa-circle-check @else fa-{{ $meta['icon'] }} @endif"></i>
+                            <span>{{ $meta['label'] }}</span>
+                        </label>
+                    @endforeach
+                    <p class="bn-empty-note" style="margin-top:4px;">{{ ___('common.pick_up_to_3_goals_note') }}</p>
+                </form>
+
+                <hr class="bn-divider">
+
                 <div class="row g-4">
                     <div class="col-lg-7">
                         <div class="bn-section-label"><i class="fa-solid fa-route"></i> {{ ___('common.whats_next') }}</div>
@@ -194,6 +214,20 @@
                                 </div>
                             </div>
                         @endif
+                    </div>
+                @endif
+
+                @if (!empty($lh['verified_skills']))
+                    <hr class="bn-divider">
+                    <div class="bn-section-label"><i class="fa-solid fa-certificate"></i> {{ ___('common.verified_skills') }}</div>
+                    <div class="bn-verified-grid">
+                        @foreach ($lh['verified_skills'] as $vs)
+                            <div class="bn-verified-card">
+                                <div class="bn-verified-card__badge"><i class="fa-solid fa-circle-check"></i> {{ ___('common.verified') }}</div>
+                                <div class="bn-verified-card__title">{{ $vs['skill']->title }}</div>
+                                <div class="bn-verified-card__meta">{{ $vs['skill']->subject->name ?? '' }} · {{ $vs['accuracy'] }}% · {{ $vs['mastered_at']->format('d M Y') }}</div>
+                            </div>
+                        @endforeach
                     </div>
                 @endif
 

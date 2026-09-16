@@ -561,6 +561,79 @@
     .bn-personal-best__delta--down { color: var(--bn-not-started); }
     .bn-personal-best__delta--flat { color: #7a8790; }
 
+    /* Verified Skills — evidence cards, not participation trophies */
+    .bn-verified-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        gap: 10px;
+    }
+
+    .bn-verified-card {
+        background: linear-gradient(160deg, #fff 0%, var(--bn-advanced-soft) 130%);
+        border: 1px solid rgba(22, 163, 74, 0.2);
+        border-top: 3px solid var(--bn-advanced);
+        border-radius: 12px;
+        padding: 12px 14px;
+    }
+
+    .bn-verified-card__badge {
+        color: var(--bn-advanced);
+        font-size: 0.68rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 4px;
+    }
+
+    .bn-verified-card__title {
+        font-weight: 700;
+        color: var(--bn-ink);
+        font-size: 0.92rem;
+        margin-bottom: 2px;
+    }
+
+    .bn-verified-card__meta {
+        font-size: 0.72rem;
+        color: #7a8790;
+    }
+
+    /* Daily goals — student-chosen, max 3, auto-detected complete */
+    .bn-goal-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: #fff;
+        border: 1px solid rgba(15, 41, 55, 0.1);
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        cursor: pointer;
+        transition: border-color 0.15s ease;
+    }
+
+    .bn-goal-option:has(input:checked) {
+        border-color: var(--bn-primary);
+        background: var(--bn-primary-soft);
+    }
+
+    .bn-goal-option input { accent-color: var(--bn-primary); width: 16px; height: 16px; flex-shrink: 0; }
+
+    .bn-goal-option i { color: var(--bn-primary); width: 16px; text-align: center; flex-shrink: 0; }
+
+    .bn-goal-option span { font-size: 0.88rem; color: var(--bn-ink); }
+
+    .bn-goal-option--done {
+        border-color: rgba(22, 163, 74, 0.3);
+        background: var(--bn-advanced-soft);
+    }
+
+    .bn-goal-option--done i { color: var(--bn-advanced); }
+
+    .bn-goal-option--done span { text-decoration: line-through; opacity: 0.75; }
+
     @media (max-width: 576px) {
         .bn-panel__body { padding: 18px; }
         .bn-milestone { flex-direction: column; text-align: center; }

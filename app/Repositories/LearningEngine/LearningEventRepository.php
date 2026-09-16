@@ -35,20 +35,28 @@ class LearningEventRepository
     public function record(int $studentId, string $eventType, ?int $skillId = null, array $payload = []): void
     {
         try {
-            $event = LearningEvent::create([
-                'student_id' => $studentId,
-                'skill_id'   => $skillId,
-                'event_type' => $eventType,
-                'payload'    => $payload,
-            ]);
+            $xp = 0;
 
             if ($eventType === self::EVENT_ANSWER_SUBMITTED && $skillId) {
                 $correct = (bool) ($payload['correct'] ?? false);
                 $result  = $this->updateMastery($studentId, $skillId, $correct);
 
-                $event->xp = $this->xpFor($correct, $result['was_recovery'], $result['newly_mastered']);
-                $event->save();
+                // Stamped onto the event's own payload (not just folded into
+                // the xp total) so "was this a recovery?" stays answerable
+                // later without having to reverse-engineer it from a number
+                // — Phase 3's daily goals need exactly this.
+                $payload['was_recovery']   = $result['was_recovery'];
+                $payload['newly_mastered'] = $result['newly_mastered'];
+                $xp = $this->xpFor($correct, $result['was_recovery'], $result['newly_mastered']);
             }
+
+            LearningEvent::create([
+                'student_id' => $studentId,
+                'skill_id'   => $skillId,
+                'event_type' => $eventType,
+                'payload'    => $payload,
+                'xp'         => $xp,
+            ]);
         } catch (\Throwable $th) {
             Log::warning('Learning event record failed: ' . $th->getMessage());
         }

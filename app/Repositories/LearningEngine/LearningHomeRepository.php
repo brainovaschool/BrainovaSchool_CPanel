@@ -133,6 +133,7 @@ class LearningHomeRepository
             'knowledge_tree'     => $this->knowledgeTree($student->id, $brainLevel['level']),
             'badges'             => $this->badges($masteries),
             'personal_best'      => $this->personalBest($student->id),
+            'verified_skills'    => $this->verifiedSkills($masteries),
             'mastery_counts'     => [
                 'not_started' => $notStarted,
                 'developing'  => $masteries->where('mastery_level', 'developing')->count(),
@@ -254,6 +255,30 @@ class LearningHomeRepository
             ->count();
 
         return (int) round($correct / $total * 100);
+    }
+
+    /**
+     * Phase 3, idea #33: "Verified Skill" instead of a generic course
+     * certificate — named this way (not "certificate") to avoid colliding
+     * with this app's existing, unrelated admin Certificate feature. Each
+     * card is evidence — the skill, the subject, and the date it was
+     * genuinely earned — not a participation trophy.
+     */
+    private function verifiedSkills($masteries): array
+    {
+        return $masteries
+            ->where('mastery_level', 'advanced')
+            ->whereNotNull('mastered_at')
+            ->sortByDesc('mastered_at')
+            ->take(6)
+            ->map(fn ($m) => [
+                'skill'      => $m->skill,
+                'mastered_at' => $m->mastered_at,
+                'accuracy'   => $m->attempts_count > 0 ? (int) round($m->correct_count / $m->attempts_count * 100) : 0,
+            ])
+            ->filter(fn ($row) => $row['skill'])
+            ->values()
+            ->all();
     }
 
     /**
