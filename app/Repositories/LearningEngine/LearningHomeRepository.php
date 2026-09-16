@@ -81,7 +81,7 @@ class LearningHomeRepository
             ->take(4)
             ->get();
 
-        $nextAction = $this->nextBestAction($masteries, $needsReview, $nextSkills);
+        $nextAction = $this->nextBestAction($student->id, $masteries, $needsReview, $nextSkills);
 
         // Don't show the same skill twice — once as THE featured next
         // action, and again in the supporting lists right below it.
@@ -91,6 +91,15 @@ class LearningHomeRepository
         }
         $nextSkills = $nextSkills->take(3)->values();
 
+        // Mistake Bank (idea #4): each remaining "needs review" skill shows
+        // its recovery progress — computed straight from the event log, no
+        // new table needed. "Needs practice" -> "First recovery" -> "Second
+        // recovery", read off how many corrects in a row since the last miss.
+        $needsReviewDisplay = $needsReview->map(fn ($skill) => [
+            'skill' => $skill,
+            'stage' => $this->recoveryStage($student->id, $skill->id),
+        ]);
+
         return [
             'greeting_character' => $character,
             'greeting_name'      => Character::name($character),
@@ -99,7 +108,7 @@ class LearningHomeRepository
             'is_comeback'        => $isComeback,
             'next_action'        => $nextAction,
             'next_skills'        => $nextSkills,
-            'needs_review'       => $needsReview,
+            'needs_review'       => $needsReviewDisplay,
             'review_line'        => Character::line('brainbot', 'mistake_review'),
             'milestone'          => $this->claimMilestone($masteries),
             'mastery_counts'     => [
@@ -169,15 +178,18 @@ class LearningHomeRepository
      * gotten wrong beats an unstarted one, which beats "you're caught up."
      * Entirely rule-based, reusing data already computed above.
      */
-    private function nextBestAction($masteries, $needsReview, $nextSkills): array
+    private function nextBestAction(int $studentId, $masteries, $needsReview, $nextSkills): array
     {
         $reviewTarget = $needsReview->first();
         if ($reviewTarget) {
-            return [
-                'skill'  => $reviewTarget,
-                'reason' => "You've gotten a few {$reviewTarget->title} questions wrong recently — let's take another look before moving on.",
-                'type'   => 'review',
-            ];
+            $stage  = $this->recoveryStage($studentId, $reviewTarget->id);
+            $reason = match ($stage['level']) {
+                'first'  => "You got {$reviewTarget->title} right last time — one more like that and it's recovered.",
+                'second' => "You've gotten {$reviewTarget->title} right twice in a row now — one step from mastered.",
+                default  => "You've gotten a few {$reviewTarget->title} questions wrong recently — let's take another look before moving on.",
+            };
+
+            return ['skill' => $reviewTarget, 'reason' => $reason, 'type' => 'review'];
         }
 
         $target = $nextSkills->first();
@@ -195,6 +207,38 @@ class LearningHomeRepository
             'reason' => "You've worked through everything set up for your grade right now — nice work. Ask your teacher what's next.",
             'type'   => 'caught_up',
         ];
+    }
+
+    /**
+     * Phase 2, idea #4: the Mistake Bank recovery loop — Needs practice ->
+     * First recovery -> Second recovery — read directly off the event log
+     * (every graded answer is already there from Phase 0/1) instead of a new
+     * table. Counts correct answers in a row for this skill since the last
+     * wrong one; resets the moment another wrong answer comes in.
+     */
+    private function recoveryStage(int $studentId, int $skillId): array
+    {
+        $lastWrongAt = LearningEvent::where('student_id', $studentId)
+            ->where('skill_id', $skillId)
+            ->where('event_type', LearningEventRepository::EVENT_ANSWER_SUBMITTED)
+            ->where('payload->correct', false)
+            ->latest('created_at')
+            ->value('created_at');
+
+        $correctSinceWrong = $lastWrongAt
+            ? LearningEvent::where('student_id', $studentId)
+                ->where('skill_id', $skillId)
+                ->where('event_type', LearningEventRepository::EVENT_ANSWER_SUBMITTED)
+                ->where('payload->correct', true)
+                ->where('created_at', '>', $lastWrongAt)
+                ->count()
+            : 0;
+
+        return match (true) {
+            $correctSinceWrong >= 2 => ['level' => 'second', 'label' => 'Second recovery'],
+            $correctSinceWrong === 1 => ['level' => 'first', 'label' => 'First recovery'],
+            default => ['level' => 'new', 'label' => 'Needs practice'],
+        };
     }
 
     /**

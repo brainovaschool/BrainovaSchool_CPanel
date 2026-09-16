@@ -141,14 +141,15 @@
 
                         @if (!empty($lh['needs_review']) && count($lh['needs_review']))
                             <div class="bn-section-label" style="margin-top:16px;"><i class="fa-solid fa-magnifying-glass"></i> {{ ___('common.could_use_another_look') }}</div>
-                            @foreach ($lh['needs_review'] as $skill)
+                            @foreach ($lh['needs_review'] as $row)
                                 <div class="bn-skill-tile bn-skill-tile--review">
                                     <div>
-                                        <div class="bn-skill-tile__title">{{ $skill->title }}</div>
-                                        @if ($skill->subject)
-                                            <div class="bn-skill-tile__meta">{{ $skill->subject->name }}</div>
+                                        <div class="bn-skill-tile__title">{{ $row['skill']->title }}</div>
+                                        @if ($row['skill']->subject)
+                                            <div class="bn-skill-tile__meta">{{ $row['skill']->subject->name }}</div>
                                         @endif
                                     </div>
+                                    <span class="bn-pill bn-pill--review">{{ $row['stage']['label'] }}</span>
                                 </div>
                             @endforeach
                         @endif
