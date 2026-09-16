@@ -65,10 +65,13 @@ class LearningHomeRepository
         $totalSkills = Skill::active()->when($classesId, fn ($q) => $q->where('classes_id', $classesId))->count();
         $notStarted  = max(0, $totalSkills - $masteries->count());
 
+        // take(4): one becomes the featured "Next Best Action" below and is
+        // removed from this list afterward, leaving 3 still visible here —
+        // not 2.
         $needsReview = $masteries
             ->filter(fn ($m) => in_array($m->mastery_level, ['not_started', 'developing'], true) && $m->correct_count < $m->attempts_count)
             ->sortByDesc('last_practiced_at')
-            ->take(3)
+            ->take(4)
             ->pluck('skill')
             ->filter();
 
@@ -167,7 +170,18 @@ class LearningHomeRepository
             ->groupBy('student_id')
             ->pluck('c', 'student_id');
 
-        $rows = $students->map(function ($student) use ($totalSkills, $countsByStudent, $needsReviewByStudent) {
+        // Silent Struggle Detector (idea #18), teacher-facing half: sustained
+        // low accuracy (3+ attempts, under 40% correct) on a not-yet-advanced
+        // skill — one query for the whole class, not one per student.
+        $strugglingByStudent = StudentSkillMastery::whereIn('student_id', $studentIds)
+            ->where('mastery_level', '!=', 'advanced')
+            ->where('attempts_count', '>=', 3)
+            ->whereRaw('correct_count / attempts_count < 0.4')
+            ->selectRaw('student_id, count(*) as c')
+            ->groupBy('student_id')
+            ->pluck('c', 'student_id');
+
+        $rows = $students->map(function ($student) use ($totalSkills, $countsByStudent, $needsReviewByStudent, $strugglingByStudent) {
             $counts  = optional($countsByStudent->get($student->id))->pluck('c', 'mastery_level') ?? collect();
             $touched = (int) $counts->sum();
 
@@ -178,6 +192,7 @@ class LearningHomeRepository
                 'proficient'   => (int) ($counts['proficient'] ?? 0),
                 'advanced'     => (int) ($counts['advanced'] ?? 0),
                 'needs_review' => (int) ($needsReviewByStudent[$student->id] ?? 0),
+                'struggling'   => (int) ($strugglingByStudent[$student->id] ?? 0),
             ];
         });
 
@@ -195,6 +210,21 @@ class LearningHomeRepository
     {
         $reviewTarget = $needsReview->first();
         if ($reviewTarget) {
+            $mastery = $masteries->firstWhere('skill_id', $reviewTarget->id);
+
+            // Silent Struggle Detector (idea #18): a single recent miss stays
+            // Brainbot's methodical "let's investigate" tone, but sustained
+            // low accuracy on a skill is a stronger signal — Kea's more
+            // caring "I noticed this is tough" tone, and this same signal
+            // also surfaces to the teacher (see classSnapshot()).
+            if ($mastery && $this->isStruggling($mastery)) {
+                return [
+                    'skill'  => $reviewTarget,
+                    'reason' => "I've noticed {$reviewTarget->title} has been tricky for a few tries now — want to work through it together?",
+                    'type'   => 'struggle',
+                ];
+            }
+
             $stage  = $this->recoveryStage($studentId, $reviewTarget->id);
             $reason = match ($stage['level']) {
                 'first'  => "You got {$reviewTarget->title} right last time — one more like that and it's recovered.",
@@ -252,6 +282,51 @@ class LearningHomeRepository
             $correctSinceWrong === 1 => ['level' => 'first', 'label' => 'First recovery'],
             default => ['level' => 'new', 'label' => 'Needs practice'],
         };
+    }
+
+    /**
+     * Phase 2, idea #18: a repeated, low-accuracy pattern on a skill — not
+     * just one miss — the difference between "everyone gets something wrong
+     * sometimes" and "this student may actually need help here."
+     */
+    private function isStruggling(StudentSkillMastery $mastery): bool
+    {
+        if ($mastery->mastery_level === 'advanced' || $mastery->attempts_count < 3) {
+            return false;
+        }
+
+        return ($mastery->correct_count / $mastery->attempts_count) < 0.4;
+    }
+
+    /**
+     * Phase 2, idea #21: real wins from the last 7 days for the Parent
+     * Snapshot — skills newly mastered and correct answers logged — instead
+     * of only ever surfacing a problem. Returns has_wins = false rather than
+     * fabricating a win when nothing real happened this week.
+     */
+    public function weeklyWins(Student $student): array
+    {
+        $since = now()->subDays(7);
+
+        $masteredTitles = StudentSkillMastery::where('student_id', $student->id)
+            ->where('mastered_at', '>=', $since)
+            ->with('skill')
+            ->get()
+            ->pluck('skill.title')
+            ->filter()
+            ->values();
+
+        $correctThisWeek = LearningEvent::where('student_id', $student->id)
+            ->where('event_type', LearningEventRepository::EVENT_ANSWER_SUBMITTED)
+            ->where('created_at', '>=', $since)
+            ->where('payload->correct', true)
+            ->count();
+
+        return [
+            'mastered_titles'   => $masteredTitles,
+            'correct_this_week' => $correctThisWeek,
+            'has_wins'          => $masteredTitles->count() > 0 || $correctThisWeek > 0,
+        ];
     }
 
     /**

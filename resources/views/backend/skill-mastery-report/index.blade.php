@@ -70,6 +70,7 @@
                                         <th>{{ ___('common.proficient') }}</th>
                                         <th>{{ ___('common.advanced') }}</th>
                                         <th>{{ ___('common.could_use_another_look') }}</th>
+                                        <th>{{ ___('common.possible_struggle') }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="tbody">
@@ -84,6 +85,13 @@
                                             <td>
                                                 @if ($row['needs_review'] > 0)
                                                     <span class="bn-pill bn-pill--review">{{ $row['needs_review'] }}</span>
+                                                @else
+                                                    —
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($row['struggling'] > 0)
+                                                    <span class="bn-pill" style="background:var(--bn-accent-soft);color:var(--bn-accent-strong);">{{ $row['struggling'] }}</span>
                                                 @else
                                                     —
                                                 @endif

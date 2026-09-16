@@ -463,6 +463,10 @@ class MigrationRunnerController extends Controller
             ['title' => 'Telling Time', 'classes_id' => $classSection->classes_id, 'subject_id' => $subject->id],
             ['slug' => 'demo-telling-time-' . $classSection->classes_id, 'description' => 'Read an analogue clock to the nearest five minutes.', 'sort_order' => 7, 'status' => 1]
         );
+        $skillStruggling = Skill::firstOrCreate(
+            ['title' => 'Multiplication Facts', 'classes_id' => $classSection->classes_id, 'subject_id' => $subject->id],
+            ['slug' => 'demo-multiplication-facts-' . $classSection->classes_id, 'description' => 'Recall multiplication facts up to 10x10 from memory.', 'sort_order' => 8, 'status' => 1]
+        );
 
         // Each skill seeds independently — re-visiting this page only fills
         // in whatever hasn't been seeded yet, instead of an all-or-nothing
@@ -503,16 +507,30 @@ class MigrationRunnerController extends Controller
                 ->update(['next_review_at' => now()->subDays(3)]);
         }
 
+        // Multiplication Facts: 4 attempts, 1 correct (25% accuracy) — crosses
+        // the Silent Struggle Detector's threshold (3+ attempts, under 40%).
+        // Seeded last so it's also the most recently practiced, making it the
+        // one "Your Next Best Action" picks out.
+        if (!$seeded($skillStruggling->id)) {
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillStruggling->id, ['correct' => false, 'source' => 'demo_seed']);
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillStruggling->id, ['correct' => true, 'source' => 'demo_seed']);
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillStruggling->id, ['correct' => false, 'source' => 'demo_seed']);
+            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillStruggling->id, ['correct' => false, 'source' => 'demo_seed']);
+        }
+
         return response(
             '<pre style="font:14px/1.5 monospace;padding:24px">'
             . "Phase 2 demo data ready for: {$student->first_name} {$student->last_name} ({$student->email})\n\n"
             . "Subtraction With Borrowing -> Needs practice   (fresh miss, no recovery yet)\n"
             . "Place Value                -> First recovery    (one correct since the last miss)\n"
             . "Number Patterns             -> Second recovery   (two correct in a row since the last miss)\n"
-            . "Telling Time                -> Advanced, review overdue by 3 days (backdated for testing)\n\n"
+            . "Telling Time                -> Advanced, review overdue by 3 days (backdated for testing)\n"
+            . "Multiplication Facts        -> Struggling (4 attempts, 25% correct)\n\n"
             . "Expected on the dashboard:\n"
-            . "  \"Your Next Best Action\" -> Subtraction With Borrowing (the freshest, unrecovered miss)\n"
-            . "  \"Let's Investigate\" -> Place Value (First recovery), Number Patterns (Second recovery)\n"
+            . "  \"Kea noticed...\" (Your Next Best Action, purple card) -> Multiplication Facts\n"
+            . "  \"Let's Investigate\" -> Subtraction With Borrowing (Needs practice), Place Value (First recovery), Number Patterns (Second recovery)\n"
+            . "  Also check /skill-mastery-report as the demo teacher -> this student now shows 1 under \"Possible Struggle\"\n"
+            . "  Also check the demo parent's dashboard -> \"Good News This Week\" should mention Telling Time mastered + correct answers this week\n"
             . "  \"Refresh Time\" -> Telling Time (mastered, review overdue)\n"
             . "</pre>"
         );

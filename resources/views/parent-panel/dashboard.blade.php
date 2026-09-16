@@ -52,7 +52,29 @@
         </form>
     </div>
     
+    @include('backend.partials.learning-engine-styles')
+
     @if($data['student'])
+
+    @if (!empty($data['weekly_wins']) && $data['weekly_wins']['has_wins'])
+        @php $ww = $data['weekly_wins']; @endphp
+        <div class="bn-milestone">
+            <div class="bn-milestone__icon"><i class="fa-solid fa-heart"></i></div>
+            <div>
+                <p class="bn-milestone__title">{{ ___('common.good_news_this_week') }}</p>
+                <p class="bn-milestone__line">
+                    @if ($ww['mastered_titles']->count())
+                        {{ $data['student']->first_name }} {{ ___('common.mastered') }} {{ $ww['mastered_titles']->count() }}
+                        {{ $ww['mastered_titles']->count() === 1 ? ___('common.new_skill') : ___('common.new_skills') }}
+                        ({{ $ww['mastered_titles']->implode(', ') }}){{ $ww['correct_this_week'] > 0 ? ' ' . ___('common.and') : '' }}
+                    @endif
+                    @if ($ww['correct_this_week'] > 0)
+                        {{ ___('common.answered') }} {{ $ww['correct_this_week'] }} {{ ___('common.questions_correctly_this_week') }}.
+                    @endif
+                </p>
+            </div>
+        </div>
+    @endif
 
     <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-5 g-3 mb-24">
         <div class="col">
@@ -111,8 +133,6 @@
             </div>
         </div>
     </div>
-
-    @include('backend.partials.learning-engine-styles')
 
     @if (!empty($data['learning_home']))
         @php

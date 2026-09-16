@@ -125,13 +125,11 @@
         border-radius: 12px;
         padding: 12px 14px;
         margin-bottom: 10px;
-        transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
-
-    .bn-skill-tile:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(15, 41, 55, 0.08);
-    }
+    /* No hover-lift here on purpose — these are informational, not clickable
+       yet (there's no "practice this skill" page to send someone to). A
+       hover effect implies interactivity that doesn't exist; add it back
+       only once these tiles actually link somewhere. */
 
     .bn-skill-tile__title {
         font-weight: 700;
@@ -272,6 +270,19 @@
     .bn-next-action--caught-up {
         background: linear-gradient(135deg, var(--bn-advanced-soft), #fff 75%);
         border-color: rgba(22, 163, 74, 0.2);
+    }
+
+    .bn-next-action--struggle {
+        background: linear-gradient(135deg, var(--bn-accent-soft), #fff 75%);
+        border-color: rgba(94, 23, 235, 0.18);
+    }
+
+    .bn-next-action--struggle .bn-next-action__icon {
+        background: var(--bn-accent);
+    }
+
+    .bn-next-action--struggle .bn-next-action__eyebrow {
+        color: var(--bn-accent-strong);
     }
 
     .bn-next-action__icon {
