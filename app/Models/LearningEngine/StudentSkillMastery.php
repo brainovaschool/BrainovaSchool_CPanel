@@ -13,6 +13,7 @@ class StudentSkillMastery extends BaseModel
     protected $casts = [
         'last_practiced_at' => 'datetime',
         'mastered_at'       => 'datetime',
+        'milestone_seen_at' => 'datetime',
     ];
 
     public function student(): BelongsTo

@@ -531,6 +531,12 @@
                             <span class="on-half-expanded">{{ ___('settings.ai_help_teacher') }}</span>
                         </a>
                     </li>
+                    <li class="sidebar-menu-item {{ set_menu(['skill-mastery-report*']) }}">
+                        <a href="{{ route('skill-mastery-report.index') }}" class="parent-item-content">
+                            <i class="las la-chart-bar"></i>
+                            <span class="on-half-expanded">{{ ___('settings.skill_mastery_report') }}</span>
+                        </a>
+                    </li>
                 @endif
 
                 @if(hasModule('StudyMaterial'))

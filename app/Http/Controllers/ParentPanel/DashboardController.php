@@ -14,26 +14,42 @@ use Illuminate\Support\Facades\Session;
 use App\Models\StudentInfo\ParentGuardian;
 use App\Models\StudentInfo\SessionClassStudent;
 use App\Repositories\ParentPanel\DashboardRepository;
+use App\Repositories\LearningEngine\LearningHomeRepository;
 
 class DashboardController extends Controller
 {
     private $repo;
+    private $learningHome;
 
-    function __construct(DashboardRepository $repo)
+    function __construct(DashboardRepository $repo, LearningHomeRepository $learningHome)
     {
-        $this->repo               = $repo;
+        $this->repo         = $repo;
+        $this->learningHome = $learningHome;
     }
 
     public function index()
     {
         $data = $this->repo->index();
+        $this->attachLearningSnapshot($data);
         return view('parent-panel.dashboard', compact('data'));
     }
 
     public function search(Request $request)
     {
         $data = $this->repo->search($request);
+        $this->attachLearningSnapshot($data);
         return view('parent-panel.dashboard', compact('data'));
+    }
+
+    private function attachLearningSnapshot(&$data): void
+    {
+        if ($data && !empty($data['student'])) {
+            try {
+                $data['learning_home'] = $this->learningHome->forStudent($data['student']);
+            } catch (\Throwable $th) {
+                report($th);
+            }
+        }
     }
 
     public function searchParentMenuData(Request $request){

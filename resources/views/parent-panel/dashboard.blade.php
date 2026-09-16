@@ -112,6 +112,54 @@
         </div>
     </div>
 
+    @if (!empty($data['learning_home']))
+        @php $lh = $data['learning_home']; @endphp
+        <div class="row">
+            <div class="col-12">
+                <div class="ot-card mb-24">
+                    <div class="card-header card_header_border">
+                        <h4 class="mb-0">{{ ___('common.learning_snapshot') }}</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-lg-7">
+                                <h6 class="mb-2">{{ ___('common.currently_working_on') }}</h6>
+                                @forelse ($lh['next_skills'] as $skill)
+                                    <div class="d-flex align-items-center justify-content-between border rounded p-2 mb-2">
+                                        <div>
+                                            <div class="fw-bold">{{ $skill->title }}</div>
+                                            <small class="gray-color">{{ $skill->subject->name ?? '' }}</small>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="gray-color mb-0">{{ ___('common.no_skills_set_up_yet_for_your_grade') }}</p>
+                                @endforelse
+
+                                @if (!empty($lh['needs_review']) && count($lh['needs_review']))
+                                    <h6 class="mb-2 mt-3">{{ ___('common.could_use_another_look') }}</h6>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        @foreach ($lh['needs_review'] as $skill)
+                                            <span class="badge-basic-danger-text">{{ $skill->title }}@if($skill->subject) — {{ $skill->subject->name }}@endif</span>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+                            <div class="col-lg-5">
+                                <h6 class="mb-2">{{ ___('common.skill_mastery_overview') }}</h6>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="badge-basic-warning-text">{{ ___('common.not_started') }}: {{ $lh['mastery_counts']['not_started'] }}</span>
+                                    <span class="badge-basic-info-text">{{ ___('common.developing') }}: {{ $lh['mastery_counts']['developing'] }}</span>
+                                    <span class="badge-basic-primary-text">{{ ___('common.proficient') }}: {{ $lh['mastery_counts']['proficient'] }}</span>
+                                    <span class="badge-basic-success-text">{{ ___('common.advanced') }}: {{ $lh['mastery_counts']['advanced'] }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="row">
         <div class="col-12 col-xl-6">
             <div class="ot-card chart-card2 ot_heightFull mb-24">

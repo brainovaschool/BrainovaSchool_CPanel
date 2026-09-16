@@ -33,6 +33,19 @@
 
     @if (!empty($data['learning_home']))
         @php $lh = $data['learning_home']; @endphp
+
+        @if (!empty($lh['milestone']))
+            <div class="card ot-card mb-24" style="border-left:4px solid #2f8f5b;">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <i class="fa-solid fa-star" style="color:#2f8f5b;font-size:1.6rem;"></i>
+                    <div>
+                        <h5 class="mb-1">{{ ___('common.milestone_reached') }}: {{ $lh['milestone']['skill_title'] }}</h5>
+                        <p class="mb-0 gray-color">{{ $lh['milestone']['line'] }}</p>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="card ot-card mb-24">
             <div class="card-body">
                 <div class="d-flex align-items-center flex-wrap gap-3">

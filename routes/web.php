@@ -271,6 +271,8 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::post('/generate-slides',       'generateSlides')->name('generate-slides');
                     });
 
+                    Route::get('/skill-mastery-report', [\App\Http\Controllers\Backend\SkillMasteryReportController::class, 'index'])->name('skill-mastery-report.index');
+
                     Route::controller(LanguageController::class)->middleware(['FeatureCheck:language', 'DenyTeacherAndStudent'])->prefix('languages')->group(function () {
                         Route::get('/',                         'index')->name('languages.index')->middleware('PermissionCheck:language_read');
                         Route::get('/create',                   'create')->name('languages.create')->middleware('PermissionCheck:language_create');

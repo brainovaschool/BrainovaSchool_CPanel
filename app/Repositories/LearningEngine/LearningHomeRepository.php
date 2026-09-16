@@ -80,12 +80,84 @@ class LearningHomeRepository
             'next_skills'        => $this->events->nextSkills($student->id, null, $classesId, 3),
             'needs_review'       => $needsReview,
             'review_line'        => Character::line('brainbot', 'mistake_review'),
+            'milestone'          => $this->claimMilestone($student->id),
             'mastery_counts'     => [
                 'not_started' => $notStarted,
                 'developing'  => (int) ($counts['developing'] ?? 0),
                 'proficient'  => (int) ($counts['proficient'] ?? 0),
                 'advanced'    => (int) ($counts['advanced'] ?? 0),
             ],
+        ];
+    }
+
+    /**
+     * Per-student mastery breakdown for a whole class — the teacher-facing
+     * counterpart to forStudent(). Growth and mastery per student, not a
+     * ranking: rows are returned in enrollment order, never sorted by score.
+     */
+    public function classSnapshot(int $classesId, ?int $sectionId = null): array
+    {
+        $students = SessionClassStudent::where('session_id', setting('session'))
+            ->where('classes_id', $classesId)
+            ->when($sectionId, fn ($q) => $q->where('section_id', $sectionId))
+            ->with('student')
+            ->get()
+            ->pluck('student')
+            ->filter()
+            ->values();
+
+        $totalSkills = Skill::active()->where('classes_id', $classesId)->count();
+
+        $rows = $students->map(function ($student) use ($totalSkills) {
+            $counts = StudentSkillMastery::where('student_id', $student->id)
+                ->selectRaw('mastery_level, count(*) as c')
+                ->groupBy('mastery_level')
+                ->pluck('c', 'mastery_level');
+
+            $touched          = (int) $counts->sum();
+            $needsReviewCount = StudentSkillMastery::where('student_id', $student->id)
+                ->whereIn('mastery_level', ['not_started', 'developing'])
+                ->whereColumn('correct_count', '<', 'attempts_count')
+                ->count();
+
+            return [
+                'student'      => $student,
+                'not_started'  => max(0, $totalSkills - $touched),
+                'developing'   => (int) ($counts['developing'] ?? 0),
+                'proficient'   => (int) ($counts['proficient'] ?? 0),
+                'advanced'     => (int) ($counts['advanced'] ?? 0),
+                'needs_review' => $needsReviewCount,
+            ];
+        });
+
+        return ['total_skills' => $totalSkills, 'rows' => $rows];
+    }
+
+    /**
+     * The "notification" piece of Phase 1: a one-time celebration the moment a
+     * skill first reaches Advanced. Shown exactly once (marked seen here, on
+     * the same request that returns it) — a real event, not a manufactured
+     * streak, and never repeated into a nag.
+     */
+    private function claimMilestone(int $studentId): ?array
+    {
+        $mastery = StudentSkillMastery::where('student_id', $studentId)
+            ->whereNotNull('mastered_at')
+            ->whereNull('milestone_seen_at')
+            ->with('skill')
+            ->orderBy('mastered_at')
+            ->first();
+
+        if (!$mastery || !$mastery->skill) {
+            return null;
+        }
+
+        $mastery->milestone_seen_at = now();
+        $mastery->save();
+
+        return [
+            'skill_title' => $mastery->skill->title,
+            'line'        => Character::line('kea', 'milestone'),
         ];
     }
 
