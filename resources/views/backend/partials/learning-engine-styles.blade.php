@@ -325,8 +325,114 @@
         line-height: 1.5;
     }
 
+    /* Profile hero — top of the dashboard: who this is, at a glance */
+    .bn-hero {
+        background: linear-gradient(120deg, var(--bn-primary) 0%, var(--bn-accent) 130%);
+        border-radius: 18px;
+        padding: 22px 24px;
+        margin-bottom: 20px;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+    }
+
+    .bn-hero__avatar {
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid rgba(255, 255, 255, 0.6);
+        flex-shrink: 0;
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+    .bn-hero__eyebrow {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: rgba(255, 255, 255, 0.75);
+        margin: 0;
+    }
+
+    .bn-hero__name {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #fff;
+        margin: 2px 0 8px;
+    }
+
+    .bn-hero__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+
+    .bn-hero__meta li {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.82rem;
+        color: rgba(255, 255, 255, 0.92);
+    }
+
+    .bn-hero__meta i { opacity: 0.85; width: 14px; text-align: center; }
+
+    /* Stat tiles — real figures only; no fabricated points/rank here */
+    .bn-stat-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .bn-stat-tile {
+        background: #fff;
+        border: 1px solid rgba(15, 41, 55, 0.08);
+        border-radius: 14px;
+        padding: 14px 16px;
+        box-shadow: 0 2px 10px rgba(15, 41, 55, 0.04);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .bn-stat-tile__icon {
+        flex-shrink: 0;
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.95rem;
+        color: #fff;
+        background: var(--bn-primary);
+    }
+
+    .bn-stat-tile__value {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--bn-ink);
+        line-height: 1.1;
+    }
+
+    .bn-stat-tile__label {
+        font-size: 0.72rem;
+        color: #7a8790;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+
     @media (max-width: 576px) {
         .bn-panel__body { padding: 18px; }
         .bn-milestone { flex-direction: column; text-align: center; }
+        .bn-hero { flex-direction: column; text-align: center; align-items: center; }
+        .bn-hero__meta { justify-content: center; }
     }
 </style>

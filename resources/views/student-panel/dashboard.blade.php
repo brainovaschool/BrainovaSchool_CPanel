@@ -4,34 +4,63 @@
 {{ ___('common.Dashboard') }}
 @endsection
 
-@push('css')
-<style>
-/* Scores card: align like other summary boxes */
-.student-dash-scores.ot_crm_summeryBox {
-  align-items: center;
-}
-.student-dash-scores.ot_crm_summeryBox > .icon {
-  flex-shrink: 0;
-  align-self: center;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.student-dash-scores .summeryContent {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-</style>
-@endpush
-
-
 @section('content')
 <div class="page-content">
 
     @include('backend.partials.learning-engine-styles')
+
+    {{-- Profile hero — who this is, at a glance, always at the top --}}
+    <div class="bn-hero">
+        <img class="bn-hero__avatar" src="{{ @globalAsset(@$data['student']->user->upload->path, '100X100.webp') }}" alt="{{ @$data['student']->first_name }}">
+        <div style="min-width:0;">
+            <p class="bn-hero__eyebrow">{{ ___('common.welcome_back') }}</p>
+            <p class="bn-hero__name">{{ @$data['student']->first_name }} {{ @$data['student']->last_name }}</p>
+            <ul class="bn-hero__meta">
+                <li><i class="fa-solid fa-graduation-cap"></i> {{ @$data['student']->sessionStudentDetails->class->name }} ({{ @$data['student']->sessionStudentDetails->section->name }})</li>
+                <li><i class="fa-solid fa-id-card"></i> {{ ___('student_info.admission_no') }}: {{ @$data['student']->admission_no }}</li>
+                <li><i class="fa-solid fa-hashtag"></i> {{ ___('student_info.roll_no') }}: {{ @$data['student']->roll_no }}</li>
+                @if (@$data['student']->parent->guardian_name)
+                    <li><i class="fa-solid fa-user-tie"></i> {{ @$data['student']->parent->guardian_name }}</li>
+                @endif
+                @if (@$data['student']->mobile)
+                    <li><i class="fa-solid fa-phone"></i> {{ @$data['student']->mobile }}</li>
+                @endif
+            </ul>
+        </div>
+    </div>
+
+    {{-- Real figures only — Class/Subject/Teacher/Event/Marks are actual data;
+         no points, XP or rank here since that data doesn't exist yet (Brain
+         Level/XP is Phase 3, and a leaderboard is deliberately on hold until
+         there are real per-grade headcounts to make ranking meaningful). --}}
+    <div class="bn-stat-row">
+        <div class="bn-stat-tile">
+            <div class="bn-stat-tile__icon" style="background:#2563eb;"><i class="fa-solid fa-chalkboard"></i></div>
+            <div><div class="bn-stat-tile__value">{{ $data['totalClass'] }}</div><div class="bn-stat-tile__label">{{ ___('academic.class') }}</div></div>
+        </div>
+        <div class="bn-stat-tile">
+            <div class="bn-stat-tile__icon" style="background:#5e17eb;"><i class="fa-solid fa-book"></i></div>
+            <div><div class="bn-stat-tile__value">{{ $data['totalSubject'] }}</div><div class="bn-stat-tile__label">{{ ___('academic.subject') }}</div></div>
+        </div>
+        <div class="bn-stat-tile">
+            <div class="bn-stat-tile__icon" style="background:#d97706;"><i class="fa-solid fa-chalkboard-user"></i></div>
+            <div><div class="bn-stat-tile__value">{{ $data['totalTeacher'] }}</div><div class="bn-stat-tile__label">{{ ___('academic.teacher') }}</div></div>
+        </div>
+        <div class="bn-stat-tile">
+            <div class="bn-stat-tile__icon" style="background:#0097b2;"><i class="fa-solid fa-calendar-days"></i></div>
+            <div><div class="bn-stat-tile__value">{{ $data['totalEvent'] }}</div><div class="bn-stat-tile__label">{{ ___('settings.event') }}</div></div>
+        </div>
+        <div class="bn-stat-tile">
+            <div class="bn-stat-tile__icon" style="background:#16a34a;"><i class="fa-solid fa-star"></i></div>
+            <div><div class="bn-stat-tile__value">@if(($data['homework_total_marks'] ?? null) !== null){{ $data['homework_total_marks'] }}@else—@endif</div><div class="bn-stat-tile__label">{{ ___('examination.scores') }}</div></div>
+        </div>
+        @if (!empty($data['weekly_wins']) && $data['weekly_wins']['has_wins'])
+            <div class="bn-stat-tile">
+                <div class="bn-stat-tile__icon" style="background:#e8664f;"><i class="fa-solid fa-trophy"></i></div>
+                <div><div class="bn-stat-tile__value">{{ $data['weekly_wins']['mastered_titles']->count() }}</div><div class="bn-stat-tile__label">{{ ___('common.mastered_this_week') }}</div></div>
+            </div>
+        @endif
+    </div>
 
     @if (!empty($data['learning_home']))
         @php
@@ -146,121 +175,8 @@
         </div>
     @endif
 
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-5 g-3 mb-24">
-        <div class="col">
-            <div class="ot_crm_summeryBox d-flex align-items-center h-100">
-                <div class="icon">
-                    <img class="img-fluid" src="{{ global_asset('backend/assets/images/crm/crm_summery1.svg') }}" alt="">
-                </div>
-                <div class="summeryContent">
-                    <h4>{{ ___('academic.class') }}</h4>
-                    <h1>{{ $data['totalClass'] }}</h1>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="ot_crm_summeryBox d-flex align-items-center h-100">
-                <div class="icon">
-                    <img class="img-fluid" src="{{ global_asset('backend/assets/images/crm/crm_summery2.svg') }}" alt="">
-                </div>
-                <div class="summeryContent">
-                    <h4>{{ ___('academic.subject') }}</h4>
-                    <h1>{{ $data['totalSubject'] }}</h1>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="ot_crm_summeryBox d-flex align-items-center h-100">
-                <div class="icon">
-                    <img class="img-fluid" src="{{ global_asset('backend/assets/images/crm/crm_summery3.svg') }}" alt="">
-                </div>
-                <div class="summeryContent">
-                    <h4>{{ ___('academic.teacher') }}</h4>
-                    <h1>{{ $data['totalTeacher'] }}</h1>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="ot_crm_summeryBox d-flex align-items-center h-100">
-                <div class="icon">
-                    <img class="img-fluid" src="{{ global_asset('backend/assets/images/crm/crm_summery4.svg') }}" alt="">
-                </div>
-                <div class="summeryContent">
-                    <h4>{{ ___('settings.event') }}</h4>
-                    <h1>{{ $data['totalEvent'] }}</h1>
-                </div>
-            </div>
-        </div>
-        <div class="col">
-            <div class="ot_crm_summeryBox student-dash-scores d-flex h-100">
-                <div class="icon">
-                    <img class="img-fluid" src="{{ global_asset('backend/assets/images/crm/crm_summery2.svg') }}" alt="">
-                </div>
-                <div class="summeryContent">
-                    <h4>{{ ___('examination.scores') }}</h4>
-                    <h1>@if(($data['homework_total_marks'] ?? null) !== null){{ $data['homework_total_marks'] }}@else—@endif</h1>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <div class="row">
-        <div class="col-12 col-xl-6">
-            <div class="ot-card chart-card2 ot_heightFull mb-24">
-                <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap_10 card_header_border">
-                    <div class="card-title">
-                        <h4>{{___('student_info.student_info')}}</h4>
-                    </div>
-                </div>
-                <div class="card-body">
-                    <div class="row mb-3">
-                        <div class="col-sm-6">
-                            <img class="mt-2" width="100" height="100" src="{{ @globalAsset(@$data['student']->user->upload->path, '100X100.webp') }}" alt="{{ @$data['student']->first_name }}">
-                            <div class="d-flex justify-content-between align-content-center mb-3 mt-2">
-                                <div class="align-self-center">
-                                    <h5 class="title">{{ ___('student_info.student_name') }}</h5>
-                                    <p class="paragraph">{{ @$data['student']->first_name }} {{ @$data['student']->last_name }}</p>
-                                    <input type="hidden" name="student_id" id="student_id" value="{{ @$data['student']->id }}" />
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between align-content-center mb-3">
-                                <div class="align-self-center">
-                                    <h5 class="title">{{ ___('student_info.admission_no') }}</h5>
-                                    <p class="paragraph">{{ @$data['student']->admission_no }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="d-flex justify-content-between align-content-center mb-3">
-                                <div class="align-self-center">
-                                    <h5 class="title">{{ ___('academic.class') }} ({{ ___('academic.section') }})</h5>
-                                    <p class="paragraph">{{ @$data['student']->sessionStudentDetails->class->name }} ({{ @$data['student']->sessionStudentDetails->section->name }})</p>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between align-content-center mb-3">
-                                <div class="align-self-center">
-                                    <h5 class="title">{{ ___('student_info.roll_no') }}</h5>
-                                    <p class="paragraph">{{ @$data['student']->roll_no }}</p>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between align-content-center mb-3">
-                                <div class="align-self-center">
-                                    <h5 class="title">{{ ___('student_info.guardian_name') }}</h5>
-                                    <p class="paragraph">{{ @$data['student']->parent->guardian_name }}</p>
-                                </div>
-                            </div>
-                            <div class="d-flex justify-content-between align-content-center mb-3">
-                                <div class="align-self-center">
-                                    <h5 class="title">{{ ___('student_info.mobile_number') }}</h5>
-                                    <p class="paragraph">{{ @$data['student']->mobile }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-xl-6">
+        <div class="col-12">
             <div class="ot-card chart-card2 ot_heightFull mb-24">
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap_10 card_header_border">
                     <div class="card-title">
@@ -269,7 +185,7 @@
                 </div>
                 <div class="card-body">
                     <div class="event_upcoming_list">
-                        @foreach ($data['events'] as $item)
+                        @forelse ($data['events'] as $item)
                             <div class="event_upcoming_single d-flex align-items-center gap_20 flex-wrap">
                                 <div class="icon d-flex align-items-center flex-column justify-content-center">
                                     <h4>{{ date('d', strtotime($item->date)) }}</h4>
@@ -284,7 +200,9 @@
                                     </p>
                                 </div>
                             </div>
-                        @endforeach
+                        @empty
+                            <p class="gray-color mb-0">{{ ___('common.no_data_available') }}</p>
+                        @endforelse
                     </div>
                 </div>
             </div>

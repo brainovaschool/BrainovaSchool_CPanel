@@ -32,6 +32,7 @@ class DashboardController extends Controller
         if ($data && !empty($data['student'])) {
             try {
                 $data['learning_home'] = $this->learningHome->forStudent($data['student']);
+                $data['weekly_wins']   = $this->learningHome->weeklyWins($data['student']);
             } catch (\Throwable $th) {
                 report($th);
             }
