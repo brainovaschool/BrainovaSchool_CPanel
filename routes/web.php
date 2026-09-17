@@ -169,6 +169,9 @@ Route::middleware(saasMiddleware())->group(function () {
             // One-off: seed 5 students in one class, each with a distinct learning story, all given the same quiz/project/assignment by the demo teacher (admin-only + key).
             Route::get('/db/seed-five-student-cohort/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedFiveStudentCohort']);
 
+            // One-off: list every demo student/teacher/parent account and reset each to a known, fixed password (admin-only + key).
+            Route::get('/db/list-demo-credentials/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'listDemoCredentials']);
+
             Route::controller(LanguageController::class)->prefix('languages')->group(function () {
                 Route::get('/change',                   'changeLanguage')->name('languages.change');
             });

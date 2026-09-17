@@ -28,6 +28,8 @@ use App\Models\Staff\Staff;
 use App\Models\StudentInfo\ParentGuardian;
 use App\Models\StudentInfo\SessionClassStudent;
 use App\Models\StudentInfo\Student;
+use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use App\Repositories\LearningEngine\LearningEventRepository;
 use App\Repositories\LearningEngine\ReflectionJournalRepository;
 use App\Repositories\StudentInfo\ParentGuardianRepository;
@@ -1430,6 +1432,72 @@ class MigrationRunnerController extends Controller
         for ($i = 0; $i < $wrong; $i++) {
             $events->record($studentId, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillId, ['correct' => false, 'source' => 'demo_seed']);
         }
+    }
+
+    /** One-off, read+reset: lists every demo-prefixed account (students,
+     *  teachers, parents/guardians) created across this whole testing setup,
+     *  and resets each one's password to a fixed, known value. Several of
+     *  these accounts were originally created with a timestamp-based
+     *  password shown once in a response that's since scrolled away — this
+     *  makes every login recoverable in one place, any time. Safe to
+     *  re-run — only the password changes, no other data is touched. */
+    public function listDemoCredentials(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $studentPassword = 'Demo@12345';
+        $parentPassword  = 'Demo@12345';
+        $staffPassword   = '123456';
+
+        $resetPassword = function ($ownerWithUser, string $plain) {
+            $user = $ownerWithUser->user;
+            if ($user) {
+                $user->password = Hash::make($plain);
+                $user->save();
+            }
+        };
+
+        $lines = [];
+
+        $lines[] = '=== STUDENTS (password: ' . $studentPassword . ') ===';
+        $students = Student::where('email', 'like', 'demo.%')->with('user')->orderBy('id')->get();
+        foreach ($students as $s) {
+            $resetPassword($s, $studentPassword);
+            $lines[] = "{$s->first_name} {$s->last_name}  |  {$s->email}";
+        }
+        if ($students->isEmpty()) {
+            $lines[] = '(none found)';
+        }
+
+        $lines[] = '';
+        $lines[] = '=== TEACHERS (password: ' . $staffPassword . ') ===';
+        $teachers = Staff::where('email', 'like', 'demo.%')->with('user')->orderBy('id')->get();
+        foreach ($teachers as $t) {
+            $resetPassword($t, $staffPassword);
+            $lines[] = "{$t->first_name} {$t->last_name}  |  {$t->email}";
+        }
+        if ($teachers->isEmpty()) {
+            $lines[] = '(none found)';
+        }
+
+        $lines[] = '';
+        $lines[] = '=== PARENTS / GUARDIANS (password: ' . $parentPassword . ') ===';
+        $parents = ParentGuardian::where('guardian_email', 'like', 'demo.%')->with('user')->orderBy('id')->get();
+        foreach ($parents as $p) {
+            $resetPassword($p, $parentPassword);
+            $lines[] = "{$p->guardian_name}  |  {$p->guardian_email}";
+        }
+        if ($parents->isEmpty()) {
+            $lines[] = '(none found)';
+        }
+
+        return response('<pre style="font:14px/1.5 monospace;padding:24px">' . e(implode("\n", $lines)) . '</pre>');
     }
 
     /** Shows the tail of storage/logs/laravel.log in the browser, newest first —
