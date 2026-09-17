@@ -163,6 +163,12 @@ Route::middleware(saasMiddleware())->group(function () {
             // One-off: backdate one not-yet-mastered skill's last_practiced_at 6 days for the demo student, to demonstrate Kea's inactivity nudge (admin-only + key).
             Route::get('/db/seed-inactivity-nudge-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedInactivityNudgeDemo']);
 
+            // One-off: seed today's Reflection Journal entry for the demo student, so the dashboard section shows a filled, saved state (admin-only + key).
+            Route::get('/db/seed-reflection-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedReflectionDemo']);
+
+            // One-off: seed 5 students in one class, each with a distinct learning story, all given the same quiz/project/assignment by the demo teacher (admin-only + key).
+            Route::get('/db/seed-five-student-cohort/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedFiveStudentCohort']);
+
             Route::controller(LanguageController::class)->prefix('languages')->group(function () {
                 Route::get('/change',                   'changeLanguage')->name('languages.change');
             });

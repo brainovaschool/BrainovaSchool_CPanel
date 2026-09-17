@@ -14,18 +14,21 @@ use App\Models\StudentInfo\SessionClassStudent;
 use App\Repositories\StudentPanel\DashboardRepository;
 use App\Repositories\LearningEngine\LearningHomeRepository;
 use App\Repositories\LearningEngine\DailyGoalRepository;
+use App\Repositories\LearningEngine\ReflectionJournalRepository;
 
 class DashboardController extends Controller
 {
     private $repo;
     private $learningHome;
     private $dailyGoals;
+    private $reflectionJournal;
 
-    function __construct(DashboardRepository $repo, LearningHomeRepository $learningHome, DailyGoalRepository $dailyGoals)
+    function __construct(DashboardRepository $repo, LearningHomeRepository $learningHome, DailyGoalRepository $dailyGoals, ReflectionJournalRepository $reflectionJournal)
     {
-        $this->repo         = $repo;
-        $this->learningHome = $learningHome;
-        $this->dailyGoals   = $dailyGoals;
+        $this->repo              = $repo;
+        $this->learningHome      = $learningHome;
+        $this->dailyGoals        = $dailyGoals;
+        $this->reflectionJournal = $reflectionJournal;
     }
 
     public function index()
@@ -34,9 +37,10 @@ class DashboardController extends Controller
 
         if ($data && !empty($data['student'])) {
             try {
-                $data['learning_home'] = $this->learningHome->forStudent($data['student']);
-                $data['weekly_wins']   = $this->learningHome->weeklyWins($data['student']);
-                $data['daily_goals']   = $this->dailyGoals->forStudent($data['student']->id);
+                $data['learning_home']      = $this->learningHome->forStudent($data['student']);
+                $data['weekly_wins']        = $this->learningHome->weeklyWins($data['student']);
+                $data['daily_goals']        = $this->dailyGoals->forStudent($data['student']->id);
+                $data['reflection_today']   = $this->reflectionJournal->today($data['student']->id);
             } catch (\Throwable $th) {
                 report($th);
             }
@@ -53,6 +57,23 @@ class DashboardController extends Controller
         }
 
         $this->dailyGoals->setGoals($student->id, (array) $request->input('goals', []));
+
+        return redirect()->route('student-panel-dashboard.index')->with('success', ___('alert.updated_successfully'));
+    }
+
+    public function saveReflection(Request $request)
+    {
+        $student = optional(Auth::user())->student;
+        if (!$student) {
+            return redirect()->route('student-panel-dashboard.index');
+        }
+
+        $request->validate([
+            'what_was_hard' => 'nullable|string|max:1000|required_without:what_worked',
+            'what_worked'   => 'nullable|string|max:1000|required_without:what_was_hard',
+        ]);
+
+        $this->reflectionJournal->save($student->id, $request->input('what_was_hard'), $request->input('what_worked'));
 
         return redirect()->route('student-panel-dashboard.index')->with('success', ___('alert.updated_successfully'));
     }

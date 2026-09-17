@@ -311,6 +311,56 @@ PROMPT;
     }
 
     /**
+     * AI Fact-Checker (Phase 4): the student pastes a claim they read or
+     * heard somewhere, and Brainbot — methodical, precise, per his own
+     * established character — checks it instead of the student trusting it
+     * outright. Deliberately a 3-way verdict, not yes/no: "unclear" is a
+     * real, honest answer for a claim that can't be confidently checked,
+     * and teaches the actual habit (verify, don't just believe) rather than
+     * training the student to expect a confident answer every time.
+     * Returns ['ok' => true, 'verdict' => string, 'explanation' => string] or ['ok' => false, 'message' => string].
+     */
+    public function factCheck(string $claim): array
+    {
+        $prompt = <<<PROMPT
+You are Brainbot, a precise, methodical robot mascot on a school learning app. A student has pasted a claim they read or heard somewhere. Your job is to model good fact-checking habits for the student — not to just be a search engine.
+
+The claim:
+"{$claim}"
+
+Decide one of three verdicts:
+- "likely_true": well-established, verifiable fact
+- "likely_false": contradicts well-established facts
+- "unclear": opinion, unverifiable, depends on context, or you are not confident enough either way
+
+Then explain your reasoning in 2-3 short sentences, talking directly to the student ("you"), in Brainbot's calm, methodical voice. If the claim is unclear or unverifiable, say so plainly and suggest what kind of source would help check it (never invent a fake source or fake statistic).
+
+Respond with ONLY valid JSON (no markdown, no code fences) matching exactly this schema:
+{"verdict": "likely_true" or "likely_false" or "unclear", "explanation": "..."}
+PROMPT;
+
+        $result = $this->callGemini($prompt, true);
+        if (!$result['ok']) {
+            return $result;
+        }
+
+        $decoded = json_decode($result['text'], true);
+        if (!is_array($decoded) || !array_key_exists('explanation', $decoded)) {
+            return ['ok' => false, 'message' => 'Brainbot got a little confused reading that. Please try again.'];
+        }
+
+        $verdict = in_array($decoded['verdict'] ?? null, ['likely_true', 'likely_false', 'unclear'], true)
+            ? $decoded['verdict']
+            : 'unclear';
+
+        return [
+            'ok'          => true,
+            'verdict'     => $verdict,
+            'explanation' => (string) $decoded['explanation'],
+        ];
+    }
+
+    /**
      * $role: 'teacher' or 'student'. Reads that role's configured limit and
      * counts how many requests this user has already made in the current
      * period. Returns ['allowed' => true] or ['allowed' => false, 'message' => string].

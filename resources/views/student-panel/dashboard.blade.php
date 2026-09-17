@@ -179,6 +179,24 @@
 
                 <hr class="bn-divider">
 
+                <div class="bn-section-label"><i class="fa-solid fa-feather-pointed"></i> {{ ___('common.todays_reflection') }}</div>
+                <form action="{{ route('student-panel-dashboard.save-reflection') }}" method="post">
+                    @csrf
+                    @php $reflection = $data['reflection_today'] ?? null; @endphp
+                    <label class="form-label" style="font-size:.85rem;">{{ ___('common.what_was_hard_today') }}</label>
+                    <textarea name="what_was_hard" class="form-control ot-textarea mb-2" rows="2" maxlength="1000" placeholder="{{ ___('common.reflection_hard_placeholder') }}">{{ optional($reflection)->what_was_hard }}</textarea>
+
+                    <label class="form-label" style="font-size:.85rem;">{{ ___('common.what_strategy_worked_today') }}</label>
+                    <textarea name="what_worked" class="form-control ot-textarea mb-2" rows="2" maxlength="1000" placeholder="{{ ___('common.reflection_worked_placeholder') }}">{{ optional($reflection)->what_worked }}</textarea>
+
+                    <button type="submit" class="btn ot-btn-primary btn-sm">{{ ___('common.save_reflection') }}</button>
+                    @if ($reflection)
+                        <span class="bn-empty-note" style="margin-left:8px;"><i class="fa-solid fa-circle-check"></i> {{ ___('common.saved_today') }}</span>
+                    @endif
+                </form>
+
+                <hr class="bn-divider">
+
                 <div class="row g-4">
                     <div class="col-lg-7">
                         <div class="bn-section-label"><i class="fa-solid fa-route"></i> {{ ___('common.whats_next') }}</div>

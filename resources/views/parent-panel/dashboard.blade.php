@@ -142,8 +142,41 @@
         @endphp
         <div class="bn-panel">
             <div class="bn-panel__body">
-                <p class="bn-panel__eyebrow">{{ ___('common.learning_snapshot') }}</p>
-                <p class="bn-panel__title" style="margin-bottom:16px;">{{ @$data['student']->first_name }} {{ @$data['student']->last_name }}</p>
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2" style="margin-bottom:16px;">
+                    <div>
+                        <p class="bn-panel__eyebrow mb-0">{{ ___('common.learning_snapshot') }}</p>
+                        <p class="bn-panel__title mb-0">{{ @$data['student']->first_name }} {{ @$data['student']->last_name }}</p>
+                    </div>
+                    <a href="{{ route('parent-panel-dashboard.learning-guide') }}" class="btn btn-sm btn-outline-primary">
+                        <i class="fa-solid fa-circle-question me-1"></i> {{ ___('common.what_does_this_mean') }}
+                    </a>
+                </div>
+
+                @if (!empty($lh['brain_level']) || !empty($lh['knowledge_tree']))
+                    <div class="d-flex flex-wrap gap-3 align-items-stretch" style="margin-bottom:20px;">
+                        @if (!empty($lh['brain_level']))
+                            @php $bl = $lh['brain_level']; @endphp
+                            <div class="bn-level-badge" style="flex:0 0 auto;">
+                                <div class="bn-level-badge__top">
+                                    <i class="fa-solid fa-brain"></i>
+                                    <span class="bn-level-badge__num">{{ $bl['level'] }}</span>
+                                    <span class="bn-level-badge__label">{{ ___('common.brain_level') }}</span>
+                                </div>
+                                <div class="bn-level-badge__bar">
+                                    <div class="bn-level-badge__fill" style="width:{{ $bl['progress_pct'] }}%"></div>
+                                </div>
+                                <div class="bn-level-badge__xp">{{ $bl['xp_into_level'] }} / {{ $bl['xp_for_level'] }} XP {{ ___('common.to_next_level') }}</div>
+                            </div>
+                        @endif
+                        @if (!empty($lh['knowledge_tree']))
+                            @php $kt = $lh['knowledge_tree']; @endphp
+                            <div class="bn-stat-tile bn-stat-tile--tree" style="flex:0 0 auto;">
+                                <div class="bn-stat-tile__emoji">{{ $kt['emoji'] }}</div>
+                                <div><div class="bn-stat-tile__value" style="font-size:0.95rem;">{{ $kt['label'] }}</div><div class="bn-stat-tile__label">{{ $kt['active_days'] }} {{ ___('common.days_growing') }}</div></div>
+                            </div>
+                        @endif
+                    </div>
+                @endif
 
                 <div class="row g-4">
                     <div class="col-lg-7">
@@ -190,6 +223,59 @@
                         </div>
                     </div>
                 </div>
+
+                @if (!empty($lh['badges']) || !empty($lh['personal_best']))
+                    <hr class="bn-divider">
+                    <div class="row g-4">
+                        @if (!empty($lh['badges']))
+                            <div class="col-lg-7">
+                                <div class="bn-section-label"><i class="fa-solid fa-award"></i> {{ ___('common.badges') }}</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach ($lh['badges'] as $badge)
+                                        <span class="bn-badge bn-badge--{{ $badge['tier'] }}">
+                                            <i class="fa-solid fa-medal"></i> {{ ucfirst($badge['tier']) }} {{ $badge['subject'] }} Explorer
+                                            <span class="bn-badge__count">· {{ $badge['count'] }}</span>
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+                        @if (!empty($lh['personal_best']))
+                            @php $pb = $lh['personal_best']; @endphp
+                            <div class="col-lg-5">
+                                <div class="bn-section-label"><i class="fa-solid fa-chart-line"></i> {{ ___('common.personal_best') }}</div>
+                                <div class="bn-personal-best">
+                                    <div class="bn-personal-best__figure">
+                                        <div class="bn-personal-best__num">{{ $pb['last_week'] }}%</div>
+                                        <div class="bn-personal-best__label">{{ ___('common.last_week') }}</div>
+                                    </div>
+                                    <i class="fa-solid fa-arrow-right bn-personal-best__arrow"></i>
+                                    <div class="bn-personal-best__figure">
+                                        <div class="bn-personal-best__num">{{ $pb['this_week'] }}%</div>
+                                        <div class="bn-personal-best__label">{{ ___('common.this_week') }}</div>
+                                    </div>
+                                    <span class="bn-personal-best__delta @if($pb['delta'] > 0) bn-personal-best__delta--up @elseif($pb['delta'] < 0) bn-personal-best__delta--down @else bn-personal-best__delta--flat @endif">
+                                        {{ $pb['delta'] > 0 ? '+' : '' }}{{ $pb['delta'] }}%
+                                    </span>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+                @endif
+
+                @if (!empty($lh['verified_skills']))
+                    <hr class="bn-divider">
+                    <div class="bn-section-label"><i class="fa-solid fa-certificate"></i> {{ ___('common.verified_skills') }}</div>
+                    <div class="bn-verified-grid">
+                        @foreach ($lh['verified_skills'] as $vs)
+                            <div class="bn-verified-card">
+                                <div class="bn-verified-card__badge"><i class="fa-solid fa-circle-check"></i> {{ ___('common.verified') }}</div>
+                                <div class="bn-verified-card__title">{{ $vs['skill']->title }}</div>
+                                <div class="bn-verified-card__meta">{{ $vs['skill']->subject->name ?? '' }} · {{ $vs['accuracy'] }}% · {{ $vs['mastered_at']->format('d M Y') }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </div>
     @endif

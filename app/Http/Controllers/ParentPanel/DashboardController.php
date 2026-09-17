@@ -53,6 +53,15 @@ class DashboardController extends Controller
         }
     }
 
+    /** Plain-language explainer for everything the Learning Snapshot panel
+     *  shows — Brain Level, Knowledge Tree, mastery stages, badges, etc.
+     *  Static content, no student-specific data needed. */
+    public function learningGuide()
+    {
+        $data['title'] = ___('common.understanding_your_childs_dashboard');
+        return view('parent-panel.learning-guide', compact('data'));
+    }
+
     public function searchParentMenuData(Request $request){
         try {
             $search = Search::query()

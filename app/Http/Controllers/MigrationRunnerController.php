@@ -29,6 +29,7 @@ use App\Models\StudentInfo\ParentGuardian;
 use App\Models\StudentInfo\SessionClassStudent;
 use App\Models\StudentInfo\Student;
 use App\Repositories\LearningEngine\LearningEventRepository;
+use App\Repositories\LearningEngine\ReflectionJournalRepository;
 use App\Repositories\StudentInfo\ParentGuardianRepository;
 use App\Repositories\StudentInfo\StudentRepository;
 use App\Repositories\UserRepository;
@@ -1032,6 +1033,350 @@ class MigrationRunnerController extends Controller
             . "in addition to her usual welcome/Brain Level/next-action lines.\n"
             . "</pre>"
         );
+    }
+
+    /** One-off: seeds today's reflection journal entry for the demo student,
+     *  so the "Today's Reflection" section on the dashboard shows a filled,
+     *  saved state (and its +10 XP) without hand-typing it. Skips silently
+     *  if today's entry already exists, matching the repository's own
+     *  one-entry-per-day rule — running this twice never double-awards XP. */
+    public function seedReflectionDemo(string $key, ReflectionJournalRepository $journal)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $student = Student::where('email', 'like', 'demo.student.%')->latest('id')->first();
+        if (!$student) {
+            return response('No demo student found yet — visit /db/create-demo-student/' . self::KEY . ' first.', 422);
+        }
+
+        $alreadyToday = (bool) $journal->today($student->id);
+
+        $journal->save(
+            $student->id,
+            'Remembering the steps for long division without mixing up the order.',
+            'Writing each step down on paper before doing it in my head helped a lot.'
+        );
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Reflection journal demo data for: {$student->first_name} {$student->last_name} ({$student->email})\n\n"
+            . ($alreadyToday
+                ? "Today's entry already existed — updated in place, no extra XP (one entry per day, by design)\n"
+                : "Saved today's entry — +10 XP\n")
+            . "\nExpected on the dashboard: the \"Today's Reflection\" section (below Today's Goals) should show\n"
+            . "both answers filled in, with a \"Saved today\" checkmark next to the Save button.\n"
+            . "</pre>"
+        );
+    }
+
+    /** One-off: the big one — 5 students in ONE class, each with a distinct
+     *  learning story, all given the SAME quiz/project/assignment by the
+     *  same demo teacher, graded with real (simulated) marks. The point is
+     *  contrast: log in as each one and the dashboards should look
+     *  genuinely different from each other, driven entirely by real
+     *  event-log data — nothing hardcoded per dashboard.
+     *
+     *  The 5 stories:
+     *    Aliza Khan   — the star: masters 3 skills, high Brain Level, badge.
+     *    Bilal Ahmed  — steady average: partial accuracy, still developing.
+     *    Sara Malik   — struggling: repeated wrong answers on one skill,
+     *                   trips the Silent Struggle Detector.
+     *    Usman Tariq  — comeback story: mastered 2 skills 10 days ago, then
+     *                   went quiet — comeback greeting + inactivity nudge.
+     *    Zara Iqbal   — brand new: only turned in the assignment so far,
+     *                   quiz/project still pending, almost no learning data.
+     *
+     *  Fully idempotent per student — safe to re-visit; each student is
+     *  skipped once they already have any learning event or homework
+     *  submission recorded. */
+    public function seedFiveStudentCohort(string $key, StudentRepository $studentRepo, LearningEventRepository $events)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $class = Classes::first();
+        if (!$class) {
+            return response('No class exists yet — create at least one Class (Academic → Classes) first.', 422);
+        }
+        $section = Section::first();
+        $subject = Subject::first();
+        if (!$subject) {
+            return response('No subject exists yet — create at least one Subject first.', 422);
+        }
+
+        $teacher = Staff::where('email', 'like', 'demo.teacher.%')->latest('id')->first();
+        if (!$teacher) {
+            return response('No demo teacher found yet — visit /db/create-demo-family/' . self::KEY . ' first (needs a demo student to already exist too — /db/create-demo-student/' . self::KEY . ').', 422);
+        }
+        $createdBy = $teacher->user_id;
+        $sessionId = setting('session');
+        $today     = now()->format('Y-m-d');
+
+        // ---- 1. Students (fixed emails so re-visiting this URL is safe) ----
+        $roster = [
+            'star'       => ['first' => 'Aliza', 'last' => 'Khan'],
+            'average'    => ['first' => 'Bilal', 'last' => 'Ahmed'],
+            'struggling' => ['first' => 'Sara',  'last' => 'Malik'],
+            'comeback'   => ['first' => 'Usman', 'last' => 'Tariq'],
+            'new'        => ['first' => 'Zara',  'last' => 'Iqbal'],
+        ];
+
+        $studentsByRole = [];
+        $created        = [];
+        foreach ($roster as $role => $person) {
+            $email = "demo.cohort.{$role}@brainovaschool.com";
+            $student = Student::where('email', $email)->first();
+
+            if (!$student) {
+                $fake = new \Illuminate\Http\Request();
+                $fake->merge([
+                    'first_name'        => $person['first'],
+                    'last_name'         => $person['last'],
+                    'email'             => $email,
+                    'mobile'            => '0300000' . random_int(1000, 9999),
+                    'admission_no'      => 'COHORT-' . strtoupper($role),
+                    'password_type'     => 'custom',
+                    'password'          => 'Demo@12345',
+                    'date_of_birth'     => '2015-01-01',
+                    'admission_date'    => now()->format('Y-m-d'),
+                    'status'            => 1,
+                    'class'             => $class->id,
+                    'section'           => optional($section)->id ?? '',
+                    'siblings_discount' => 0,
+                ]);
+
+                $result = $studentRepo->store($fake);
+                if (!$result['status']) {
+                    return response("Could not create student for role \"{$role}\": " . $result['message'], 422);
+                }
+                $student   = Student::where('email', $email)->latest('id')->first();
+                $created[] = "{$person['first']} {$person['last']} ({$role})";
+            }
+
+            $studentsByRole[$role] = $student;
+        }
+
+        // ---- 2. Skills used across the cohort ----
+        $skillA = Skill::firstOrCreate(
+            ['title' => 'Two-Digit Addition', 'classes_id' => $class->id, 'subject_id' => $subject->id],
+            ['slug' => 'cohort-two-digit-addition-' . $class->id, 'sort_order' => 20, 'status' => 1]
+        );
+        $skillB = Skill::firstOrCreate(
+            ['title' => 'Fractions Basics', 'classes_id' => $class->id, 'subject_id' => $subject->id],
+            ['slug' => 'cohort-fractions-basics-' . $class->id, 'sort_order' => 21, 'status' => 1]
+        );
+        $skillC = Skill::firstOrCreate(
+            ['title' => 'Multiplication Tables', 'classes_id' => $class->id, 'subject_id' => $subject->id],
+            ['slug' => 'cohort-multiplication-tables-' . $class->id, 'sort_order' => 22, 'status' => 1]
+        );
+
+        // ---- 3. Homework — one quiz, one project, one assignment, shared by the whole class ----
+        $quizId = DB::table('homework')->where('title', 'Cohort Math Quiz')->where('classes_id', $class->id)->value('id');
+        if (!$quizId) {
+            $quizId = DB::table('homework')->insertGetId([
+                'session_id' => $sessionId, 'classes_id' => $class->id, 'section_id' => optional($section)->id,
+                'subject_id' => $subject->id, 'title' => 'Cohort Math Quiz', 'topic' => 'Addition & Fractions',
+                'task_type' => 'quiz', 'date' => $today, 'submission_date' => now()->addDays(3)->format('Y-m-d'),
+                'marks' => 30, 'description' => 'Class quiz covering two tagged skills.', 'status' => 1,
+                'created_by' => $createdBy, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+        $questions = [
+            ['question' => 'What is 27 + 15?', 'option_a' => '42', 'option_b' => '32', 'option_c' => '45', 'option_d' => '52', 'correct_answer' => 'A', 'skill_id' => $skillA->id],
+            ['question' => 'What is 48 + 36?', 'option_a' => '74', 'option_b' => '84', 'option_c' => '94', 'option_d' => '64', 'correct_answer' => 'B', 'skill_id' => $skillA->id],
+            ['question' => 'What is 1/2 + 1/4?', 'option_a' => '1/6', 'option_b' => '2/6', 'option_c' => '3/4', 'option_d' => '1/2', 'correct_answer' => 'C', 'skill_id' => $skillB->id],
+            ['question' => 'Which country has the most population?', 'option_a' => 'USA', 'option_b' => 'India', 'option_c' => 'Brazil', 'option_d' => 'Russia', 'correct_answer' => 'B', 'skill_id' => null],
+        ];
+        $questionIds = DB::table('homework_quiz_questions')->where('homework_id', $quizId)->orderBy('id')->pluck('id')->all();
+        if (count($questionIds) !== count($questions)) {
+            $questionIds = [];
+            foreach ($questions as $q) {
+                $questionIds[] = DB::table('homework_quiz_questions')->insertGetId([
+                    'homework_id' => $quizId, 'skill_id' => $q['skill_id'], 'question' => $q['question'],
+                    'option_a' => $q['option_a'], 'option_b' => $q['option_b'], 'option_c' => $q['option_c'], 'option_d' => $q['option_d'],
+                    'correct_answer' => $q['correct_answer'], 'created_at' => now(), 'updated_at' => now(),
+                ]);
+            }
+        }
+
+        $projectId = DB::table('homework')->where('title', 'Cohort Science Project')->where('classes_id', $class->id)->value('id');
+        if (!$projectId) {
+            $projectId = DB::table('homework')->insertGetId([
+                'session_id' => $sessionId, 'classes_id' => $class->id, 'section_id' => optional($section)->id,
+                'subject_id' => $subject->id, 'title' => 'Cohort Science Project', 'topic' => 'Water Cycle Model',
+                'task_type' => 'project', 'date' => $today, 'submission_date' => now()->addDays(7)->format('Y-m-d'),
+                'marks' => 50, 'description' => 'Build a simple water-cycle model and explain each stage.', 'status' => 1,
+                'created_by' => $createdBy, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+
+        $assignmentId = DB::table('homework')->where('title', 'Cohort Reading Assignment')->where('classes_id', $class->id)->value('id');
+        if (!$assignmentId) {
+            $assignmentId = DB::table('homework')->insertGetId([
+                'session_id' => $sessionId, 'classes_id' => $class->id, 'section_id' => optional($section)->id,
+                'subject_id' => $subject->id, 'title' => 'Cohort Reading Assignment', 'topic' => 'Chapter 4 Summary',
+                'task_type' => 'assignment', 'date' => $today, 'submission_date' => now()->addDays(2)->format('Y-m-d'),
+                'marks' => 20, 'description' => 'Write a one-page summary of chapter 4.', 'status' => 1,
+                'created_by' => $createdBy, 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+
+        // ---- 4. Each student submits + gets graded, per their story ----
+        $report = [];
+
+        foreach ($studentsByRole as $role => $student) {
+            $alreadySeeded = LearningEvent::where('student_id', $student->id)->exists()
+                || DB::table('homework_students')->where('student_id', $student->id)->exists();
+
+            if ($alreadySeeded) {
+                $report[] = ucfirst($role) . " ({$student->first_name} {$student->last_name}): already seeded — skipped";
+                continue;
+            }
+
+            switch ($role) {
+                case 'star':
+                    $marks = $this->simulateQuizSubmission($student->id, $quizId, $questionIds, $questions, ['A', 'B', 'C', 'B'], $events);
+                    $this->practiceSkill($student->id, $skillA->id, 8, 8, $events);
+                    $this->practiceSkill($student->id, $skillB->id, 8, 8, $events);
+                    $this->practiceSkill($student->id, $skillC->id, 8, 8, $events);
+                    DB::table('homework_students')->insert([
+                        ['student_id' => $student->id, 'homework_id' => $projectId, 'homework' => null, 'marks' => 48, 'date' => $today, 'created_at' => now(), 'updated_at' => now()],
+                        ['student_id' => $student->id, 'homework_id' => $assignmentId, 'homework' => null, 'marks' => 19, 'date' => $today, 'created_at' => now(), 'updated_at' => now()],
+                    ]);
+                    $report[] = "Aliza Khan (star): quiz {$marks}/30, project 48/50, assignment 19/20 — 3 skills mastered (Bronze badge expected), high Brain Level";
+                    break;
+
+                case 'average':
+                    $marks = $this->simulateQuizSubmission($student->id, $quizId, $questionIds, $questions, ['A', 'A', 'C', 'A'], $events);
+                    $this->practiceSkill($student->id, $skillA->id, 2, 1, $events); // +2 correct, +1 wrong on top of the quiz's 1 correct/1 wrong
+                    DB::table('homework_students')->insert([
+                        ['student_id' => $student->id, 'homework_id' => $projectId, 'homework' => null, 'marks' => 35, 'date' => $today, 'created_at' => now(), 'updated_at' => now()],
+                        ['student_id' => $student->id, 'homework_id' => $assignmentId, 'homework' => null, 'marks' => 14, 'date' => $today, 'created_at' => now(), 'updated_at' => now()],
+                    ]);
+                    $report[] = "Bilal Ahmed (average): quiz {$marks}/30, project 35/50, assignment 14/20 — skills still developing, no mastery yet";
+                    break;
+
+                case 'struggling':
+                    $marks = $this->simulateQuizSubmission($student->id, $quizId, $questionIds, $questions, ['B', 'A', 'A', 'A'], $events);
+                    $this->practiceSkill($student->id, $skillA->id, 0, 2, $events); // 2 more wrong attempts on top of the quiz's 0/2
+                    DB::table('homework_students')->insert([
+                        ['student_id' => $student->id, 'homework_id' => $projectId, 'homework' => null, 'marks' => 20, 'date' => $today, 'created_at' => now(), 'updated_at' => now()],
+                        ['student_id' => $student->id, 'homework_id' => $assignmentId, 'homework' => null, 'marks' => 8, 'date' => $today, 'created_at' => now(), 'updated_at' => now()],
+                    ]);
+                    $report[] = "Sara Malik (struggling): quiz {$marks}/30, project 20/50, assignment 8/20 — Two-Digit Addition should trip the Silent Struggle Detector";
+                    break;
+
+                case 'comeback':
+                    $marks = $this->simulateQuizSubmission($student->id, $quizId, $questionIds, $questions, ['A', 'B', 'C', 'B'], $events);
+                    $this->practiceSkill($student->id, $skillA->id, 8, 0, $events);
+                    $this->practiceSkill($student->id, $skillB->id, 8, 0, $events);
+                    DB::table('homework_students')->insert([
+                        ['student_id' => $student->id, 'homework_id' => $projectId, 'homework' => null, 'marks' => 45, 'date' => $today, 'created_at' => now(), 'updated_at' => now()],
+                        ['student_id' => $student->id, 'homework_id' => $assignmentId, 'homework' => null, 'marks' => 17, 'date' => $today, 'created_at' => now(), 'updated_at' => now()],
+                    ]);
+
+                    // Push everything 10 days into the past — mastered, then went quiet.
+                    $backdate = now()->subDays(10);
+                    LearningEvent::where('student_id', $student->id)->update(['created_at' => $backdate, 'updated_at' => $backdate]);
+                    StudentSkillMastery::where('student_id', $student->id)->update([
+                        'last_practiced_at' => $backdate, 'mastered_at' => $backdate, 'next_review_at' => $backdate->copy()->addDays(7),
+                    ]);
+                    DB::table('homework_students')->where('student_id', $student->id)->update(['created_at' => $backdate, 'updated_at' => $backdate, 'date' => $backdate->format('Y-m-d')]);
+                    DB::table('homework_quiz_answers')->where('student_id', $student->id)->update(['created_at' => $backdate, 'updated_at' => $backdate]);
+
+                    $report[] = "Usman Tariq (comeback): quiz {$marks}/30, project 45/50, assignment 17/20 — mastered 2 skills, then everything backdated 10 days (comeback greeting + inactivity nudge expected)";
+                    break;
+
+                case 'new':
+                    // Deliberately only the assignment — quiz and project left
+                    // pending, almost no learning-engine data at all yet.
+                    DB::table('homework_students')->insert([
+                        'student_id' => $student->id, 'homework_id' => $assignmentId, 'homework' => null, 'marks' => 15, 'date' => $today, 'created_at' => now(), 'updated_at' => now(),
+                    ]);
+                    $report[] = 'Zara Iqbal (new): only the assignment turned in (15/20) — quiz and project still pending, Brain Level 1, Knowledge Tree still a Seed';
+                    break;
+            }
+        }
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "5-student cohort seeded in class: {$class->name}" . ($section ? " ({$section->name})" : '') . "\n\n"
+            . (count($created) ? "Created: " . implode(', ', $created) . "\n\n" : "All 5 students already existed — reused them\n\n")
+            . implode("\n", $report) . "\n\n"
+            . "All 5 log in with password: Demo@12345\n"
+            . "Emails: demo.cohort.star@ / demo.cohort.average@ / demo.cohort.struggling@ / demo.cohort.comeback@ / demo.cohort.new@brainovaschool.com\n\n"
+            . "Check as the demo TEACHER: Homework & Tasks -> \"Cohort Math Quiz\" / \"Cohort Science Project\" / \"Cohort Reading Assignment\"\n"
+            . "  should each show submissions from 4 of the 5 students (Zara only submitted the assignment), with real, varied marks.\n"
+            . "  Skill Mastery Report -> this class should show 5 very different rows (mastery counts + who's flagged as struggling).\n"
+            . "Check as each STUDENT: dashboards should look genuinely different — compare Brain Level, Knowledge Tree stage,\n"
+            . "  badges, Next Best Action, and (for Usman) the comeback greeting + Kea's inactivity nudge on tap.\n"
+            . "</pre>"
+        );
+    }
+
+    /** Shared by seedHomeworkDemo-style methods: grades one student's quiz
+     *  submission against a fixed answer key, inserting homework_students +
+     *  homework_quiz_answers exactly as submitInteractiveQuiz() does, then
+     *  records a learning event for every skill-tagged question — after the
+     *  "submission" rows exist, matching the real controller's post-commit
+     *  ordering. Returns the earned marks. */
+    private function simulateQuizSubmission(int $studentId, int $quizId, array $questionIds, array $questions, array $studentAnswers, LearningEventRepository $events): float
+    {
+        $marksPerQ  = 30 / count($questions);
+        $earned     = 0;
+        $answerRows = [];
+        $skillEvents = [];
+
+        foreach ($questions as $i => $q) {
+            $isCorrect = strtoupper($studentAnswers[$i]) === strtoupper($q['correct_answer']);
+            if ($isCorrect) {
+                $earned += $marksPerQ;
+            }
+            $answerRows[] = [
+                'homework_id' => $quizId, 'student_id' => $studentId, 'question_id' => $questionIds[$i],
+                'selected_answer' => $studentAnswers[$i], 'is_correct' => $isCorrect ? 1 : 0,
+                'created_at' => now(), 'updated_at' => now(),
+            ];
+            if ($q['skill_id']) {
+                $skillEvents[] = ['skill_id' => $q['skill_id'], 'correct' => $isCorrect];
+            }
+        }
+
+        DB::table('homework_students')->insert([
+            'student_id' => $studentId, 'homework_id' => $quizId, 'homework' => null,
+            'marks' => round($earned, 2), 'date' => now()->format('Y-m-d'), 'created_at' => now(), 'updated_at' => now(),
+        ]);
+        DB::table('homework_quiz_answers')->insert($answerRows);
+
+        foreach ($skillEvents as $event) {
+            $events->record($studentId, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $event['skill_id'], ['correct' => $event['correct'], 'source' => 'homework_quiz']);
+        }
+
+        return round($earned, 2);
+    }
+
+    /** Records $correct correct-answer events followed by $wrong wrong-answer
+     *  events for one skill — extra practice on top of a quiz, e.g. to push
+     *  a skill to "advanced" or to demonstrate the Silent Struggle Detector. */
+    private function practiceSkill(int $studentId, int $skillId, int $correct, int $wrong, LearningEventRepository $events): void
+    {
+        for ($i = 0; $i < $correct; $i++) {
+            $events->record($studentId, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillId, ['correct' => true, 'source' => 'demo_seed']);
+        }
+        for ($i = 0; $i < $wrong; $i++) {
+            $events->record($studentId, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skillId, ['correct' => false, 'source' => 'demo_seed']);
+        }
     }
 
     /** Shows the tail of storage/logs/laravel.log in the browser, newest first —

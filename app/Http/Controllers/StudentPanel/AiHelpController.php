@@ -85,4 +85,22 @@ class AiHelpController extends Controller
 
         return response()->json($result);
     }
+
+    public function factCheck(Request $request)
+    {
+        $request->validate(['claim' => 'required|string|max:1000']);
+
+        $check = $this->repo->checkLimit(Auth::id(), 'student');
+        if (!$check['allowed']) {
+            return response()->json(['ok' => false, 'message' => $check['message']], 429);
+        }
+
+        $result = $this->repo->factCheck($request->input('claim'));
+
+        if ($result['ok']) {
+            $this->repo->logUsage(Auth::id(), Auth::user()->name, 'student', 'fact_check', $request->input('claim'));
+        }
+
+        return response()->json($result);
+    }
 }

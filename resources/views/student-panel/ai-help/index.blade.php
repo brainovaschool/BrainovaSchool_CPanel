@@ -34,9 +34,8 @@
         <div class="card ot-card mt-4">
             <div class="card-body">
                 <div class="d-flex align-items-center gap-3 mb-4">
-                    @php($keaImage = \App\Support\Character::image('kea'))
-                    @if ($keaImage)
-                        <img src="{{ globalAsset($keaImage) }}" alt="Kea" style="height:70px;border-radius:50%;">
+                    @if ($data['mascot'])
+                        <img src="{{ $data['mascot'] }}" alt="Kea" style="height:70px;border-radius:50%;">
                     @endif
                     <div>
                         <h4 class="mb-1">Teach Kea</h4>
@@ -66,6 +65,32 @@
                         <div id="teachKeaAnswer" class="mt-4 p-3 rounded" style="display:none;line-height:1.6;"></div>
                     </form>
                 @endif
+            </div>
+        </div>
+
+        <div class="card ot-card mt-4">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-4">
+                    @php($brainbotImage = setting('ai_helper_teacher_mascot') ? globalAsset(setting('ai_helper_teacher_mascot')) : null)
+                    @if ($brainbotImage)
+                        <img src="{{ $brainbotImage }}" alt="Brainbot" style="height:70px;border-radius:50%;">
+                    @endif
+                    <div>
+                        <h4 class="mb-1">AI Fact-Checker</h4>
+                        <p class="text-secondary mb-0">Read or heard something and not sure it's true? Paste it below — Brainbot checks it instead of you just trusting it.</p>
+                    </div>
+                </div>
+
+                <form id="factCheckForm">
+                    @csrf
+                    <label class="form-label">What's the claim?</label>
+                    <textarea id="factCheckClaim" class="form-control ot-textarea mb-3" rows="3"
+                        placeholder="e.g. Goldfish only have a 3-second memory" required></textarea>
+
+                    <button type="submit" id="factCheckBtn" class="btn ot-btn-primary">Check It</button>
+
+                    <div id="factCheckAnswer" class="mt-4 p-3 rounded" style="display:none;line-height:1.6;"></div>
+                </form>
             </div>
         </div>
     </div>
@@ -170,6 +195,76 @@
                             answer.style.color = '#1e293b';
                             answer.innerHTML = '<strong>🐦 Kea (+10 XP for trying)</strong><br>' + escapeHtml(data.feedback);
                         }
+                    } else {
+                        answer.style.background = '#fff1f2';
+                        answer.style.color = '#b91c1c';
+                        answer.textContent = data.message || 'Something went wrong. Please try again.';
+                    }
+                })
+                .catch(function () {
+                    answer.style.background = '#fff1f2';
+                    answer.style.color = '#b91c1c';
+                    answer.textContent = 'Something went wrong. Please try again.';
+                })
+                .finally(function () {
+                    btn.disabled = false;
+                });
+            });
+        })();
+
+        (function () {
+            var form   = document.getElementById('factCheckForm');
+            if (!form) return;
+
+            var claim  = document.getElementById('factCheckClaim');
+            var btn    = document.getElementById('factCheckBtn');
+            var answer = document.getElementById('factCheckAnswer');
+
+            var verdictLabels = {
+                likely_true:  '✅ Likely true',
+                likely_false: '❌ Likely false',
+                unclear:      '❓ Unclear — needs a real source'
+            };
+            var verdictColors = {
+                likely_true:  { bg: '#e8f7ef', fg: '#1e293b' },
+                likely_false: { bg: '#fff1f2', fg: '#1e293b' },
+                unclear:      { bg: '#fff8e6', fg: '#1e293b' }
+            };
+
+            function escapeHtml(text) {
+                var div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                var token = form.querySelector('input[name="_token"]').value;
+
+                btn.disabled = true;
+                answer.style.display = 'block';
+                answer.style.background = '#eaf2ff';
+                answer.style.color = '#1e40af';
+                answer.textContent = 'Brainbot is checking…';
+
+                fetch('{{ route('student-panel-ai-help.fact-check') }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ claim: claim.value })
+                })
+                .then(function (response) { return response.json(); })
+                .then(function (data) {
+                    if (data.ok) {
+                        var colors = verdictColors[data.verdict] || verdictColors.unclear;
+                        var label  = verdictLabels[data.verdict] || verdictLabels.unclear;
+                        answer.style.background = colors.bg;
+                        answer.style.color = colors.fg;
+                        answer.innerHTML = '<strong>🤖 ' + label + '</strong><br>' + escapeHtml(data.explanation);
                     } else {
                         answer.style.background = '#fff1f2';
                         answer.style.color = '#b91c1c';

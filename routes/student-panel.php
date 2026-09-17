@@ -31,12 +31,14 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::get('/', 'index')->name('student-panel-dashboard.index');
                         Route::post('search-student-menu-data', 'searchStudentMenuData')->name('search-student-menu-data');
                         Route::post('daily-goals', 'saveDailyGoals')->name('student-panel-dashboard.save-daily-goals');
+                        Route::post('reflection', 'saveReflection')->name('student-panel-dashboard.save-reflection');
                     });
 
                     Route::controller(AiHelpController::class)->prefix('student-panel-ai-help')->group(function () {
                         Route::get('/',            'index')->name('student-panel-ai-help.index');
                         Route::post('/ask',        'ask')->name('student-panel-ai-help.ask');
                         Route::post('/teach-kea',  'teachKea')->name('student-panel-ai-help.teach-kea');
+                        Route::post('/fact-check', 'factCheck')->name('student-panel-ai-help.fact-check');
                     });
 
                     Route::controller(ProfileController::class)->prefix('student-panel')->group(function () {

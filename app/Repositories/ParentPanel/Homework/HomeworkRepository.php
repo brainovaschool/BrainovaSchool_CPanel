@@ -56,6 +56,14 @@ class HomeworkRepository implements HomeworkInterface
                     ->first();
             }
 
+            // A child was already selected in an earlier request (session
+            // carried it over) — load their homework now too, instead of
+            // leaving the page showing 0/0/0 until the parent re-clicks the
+            // child card to fire search() again.
+            if ($data['student']) {
+                $data['homeworks'] = $this->loadHomeworkFor($data['student']);
+            }
+
             return $data;
 
         } catch (\Throwable $th) {
@@ -95,40 +103,49 @@ class HomeworkRepository implements HomeworkInterface
                 return $data;
             }
 
-            // Resolve current class/section for this child
-            $classSection = SessionClassStudent::where('session_id', setting('session'))
-                ->where('student_id', $studentId)
-                ->latest()
-                ->first();
-
-            if (!$classSection) {
-                return $data;
-            }
-
-            // Load active homework only for this child's class/section
-            $homeworks = $this->model::with(['subject', 'class', 'section', 'upload'])
-                ->active()
-                ->where('session_id', setting('session'))
-                ->where('classes_id', $classSection->classes_id)
-                ->where('section_id', $classSection->section_id)
-                ->orderByDesc('id')
-                ->get();
-
-            // Attach submission record to each homework row
-            $homeworks->transform(function ($hw) use ($studentId) {
-                $hw->submission_record = HomeworkStudent::where('homework_id', $hw->id)
-                    ->where('student_id', $studentId)
-                    ->first();
-                return $hw;
-            });
-
-            $data['homeworks'] = $homeworks;
+            $data['homeworks'] = $this->loadHomeworkFor($data['student']);
             return $data;
 
         } catch (\Throwable $th) {
             \Log::error('Parent Homework Search Error: ' . $th->getMessage());
             return $data;
         }
+    }
+
+    /** Shared by indexParent() (session-restored child) and search() (freshly
+     *  picked child) so both paths load homework the same way. Submission
+     *  records are batch-loaded with one whereIn + keyBy, not one query per
+     *  homework row. */
+    private function loadHomeworkFor(Student $student)
+    {
+        $classSection = SessionClassStudent::where('session_id', setting('session'))
+            ->where('student_id', $student->id)
+            ->latest()
+            ->first();
+
+        if (!$classSection) {
+            return collect();
+        }
+
+        $homeworks = $this->model::with(['subject', 'class', 'section', 'upload'])
+            ->active()
+            ->where('session_id', setting('session'))
+            ->where('classes_id', $classSection->classes_id)
+            ->where('section_id', $classSection->section_id)
+            ->orderByDesc('id')
+            ->get();
+
+        $submissions = HomeworkStudent::where('student_id', $student->id)
+            ->whereIn('homework_id', $homeworks->pluck('id'))
+            ->get()
+            ->keyBy('homework_id');
+
+        $homeworks->transform(function ($hw) use ($submissions) {
+            $hw->submission_record = $submissions->get($hw->id);
+            return $hw;
+        });
+
+        return $homeworks;
     }
 
     // Legacy method kept for compatibility — not used by our new blade

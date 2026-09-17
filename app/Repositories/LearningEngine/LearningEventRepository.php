@@ -23,6 +23,7 @@ class LearningEventRepository
     public const EVENT_HINT_USED        = 'hint_used';
     public const EVENT_QUEST_CLAIMED    = 'quest_claimed';
     public const EVENT_TAUGHT_KEA       = 'taught_kea';
+    public const EVENT_REFLECTION_SUBMITTED = 'reflection_submitted';
 
     // Phase 3, idea #8: reward the behavior, not just raw correctness — fixing
     // a past mistake and mastering a skill earn far more than a routine
@@ -38,6 +39,12 @@ class LearningEventRepository
     // a routine correct answer even on a partial attempt.
     private const XP_TEACH_KEA_UNDERSTOOD = 30;
     private const XP_TEACH_KEA_ATTEMPT    = 10;
+
+    // Phase 4: reflecting on a learning session — what was hard, what
+    // strategy worked — is its own worthwhile habit, once per day (the
+    // repository only calls record() the first time a day's entry is
+    // saved, so re-editing the same day's entry doesn't re-earn XP).
+    private const XP_REFLECTION = 10;
 
     public function record(int $studentId, string $eventType, ?int $skillId = null, array $payload = []): void
     {
@@ -61,6 +68,8 @@ class LearningEventRepository
                 // earns XP on its own track instead of running through
                 // updateMastery().
                 $xp = ($payload['understood'] ?? false) ? self::XP_TEACH_KEA_UNDERSTOOD : self::XP_TEACH_KEA_ATTEMPT;
+            } elseif ($eventType === self::EVENT_REFLECTION_SUBMITTED) {
+                $xp = self::XP_REFLECTION;
             }
 
             LearningEvent::create([

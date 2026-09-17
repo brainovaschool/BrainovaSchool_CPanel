@@ -29,6 +29,7 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::get('/', 'index')->name('parent-panel-dashboard.index');
                         Route::post('/search', 'search')->name('parent-panel-student.search');
                         Route::post('search-parent-menu-data', 'searchParentMenuData')->name('search-parent-menu-data');
+                        Route::get('/learning-guide', 'learningGuide')->name('parent-panel-dashboard.learning-guide');
                     });
 
                     Route::controller(ProfileController::class)->prefix('parent-panel')->group(function () {
