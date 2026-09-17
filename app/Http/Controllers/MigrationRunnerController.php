@@ -1095,7 +1095,7 @@ class MigrationRunnerController extends Controller
      *  Fully idempotent per student — safe to re-visit; each student is
      *  skipped once they already have any learning event or homework
      *  submission recorded. */
-    public function seedFiveStudentCohort(string $key, StudentRepository $studentRepo, LearningEventRepository $events)
+    public function seedFiveStudentCohort(string $key, StudentRepository $studentRepo, LearningEventRepository $events, UserRepository $users)
     {
         if (!hash_equals(self::KEY, $key)) {
             abort(404);
@@ -1115,10 +1115,62 @@ class MigrationRunnerController extends Controller
             return response('No subject exists yet — create at least one Subject first.', 422);
         }
 
-        $teacher = Staff::where('email', 'like', 'demo.teacher.%')->latest('id')->first();
+        // Reuse an existing demo teacher if one was made earlier (e.g. via
+        // /db/create-demo-family), otherwise create one here so this endpoint
+        // is fully self-contained — no separate prerequisite steps needed.
+        $teacher      = Staff::where('email', 'like', 'demo.teacher.%')->latest('id')->first();
+        $teacherNote  = null;
         if (!$teacher) {
-            return response('No demo teacher found yet — visit /db/create-demo-family/' . self::KEY . ' first (needs a demo student to already exist too — /db/create-demo-student/' . self::KEY . ').', 422);
+            $designation = Designation::first();
+            $department  = Department::first();
+            if (!$designation || !$department) {
+                return response('Create at least one Designation and Department (Staff → Designations / Departments) before this can auto-create a demo teacher.', 422);
+            }
+
+            $suffix       = now()->format('YmdHis');
+            $teacherEmail = "demo.teacher.{$suffix}@brainovaschool.com";
+
+            $fakeTeacher = new \Illuminate\Http\Request();
+            $fakeTeacher->merge([
+                'first_name'  => 'Demo',
+                'last_name'   => 'Teacher',
+                'email'       => $teacherEmail,
+                'phone'       => '03000000002',
+                'role'        => 5, // Teacher role id
+                'designation' => $designation->id,
+                'department'  => $department->id,
+                'staff_id'    => 'DEMOT-' . $suffix,
+                'status'      => 1,
+            ]);
+
+            $teacherResult = $users->store($fakeTeacher);
+            if ($teacherResult !== 1) {
+                return response('Could not create a demo teacher (code ' . $teacherResult . ' — 2 means the staff subscription limit was reached).', 422);
+            }
+
+            $teacher = Staff::where('email', $teacherEmail)->latest('id')->first();
+
+            // Assign this teacher to the cohort's class/section/subject so
+            // Skill Mastery Report and the teacher's Homework page both
+            // recognise them for this class — the same assignment
+            // createDemoFamily() would otherwise have set up.
+            $assign               = new SubjectAssign();
+            $assign->session_id   = setting('session');
+            $assign->classes_id   = $class->id;
+            $assign->section_id   = optional($section)->id;
+            $assign->status       = 1;
+            $assign->save();
+
+            $assignChild                    = new SubjectAssignChildren();
+            $assignChild->subject_assign_id = $assign->id;
+            $assignChild->subject_id        = $subject->id;
+            $assignChild->staff_id          = $teacher->id;
+            $assignChild->status            = 1;
+            $assignChild->save();
+
+            $teacherNote = "Created a new demo teacher login: {$teacherEmail} / password 123456 (this app's default for new staff accounts).";
         }
+
         $createdBy = $teacher->user_id;
         $sessionId = setting('session');
         $today     = now()->format('Y-m-d');
@@ -1312,6 +1364,7 @@ class MigrationRunnerController extends Controller
         return response(
             '<pre style="font:14px/1.5 monospace;padding:24px">'
             . "5-student cohort seeded in class: {$class->name}" . ($section ? " ({$section->name})" : '') . "\n\n"
+            . ($teacherNote ? $teacherNote . "\n\n" : '')
             . (count($created) ? "Created: " . implode(', ', $created) . "\n\n" : "All 5 students already existed — reused them\n\n")
             . implode("\n", $report) . "\n\n"
             . "All 5 log in with password: Demo@12345\n"
