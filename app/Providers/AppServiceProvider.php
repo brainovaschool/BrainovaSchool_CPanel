@@ -63,6 +63,24 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // The live server has APP_DEBUG left on in production, which makes
+        // barryvdh/laravel-debugbar inject its full HTML/CSS/JS panel into
+        // every response — including plain-text/JSON error messages (e.g. a
+        // Gemini "AI is busy" message came back with the entire debug panel
+        // appended to it). Force it off in production regardless of
+        // APP_DEBUG, without touching the live .env file. This does not
+        // change Laravel's own debug/error-detail behavior — only the
+        // debugbar's page injection — so fixing APP_DEBUG itself in .env is
+        // still worth doing separately for security (it currently exposes
+        // DB queries, file paths, etc. to any visitor who triggers an error).
+        if (app()->environment('production') && app()->bound('debugbar')) {
+            try {
+                app('debugbar')->disable();
+            } catch (\Throwable $e) {
+                // Never let a debug-tooling call break the actual request.
+            }
+        }
+
         RateLimiter::for('web', function (Request $request) {
             return Limit::perMinute(2)->by(optional($request->user())->id ?: $request->ip());
         });
