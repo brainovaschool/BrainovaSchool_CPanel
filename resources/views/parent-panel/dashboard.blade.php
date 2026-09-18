@@ -147,11 +147,14 @@
                         <p class="bn-panel__eyebrow mb-0">{{ ___('common.learning_snapshot') }}</p>
                         <p class="bn-panel__title mb-0">{{ @$data['student']->first_name }} {{ @$data['student']->last_name }}</p>
                     </div>
-                    @if (dashboard_feature_enabled('parent', 'learning_guide'))
-                        <a href="{{ route('parent-panel-dashboard.learning-guide') }}" class="btn btn-sm btn-outline-primary">
-                            <i class="fa-solid fa-circle-question me-1"></i> {{ ___('common.what_does_this_mean') }}
-                        </a>
-                    @endif
+                    <div class="d-flex align-items-center gap-3">
+                        @include('backend.partials.theme-picker', ['onLight' => true])
+                        @if (dashboard_feature_enabled('parent', 'learning_guide'))
+                            <a href="{{ route('parent-panel-dashboard.learning-guide') }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fa-solid fa-circle-question me-1"></i> {{ ___('common.what_does_this_mean') }}
+                            </a>
+                        @endif
+                    </div>
                 </div>
 
                 @if ((!empty($lh['brain_level']) && dashboard_feature_enabled('parent', 'brain_level')) || (!empty($lh['knowledge_tree']) && dashboard_feature_enabled('parent', 'knowledge_tree')))

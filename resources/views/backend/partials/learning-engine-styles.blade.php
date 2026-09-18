@@ -29,6 +29,57 @@
         --bn-review-soft: #fdeae6;
     }
 
+    /* Dashboard color themes — a personalization option (Website Setup has
+       no influence here; this is a per-browser student/parent preference,
+       stored in localStorage by backend.partials.theme-picker). Only the
+       BRAND tokens (primary/accent) change per theme — the mastery-stage
+       colors above (not-started/developing/proficient/advanced/review) stay
+       fixed always, since they carry a specific meaning that must never be
+       reinterpreted by a color theme. */
+    :root[data-bn-theme="nature"] {
+        --bn-primary: #16a34a; --bn-primary-strong: #0f7a37; --bn-primary-soft: #e7f5ee;
+        --bn-accent: #65a30d; --bn-accent-strong: #4d7a0a; --bn-accent-soft: #eef7dc;
+    }
+    :root[data-bn-theme="midnight"] {
+        --bn-primary: #6d28d9; --bn-primary-strong: #5620ad; --bn-primary-soft: #efe8fd;
+        --bn-accent: #0ea5b7; --bn-accent-strong: #0b7d8c; --bn-accent-soft: #e1f6fa;
+    }
+    :root[data-bn-theme="sunrise"] {
+        --bn-primary: #e8664f; --bn-primary-strong: #c94a35; --bn-primary-soft: #fdeae6;
+        --bn-accent: #f59e0b; --bn-accent-strong: #c47f08; --bn-accent-soft: #fef3e2;
+    }
+    :root[data-bn-theme="berry"] {
+        --bn-primary: #db2777; --bn-primary-strong: #ad1c5e; --bn-primary-soft: #fbe7f1;
+        --bn-accent: #a21caf; --bn-accent-strong: #7c1587; --bn-accent-soft: #f6e6f8;
+    }
+    :root[data-bn-theme="ocean"] {
+        --bn-primary: #2563eb; --bn-primary-strong: #1d4fbf; --bn-primary-soft: #e9f0fd;
+        --bn-accent: #06b6d4; --bn-accent-strong: #0592a8; --bn-accent-soft: #e1f6fa;
+    }
+
+    .bn-theme-picker { display: inline-flex; align-items: center; gap: 7px; }
+    .bn-theme-picker__label {
+        font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+        color: rgba(255, 255, 255, 0.75); margin-right: 2px;
+    }
+    .bn-theme-swatch {
+        width: 22px; height: 22px; border-radius: 50%; padding: 0; cursor: pointer;
+        border: 2px solid rgba(255, 255, 255, 0.7); box-shadow: 0 0 0 1px rgba(15, 41, 55, 0.15);
+    }
+    .bn-theme-swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px #fff, 0 0 0 3px rgba(15, 41, 55, 0.35); }
+    .bn-theme-swatch--aurora   { background: linear-gradient(135deg, #0097b2, #5e17eb); }
+    .bn-theme-swatch--nature   { background: linear-gradient(135deg, #16a34a, #65a30d); }
+    .bn-theme-swatch--midnight { background: linear-gradient(135deg, #6d28d9, #0ea5b7); }
+    .bn-theme-swatch--sunrise  { background: linear-gradient(135deg, #e8664f, #f59e0b); }
+    .bn-theme-swatch--berry    { background: linear-gradient(135deg, #db2777, #a21caf); }
+    .bn-theme-swatch--ocean    { background: linear-gradient(135deg, #2563eb, #06b6d4); }
+
+    /* On surfaces that aren't the gradient hero (e.g. the avatar shop page),
+       the swatch ring needs a light-surface-safe border instead of the
+       hero's translucent-white one. */
+    .bn-theme-picker--on-light .bn-theme-picker__label { color: #7a8790; }
+    .bn-theme-picker--on-light .bn-theme-swatch { border-color: #fff; }
+
     .bn-panel {
         background: linear-gradient(180deg, #ffffff 0%, #fbfeff 100%);
         border: 1px solid rgba(0, 151, 178, 0.12);
@@ -327,6 +378,7 @@
 
     /* Profile hero — top of the dashboard: who this is, at a glance */
     .bn-hero {
+        position: relative;
         background: linear-gradient(120deg, var(--bn-primary) 0%, var(--bn-accent) 130%);
         border-radius: 18px;
         padding: 22px 24px;
@@ -336,6 +388,16 @@
         align-items: center;
         gap: 18px;
         flex-wrap: wrap;
+    }
+
+    .bn-hero .bn-theme-picker {
+        position: absolute;
+        top: 16px;
+        right: 20px;
+    }
+
+    @media (max-width: 576px) {
+        .bn-hero .bn-theme-picker { position: static; margin-top: 10px; justify-content: center; width: 100%; }
     }
 
     .bn-hero__avatar {

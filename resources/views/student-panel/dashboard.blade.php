@@ -45,6 +45,7 @@
 
     {{-- Profile hero — who this is, at a glance, always at the top --}}
     <div class="bn-hero">
+        @include('backend.partials.theme-picker')
         <img class="bn-hero__avatar" src="{{ @globalAsset(@$data['student']->user->upload->path, '100X100.webp') }}" alt="{{ @$data['student']->first_name }}">
         <div style="min-width:0;">
             <p class="bn-hero__eyebrow">{{ ___('common.welcome_back') }}</p>
