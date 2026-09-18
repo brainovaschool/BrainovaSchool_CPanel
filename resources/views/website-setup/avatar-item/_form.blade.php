@@ -28,8 +28,14 @@
 
     <div class="col-md-6 mb-3">
         <label class="form-label">{{ ___('common.image') }} @if(!$s) <span class="fillable">*</span> @endif</label>
-        <input class="form-control ot-input @error('image') is-invalid @enderror" name="image" type="file" accept="image/*">
-        @error('image')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        <div class="ot_fileUploader left-side mb-2 @error('image') is-invalid @enderror">
+            <input class="form-control" type="text" placeholder="{{ ___('common.image') }}" readonly id="placeholder">
+            <button class="primary-btn-small-input" type="button">
+                <label class="btn btn-lg ot-btn-primary" for="fileBrouse">{{ ___('common.browse') }}</label>
+                <input type="file" class="d-none form-control" name="image" accept="image/*" id="fileBrouse">
+            </button>
+        </div>
+        @error('image')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         @if ($s && $s->image)
             <img src="{{ globalAsset($s->image) }}" alt="{{ $s->name }}" class="mt-2" style="height:70px;border-radius:50%;">
         @endif
