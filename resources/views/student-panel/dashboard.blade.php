@@ -8,6 +8,7 @@
 <div class="page-content">
 
     @include('backend.partials.learning-engine-styles')
+    @include('backend.partials.learning-engine-charts')
 
     @php
         $keaSpeakText = null;
@@ -68,15 +69,16 @@
         @if (!empty($data['learning_home']['brain_level']) && dashboard_feature_enabled('student', 'brain_level'))
             @php $bl = $data['learning_home']['brain_level']; @endphp
             <div class="bn-level-badge">
-                <div class="bn-level-badge__top">
-                    <i class="fa-solid fa-brain"></i>
-                    <span class="bn-level-badge__num">{{ $bl['level'] }}</span>
-                    <span class="bn-level-badge__label">{{ ___('common.brain_level') }}</span>
+                <div class="bn-level-badge__ring-row">
+                    <div class="bn-level-badge__ring-wrap">
+                        <div class="bn-ring" style="width:100%;height:100%;" data-value="{{ $bl['progress_pct'] }}" data-color="#ffffff" data-track="rgba(255,255,255,.3)"></div>
+                        <div class="bn-level-badge__ring-num">{{ $bl['level'] }}</div>
+                    </div>
+                    <div>
+                        <div class="bn-level-badge__label">{{ ___('common.brain_level') }}</div>
+                        <div class="bn-level-badge__xp">{{ $bl['xp_into_level'] }} / {{ $bl['xp_for_level'] }} XP {{ ___('common.to_next_level') }}</div>
+                    </div>
                 </div>
-                <div class="bn-level-badge__bar">
-                    <div class="bn-level-badge__fill" style="width:{{ $bl['progress_pct'] }}%"></div>
-                </div>
-                <div class="bn-level-badge__xp">{{ $bl['xp_into_level'] }} / {{ $bl['xp_for_level'] }} XP {{ ___('common.to_next_level') }}</div>
             </div>
         @endif
     </div>
@@ -214,9 +216,12 @@
                                 <div class="bn-section-label"><i class="fa-solid fa-route"></i> {{ ___('common.whats_next') }}</div>
                                 @forelse ($lh['next_skills'] as $skill)
                                     <div class="bn-skill-tile">
-                                        <div>
-                                            <div class="bn-skill-tile__title">{{ $skill->title }}</div>
-                                            <div class="bn-skill-tile__meta">{{ $skill->subject->name ?? '' }}</div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="bn-skill-tile__num">{{ $loop->iteration }}</span>
+                                            <div>
+                                                <div class="bn-skill-tile__title">{{ $skill->title }}</div>
+                                                <div class="bn-skill-tile__meta">{{ $skill->subject->name ?? '' }}</div>
+                                            </div>
                                         </div>
                                     </div>
                                 @empty
@@ -227,17 +232,16 @@
                         @if (dashboard_feature_enabled('student', 'skill_mastery_overview'))
                             <div class="col-lg-5">
                                 <div class="bn-section-label"><i class="fa-solid fa-chart-simple"></i> {{ ___('common.your_skill_snapshot') }}</div>
-                                <div class="bn-progress">
-                                    <div class="bn-progress__seg bn-progress__seg--not-started" style="width:{{ $mc['not_started'] / $mcTotal * 100 }}%"></div>
-                                    <div class="bn-progress__seg bn-progress__seg--developing" style="width:{{ $mc['developing'] / $mcTotal * 100 }}%"></div>
-                                    <div class="bn-progress__seg bn-progress__seg--proficient" style="width:{{ $mc['proficient'] / $mcTotal * 100 }}%"></div>
-                                    <div class="bn-progress__seg bn-progress__seg--advanced" style="width:{{ $mc['advanced'] / $mcTotal * 100 }}%"></div>
-                                </div>
-                                <div class="d-flex flex-wrap gap-2">
-                                    <span class="bn-pill bn-pill--not-started">{{ ___('common.not_started') }} · {{ $mc['not_started'] }}</span>
-                                    <span class="bn-pill bn-pill--developing">{{ ___('common.developing') }} · {{ $mc['developing'] }}</span>
-                                    <span class="bn-pill bn-pill--proficient">{{ ___('common.proficient') }} · {{ $mc['proficient'] }}</span>
-                                    <span class="bn-pill bn-pill--advanced">{{ ___('common.advanced') }} · {{ $mc['advanced'] }}</span>
+                                <div class="bn-mastery-donut-row">
+                                    <div class="bn-donut"
+                                        data-segments="{{ $mc['not_started'] }},{{ $mc['developing'] }},{{ $mc['proficient'] }},{{ $mc['advanced'] }}"
+                                        data-colors="var(--bn-not-started),var(--bn-developing),var(--bn-proficient),var(--bn-advanced)"></div>
+                                    <ul class="bn-mastery-legend">
+                                        <li><span class="bn-pill bn-pill--not-started">{{ ___('common.not_started') }}</span><b>{{ $mc['not_started'] }}</b></li>
+                                        <li><span class="bn-pill bn-pill--developing">{{ ___('common.developing') }}</span><b>{{ $mc['developing'] }}</b></li>
+                                        <li><span class="bn-pill bn-pill--proficient">{{ ___('common.proficient') }}</span><b>{{ $mc['proficient'] }}</b></li>
+                                        <li><span class="bn-pill bn-pill--advanced">{{ ___('common.advanced') }}</span><b>{{ $mc['advanced'] }}</b></li>
+                                    </ul>
                                 </div>
                             </div>
                         @endif
@@ -250,12 +254,13 @@
                         @if (!empty($lh['badges']) && dashboard_feature_enabled('student', 'badges'))
                             <div class="col-lg-7">
                                 <div class="bn-section-label"><i class="fa-solid fa-award"></i> {{ ___('common.badges') }}</div>
-                                <div class="d-flex flex-wrap gap-2">
+                                <div class="bn-badge-grid">
                                     @foreach ($lh['badges'] as $badge)
-                                        <span class="bn-badge bn-badge--{{ $badge['tier'] }}">
-                                            <i class="fa-solid fa-medal"></i> {{ ucfirst($badge['tier']) }} {{ $badge['subject'] }} Explorer
-                                            <span class="bn-badge__count">· {{ $badge['count'] }}</span>
-                                        </span>
+                                        <div class="bn-badge-chip bn-badge-chip--{{ $badge['tier'] }}">
+                                            <div class="bn-badge-chip__icon">🏅</div>
+                                            <div class="bn-badge-chip__label">{{ $badge['subject'] }}</div>
+                                            <div class="bn-badge-chip__count">{{ ucfirst($badge['tier']) }} · {{ $badge['count'] }}</div>
+                                        </div>
                                     @endforeach
                                 </div>
                             </div>
@@ -264,19 +269,20 @@
                             @php $pb = $lh['personal_best']; @endphp
                             <div class="col-lg-5">
                                 <div class="bn-section-label"><i class="fa-solid fa-chart-line"></i> {{ ___('common.personal_best') }}</div>
-                                <div class="bn-personal-best">
-                                    <div class="bn-personal-best__figure">
-                                        <div class="bn-personal-best__num">{{ $pb['last_week'] }}%</div>
-                                        <div class="bn-personal-best__label">{{ ___('common.last_week') }}</div>
+                                <div class="bn-gauge">
+                                    <div class="bn-gauge__ring-wrap">
+                                        <div class="bn-ring" style="width:100%;height:100%;" data-value="{{ $pb['this_week'] }}"
+                                            data-color="@if($pb['delta'] < 0) var(--bn-not-started) @else var(--bn-advanced) @endif"
+                                            data-track="@if($pb['delta'] < 0) var(--bn-not-started-soft) @else var(--bn-advanced-soft) @endif"></div>
+                                        <div class="bn-gauge__num">{{ $pb['this_week'] }}%</div>
                                     </div>
-                                    <i class="fa-solid fa-arrow-right bn-personal-best__arrow"></i>
-                                    <div class="bn-personal-best__figure">
-                                        <div class="bn-personal-best__num">{{ $pb['this_week'] }}%</div>
-                                        <div class="bn-personal-best__label">{{ ___('common.this_week') }}</div>
+                                    <div class="bn-gauge__cap">
+                                        {{ ___('common.this_week') }} ·
+                                        <b class="@if($pb['delta'] > 0) bn-personal-best__delta--up @elseif($pb['delta'] < 0) bn-personal-best__delta--down @else bn-personal-best__delta--flat @endif">
+                                            {{ $pb['delta'] > 0 ? '+' : '' }}{{ $pb['delta'] }}%
+                                        </b>
+                                        {{ ___('common.vs_last_week') }} ({{ $pb['last_week'] }}%)
                                     </div>
-                                    <span class="bn-personal-best__delta @if($pb['delta'] > 0) bn-personal-best__delta--up @elseif($pb['delta'] < 0) bn-personal-best__delta--down @else bn-personal-best__delta--flat @endif">
-                                        {{ $pb['delta'] > 0 ? '+' : '' }}{{ $pb['delta'] }}%
-                                    </span>
                                 </div>
                             </div>
                         @endif

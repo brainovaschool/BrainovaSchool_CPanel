@@ -80,6 +80,49 @@
     .bn-theme-picker--on-light .bn-theme-picker__label { color: #7a8790; }
     .bn-theme-picker--on-light .bn-theme-swatch { border-color: #fff; }
 
+    /* Ring gauge + donut — shared base sizing; renderer lives in
+       backend.partials.learning-engine-charts. Default 104px; override with
+       an inline width/height style for a compact placement (e.g. inside the
+       hero's level badge). */
+    .bn-ring, .bn-donut { width: 104px; height: 104px; }
+    .bn-ring svg, .bn-donut svg { width: 100%; height: 100%; display: block; }
+
+    /* Gauge: a ring with its value centered inside, plus a caption below —
+       used for Personal Best and anywhere else a single ring tells the story. */
+    .bn-gauge { display: flex; flex-direction: column; align-items: center; text-align: center; }
+    .bn-gauge__ring-wrap { position: relative; width: 104px; height: 104px; }
+    .bn-gauge__num {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        font-size: 1.3rem; font-weight: 800; color: var(--bn-ink);
+    }
+    .bn-gauge__cap { font-size: 0.78rem; color: #7a8790; margin-top: 8px; max-width: 200px; }
+    .bn-gauge__cap b { color: var(--bn-ink); }
+
+    .bn-level-badge__ring-row { display: flex; align-items: center; gap: 12px; }
+    .bn-level-badge__ring-wrap { position: relative; flex-shrink: 0; width: 62px; height: 62px; }
+    .bn-level-badge__ring-num {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        font-size: 1.25rem; font-weight: 800; color: #fff;
+    }
+
+    /* The level badge was designed for the colored gradient hero (translucent
+       white on a bright background). Reused as-is on the parent panel's
+       plain white card, that translucency reads as almost invisible — this
+       variant gives it real contrast there instead. */
+    .bn-level-badge--on-light {
+        background: var(--bn-primary-soft);
+        border: 1px solid rgba(15, 41, 55, 0.08);
+    }
+    .bn-level-badge--on-light .bn-level-badge__ring-num { color: var(--bn-primary-strong); }
+    .bn-level-badge--on-light .bn-level-badge__label { color: var(--bn-primary-strong); opacity: 1; }
+    .bn-level-badge--on-light .bn-level-badge__xp { color: #56616a; }
+
+    .bn-mastery-donut-row { display: flex; align-items: center; gap: 18px; }
+    .bn-mastery-donut-row .bn-donut { flex-shrink: 0; }
+    .bn-mastery-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; flex: 1; min-width: 0; }
+    .bn-mastery-legend li { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; color: var(--bn-ink); }
+    .bn-mastery-legend li b { margin-left: auto; }
+
     .bn-panel {
         background: linear-gradient(180deg, #ffffff 0%, #fbfeff 100%);
         border: 1px solid rgba(0, 151, 178, 0.12);
@@ -338,15 +381,16 @@
 
     .bn-next-action__icon {
         flex-shrink: 0;
-        width: 38px;
-        height: 38px;
-        border-radius: 10px;
+        width: 46px;
+        height: 46px;
+        border-radius: 13px;
         background: var(--bn-primary);
         color: #fff;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1rem;
+        font-size: 1.15rem;
+        box-shadow: 0 4px 12px color-mix(in srgb, var(--bn-primary) 30%, transparent);
     }
 
     .bn-next-action--caught-up .bn-next-action__icon {
@@ -549,12 +593,12 @@
 
     .bn-stat-tile__emoji {
         flex-shrink: 0;
-        width: 38px;
-        height: 38px;
+        width: 42px;
+        height: 42px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.4rem;
+        font-size: 1.9rem;
     }
 
     /* Badges — tiered, tied to real evidence, never arbitrary */
@@ -577,6 +621,27 @@
         font-size: 0.72rem;
         font-weight: 600;
         opacity: 0.75;
+    }
+
+    /* Badge chip grid — an icon-first alternative to the inline pill above,
+       used where there's room to give badges more visual weight. */
+    .bn-badge-grid { display: flex; flex-wrap: wrap; gap: 14px; }
+    .bn-badge-chip { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 76px; text-align: center; }
+    .bn-badge-chip__icon {
+        width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; border: 1px solid;
+    }
+    .bn-badge-chip--bronze .bn-badge-chip__icon { background: #fdf1e7; border-color: rgba(161, 92, 46, 0.25); }
+    .bn-badge-chip--silver .bn-badge-chip__icon { background: #f1f4f7; border-color: rgba(91, 107, 122, 0.25); }
+    .bn-badge-chip--gold .bn-badge-chip__icon    { background: #fef8e3; border-color: rgba(161, 117, 10, 0.3); }
+    .bn-badge-chip__label { font-size: 0.74rem; font-weight: 700; color: var(--bn-ink); line-height: 1.25; }
+    .bn-badge-chip__count { font-size: 0.68rem; color: #7a8790; }
+
+    /* Numbered list — "What's Next", read as a real order (1, 2, 3...). */
+    .bn-skill-tile__num {
+        flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--bn-primary-soft);
+        color: var(--bn-primary-strong); font-size: 0.76rem; font-weight: 800;
+        display: flex; align-items: center; justify-content: center; margin-right: 4px;
     }
 
     /* Personal Best — the default comparison, never a rank */
