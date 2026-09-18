@@ -483,6 +483,10 @@ class HomeworkController extends Controller
      *  system the same way a tagged Online Exam question already does. */
     public function updateQuizQuestionSkill(Request $request)
     {
+        if (!dashboard_feature_enabled('teacher', 'quiz_skill_tagging')) {
+            return response()->json(['status' => 'error', 'message' => ___('alert.feature_disabled')], 403);
+        }
+
         $questionId = (int) $request->input('question_id');
         $skillId    = $request->input('skill_id');
 

@@ -37,6 +37,10 @@ class AiHelpController extends Controller
 
     public function ask(Request $request)
     {
+        if (!dashboard_feature_enabled('student', 'ai_ask_helper')) {
+            return response()->json(['ok' => false, 'message' => ___('alert.feature_disabled')], 403);
+        }
+
         $request->validate(['question' => 'required|string|max:1000']);
 
         $check = $this->repo->checkLimit(Auth::id(), 'student');
@@ -55,6 +59,10 @@ class AiHelpController extends Controller
 
     public function teachKea(Request $request)
     {
+        if (!dashboard_feature_enabled('student', 'teach_kea')) {
+            return response()->json(['ok' => false, 'message' => ___('alert.feature_disabled')], 403);
+        }
+
         $request->validate([
             'skill_id'    => 'required|integer',
             'explanation' => 'required|string|max:2000',
@@ -88,6 +96,10 @@ class AiHelpController extends Controller
 
     public function factCheck(Request $request)
     {
+        if (!dashboard_feature_enabled('student', 'ai_fact_checker')) {
+            return response()->json(['ok' => false, 'message' => ___('alert.feature_disabled')], 403);
+        }
+
         $request->validate(['claim' => 'required|string|max:1000']);
 
         $check = $this->repo->checkLimit(Auth::id(), 'student');

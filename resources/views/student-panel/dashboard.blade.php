@@ -56,10 +56,10 @@
                 @endif
             </ul>
         </div>
-        @if ($keaSpeakText)
+        @if ($keaSpeakText && dashboard_feature_enabled('student', 'kea_voice'))
             @include('backend.partials.character-voice-avatar', ['image' => $keaImage, 'name' => 'Kea', 'speakText' => $keaSpeakText])
         @endif
-        @if (!empty($data['learning_home']['brain_level']))
+        @if (!empty($data['learning_home']['brain_level']) && dashboard_feature_enabled('student', 'brain_level'))
             @php $bl = $data['learning_home']['brain_level']; @endphp
             <div class="bn-level-badge">
                 <div class="bn-level-badge__top">
@@ -79,7 +79,7 @@
          deliberately on hold until there are real per-grade headcounts to
          make ranking meaningful, even though Brain Level/XP now exist. --}}
     <div class="bn-stat-row">
-        @if (!empty($data['learning_home']['knowledge_tree']))
+        @if (!empty($data['learning_home']['knowledge_tree']) && dashboard_feature_enabled('student', 'knowledge_tree'))
             @php $kt = $data['learning_home']['knowledge_tree']; @endphp
             <div class="bn-stat-tile bn-stat-tile--tree">
                 <div class="bn-stat-tile__emoji">{{ $kt['emoji'] }}</div>
@@ -106,7 +106,7 @@
             <div class="bn-stat-tile__icon" style="background:#16a34a;"><i class="fa-solid fa-star"></i></div>
             <div><div class="bn-stat-tile__value">@if(($data['homework_total_marks'] ?? null) !== null){{ $data['homework_total_marks'] }}@else—@endif</div><div class="bn-stat-tile__label">{{ ___('examination.scores') }}</div></div>
         </div>
-        @if (!empty($data['weekly_wins']) && $data['weekly_wins']['has_wins'])
+        @if (!empty($data['weekly_wins']) && $data['weekly_wins']['has_wins'] && dashboard_feature_enabled('student', 'weekly_wins'))
             <div class="bn-stat-tile">
                 <div class="bn-stat-tile__icon" style="background:#e8664f;"><i class="fa-solid fa-trophy"></i></div>
                 <div><div class="bn-stat-tile__value">{{ $data['weekly_wins']['mastered_titles']->count() }}</div><div class="bn-stat-tile__label">{{ ___('common.mastered_this_week') }}</div></div>
@@ -121,7 +121,7 @@
             $mcTotal = max(1, array_sum($mc));
         @endphp
 
-        @if (!empty($lh['milestone']))
+        @if (!empty($lh['milestone']) && dashboard_feature_enabled('student', 'milestone_banner'))
             <div class="bn-milestone">
                 <div class="bn-milestone__icon"><i class="fa-solid fa-star"></i></div>
                 <div>
@@ -143,7 +143,7 @@
                     </div>
                 </div>
 
-                @if (!empty($lh['next_action']))
+                @if (!empty($lh['next_action']) && dashboard_feature_enabled('student', 'next_best_action'))
                     @php $na = $lh['next_action']; @endphp
                     <div class="bn-next-action @if($na['type'] === 'caught_up') bn-next-action--caught-up @elseif($na['type'] === 'struggle') bn-next-action--struggle @endif">
                         <div class="bn-next-action__icon">
@@ -157,81 +157,91 @@
                     </div>
                 @endif
 
-                <hr class="bn-divider">
+                @if (dashboard_feature_enabled('student', 'daily_goals'))
+                    <hr class="bn-divider">
 
-                <div class="bn-section-label"><i class="fa-solid fa-flag-checkered"></i> {{ ___('common.todays_goals') }}</div>
-                <form action="{{ route('student-panel-dashboard.save-daily-goals') }}" method="post" style="margin-bottom:8px;">
-                    @csrf
-                    @php $chosenKeys = collect($data['daily_goals'] ?? [])->pluck('key')->all(); @endphp
-                    @foreach (\App\Repositories\LearningEngine\DailyGoalRepository::CATALOGUE as $key => $meta)
-                        @php
-                            $chosenRow = collect($data['daily_goals'] ?? [])->firstWhere('key', $key);
-                            $isDone    = $chosenRow['completed'] ?? false;
-                        @endphp
-                        <label class="bn-goal-option @if($isDone) bn-goal-option--done @endif">
-                            <input type="checkbox" name="goals[]" value="{{ $key }}" @if(in_array($key, $chosenKeys)) checked @endif onchange="this.form.submit()">
-                            <i class="fa-solid @if($isDone) fa-circle-check @else fa-{{ $meta['icon'] }} @endif"></i>
-                            <span>{{ $meta['label'] }}</span>
-                        </label>
-                    @endforeach
-                    <p class="bn-empty-note" style="margin-top:4px;">{{ ___('common.pick_up_to_3_goals_note') }}</p>
-                </form>
+                    <div class="bn-section-label"><i class="fa-solid fa-flag-checkered"></i> {{ ___('common.todays_goals') }}</div>
+                    <form action="{{ route('student-panel-dashboard.save-daily-goals') }}" method="post" style="margin-bottom:8px;">
+                        @csrf
+                        @php $chosenKeys = collect($data['daily_goals'] ?? [])->pluck('key')->all(); @endphp
+                        @foreach (\App\Repositories\LearningEngine\DailyGoalRepository::CATALOGUE as $key => $meta)
+                            @php
+                                $chosenRow = collect($data['daily_goals'] ?? [])->firstWhere('key', $key);
+                                $isDone    = $chosenRow['completed'] ?? false;
+                            @endphp
+                            <label class="bn-goal-option @if($isDone) bn-goal-option--done @endif">
+                                <input type="checkbox" name="goals[]" value="{{ $key }}" @if(in_array($key, $chosenKeys)) checked @endif onchange="this.form.submit()">
+                                <i class="fa-solid @if($isDone) fa-circle-check @else fa-{{ $meta['icon'] }} @endif"></i>
+                                <span>{{ $meta['label'] }}</span>
+                            </label>
+                        @endforeach
+                        <p class="bn-empty-note" style="margin-top:4px;">{{ ___('common.pick_up_to_3_goals_note') }}</p>
+                    </form>
+                @endif
 
-                <hr class="bn-divider">
+                @if (dashboard_feature_enabled('student', 'reflection_journal'))
+                    <hr class="bn-divider">
 
-                <div class="bn-section-label"><i class="fa-solid fa-feather-pointed"></i> {{ ___('common.todays_reflection') }}</div>
-                <form action="{{ route('student-panel-dashboard.save-reflection') }}" method="post">
-                    @csrf
-                    @php $reflection = $data['reflection_today'] ?? null; @endphp
-                    <label class="form-label" style="font-size:.85rem;">{{ ___('common.what_was_hard_today') }}</label>
-                    <textarea name="what_was_hard" class="form-control ot-textarea mb-2" rows="2" maxlength="1000" placeholder="{{ ___('common.reflection_hard_placeholder') }}">{{ optional($reflection)->what_was_hard }}</textarea>
+                    <div class="bn-section-label"><i class="fa-solid fa-feather-pointed"></i> {{ ___('common.todays_reflection') }}</div>
+                    <form action="{{ route('student-panel-dashboard.save-reflection') }}" method="post">
+                        @csrf
+                        @php $reflection = $data['reflection_today'] ?? null; @endphp
+                        <label class="form-label" style="font-size:.85rem;">{{ ___('common.what_was_hard_today') }}</label>
+                        <textarea name="what_was_hard" class="form-control ot-textarea mb-2" rows="2" maxlength="1000" placeholder="{{ ___('common.reflection_hard_placeholder') }}">{{ optional($reflection)->what_was_hard }}</textarea>
 
-                    <label class="form-label" style="font-size:.85rem;">{{ ___('common.what_strategy_worked_today') }}</label>
-                    <textarea name="what_worked" class="form-control ot-textarea mb-2" rows="2" maxlength="1000" placeholder="{{ ___('common.reflection_worked_placeholder') }}">{{ optional($reflection)->what_worked }}</textarea>
+                        <label class="form-label" style="font-size:.85rem;">{{ ___('common.what_strategy_worked_today') }}</label>
+                        <textarea name="what_worked" class="form-control ot-textarea mb-2" rows="2" maxlength="1000" placeholder="{{ ___('common.reflection_worked_placeholder') }}">{{ optional($reflection)->what_worked }}</textarea>
 
-                    <button type="submit" class="btn ot-btn-primary btn-sm">{{ ___('common.save_reflection') }}</button>
-                    @if ($reflection)
-                        <span class="bn-empty-note" style="margin-left:8px;"><i class="fa-solid fa-circle-check"></i> {{ ___('common.saved_today') }}</span>
-                    @endif
-                </form>
+                        <button type="submit" class="btn ot-btn-primary btn-sm">{{ ___('common.save_reflection') }}</button>
+                        @if ($reflection)
+                            <span class="bn-empty-note" style="margin-left:8px;"><i class="fa-solid fa-circle-check"></i> {{ ___('common.saved_today') }}</span>
+                        @endif
+                    </form>
+                @endif
 
-                <hr class="bn-divider">
+                @if (dashboard_feature_enabled('student', 'whats_next') || dashboard_feature_enabled('student', 'skill_mastery_overview'))
+                    <hr class="bn-divider">
 
-                <div class="row g-4">
-                    <div class="col-lg-7">
-                        <div class="bn-section-label"><i class="fa-solid fa-route"></i> {{ ___('common.whats_next') }}</div>
-                        @forelse ($lh['next_skills'] as $skill)
-                            <div class="bn-skill-tile">
-                                <div>
-                                    <div class="bn-skill-tile__title">{{ $skill->title }}</div>
-                                    <div class="bn-skill-tile__meta">{{ $skill->subject->name ?? '' }}</div>
+                    <div class="row g-4">
+                        @if (dashboard_feature_enabled('student', 'whats_next'))
+                            <div class="col-lg-7">
+                                <div class="bn-section-label"><i class="fa-solid fa-route"></i> {{ ___('common.whats_next') }}</div>
+                                @forelse ($lh['next_skills'] as $skill)
+                                    <div class="bn-skill-tile">
+                                        <div>
+                                            <div class="bn-skill-tile__title">{{ $skill->title }}</div>
+                                            <div class="bn-skill-tile__meta">{{ $skill->subject->name ?? '' }}</div>
+                                        </div>
+                                    </div>
+                                @empty
+                                    <p class="bn-empty-note">{{ ___('common.no_skills_set_up_yet_for_your_grade') }}</p>
+                                @endforelse
+                            </div>
+                        @endif
+                        @if (dashboard_feature_enabled('student', 'skill_mastery_overview'))
+                            <div class="col-lg-5">
+                                <div class="bn-section-label"><i class="fa-solid fa-chart-simple"></i> {{ ___('common.your_skill_snapshot') }}</div>
+                                <div class="bn-progress">
+                                    <div class="bn-progress__seg bn-progress__seg--not-started" style="width:{{ $mc['not_started'] / $mcTotal * 100 }}%"></div>
+                                    <div class="bn-progress__seg bn-progress__seg--developing" style="width:{{ $mc['developing'] / $mcTotal * 100 }}%"></div>
+                                    <div class="bn-progress__seg bn-progress__seg--proficient" style="width:{{ $mc['proficient'] / $mcTotal * 100 }}%"></div>
+                                    <div class="bn-progress__seg bn-progress__seg--advanced" style="width:{{ $mc['advanced'] / $mcTotal * 100 }}%"></div>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span class="bn-pill bn-pill--not-started">{{ ___('common.not_started') }} · {{ $mc['not_started'] }}</span>
+                                    <span class="bn-pill bn-pill--developing">{{ ___('common.developing') }} · {{ $mc['developing'] }}</span>
+                                    <span class="bn-pill bn-pill--proficient">{{ ___('common.proficient') }} · {{ $mc['proficient'] }}</span>
+                                    <span class="bn-pill bn-pill--advanced">{{ ___('common.advanced') }} · {{ $mc['advanced'] }}</span>
                                 </div>
                             </div>
-                        @empty
-                            <p class="bn-empty-note">{{ ___('common.no_skills_set_up_yet_for_your_grade') }}</p>
-                        @endforelse
+                        @endif
                     </div>
-                    <div class="col-lg-5">
-                        <div class="bn-section-label"><i class="fa-solid fa-chart-simple"></i> {{ ___('common.your_skill_snapshot') }}</div>
-                        <div class="bn-progress">
-                            <div class="bn-progress__seg bn-progress__seg--not-started" style="width:{{ $mc['not_started'] / $mcTotal * 100 }}%"></div>
-                            <div class="bn-progress__seg bn-progress__seg--developing" style="width:{{ $mc['developing'] / $mcTotal * 100 }}%"></div>
-                            <div class="bn-progress__seg bn-progress__seg--proficient" style="width:{{ $mc['proficient'] / $mcTotal * 100 }}%"></div>
-                            <div class="bn-progress__seg bn-progress__seg--advanced" style="width:{{ $mc['advanced'] / $mcTotal * 100 }}%"></div>
-                        </div>
-                        <div class="d-flex flex-wrap gap-2">
-                            <span class="bn-pill bn-pill--not-started">{{ ___('common.not_started') }} · {{ $mc['not_started'] }}</span>
-                            <span class="bn-pill bn-pill--developing">{{ ___('common.developing') }} · {{ $mc['developing'] }}</span>
-                            <span class="bn-pill bn-pill--proficient">{{ ___('common.proficient') }} · {{ $mc['proficient'] }}</span>
-                            <span class="bn-pill bn-pill--advanced">{{ ___('common.advanced') }} · {{ $mc['advanced'] }}</span>
-                        </div>
-                    </div>
-                </div>
+                @endif
 
-                @if (!empty($lh['badges']) || !empty($lh['personal_best']))
+                @if ((!empty($lh['badges']) && dashboard_feature_enabled('student', 'badges')) || (!empty($lh['personal_best']) && dashboard_feature_enabled('student', 'personal_best')))
                     <hr class="bn-divider">
                     <div class="row g-4">
-                        @if (!empty($lh['badges']))
+                        @if (!empty($lh['badges']) && dashboard_feature_enabled('student', 'badges'))
                             <div class="col-lg-7">
                                 <div class="bn-section-label"><i class="fa-solid fa-award"></i> {{ ___('common.badges') }}</div>
                                 <div class="d-flex flex-wrap gap-2">
@@ -244,7 +254,7 @@
                                 </div>
                             </div>
                         @endif
-                        @if (!empty($lh['personal_best']))
+                        @if (!empty($lh['personal_best']) && dashboard_feature_enabled('student', 'personal_best'))
                             @php $pb = $lh['personal_best']; @endphp
                             <div class="col-lg-5">
                                 <div class="bn-section-label"><i class="fa-solid fa-chart-line"></i> {{ ___('common.personal_best') }}</div>
@@ -267,7 +277,7 @@
                     </div>
                 @endif
 
-                @if (!empty($lh['verified_skills']))
+                @if (!empty($lh['verified_skills']) && dashboard_feature_enabled('student', 'verified_skills'))
                     <hr class="bn-divider">
                     <div class="bn-section-label"><i class="fa-solid fa-certificate"></i> {{ ___('common.verified_skills') }}</div>
                     <div class="bn-verified-grid">
@@ -281,7 +291,7 @@
                     </div>
                 @endif
 
-                @if (!empty($lh['needs_review']) && count($lh['needs_review']))
+                @if (!empty($lh['needs_review']) && count($lh['needs_review']) && dashboard_feature_enabled('student', 'mistake_bank'))
                     <hr class="bn-divider">
                     <div class="bn-section-label"><i class="fa-solid fa-magnifying-glass"></i> {{ ___('common.lets_investigate') }}</div>
                     <p class="bn-panel__line" style="margin-bottom:12px;">{{ $lh['review_line'] }}</p>
@@ -298,7 +308,7 @@
                     @endforeach
                 @endif
 
-                @if (!empty($lh['due_for_review']) && count($lh['due_for_review']))
+                @if (!empty($lh['due_for_review']) && count($lh['due_for_review']) && dashboard_feature_enabled('student', 'refresh_time'))
                     <hr class="bn-divider">
                     <div class="bn-section-label"><i class="fa-solid fa-rotate"></i> {{ ___('common.refresh_time') }}</div>
                     <p class="bn-panel__line" style="margin-bottom:12px;">{{ $lh['refresher_line'] }}</p>

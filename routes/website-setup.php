@@ -23,6 +23,7 @@ use App\Http\Controllers\WebsiteSetup\TestimonialController;
 use App\Http\Controllers\WebsiteSetup\TrialSlotController;
 use App\Http\Controllers\WebsiteSetup\AiHelperController;
 use App\Http\Controllers\WebsiteSetup\SkillController;
+use App\Http\Controllers\WebsiteSetup\DashboardFeatureController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -163,6 +164,12 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:skill_delete', 'DemoCheck');
                     Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:skill_delete', 'DemoCheck');
                     Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:skill_update', 'DemoCheck');
+                });
+
+                Route::controller(DashboardFeatureController::class)->prefix('dashboard-features')->name('dashboard-features.')->group(function () {
+                    Route::get('/',              'index')->name('index')->middleware('PermissionCheck:dashboard_features_read');
+                    Route::post('/bulk-delete',  'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:dashboard_features_delete', 'DemoCheck');
+                    Route::post('/bulk-status',  'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:dashboard_features_update', 'DemoCheck');
                 });
 
                 Route::controller(TrialSlotController::class)->prefix('trial-slot')->name('trial-slot.')->group(function () {

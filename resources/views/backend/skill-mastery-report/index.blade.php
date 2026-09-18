@@ -52,7 +52,7 @@
             </div>
         </div>
 
-        @if ($data['snapshot'])
+        @if ($data['snapshot'] && dashboard_feature_enabled('teacher', 'skill_mastery_report'))
             <div class="table-content table-basic">
                 <div class="card">
                     <div class="card-header">
@@ -70,7 +70,9 @@
                                         <th>{{ ___('common.proficient') }}</th>
                                         <th>{{ ___('common.advanced') }}</th>
                                         <th>{{ ___('common.could_use_another_look') }}</th>
-                                        <th>{{ ___('common.possible_struggle') }}</th>
+                                        @if (dashboard_feature_enabled('teacher', 'struggle_flag'))
+                                            <th>{{ ___('common.possible_struggle') }}</th>
+                                        @endif
                                     </tr>
                                 </thead>
                                 <tbody class="tbody">
@@ -89,13 +91,15 @@
                                                     —
                                                 @endif
                                             </td>
-                                            <td>
-                                                @if ($row['struggling'] > 0)
-                                                    <span class="bn-pill" style="background:var(--bn-accent-soft);color:var(--bn-accent-strong);">{{ $row['struggling'] }}</span>
-                                                @else
-                                                    —
-                                                @endif
-                                            </td>
+                                            @if (dashboard_feature_enabled('teacher', 'struggle_flag'))
+                                                <td>
+                                                    @if ($row['struggling'] > 0)
+                                                        <span class="bn-pill" style="background:var(--bn-accent-soft);color:var(--bn-accent-strong);">{{ $row['struggling'] }}</span>
+                                                    @else
+                                                        —
+                                                    @endif
+                                                </td>
+                                            @endif
                                         </tr>
                                     @empty
                                         <tr>

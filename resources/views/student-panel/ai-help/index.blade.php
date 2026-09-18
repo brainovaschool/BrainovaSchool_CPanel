@@ -6,6 +6,7 @@
 
 @section('content')
     <div class="page-content">
+        @if (dashboard_feature_enabled('student', 'ai_ask_helper'))
         <div class="card ot-card">
             <div class="card-body">
                 <div class="d-flex align-items-center gap-3 mb-4">
@@ -30,7 +31,9 @@
                 </form>
             </div>
         </div>
+        @endif
 
+        @if (dashboard_feature_enabled('student', 'teach_kea'))
         <div class="card ot-card mt-4">
             <div class="card-body">
                 <div class="d-flex align-items-center gap-3 mb-4">
@@ -67,7 +70,9 @@
                 @endif
             </div>
         </div>
+        @endif
 
+        @if (dashboard_feature_enabled('student', 'ai_fact_checker'))
         <div class="card ot-card mt-4">
             <div class="card-body">
                 <div class="d-flex align-items-center gap-3 mb-4">
@@ -93,6 +98,7 @@
                 </form>
             </div>
         </div>
+        @endif
     </div>
 
     <script>

@@ -56,7 +56,7 @@
 
     @if($data['student'])
 
-    @if (!empty($data['weekly_wins']) && $data['weekly_wins']['has_wins'])
+    @if (!empty($data['weekly_wins']) && $data['weekly_wins']['has_wins'] && dashboard_feature_enabled('parent', 'weekly_wins'))
         @php $ww = $data['weekly_wins']; @endphp
         <div class="bn-milestone">
             <div class="bn-milestone__icon"><i class="fa-solid fa-heart"></i></div>
@@ -147,14 +147,16 @@
                         <p class="bn-panel__eyebrow mb-0">{{ ___('common.learning_snapshot') }}</p>
                         <p class="bn-panel__title mb-0">{{ @$data['student']->first_name }} {{ @$data['student']->last_name }}</p>
                     </div>
-                    <a href="{{ route('parent-panel-dashboard.learning-guide') }}" class="btn btn-sm btn-outline-primary">
-                        <i class="fa-solid fa-circle-question me-1"></i> {{ ___('common.what_does_this_mean') }}
-                    </a>
+                    @if (dashboard_feature_enabled('parent', 'learning_guide'))
+                        <a href="{{ route('parent-panel-dashboard.learning-guide') }}" class="btn btn-sm btn-outline-primary">
+                            <i class="fa-solid fa-circle-question me-1"></i> {{ ___('common.what_does_this_mean') }}
+                        </a>
+                    @endif
                 </div>
 
-                @if (!empty($lh['brain_level']) || !empty($lh['knowledge_tree']))
+                @if ((!empty($lh['brain_level']) && dashboard_feature_enabled('parent', 'brain_level')) || (!empty($lh['knowledge_tree']) && dashboard_feature_enabled('parent', 'knowledge_tree')))
                     <div class="d-flex flex-wrap gap-3 align-items-stretch" style="margin-bottom:20px;">
-                        @if (!empty($lh['brain_level']))
+                        @if (!empty($lh['brain_level']) && dashboard_feature_enabled('parent', 'brain_level'))
                             @php $bl = $lh['brain_level']; @endphp
                             <div class="bn-level-badge" style="flex:0 0 auto;">
                                 <div class="bn-level-badge__top">
@@ -168,7 +170,7 @@
                                 <div class="bn-level-badge__xp">{{ $bl['xp_into_level'] }} / {{ $bl['xp_for_level'] }} XP {{ ___('common.to_next_level') }}</div>
                             </div>
                         @endif
-                        @if (!empty($lh['knowledge_tree']))
+                        @if (!empty($lh['knowledge_tree']) && dashboard_feature_enabled('parent', 'knowledge_tree'))
                             @php $kt = $lh['knowledge_tree']; @endphp
                             <div class="bn-stat-tile bn-stat-tile--tree" style="flex:0 0 auto;">
                                 <div class="bn-stat-tile__emoji">{{ $kt['emoji'] }}</div>
@@ -178,6 +180,7 @@
                     </div>
                 @endif
 
+                @if (dashboard_feature_enabled('parent', 'learning_snapshot'))
                 <div class="row g-4">
                     <div class="col-lg-7">
                         <div class="bn-section-label"><i class="fa-solid fa-route"></i> {{ ___('common.currently_working_on') }}</div>
@@ -223,11 +226,12 @@
                         </div>
                     </div>
                 </div>
+                @endif
 
-                @if (!empty($lh['badges']) || !empty($lh['personal_best']))
+                @if ((!empty($lh['badges']) && dashboard_feature_enabled('parent', 'badges')) || (!empty($lh['personal_best']) && dashboard_feature_enabled('parent', 'personal_best')))
                     <hr class="bn-divider">
                     <div class="row g-4">
-                        @if (!empty($lh['badges']))
+                        @if (!empty($lh['badges']) && dashboard_feature_enabled('parent', 'badges'))
                             <div class="col-lg-7">
                                 <div class="bn-section-label"><i class="fa-solid fa-award"></i> {{ ___('common.badges') }}</div>
                                 <div class="d-flex flex-wrap gap-2">
@@ -240,7 +244,7 @@
                                 </div>
                             </div>
                         @endif
-                        @if (!empty($lh['personal_best']))
+                        @if (!empty($lh['personal_best']) && dashboard_feature_enabled('parent', 'personal_best'))
                             @php $pb = $lh['personal_best']; @endphp
                             <div class="col-lg-5">
                                 <div class="bn-section-label"><i class="fa-solid fa-chart-line"></i> {{ ___('common.personal_best') }}</div>
@@ -263,7 +267,7 @@
                     </div>
                 @endif
 
-                @if (!empty($lh['verified_skills']))
+                @if (!empty($lh['verified_skills']) && dashboard_feature_enabled('parent', 'verified_skills'))
                     <hr class="bn-divider">
                     <div class="bn-section-label"><i class="fa-solid fa-certificate"></i> {{ ___('common.verified_skills') }}</div>
                     <div class="bn-verified-grid">

@@ -54,6 +54,7 @@ class MigrationRunnerController extends Controller
         'testimonial'      => ['read' => 'testimonial_read', 'create' => 'testimonial_create', 'update' => 'testimonial_update', 'delete' => 'testimonial_delete'],
         'trial_slot'       => ['read' => 'trial_slot_read', 'create' => 'trial_slot_create', 'update' => 'trial_slot_update', 'delete' => 'trial_slot_delete'],
         'skill'            => ['read' => 'skill_read', 'create' => 'skill_create', 'update' => 'skill_update', 'delete' => 'skill_delete'],
+        'dashboard_features' => ['read' => 'dashboard_features_read', 'update' => 'dashboard_features_update', 'delete' => 'dashboard_features_delete'],
     ];
 
     public function run(string $key)
@@ -101,12 +102,23 @@ class MigrationRunnerController extends Controller
             $notice = 'error: ' . $e->getMessage();
         }
 
+        // Dashboard feature catalogue (idempotent — never overwrites a row's
+        // status, only its label/description, so admin toggles survive re-runs).
+        $features = 'skipped';
+        try {
+            (new \Database\Seeders\WebsiteSetup\DashboardFeatureSeeder())->run();
+            $features = 'ok — dashboard feature catalogue synced';
+        } catch (\Throwable $e) {
+            $features = 'error: ' . $e->getMessage();
+        }
+
         return response(
             '<pre style="font:14px/1.5 monospace;padding:24px">'
             . e($migrate) . "\n\nPermissions: " . e($perms)
             . "\nCatalogue seed: " . e($seed)
             . "\nTestimonials seed: " . e($tm)
             . "\nNotice seed: " . e($notice)
+            . "\nDashboard features seed: " . e($features)
             . "</pre>"
         );
     }

@@ -23,7 +23,9 @@
             </div>
         @else
             <div class="table-responsive">
-                <p class="text-muted small mb-3">Tagging a question with a Skill lets it feed the skill-mastery system when a student answers it — optional, and doesn't change how the quiz is scored.</p>
+                @if (dashboard_feature_enabled('teacher', 'quiz_skill_tagging'))
+                    <p class="text-muted small mb-3">Tagging a question with a Skill lets it feed the skill-mastery system when a student answers it — optional, and doesn't change how the quiz is scored.</p>
+                @endif
                 <table class="table ot-table-bg table-bordered">
                     <thead class="thead">
                         <tr>
@@ -32,7 +34,9 @@
                             <th>Options</th>
                             <th>Correct Answer</th>
                             <th>Hint</th>
-                            <th style="width:200px;">Skill</th>
+                            @if (dashboard_feature_enabled('teacher', 'quiz_skill_tagging'))
+                                <th style="width:200px;">Skill</th>
+                            @endif
                         </tr>
                     </thead>
                     <tbody class="tbody">
@@ -56,14 +60,16 @@
                             <td class="text-muted small">
                                 {{ $q->hint ?? '—' }}
                             </td>
-                            <td>
-                                <select class="form-control form-control-sm quiz-question-skill" data-question-id="{{ $q->id }}">
-                                    <option value="">Not tagged</option>
-                                    @foreach ($skills ?? [] as $skill)
-                                        <option value="{{ $skill->id }}" {{ ($q->skill_id ?? null) == $skill->id ? 'selected' : '' }}>{{ $skill->title }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
+                            @if (dashboard_feature_enabled('teacher', 'quiz_skill_tagging'))
+                                <td>
+                                    <select class="form-control form-control-sm quiz-question-skill" data-question-id="{{ $q->id }}">
+                                        <option value="">Not tagged</option>
+                                        @foreach ($skills ?? [] as $skill)
+                                            <option value="{{ $skill->id }}" {{ ($q->skill_id ?? null) == $skill->id ? 'selected' : '' }}>{{ $skill->title }}</option>
+                                        @endforeach
+                                    </select>
+                                </td>
+                            @endif
                         </tr>
                         @endforeach
                     </tbody>

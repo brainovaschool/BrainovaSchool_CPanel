@@ -139,6 +139,40 @@ if (!function_exists('calculateDiscount')) {
     }
 }
 
+if (!function_exists('dashboard_feature_enabled')) {
+    /**
+     * Website Setup > Dashboard Features lets the admin show/hide individual
+     * student/teacher/parent dashboard sections. Loaded once per request
+     * (static cache) since a single page checks many of these. A key nobody
+     * has configured yet — or one an admin deleted from the management list —
+     * stays visible by default (fail-open), so this toggle system can never
+     * silently break a dashboard section that isn't in the catalogue.
+     */
+    function dashboard_feature_enabled(string $portal, string $key): bool
+    {
+        static $flags = null;
+
+        if ($flags === null) {
+            $flags = [];
+            try {
+                foreach (\App\Models\WebsiteSetup\DashboardFeature::select('portal', 'feature_key', 'status')->get() as $row) {
+                    $flags[$row->portal . '.' . $row->feature_key] = (int) $row->status;
+                }
+            } catch (\Throwable $e) {
+                $flags = [];
+            }
+        }
+
+        $lookup = $portal . '.' . $key;
+
+        if (!array_key_exists($lookup, $flags)) {
+            return true;
+        }
+
+        return $flags[$lookup] === \App\Enums\Status::ACTIVE;
+    }
+}
+
 function ___($key = null, $replace = [], $locale = null)
 {
 

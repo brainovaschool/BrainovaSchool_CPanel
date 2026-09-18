@@ -52,7 +52,7 @@ class DashboardController extends Controller
     public function saveDailyGoals(Request $request)
     {
         $student = optional(Auth::user())->student;
-        if (!$student) {
+        if (!$student || !dashboard_feature_enabled('student', 'daily_goals')) {
             return redirect()->route('student-panel-dashboard.index');
         }
 
@@ -64,7 +64,7 @@ class DashboardController extends Controller
     public function saveReflection(Request $request)
     {
         $student = optional(Auth::user())->student;
-        if (!$student) {
+        if (!$student || !dashboard_feature_enabled('student', 'reflection_journal')) {
             return redirect()->route('student-panel-dashboard.index');
         }
 
