@@ -907,10 +907,11 @@
                         hasPermission('trial_slot_read') ||
                         hasPermission('ai_helper_read') ||
                         hasPermission('dashboard_features_read') ||
+                        hasPermission('avatar_item_read') ||
                         hasPermission('event_read')) &&
                         hasFeature('website_setup'))
                     <li
-                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'program-category*', 'program-focus*', 'program/*', 'testimonial*', 'trial-slot*', 'ai-helper*', 'skill*', 'dashboard-features*']) }}">
+                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'program-category*', 'program-focus*', 'program/*', 'testimonial*', 'trial-slot*', 'ai-helper*', 'skill*', 'dashboard-features*', 'avatar-item*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-wrench"></i>
                             <span class="on-half-expanded">{{ ___('settings.Website_setup') }}</span>
@@ -1009,6 +1010,12 @@
                             @if (hasPermission('dashboard_features_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['dashboard-features*']) }}">
                                     <a href="{{ route('dashboard-features.index') }}">{{ ___('settings.dashboard_features') }}</a>
+                                </li>
+                            @endif
+
+                            @if (hasPermission('avatar_item_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['avatar-item*']) }}">
+                                    <a href="{{ route('avatar-item.index') }}">{{ ___('settings.avatar_gallery') }}</a>
                                 </li>
                             @endif
 

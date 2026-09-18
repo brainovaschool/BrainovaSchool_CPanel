@@ -1,0 +1,114 @@
+<?php
+
+namespace App\Http\Controllers\WebsiteSetup;
+
+use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
+use App\Repositories\WebsiteSetup\AvatarItemRepository;
+
+class AvatarItemController extends Controller
+{
+    private $repo;
+
+    public function __construct(AvatarItemRepository $repo)
+    {
+        $this->repo = $repo;
+    }
+
+    public function index(Request $request)
+    {
+        $category = in_array($request->get('category'), ['avatar', 'accessory'], true)
+            ? $request->get('category')
+            : 'avatar';
+
+        $data['category'] = $category;
+        $data['items']    = $this->repo->getByCategory($category);
+        $data['title']    = ___('settings.avatar_gallery');
+
+        return view('website-setup.avatar-item.index', compact('data'));
+    }
+
+    public function create(Request $request)
+    {
+        $data['category'] = in_array($request->get('category'), ['avatar', 'accessory'], true) ? $request->get('category') : 'avatar';
+        $data['title']    = ___('settings.add_avatar_item');
+        return view('website-setup.avatar-item.create', compact('data'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'category'    => 'required|in:avatar,accessory',
+            'name'        => 'required|string|max:60',
+            'price_coins' => 'nullable|integer|min:0',
+            'image'       => 'required|image|max:2048',
+        ]);
+
+        $result = $this->repo->store($request);
+        if ($result['status']) {
+            return redirect()->route('avatar-item.index', ['category' => $request->category])->with('success', $result['message']);
+        }
+        return back()->withInput()->with('danger', $result['message']);
+    }
+
+    public function edit($id)
+    {
+        $data['item'] = $this->repo->show($id);
+        if (!$data['item']) {
+            return redirect()->route('avatar-item.index')->with('danger', ___('alert.not_found'));
+        }
+        $data['title'] = ___('settings.edit_avatar_item');
+        return view('website-setup.avatar-item.edit', compact('data'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'category'    => 'required|in:avatar,accessory',
+            'name'        => 'required|string|max:60',
+            'price_coins' => 'nullable|integer|min:0',
+            'image'       => 'nullable|image|max:2048',
+        ]);
+
+        $result = $this->repo->update($request, $id);
+        if ($result['status']) {
+            return redirect()->route('avatar-item.index', ['category' => $request->category])->with('success', $result['message']);
+        }
+        return back()->withInput()->with('danger', $result['message']);
+    }
+
+    public function delete($id)
+    {
+        $result = $this->repo->destroy($id);
+        if ($result['status']) {
+            return response()->json([$result['message'], 'success', ___('alert.deleted'), ___('alert.OK')]);
+        }
+        return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+        $result = $this->repo->bulkDestroy($ids);
+        if ($result['status']) {
+            return response()->json([$result['message'], 'success', ___('alert.deleted'), ___('alert.OK')]);
+        }
+        return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
+    }
+
+    public function bulkStatus(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+        $result = $this->repo->bulkStatus($ids, (int) $request->input('status', 1));
+        if ($result['status']) {
+            return response()->json([$result['message'], 'success', ___('alert.updated'), ___('alert.OK')]);
+        }
+        return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
+    }
+}

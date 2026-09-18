@@ -24,6 +24,7 @@ use App\Http\Controllers\WebsiteSetup\TrialSlotController;
 use App\Http\Controllers\WebsiteSetup\AiHelperController;
 use App\Http\Controllers\WebsiteSetup\SkillController;
 use App\Http\Controllers\WebsiteSetup\DashboardFeatureController;
+use App\Http\Controllers\WebsiteSetup\AvatarItemController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -170,6 +171,17 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/',              'index')->name('index')->middleware('PermissionCheck:dashboard_features_read');
                     Route::post('/bulk-delete',  'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:dashboard_features_delete', 'DemoCheck');
                     Route::post('/bulk-status',  'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:dashboard_features_update', 'DemoCheck');
+                });
+
+                Route::controller(AvatarItemController::class)->prefix('avatar-item')->name('avatar-item.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:avatar_item_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:avatar_item_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:avatar_item_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:avatar_item_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:avatar_item_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:avatar_item_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
                 });
 
                 Route::controller(TrialSlotController::class)->prefix('trial-slot')->name('trial-slot.')->group(function () {

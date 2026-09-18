@@ -55,6 +55,7 @@ class MigrationRunnerController extends Controller
         'trial_slot'       => ['read' => 'trial_slot_read', 'create' => 'trial_slot_create', 'update' => 'trial_slot_update', 'delete' => 'trial_slot_delete'],
         'skill'            => ['read' => 'skill_read', 'create' => 'skill_create', 'update' => 'skill_update', 'delete' => 'skill_delete'],
         'dashboard_features' => ['read' => 'dashboard_features_read', 'update' => 'dashboard_features_update', 'delete' => 'dashboard_features_delete'],
+        'avatar_item'      => ['read' => 'avatar_item_read', 'create' => 'avatar_item_create', 'update' => 'avatar_item_update', 'delete' => 'avatar_item_delete'],
     ];
 
     public function run(string $key)

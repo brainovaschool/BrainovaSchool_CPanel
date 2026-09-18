@@ -15,6 +15,7 @@ use App\Repositories\StudentPanel\DashboardRepository;
 use App\Repositories\LearningEngine\LearningHomeRepository;
 use App\Repositories\LearningEngine\DailyGoalRepository;
 use App\Repositories\LearningEngine\ReflectionJournalRepository;
+use App\Repositories\LearningEngine\StudentAvatarRepository;
 
 class DashboardController extends Controller
 {
@@ -22,13 +23,15 @@ class DashboardController extends Controller
     private $learningHome;
     private $dailyGoals;
     private $reflectionJournal;
+    private $avatar;
 
-    function __construct(DashboardRepository $repo, LearningHomeRepository $learningHome, DailyGoalRepository $dailyGoals, ReflectionJournalRepository $reflectionJournal)
+    function __construct(DashboardRepository $repo, LearningHomeRepository $learningHome, DailyGoalRepository $dailyGoals, ReflectionJournalRepository $reflectionJournal, StudentAvatarRepository $avatar)
     {
         $this->repo              = $repo;
         $this->learningHome      = $learningHome;
         $this->dailyGoals        = $dailyGoals;
         $this->reflectionJournal = $reflectionJournal;
+        $this->avatar            = $avatar;
     }
 
     public function index()
@@ -41,6 +44,7 @@ class DashboardController extends Controller
                 $data['weekly_wins']        = $this->learningHome->weeklyWins($data['student']);
                 $data['daily_goals']        = $this->dailyGoals->forStudent($data['student']->id);
                 $data['reflection_today']   = $this->reflectionJournal->today($data['student']->id);
+                $data['avatar_profile']     = $this->avatar->getOrCreateProfile($data['student']->id)->load('avatar');
             } catch (\Throwable $th) {
                 report($th);
             }

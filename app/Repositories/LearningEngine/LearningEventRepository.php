@@ -78,6 +78,11 @@ class LearningEventRepository
                 'event_type' => $eventType,
                 'payload'    => $payload,
                 'xp'         => $xp,
+                // Coins are a second, SPENDABLE currency — earned 1-for-1
+                // with XP on every event, but tracked separately so the
+                // avatar shop can spend them without ever touching the XP
+                // total that drives Brain Level. See totalCoinsEarned().
+                'coins'      => $xp,
             ]);
         } catch (\Throwable $th) {
             Log::warning('Learning event record failed: ' . $th->getMessage());
@@ -103,6 +108,14 @@ class LearningEventRepository
     public function totalXp(int $studentId): int
     {
         return (int) LearningEvent::where('student_id', $studentId)->sum('xp');
+    }
+
+    /** Lifetime coins earned — spending in the avatar shop is tracked
+     *  separately (student_avatar_purchases), never subtracted here, so this
+     *  number always matches "coins earned" even after spending some. */
+    public function totalCoinsEarned(int $studentId): int
+    {
+        return (int) LearningEvent::where('student_id', $studentId)->sum('coins');
     }
 
     private function updateMastery(int $studentId, int $skillId, bool $correct): array

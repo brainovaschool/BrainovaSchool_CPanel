@@ -8,6 +8,7 @@ use App\Http\Controllers\StudentPanel\FeesController;
 use App\Repositories\StudentPanel\AttendanceRepository;
 use App\Http\Controllers\StudentPanel\ProfileController;
 use App\Http\Controllers\StudentPanel\AiHelpController;
+use App\Http\Controllers\StudentPanel\AvatarController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use App\Http\Controllers\StudentPanel\HomeworkController;
 use App\Http\Controllers\StudentPanel\DashboardController;
@@ -39,6 +40,14 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::post('/ask',        'ask')->name('student-panel-ai-help.ask');
                         Route::post('/teach-kea',  'teachKea')->name('student-panel-ai-help.teach-kea');
                         Route::post('/fact-check', 'factCheck')->name('student-panel-ai-help.fact-check');
+                    });
+
+                    Route::controller(AvatarController::class)->prefix('student-panel-avatar')->name('student-panel-avatar.')->group(function () {
+                        Route::get('/',                  'index')->name('index');
+                        Route::post('/purchase',         'purchase')->name('purchase');
+                        Route::post('/select-avatar',    'selectAvatar')->name('select-avatar');
+                        Route::post('/select-accessory', 'selectAccessory')->name('select-accessory');
+                        Route::post('/save-profile',     'saveProfile')->name('save-profile');
                     });
 
                     Route::controller(ProfileController::class)->prefix('student-panel')->group(function () {

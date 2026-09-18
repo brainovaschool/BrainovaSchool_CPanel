@@ -35,7 +35,12 @@
 
             $keaSpeakText = implode(' ', $speakParts);
         }
-        $keaImage = setting('ai_helper_student_mascot') ? globalAsset(setting('ai_helper_student_mascot')) : null;
+        $avatarProfile = $data['avatar_profile'] ?? null;
+        $keaImage = optional($avatarProfile)->avatar && $avatarProfile->avatar->image
+            ? globalAsset($avatarProfile->avatar->image)
+            : (setting('ai_helper_student_mascot') ? globalAsset(setting('ai_helper_student_mascot')) : null);
+        $keaName = optional($avatarProfile)->avatar_name ?: 'Kea';
+        $keaVoicePreset = optional($avatarProfile)->voice_preset ?: 'classic';
     @endphp
 
     {{-- Profile hero — who this is, at a glance, always at the top --}}
@@ -57,7 +62,7 @@
             </ul>
         </div>
         @if ($keaSpeakText && dashboard_feature_enabled('student', 'kea_voice'))
-            @include('backend.partials.character-voice-avatar', ['image' => $keaImage, 'name' => 'Kea', 'speakText' => $keaSpeakText])
+            @include('backend.partials.character-voice-avatar', ['image' => $keaImage, 'name' => $keaName, 'speakText' => $keaSpeakText, 'voicePreset' => $keaVoicePreset])
         @endif
         @if (!empty($data['learning_home']['brain_level']) && dashboard_feature_enabled('student', 'brain_level'))
             @php $bl = $data['learning_home']['brain_level']; @endphp

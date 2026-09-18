@@ -21,6 +21,12 @@
                         <span class="on-half-expanded">{{ ___('settings.ai_help_student') }}</span>
                     </a>
                 </li>
+                <li class="sidebar-menu-item {{ set_menu(['student-panel-avatar*']) }}">
+                    <a href="{{ route('student-panel-avatar.index') }}" class="parent-item-content">
+                        <i class="las la-user-astronaut"></i>
+                        <span class="on-half-expanded">{{ ___('settings.my_avatar') }}</span>
+                    </a>
+                </li>
                 @if (hasFeature('academic'))
                     <li class="sidebar-menu-item {{ set_menu(['student-panel-subject-list*']) }}">
                         <a href="{{ route('student-panel-subject-list.index') }}" class="parent-item-content">
