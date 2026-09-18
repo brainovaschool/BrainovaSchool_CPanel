@@ -172,6 +172,9 @@ Route::middleware(saasMiddleware())->group(function () {
             // One-off: list every demo student/teacher/parent account and reset each to a known, fixed password (admin-only + key).
             Route::get('/db/list-demo-credentials/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'listDemoCredentials']);
 
+            // One-off: credit every demo student with 5000 test coins to try out the avatar shop's buy flow (admin-only + key).
+            Route::get('/db/grant-test-coins/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'grantTestCoins']);
+
             Route::controller(LanguageController::class)->prefix('languages')->group(function () {
                 Route::get('/change',                   'changeLanguage')->name('languages.change');
             });

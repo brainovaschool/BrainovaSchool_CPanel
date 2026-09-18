@@ -1513,6 +1513,41 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:14px/1.5 monospace;padding:24px">' . e(implode("\n", $lines)) . '</pre>');
     }
 
+    /** One-off: credits every demo. student account with 5000 spendable
+     *  Coins (xp stays 0, so Brain Level/mastery are untouched) so the
+     *  avatar shop's buy flow can be tested end to end. */
+    public function grantTestCoins(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $amount   = 5000;
+        $students = Student::where('email', 'like', 'demo.%')->get();
+
+        if ($students->isEmpty()) {
+            return response('No demo student accounts found (email must start with "demo.").', 422);
+        }
+
+        foreach ($students as $student) {
+            LearningEvent::create([
+                'student_id' => $student->id,
+                'event_type' => 'coin_grant',
+                'xp'         => 0,
+                'coins'      => $amount,
+                'payload'    => ['reason' => 'manual test grant via /db/grant-test-coins'],
+            ]);
+        }
+
+        $names = $students->map(fn ($s) => "{$s->first_name} {$s->last_name}")->implode(', ');
+
+        return response("Granted {$amount} coins each to: {$names}. Reload the My Avatar page to see the new balance.");
+    }
+
     /** Shows the tail of storage/logs/laravel.log in the browser, newest first —
      *  for a host with no SSH and no confirmed file-manager access to logs. */
     public function viewLogs(string $key)

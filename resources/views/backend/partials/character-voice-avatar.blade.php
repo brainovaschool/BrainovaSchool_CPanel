@@ -18,25 +18,26 @@
         $voice = \App\Repositories\LearningEngine\StudentAvatarRepository::VOICE_PRESETS[$voicePreset ?? 'classic']
             ?? \App\Repositories\LearningEngine\StudentAvatarRepository::VOICE_PRESETS['classic'];
     @endphp
+    @php $displayName = $name ?? ___('common.my_avatar'); @endphp
     @if (($variant ?? 'avatar') === 'card')
-        <div class="bn-dv2-card bn-dv2-kea" id="bnVoiceAvatarBtn" role="button" tabindex="0" aria-label="{{ ___('common.tap_to_hear_from') }} {{ $name ?? 'Kea' }}">
+        <div class="bn-dv2-card bn-dv2-kea" id="bnVoiceAvatarBtn" role="button" tabindex="0" aria-label="{{ ___('common.tap_to_hear_from') }} {{ $displayName }}">
             @if (!empty($image))
-                <img src="{{ $image }}" alt="{{ $name ?? 'Kea' }}">
+                <img src="{{ $image }}" alt="{{ $displayName }}">
             @else
-                <div class="fallback">🐦</div>
+                <div class="fallback"><i class="fa-solid fa-user"></i></div>
             @endif
             <div>
                 <div class="t">{{ ___('common.tap_to_hear_your_update') }}</div>
-                <div class="m">{{ $name ?? 'Kea' }} {{ ___('common.has_something_to_tell_you') }}</div>
+                <div class="m">{{ $displayName }} {{ ___('common.has_something_to_tell_you') }}</div>
             </div>
             <div class="mic"><i class="fa-solid fa-volume-high"></i></div>
         </div>
     @else
-        <button type="button" class="bn-voice-avatar" id="bnVoiceAvatarBtn" aria-label="{{ ___('common.tap_to_hear_from') }} {{ $name ?? 'Kea' }}">
+        <button type="button" class="bn-voice-avatar" id="bnVoiceAvatarBtn" aria-label="{{ ___('common.tap_to_hear_from') }} {{ $displayName }}">
             @if (!empty($image))
-                <img src="{{ $image }}" alt="{{ $name ?? 'Kea' }}">
+                <img src="{{ $image }}" alt="{{ $displayName }}">
             @else
-                <i class="fa-solid fa-feather"></i>
+                <i class="fa-solid fa-user"></i>
             @endif
             <span class="bn-voice-avatar__icon"><i class="fa-solid fa-volume-high"></i></span>
         </button>

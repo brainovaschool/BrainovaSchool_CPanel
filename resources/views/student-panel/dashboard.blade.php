@@ -34,7 +34,7 @@
         $keaImage = optional($avatarProfile)->avatar && $avatarProfile->avatar->image
             ? globalAsset($avatarProfile->avatar->image)
             : (setting('ai_helper_student_mascot') ? globalAsset(setting('ai_helper_student_mascot')) : null);
-        $keaName = optional($avatarProfile)->avatar_name ?: 'Kea';
+        $keaName = optional($avatarProfile)->avatar_name ?: ___('common.my_avatar');
         $keaVoicePreset = optional($avatarProfile)->voice_preset ?: 'classic';
 
         $lh = $data['learning_home'] ?? null;

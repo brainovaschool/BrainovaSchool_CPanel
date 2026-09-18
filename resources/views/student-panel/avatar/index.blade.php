@@ -18,12 +18,12 @@
     width:88px; height:88px; border-radius:50%; background:var(--bn-primary-soft); border:3px solid var(--bn-primary);
     display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:2.4rem;
 }
-.av-preview .face img{ width:100%; height:100%; object-fit:cover; }
+.av-preview .face img{ width:100%; height:100%; object-fit:contain; }
 .av-preview .acc-badge{
     position:absolute; bottom:-4px; right:-4px; width:34px; height:34px; border-radius:50%; background:#fff;
     border:2px solid #eee; display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:1.1rem;
 }
-.av-preview .acc-badge img{ width:100%; height:100%; object-fit:cover; }
+.av-preview .acc-badge img{ width:100%; height:100%; object-fit:contain; }
 .av-hero-name{ font-weight:800; font-size:1.2rem; color:var(--bn-ink); }
 .av-hero-sub{ color:#7a8790; font-size:.84rem; margin-top:2px; }
 
@@ -36,7 +36,7 @@
     background:#fbfeff;
 }
 .av-shop-item.equipped{ border-color:var(--bn-primary); background:var(--bn-primary-soft); }
-.av-shop-item img{ width:64px; height:64px; border-radius:50%; object-fit:cover; margin-bottom:6px; background:#fff; }
+.av-shop-item img{ width:64px; height:64px; border-radius:12px; object-fit:contain; margin-bottom:6px; background:#f4f6f7; }
 .av-shop-item .face-fallback{ width:64px; height:64px; border-radius:50%; background:#eef2f4; margin:0 auto 6px; display:flex; align-items:center; justify-content:center; color:#9aa4ab; }
 .av-shop-item .nm{ font-size:.82rem; font-weight:700; color:var(--bn-ink); }
 .av-shop-item .price{ font-size:.74rem; color:#92400e; margin-top:3px; }
@@ -70,7 +70,7 @@
                         @if (optional($data['profile'])->avatar && $data['profile']->avatar->image)
                             <img src="{{ globalAsset($data['profile']->avatar->image) }}" alt="{{ $data['profile']->avatar->name }}">
                         @else
-                            🐦
+                            <i class="fa-solid fa-user" style="color:var(--bn-primary);font-size:2.4rem;"></i>
                         @endif
                     </div>
                     @if (optional($data['profile'])->accessory && $data['profile']->accessory->image)
@@ -78,7 +78,7 @@
                     @endif
                 </div>
                 <div style="flex:1;min-width:200px;">
-                    <div class="av-hero-name">{{ optional($data['profile'])->avatar_name ?: 'Kea' }}</div>
+                    <div class="av-hero-name">{{ optional($data['profile'])->avatar_name ?: ___('common.my_avatar') }}</div>
                     <div class="av-hero-sub">Your avatar — speaks to you from the dashboard</div>
                 </div>
             </div>
