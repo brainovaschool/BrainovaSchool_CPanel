@@ -17,9 +17,12 @@ class AvatarItemRepository
         $this->model = $model;
     }
 
+    /** Paginated far higher than the app default — these are small visual
+     *  thumbnails, and splitting a wardrobe across pages of 10 made it look
+     *  like there was a cap on how many items you could add. */
     public function getByCategory(string $category)
     {
-        return $this->model->category($category)->orderBy('sort_order')->paginate(\App\Enums\Settings::PAGINATE);
+        return $this->model->category($category)->orderBy('sort_order')->paginate(60);
     }
 
     public function show($id)
@@ -70,6 +73,55 @@ class AvatarItemRepository
         }
     }
 
+    /** Creates one item per uploaded file, named after the file, priced and
+     *  placed from the category defaults. Positioning is still per-item, but
+     *  building a wardrobe no longer means repeating the whole form for
+     *  every single hat. */
+    public function bulkStore($request): array
+    {
+        $files = array_filter((array) $request->file('images', []));
+        if (empty($files)) {
+            return $this->responseWithError('Choose at least one image to upload.', []);
+        }
+
+        $placement = AvatarItem::DEFAULT_PLACEMENT[$request->category] ?? AvatarItem::DEFAULT_PLACEMENT['accessory'];
+        $price     = max(0, (int) $request->input('price_coins', 0));
+        $created   = 0;
+
+        foreach ($files as $file) {
+            if (!$file->isValid()) {
+                continue;
+            }
+
+            try {
+                $row              = new $this->model;
+                $row->category    = $request->category;
+                $row->name        = Str::limit(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME), 57);
+                $row->price_coins = $price;
+                $row->sort_order  = 0;
+                $row->status      = \App\Enums\Status::ACTIVE;
+                $row->image       = $this->storeFile($file);
+                $row->pos_x       = $placement['pos_x'];
+                $row->pos_y       = $placement['pos_y'];
+                $row->scale       = $placement['scale'];
+                $row->rotation    = $placement['rotation'];
+                $row->save();
+                $created++;
+            } catch (\Throwable $th) {
+                report($th);
+            }
+        }
+
+        if ($created === 0) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+
+        return $this->responseWithSuccess(
+            $created . ' item(s) added. Open each one to set where it sits on the avatar.',
+            []
+        );
+    }
+
     public function destroy($id)
     {
         try {
@@ -118,10 +170,14 @@ class AvatarItemRepository
             return null;
         }
 
+        return $this->storeFile($request->file('image'));
+    }
+
+    private function storeFile($file): string
+    {
         $path      = 'backend/uploads/avatar-items';
-        $file      = $request->file('image');
         $extension = $file->guessExtension();
-        $filename  = Str::random(6) . '_' . time() . '.' . $extension;
+        $filename  = Str::random(6) . '_' . time() . '_' . Str::random(4) . '.' . $extension;
 
         if (setting('file_system') == 's3') {
             return s3Upload($path, $file);

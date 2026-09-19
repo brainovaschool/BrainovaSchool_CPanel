@@ -57,6 +57,21 @@ class AvatarItemController extends Controller
         return back()->withInput()->with('danger', $result['message']);
     }
 
+    public function bulkStore(Request $request)
+    {
+        $request->validate([
+            'category'    => 'required|in:' . implode(',', array_keys(AvatarItem::CATEGORIES)),
+            'price_coins' => 'nullable|integer|min:0',
+            'images'      => 'required|array',
+            'images.*'    => 'image|max:2048',
+        ]);
+
+        $result = $this->repo->bulkStore($request);
+
+        return redirect()->route('avatar-item.index', ['category' => $request->category])
+            ->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
     public function edit($id)
     {
         $data['item'] = $this->repo->show($id);

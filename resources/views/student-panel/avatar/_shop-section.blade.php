@@ -1,16 +1,11 @@
 {{--
     One "shop + your items" card, used for all four avatar layer categories
-    on the Avatar World page. Left side: unowned items, buyable with coins.
-    Right side: a scrollable inventory of everything already owned — click
-    an item to wear it.
+    on the Avatar World page. Left: items not owned yet, buyable with coins.
+    Right: the "Your Items" inventory (see _inventory.blade.php).
 
-    Three equip behaviours, picked automatically from $kind:
-      - 'avatar'    single-select, never clearable (a body is always worn)
-      - 'outfit'/'hat'  single-select, clearable (worn row's form omits
-                    item_id to go back to "nothing in this slot")
-      - 'accessory' multi-select — every row always posts its own item_id
-                    to the same toggle route, which flips it on/off, so
-                    several can be worn at once
+    Pass 'showInventory' => false when that category's inventory is shown
+    somewhere else on the page instead — accessories put theirs up beside
+    the avatar, so changes are visible as they're made.
 
     Usage: @include('student-panel.avatar._shop-section', [
         'title'    => 'Accessories',
@@ -23,16 +18,7 @@
     ])
 --}}
 @php
-    $multi     = $kind === 'accessory';
-    $wearRoute = match ($kind) {
-        'avatar'    => route('student-panel-avatar.select-avatar'),
-        'outfit'    => route('student-panel-avatar.select-outfit'),
-        'hat'       => route('student-panel-avatar.select-hat'),
-        'accessory' => route('student-panel-avatar.toggle-accessory'),
-    };
-    $equippedIds = $multi ? (array) $equipped : [];
-    $ownedItems  = $items->filter(fn ($i) => in_array($i->id, $owned, true))->values();
-    $shopItems   = $items->reject(fn ($i) => in_array($i->id, $owned, true))->values();
+    $shopItems = $items->reject(fn ($i) => in_array($i->id, $owned, true))->values();
 @endphp
 <div class="card ot-card mb-4">
     <div class="card-body">
@@ -63,55 +49,14 @@
                 @endforelse
             </div>
 
-            <div class="av-inventory">
-                <div class="av-inventory__title"><i class="fa-solid fa-box-open"></i> {{ ___('common.your_items') }} ({{ $ownedItems->count() }})</div>
-                <div class="av-inventory__list">
-                    @forelse ($ownedItems as $item)
-                        @php $isWorn = $multi ? in_array($item->id, $equippedIds, true) : $equipped === $item->id; @endphp
-
-                        @if ($isWorn && $kind === 'avatar')
-                            <div class="av-inv-row worn">
-                                @if ($item->image)
-                                    <img src="{{ globalAsset($item->image) }}" alt="{{ $item->name }}">
-                                @else
-                                    <div class="face-fallback"><i class="fa-solid fa-image"></i></div>
-                                @endif
-                                <span class="nm">{{ $item->name }}</span>
-                                <i class="fa-solid fa-check worn-check"></i>
-                            </div>
-                        @elseif ($isWorn)
-                            <form method="post" action="{{ $wearRoute }}" class="av-inv-row worn">
-                                @csrf
-                                @if ($multi)
-                                    <input type="hidden" name="item_id" value="{{ $item->id }}">
-                                @endif
-                                @if ($item->image)
-                                    <img src="{{ globalAsset($item->image) }}" alt="{{ $item->name }}">
-                                @else
-                                    <div class="face-fallback"><i class="fa-solid fa-image"></i></div>
-                                @endif
-                                <span class="nm">{{ $item->name }}</span>
-                                <button type="submit" class="remove-x" title="{{ ___('common.remove') }}"><i class="fa-solid fa-xmark"></i></button>
-                            </form>
-                        @else
-                            <form method="post" action="{{ $wearRoute }}">
-                                @csrf
-                                <input type="hidden" name="item_id" value="{{ $item->id }}">
-                                <button type="submit" class="av-inv-row" title="{{ ___('common.click_to_wear') }}">
-                                    @if ($item->image)
-                                        <img src="{{ globalAsset($item->image) }}" alt="{{ $item->name }}">
-                                    @else
-                                        <div class="face-fallback"><i class="fa-solid fa-image"></i></div>
-                                    @endif
-                                    <span class="nm">{{ $item->name }}</span>
-                                </button>
-                            </form>
-                        @endif
-                    @empty
-                        <p class="av-inventory__empty">Nothing owned yet — buy one from the left to start your collection.</p>
-                    @endforelse
-                </div>
-            </div>
+            @if ($showInventory ?? true)
+                @include('student-panel.avatar._inventory', [
+                    'items'    => $items,
+                    'owned'    => $owned,
+                    'equipped' => $equipped,
+                    'kind'     => $kind,
+                ])
+            @endif
         </div>
     </div>
 </div>

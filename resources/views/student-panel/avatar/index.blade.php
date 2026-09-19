@@ -12,7 +12,11 @@
     padding:8px 16px; border-radius:20px; font-size:.95rem;
 }
 
-.av-hero{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+.av-hero{ display:flex; align-items:flex-start; gap:22px; flex-wrap:wrap; }
+/* The accessories inventory sits in the hero, filling the space beside the
+   avatar rather than being buried down in the shop. */
+.av-hero .av-inventory{ flex:0 1 300px; max-width:320px; }
+.av-hero .av-inventory__list{ max-height:210px; }
 .av-preview{ position:relative; width:220px; aspect-ratio:1/1; flex-shrink:0; }
 .av-preview .fallback-icon{
     width:100%; height:100%;
@@ -93,6 +97,17 @@ button.av-inv-row:hover{ background:#f4f8fa; }
                     <div class="av-hero-name">{{ optional($data['profile'])->avatar_name ?: ___('common.my_avatar') }}</div>
                     <div class="av-hero-sub">Your avatar — speaks to you from the dashboard</div>
                 </div>
+
+                {{-- Accessories live up here rather than down in their shop
+                     section, so taking one on or off shows on the avatar
+                     right beside it. --}}
+                @include('student-panel.avatar._inventory', [
+                    'items'    => $data['accessories'],
+                    'owned'    => $data['owned'],
+                    'equipped' => $data['equippedAccessories'],
+                    'kind'     => 'accessory',
+                    'invTitle' => 'My Accessories',
+                ])
             </div>
 
             <form action="{{ route('student-panel-avatar.save-profile') }}" method="post" class="av-name-voice-row">
@@ -148,12 +163,13 @@ button.av-inv-row:hover{ background:#f4f8fa; }
 
     @include('student-panel.avatar._shop-section', [
         'title'    => 'Accessories',
-        'hint'     => 'Small extras you can wear several of at once.',
+        'hint'     => 'Small extras you can wear several of at once. Everything you own is up beside your avatar.',
         'items'    => $data['accessories'],
         'owned'    => $data['owned'],
         'equipped' => $data['equippedAccessories'],
         'kind'     => 'accessory',
         'coins'    => $data['coins'],
+        'showInventory' => false,
     ])
 </div>
 

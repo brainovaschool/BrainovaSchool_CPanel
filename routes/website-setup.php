@@ -177,6 +177,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/',                'index')->name('index')->middleware('PermissionCheck:avatar_item_read');
                     Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:avatar_item_create');
                     Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:avatar_item_create', 'DemoCheck');
+                    Route::post('/bulk-store',     'bulkStore')->name('bulk-store')->middleware('PermissionCheck:avatar_item_create', 'DemoCheck');
                     Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:avatar_item_update');
                     Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:avatar_item_delete', 'DemoCheck');

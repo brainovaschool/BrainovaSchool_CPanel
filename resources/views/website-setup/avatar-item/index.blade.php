@@ -27,10 +27,16 @@
                         @endforeach
                     </div>
                     @if (hasPermission('avatar_item_create'))
-                        <a href="{{ route('avatar-item.create', ['category' => $data['category']]) }}" class="btn btn-lg ot-btn-primary">
-                            <span><i class="fa-solid fa-plus"></i> </span>
-                            <span>{{ ___('common.add') }}</span>
-                        </a>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-lg btn-outline-primary" data-bs-toggle="collapse" data-bs-target="#bulkUploadPanel">
+                                <span><i class="fa-solid fa-layer-group"></i> </span>
+                                <span>Upload many</span>
+                            </button>
+                            <a href="{{ route('avatar-item.create', ['category' => $data['category']]) }}" class="btn btn-lg ot-btn-primary">
+                                <span><i class="fa-solid fa-plus"></i> </span>
+                                <span>{{ ___('common.add') }}</span>
+                            </a>
+                        </div>
                     @endif
                 </div>
                 <div class="card-body">
@@ -49,6 +55,34 @@
                         <i class="fa-solid fa-circle-info"></i>
                         For layers to line up on the student's avatar, upload every image (across all four categories) at the exact same canvas size and with the character in the exact same position — e.g. 500&times;650px, transparent background. Mismatched artwork will still work, it just won't line up visually.
                     </p>
+
+                    @if (hasPermission('avatar_item_create'))
+                        <div class="collapse mb-3" id="bulkUploadPanel">
+                            <form action="{{ route('avatar-item.bulk-store') }}" method="post" enctype="multipart/form-data"
+                                class="p-3" style="border:1px dashed #d7dbe0; border-radius:12px; background:#fbfeff;">
+                                @csrf
+                                <input type="hidden" name="category" value="{{ $data['category'] }}">
+                                <div class="row align-items-end">
+                                    <div class="col-md-6 mb-2">
+                                        <label class="form-label">Pick several images at once</label>
+                                        <input type="file" class="form-control" name="images[]" accept="image/*" multiple required>
+                                        <small class="text-secondary">Each file becomes one {{ strtolower(App\Models\LearningEngine\AvatarItem::CATEGORIES[$data['category']]) }}, named after the file.</small>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <label class="form-label">{{ ___('settings.price_in_coins') }}</label>
+                                        <input type="number" class="form-control ot-input" name="price_coins" min="0" value="0">
+                                        <small class="text-secondary">Applied to all of them.</small>
+                                    </div>
+                                    <div class="col-md-3 mb-2">
+                                        <button class="btn btn-lg ot-btn-primary w-100"><i class="fa-solid fa-upload"></i> Upload all</button>
+                                    </div>
+                                </div>
+                                <p class="text-secondary mb-0" style="font-size:.82rem;">
+                                    They all start at this category's default position — open each one afterwards to fine-tune where it sits.
+                                </p>
+                            </form>
+                        </div>
+                    @endif
 
                     @if (hasPermission('avatar_item_delete') || hasPermission('avatar_item_update'))
                         @include('backend.partials.bulk-actions-bar')
