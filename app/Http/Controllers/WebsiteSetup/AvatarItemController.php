@@ -4,6 +4,7 @@ namespace App\Http\Controllers\WebsiteSetup;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\LearningEngine\AvatarItem;
 use App\Repositories\WebsiteSetup\AvatarItemRepository;
 
 class AvatarItemController extends Controller
@@ -17,7 +18,7 @@ class AvatarItemController extends Controller
 
     public function index(Request $request)
     {
-        $category = in_array($request->get('category'), ['avatar', 'accessory'], true)
+        $category = array_key_exists($request->get('category'), AvatarItem::CATEGORIES)
             ? $request->get('category')
             : 'avatar';
 
@@ -30,7 +31,7 @@ class AvatarItemController extends Controller
 
     public function create(Request $request)
     {
-        $data['category'] = in_array($request->get('category'), ['avatar', 'accessory'], true) ? $request->get('category') : 'avatar';
+        $data['category'] = array_key_exists($request->get('category'), AvatarItem::CATEGORIES) ? $request->get('category') : 'avatar';
         $data['title']    = ___('settings.add_avatar_item');
         return view('website-setup.avatar-item.create', compact('data'));
     }
@@ -38,7 +39,7 @@ class AvatarItemController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'category'    => 'required|in:avatar,accessory',
+            'category'    => 'required|in:' . implode(',', array_keys(AvatarItem::CATEGORIES)),
             'name'        => 'required|string|max:60',
             'price_coins' => 'nullable|integer|min:0',
             'image'       => 'required|image|max:2048',
@@ -64,7 +65,7 @@ class AvatarItemController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'category'    => 'required|in:avatar,accessory',
+            'category'    => 'required|in:' . implode(',', array_keys(AvatarItem::CATEGORIES)),
             'name'        => 'required|string|max:60',
             'price_coins' => 'nullable|integer|min:0',
             'image'       => 'nullable|image|max:2048',

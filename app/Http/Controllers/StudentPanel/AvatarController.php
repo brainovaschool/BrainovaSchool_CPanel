@@ -20,7 +20,7 @@ class AvatarController extends Controller
     {
         $student = Auth::user()->student;
         $data              = $this->repo->forStudent($student->id);
-        $data['title']     = 'My Avatar';
+        $data['title']     = 'Avatar World';
 
         return view('student-panel.avatar.index', compact('data'));
     }
@@ -47,13 +47,36 @@ class AvatarController extends Controller
             ->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
-    public function selectAccessory(Request $request)
+    public function selectOutfit(Request $request)
     {
         $request->validate(['item_id' => 'nullable|integer']);
         $student = Auth::user()->student;
 
         $itemId = $request->filled('item_id') ? (int) $request->input('item_id') : null;
-        $result = $this->repo->selectAccessory($student->id, $itemId);
+        $result = $this->repo->selectOutfit($student->id, $itemId);
+
+        return redirect()->route('student-panel-avatar.index')
+            ->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function selectHat(Request $request)
+    {
+        $request->validate(['item_id' => 'nullable|integer']);
+        $student = Auth::user()->student;
+
+        $itemId = $request->filled('item_id') ? (int) $request->input('item_id') : null;
+        $result = $this->repo->selectHat($student->id, $itemId);
+
+        return redirect()->route('student-panel-avatar.index')
+            ->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function toggleAccessory(Request $request)
+    {
+        $request->validate(['item_id' => 'required|integer']);
+        $student = Auth::user()->student;
+
+        $result = $this->repo->toggleAccessory($student->id, (int) $request->input('item_id'));
 
         return redirect()->route('student-panel-avatar.index')
             ->with($result['status'] ? 'success' : 'danger', $result['message']);

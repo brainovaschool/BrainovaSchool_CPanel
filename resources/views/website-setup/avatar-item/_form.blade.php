@@ -4,11 +4,12 @@
     <div class="col-md-4 mb-3">
         <label class="form-label">{{ ___('common.category') }} <span class="fillable">*</span></label>
         <select class="form-control ot-input @error('category') is-invalid @enderror" name="category">
-            <option value="avatar" {{ old('category', $s->category ?? $data['category'] ?? 'avatar') == 'avatar' ? 'selected' : '' }}>{{ ___('settings.avatar_look') }}</option>
-            <option value="accessory" {{ old('category', $s->category ?? '') == 'accessory' ? 'selected' : '' }}>{{ ___('settings.accessory') }}</option>
+            @foreach (App\Models\LearningEngine\AvatarItem::CATEGORIES as $catKey => $catLabel)
+                <option value="{{ $catKey }}" {{ old('category', $s->category ?? $data['category'] ?? 'avatar') == $catKey ? 'selected' : '' }}>{{ $catLabel }}</option>
+            @endforeach
         </select>
         @error('category')<div class="invalid-feedback">{{ $message }}</div>@enderror
-        <small class="text-secondary">An "avatar look" is a full image students can choose; an "accessory" is a small badge shown on the corner of it.</small>
+        <small class="text-secondary">Base Character is the body itself (always one worn); Outfit and Hat are optional single layers; Accessory can be worn several at once.</small>
     </div>
 
     <div class="col-md-4 mb-3">

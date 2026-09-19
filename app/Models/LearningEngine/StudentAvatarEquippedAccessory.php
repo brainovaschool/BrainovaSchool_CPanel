@@ -6,7 +6,10 @@ use App\Models\BaseModel;
 use App\Models\StudentInfo\Student;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class StudentAvatarProfile extends BaseModel
+/** One row per accessory a student currently has equipped — accessories are
+ *  the only avatar layer that can be worn several at once (glasses AND a
+ *  backpack AND a held prop, all at the same time). */
+class StudentAvatarEquippedAccessory extends BaseModel
 {
     protected $guarded = ['id'];
 
@@ -15,18 +18,8 @@ class StudentAvatarProfile extends BaseModel
         return $this->belongsTo(Student::class, 'student_id', 'id');
     }
 
-    public function avatar(): BelongsTo
+    public function item(): BelongsTo
     {
         return $this->belongsTo(AvatarItem::class, 'avatar_item_id', 'id');
-    }
-
-    public function outfit(): BelongsTo
-    {
-        return $this->belongsTo(AvatarItem::class, 'outfit_item_id', 'id');
-    }
-
-    public function hat(): BelongsTo
-    {
-        return $this->belongsTo(AvatarItem::class, 'hat_item_id', 'id');
     }
 }

@@ -44,7 +44,8 @@ class DashboardController extends Controller
                 $data['weekly_wins']        = $this->learningHome->weeklyWins($data['student']);
                 $data['daily_goals']        = $this->dailyGoals->forStudent($data['student']->id);
                 $data['reflection_today']   = $this->reflectionJournal->today($data['student']->id);
-                $data['avatar_profile']     = $this->avatar->getOrCreateProfile($data['student']->id)->load('avatar');
+                $data['avatar_profile']     = $this->avatar->getOrCreateProfile($data['student']->id);
+                $data['avatar_layers']      = $this->avatar->equippedLayers($data['student']->id);
             } catch (\Throwable $th) {
                 report($th);
             }

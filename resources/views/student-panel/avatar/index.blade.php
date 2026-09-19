@@ -12,41 +12,55 @@
     padding:8px 16px; border-radius:20px; font-size:.95rem;
 }
 
-.av-hero{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
-.av-preview{ position:relative; width:88px; height:88px; flex-shrink:0; }
-.av-preview .face{
-    width:88px; height:88px; border-radius:50%; background:var(--bn-primary-soft); border:3px solid var(--bn-primary);
-    display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:2.4rem;
+.av-hero{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
+.av-preview{ position:relative; width:160px; height:200px; flex-shrink:0; }
+.av-preview .fallback-icon{
+    width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center; font-size:5rem; color:var(--bn-primary);
 }
-.av-preview .face img{ width:100%; height:100%; object-fit:contain; }
-.av-preview .acc-badge{
-    position:absolute; bottom:-4px; right:-4px; width:34px; height:34px; border-radius:50%; background:#fff;
-    border:2px solid #eee; display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:1.1rem;
-}
-.av-preview .acc-badge img{ width:100%; height:100%; object-fit:contain; }
+.av-preview .layer{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
 .av-hero-name{ font-weight:800; font-size:1.2rem; color:var(--bn-ink); }
 .av-hero-sub{ color:#7a8790; font-size:.84rem; margin-top:2px; }
 
 .av-name-voice-row{ display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-top:16px; }
 .av-name-voice-row .field{ flex:1; min-width:160px; }
 
-.av-shop-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:14px; margin-top:12px; }
+.av-shop-layout{ display:flex; gap:18px; margin-top:12px; flex-wrap:wrap; align-items:flex-start; }
+
+.av-shop-grid{ flex:2 1 300px; display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:14px; align-content:start; }
 .av-shop-item{
-    text-align:center; padding:14px 10px; border:2px solid rgba(15,41,55,0.08); border-radius:14px; position:relative;
+    text-align:center; padding:14px 10px; border:2px solid rgba(15,41,55,0.08); border-radius:14px;
     background:#fbfeff;
 }
-.av-shop-item.equipped{ border-color:var(--bn-primary); background:var(--bn-primary-soft); }
 .av-shop-item img{ width:64px; height:64px; border-radius:12px; object-fit:contain; margin-bottom:6px; background:#f4f6f7; }
-.av-shop-item .face-fallback{ width:64px; height:64px; border-radius:50%; background:#eef2f4; margin:0 auto 6px; display:flex; align-items:center; justify-content:center; color:#9aa4ab; }
+.av-shop-item .face-fallback{ width:64px; height:64px; border-radius:12px; background:#eef2f4; margin:0 auto 6px; display:flex; align-items:center; justify-content:center; color:#9aa4ab; }
 .av-shop-item .nm{ font-size:.82rem; font-weight:700; color:var(--bn-ink); }
 .av-shop-item .price{ font-size:.74rem; color:#92400e; margin-top:3px; }
 .av-shop-item form{ margin-top:8px; }
 .av-shop-item .btn{ font-size:.74rem; padding:5px 12px; }
-.av-shop-item .owned-tag{ font-size:.72rem; color:#7a8790; margin-top:6px; }
-.av-current-pip{
-    position:absolute; top:8px; right:8px; background:var(--bn-primary); color:#fff; border-radius:50%;
-    width:20px; height:20px; font-size:.65rem; display:flex; align-items:center; justify-content:center;
+
+.av-inventory{ flex:1 1 220px; max-width:280px; border:1px solid rgba(15,41,55,.08); border-radius:14px; padding:14px; background:#fbfeff; align-self:flex-start; }
+.av-inventory__title{ font-size:.8rem; font-weight:800; color:var(--bn-ink); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.av-inventory__title i{ color:var(--bn-primary); }
+.av-inventory__list{ display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; padding-right:4px; }
+.av-inventory__empty{ font-size:.78rem; color:#7a8790; margin:0; }
+
+.av-inv-row{
+    display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px;
+    border:1px solid rgba(15,41,55,.08); background:#fff;
 }
+.av-inv-row.worn{ border-color:var(--bn-primary); background:var(--bn-primary-soft); }
+button.av-inv-row{ width:100%; text-align:left; cursor:pointer; font:inherit; -webkit-appearance:none; appearance:none; }
+button.av-inv-row:hover{ background:#f4f8fa; }
+.av-inv-row img{ width:32px; height:32px; object-fit:contain; flex-shrink:0; }
+.av-inv-row .face-fallback{ width:32px; height:32px; border-radius:8px; background:#eef2f4; display:flex; align-items:center; justify-content:center; color:#9aa4ab; flex-shrink:0; }
+.av-inv-row .nm{ font-size:.82rem; font-weight:600; flex:1; color:var(--bn-ink); }
+.av-inv-row .worn-check{ color:var(--bn-primary); font-size:.85rem; flex-shrink:0; }
+.remove-x{
+    width:22px; height:22px; border-radius:50%; background:#e11d48; color:#fff; font-size:.65rem;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer; margin-left:auto;
+}
+.remove-x:hover{ background:#be123c; }
 </style>
 @endpush
 
@@ -55,7 +69,7 @@
     @include('backend.partials.learning-engine-styles')
 
     <div class="av-page-head">
-        <h4 class="mb-0">🐦 My Avatar</h4>
+        <h4 class="mb-0">Avatar World</h4>
         <div class="d-flex align-items-center gap-3">
             @include('backend.partials.theme-picker', ['onLight' => true])
             <span class="av-coin-pill">🪙 {{ $data['coins'] }} coins</span>
@@ -66,16 +80,11 @@
         <div class="card-body">
             <div class="av-hero">
                 <div class="av-preview">
-                    <div class="face">
-                        @if (optional($data['profile'])->avatar && $data['profile']->avatar->image)
-                            <img src="{{ globalAsset($data['profile']->avatar->image) }}" alt="{{ $data['profile']->avatar->name }}">
-                        @else
-                            <i class="fa-solid fa-user" style="color:var(--bn-primary);font-size:2.4rem;"></i>
-                        @endif
-                    </div>
-                    @if (optional($data['profile'])->accessory && $data['profile']->accessory->image)
-                        <div class="acc-badge"><img src="{{ globalAsset($data['profile']->accessory->image) }}" alt="{{ $data['profile']->accessory->name }}"></div>
-                    @endif
+                    @forelse ($data['layers'] as $layerPath)
+                        <img class="layer" src="{{ globalAsset($layerPath) }}" alt="">
+                    @empty
+                        <div class="fallback-icon"><i class="fa-solid fa-user"></i></div>
+                    @endforelse
                 </div>
                 <div style="flex:1;min-width:200px;">
                     <div class="av-hero-name">{{ optional($data['profile'])->avatar_name ?: ___('common.my_avatar') }}</div>
@@ -104,96 +113,45 @@
         </div>
     </div>
 
-    <div class="card ot-card mb-4">
-        <div class="card-body">
-            <h5 class="mb-0">Avatar Looks</h5>
-            <p class="text-secondary mb-0">Free looks are yours already. Spend coins to unlock the rest.</p>
-            <div class="av-shop-grid">
-                @forelse ($data['avatars'] as $item)
-                    @php $owned = in_array($item->id, $data['owned'], true); $isCurrent = optional($data['profile'])->avatar_item_id === $item->id; @endphp
-                    <div class="av-shop-item {{ $isCurrent ? 'equipped' : '' }}">
-                        @if ($isCurrent)<span class="av-current-pip"><i class="fa-solid fa-check"></i></span>@endif
-                        @if ($item->image)
-                            <img src="{{ globalAsset($item->image) }}" alt="{{ $item->name }}">
-                        @else
-                            <div class="face-fallback"><i class="fa-solid fa-image"></i></div>
-                        @endif
-                        <div class="nm">{{ $item->name }}</div>
-                        @if ($isCurrent)
-                            <div class="owned-tag">Wearing</div>
-                        @elseif ($owned)
-                            <form action="{{ route('student-panel-avatar.select-avatar') }}" method="post">
-                                @csrf
-                                <input type="hidden" name="item_id" value="{{ $item->id }}">
-                                <button class="btn ot-btn-primary">Wear</button>
-                            </form>
-                        @else
-                            <div class="price">🪙 {{ $item->price_coins }}</div>
-                            <form action="{{ route('student-panel-avatar.purchase') }}" method="post">
-                                @csrf
-                                <input type="hidden" name="item_id" value="{{ $item->id }}">
-                                <button class="btn btn-outline-primary" {{ $data['coins'] < $item->price_coins ? 'disabled' : '' }}>Buy</button>
-                            </form>
-                        @endif
-                    </div>
-                @empty
-                    <p class="text-secondary">No avatar looks have been added yet — ask your school to add some in Website Setup.</p>
-                @endforelse
-            </div>
-        </div>
-    </div>
+    @include('student-panel.avatar._shop-section', [
+        'title'    => 'Base Character',
+        'hint'     => 'Free looks are yours already. Spend coins to unlock the rest.',
+        'items'    => $data['bodies'],
+        'owned'    => $data['owned'],
+        'equipped' => optional($data['profile'])->avatar_item_id,
+        'kind'     => 'avatar',
+        'coins'    => $data['coins'],
+    ])
 
-    <div class="card ot-card">
-        <div class="card-body">
-            <h5 class="mb-0">Accessories</h5>
-            <p class="text-secondary mb-0">A small badge shown on your avatar's corner. Pick one, or none.</p>
-            <div class="av-shop-grid">
-                <div class="av-shop-item {{ !optional($data['profile'])->accessory_item_id ? 'equipped' : '' }}">
-                    @if (!optional($data['profile'])->accessory_item_id)<span class="av-current-pip"><i class="fa-solid fa-check"></i></span>@endif
-                    <div class="face-fallback"><i class="fa-solid fa-ban"></i></div>
-                    <div class="nm">None</div>
-                    @if (optional($data['profile'])->accessory_item_id)
-                        <form action="{{ route('student-panel-avatar.select-accessory') }}" method="post">
-                            @csrf
-                            <button class="btn btn-outline-secondary">Remove</button>
-                        </form>
-                    @else
-                        <div class="owned-tag">Equipped</div>
-                    @endif
-                </div>
-                @forelse ($data['accessories'] as $item)
-                    @php $owned = in_array($item->id, $data['owned'], true); $isCurrent = optional($data['profile'])->accessory_item_id === $item->id; @endphp
-                    <div class="av-shop-item {{ $isCurrent ? 'equipped' : '' }}">
-                        @if ($isCurrent)<span class="av-current-pip"><i class="fa-solid fa-check"></i></span>@endif
-                        @if ($item->image)
-                            <img src="{{ globalAsset($item->image) }}" alt="{{ $item->name }}">
-                        @else
-                            <div class="face-fallback"><i class="fa-solid fa-image"></i></div>
-                        @endif
-                        <div class="nm">{{ $item->name }}</div>
-                        @if ($isCurrent)
-                            <div class="owned-tag">Equipped</div>
-                        @elseif ($owned)
-                            <form action="{{ route('student-panel-avatar.select-accessory') }}" method="post">
-                                @csrf
-                                <input type="hidden" name="item_id" value="{{ $item->id }}">
-                                <button class="btn ot-btn-primary">Wear</button>
-                            </form>
-                        @else
-                            <div class="price">🪙 {{ $item->price_coins }}</div>
-                            <form action="{{ route('student-panel-avatar.purchase') }}" method="post">
-                                @csrf
-                                <input type="hidden" name="item_id" value="{{ $item->id }}">
-                                <button class="btn btn-outline-primary" {{ $data['coins'] < $item->price_coins ? 'disabled' : '' }}>Buy</button>
-                            </form>
-                        @endif
-                    </div>
-                @empty
-                    <p class="text-secondary">No accessories have been added yet.</p>
-                @endforelse
-            </div>
-        </div>
-    </div>
+    @include('student-panel.avatar._shop-section', [
+        'title'    => 'Outfit',
+        'hint'     => 'A clothing layer worn over your base character. Optional.',
+        'items'    => $data['outfits'],
+        'owned'    => $data['owned'],
+        'equipped' => optional($data['profile'])->outfit_item_id,
+        'kind'     => 'outfit',
+        'coins'    => $data['coins'],
+    ])
+
+    @include('student-panel.avatar._shop-section', [
+        'title'    => 'Hat',
+        'hint'     => 'Headwear worn on top of everything else. Optional.',
+        'items'    => $data['hats'],
+        'owned'    => $data['owned'],
+        'equipped' => optional($data['profile'])->hat_item_id,
+        'kind'     => 'hat',
+        'coins'    => $data['coins'],
+    ])
+
+    @include('student-panel.avatar._shop-section', [
+        'title'    => 'Accessories',
+        'hint'     => 'Small extras you can wear several of at once.',
+        'items'    => $data['accessories'],
+        'owned'    => $data['owned'],
+        'equipped' => $data['equippedAccessories'],
+        'kind'     => 'accessory',
+        'coins'    => $data['coins'],
+    ])
 </div>
 
 <script>

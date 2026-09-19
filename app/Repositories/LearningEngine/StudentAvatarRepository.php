@@ -5,14 +5,17 @@ namespace App\Repositories\LearningEngine;
 use App\Models\LearningEngine\AvatarItem;
 use App\Models\LearningEngine\StudentAvatarProfile;
 use App\Models\LearningEngine\StudentAvatarPurchase;
+use App\Models\LearningEngine\StudentAvatarEquippedAccessory;
 use App\Traits\ReturnFormatTrait;
 
 /**
- * The Kea avatar shop: a student's chosen look, an optional accessory badge,
- * their avatar's name, and a voice preset — plus the Coins economy that pays
- * for it all. Coins are tracked entirely through LearningEventRepository's
- * ledger (coins earned) minus this repository's purchase rows (coins spent);
- * there's no separate balance to drift out of sync.
+ * The avatar shop: a layered dress-up system. A student always has exactly
+ * one base character (avatar_item_id), and may additionally have one outfit,
+ * one hat, and any number of accessories worn at once — each layer is its
+ * own transparent-PNG image, stacked bottom to top (see equippedLayers()) to
+ * build the composited look shown on the dashboard and the Avatar World
+ * page. Paid for with Coins, tracked entirely through LearningEventRepository's
+ * ledger (coins earned) minus this repository's purchase rows (coins spent).
  */
 class StudentAvatarRepository
 {
@@ -59,19 +62,61 @@ class StudentAvatarRepository
         return max(0, $earned - $spent);
     }
 
-    /** Everything the "My Avatar" page needs in one call. */
+    public function equippedAccessoryIds(int $studentId): array
+    {
+        return StudentAvatarEquippedAccessory::where('student_id', $studentId)->pluck('avatar_item_id')->all();
+    }
+
+    /** The student's current look as an ordered list of image paths, bottom
+     *  layer first — body, then outfit, then every worn accessory, then the
+     *  hat on top. Empty layers (nothing equipped, or an item with no image
+     *  uploaded yet) are simply skipped. Used to composite the avatar both
+     *  on the Avatar World page and the dashboard's speaking-avatar card. */
+    public function equippedLayers(int $studentId): array
+    {
+        $profile = $this->getOrCreateProfile($studentId)->load(['avatar', 'outfit', 'hat']);
+
+        $accessories = AvatarItem::active()
+            ->whereIn('id', $this->equippedAccessoryIds($studentId))
+            ->orderBy('sort_order')
+            ->get();
+
+        $layers = [];
+        if ($profile->avatar && $profile->avatar->image) {
+            $layers[] = $profile->avatar->image;
+        }
+        if ($profile->outfit && $profile->outfit->image) {
+            $layers[] = $profile->outfit->image;
+        }
+        foreach ($accessories as $accessory) {
+            if ($accessory->image) {
+                $layers[] = $accessory->image;
+            }
+        }
+        if ($profile->hat && $profile->hat->image) {
+            $layers[] = $profile->hat->image;
+        }
+
+        return $layers;
+    }
+
+    /** Everything the Avatar World page needs in one call. */
     public function forStudent(int $studentId): array
     {
         $profile = $this->getOrCreateProfile($studentId);
         $owned   = $this->ownedItemIds($studentId);
 
         return [
-            'profile'  => $profile,
-            'coins'    => $this->availableCoins($studentId),
-            'owned'    => $owned,
-            'avatars'  => AvatarItem::active()->category('avatar')->orderBy('sort_order')->get(),
-            'accessories' => AvatarItem::active()->category('accessory')->orderBy('sort_order')->get(),
-            'voices'   => self::VOICE_PRESETS,
+            'profile'             => $profile,
+            'coins'               => $this->availableCoins($studentId),
+            'owned'               => $owned,
+            'equippedAccessories' => $this->equippedAccessoryIds($studentId),
+            'layers'              => $this->equippedLayers($studentId),
+            'bodies'              => AvatarItem::active()->category('avatar')->orderBy('sort_order')->get(),
+            'outfits'             => AvatarItem::active()->category('outfit')->orderBy('sort_order')->get(),
+            'hats'                => AvatarItem::active()->category('hat')->orderBy('sort_order')->get(),
+            'accessories'         => AvatarItem::active()->category('accessory')->orderBy('sort_order')->get(),
+            'voices'              => self::VOICE_PRESETS,
         ];
     }
 
@@ -112,15 +157,48 @@ class StudentAvatarRepository
         return $this->responseWithSuccess(___('alert.updated_successfully'), []);
     }
 
-    public function selectAccessory(int $studentId, ?int $itemId): array
+    public function selectOutfit(int $studentId, ?int $itemId): array
     {
         if ($itemId && !in_array($itemId, $this->ownedItemIds($studentId), true)) {
-            return $this->responseWithError('You need to buy this accessory first.', []);
+            return $this->responseWithError('You need to buy this outfit first.', []);
         }
 
         $profile = $this->getOrCreateProfile($studentId);
-        $profile->accessory_item_id = $itemId;
+        $profile->outfit_item_id = $itemId;
         $profile->save();
+
+        return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+    }
+
+    public function selectHat(int $studentId, ?int $itemId): array
+    {
+        if ($itemId && !in_array($itemId, $this->ownedItemIds($studentId), true)) {
+            return $this->responseWithError('You need to buy this hat first.', []);
+        }
+
+        $profile = $this->getOrCreateProfile($studentId);
+        $profile->hat_item_id = $itemId;
+        $profile->save();
+
+        return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+    }
+
+    /** Accessories can be worn several at once, so each one is toggled
+     *  independently rather than "selected" like the other slots. */
+    public function toggleAccessory(int $studentId, int $itemId): array
+    {
+        if (!in_array($itemId, $this->ownedItemIds($studentId), true)) {
+            return $this->responseWithError('You need to buy this accessory first.', []);
+        }
+
+        $existing = StudentAvatarEquippedAccessory::where('student_id', $studentId)->where('avatar_item_id', $itemId)->first();
+
+        if ($existing) {
+            $existing->delete();
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        }
+
+        StudentAvatarEquippedAccessory::create(['student_id' => $studentId, 'avatar_item_id' => $itemId]);
 
         return $this->responseWithSuccess(___('alert.updated_successfully'), []);
     }

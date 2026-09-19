@@ -6,7 +6,8 @@
     version), just a different container for a different placement.
 
     Usage: @include('backend.partials.character-voice-avatar', [
-        'image'       => $image,
+        'image'       => $image,   // single image URL — used by the 'avatar' variant, and as a fallback for 'card' if $layers is empty
+        'layers'      => $layers,  // optional — ordered array of image URLs to stack (body, outfit, accessories, hat), for the 'card' variant's layered avatar
         'name'        => 'Kea',
         'speakText'   => $speakText,
         'voicePreset' => 'cheerful', // optional — one of StudentAvatarRepository::VOICE_PRESETS, defaults to 'classic'
@@ -20,9 +21,14 @@
     @endphp
     @php $displayName = $name ?? ___('common.my_avatar'); @endphp
     @if (($variant ?? 'avatar') === 'card')
+        @php $cardLayers = !empty($layers) ? $layers : (!empty($image) ? [$image] : []); @endphp
         <div class="bn-dv2-card bn-dv2-kea" id="bnVoiceAvatarBtn" role="button" tabindex="0" aria-label="{{ ___('common.tap_to_hear_from') }} {{ $displayName }}">
-            @if (!empty($image))
-                <img src="{{ $image }}" alt="{{ $displayName }}">
+            @if (!empty($cardLayers))
+                <div class="bn-dv2-kea__stack">
+                    @foreach ($cardLayers as $layerUrl)
+                        <img src="{{ $layerUrl }}" alt="{{ $displayName }}">
+                    @endforeach
+                </div>
             @else
                 <div class="fallback"><i class="fa-solid fa-user"></i></div>
             @endif

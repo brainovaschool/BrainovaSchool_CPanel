@@ -24,7 +24,7 @@
                 <li class="sidebar-menu-item {{ set_menu(['student-panel-avatar*']) }}">
                     <a href="{{ route('student-panel-avatar.index') }}" class="parent-item-content">
                         <i class="las la-user-astronaut"></i>
-                        <span class="on-half-expanded">{{ ___('settings.my_avatar') }}</span>
+                        <span class="on-half-expanded">{{ ___('settings.avatar_world') }}</span>
                     </a>
                 </li>
                 @if (hasFeature('academic'))

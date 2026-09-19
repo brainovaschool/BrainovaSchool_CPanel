@@ -21,10 +21,10 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div class="btn-group">
-                        <a href="{{ route('avatar-item.index', ['category' => 'avatar']) }}"
-                            class="btn {{ $data['category'] === 'avatar' ? 'ot-btn-primary' : 'btn-outline-secondary' }}">{{ ___('settings.avatar_looks') }}</a>
-                        <a href="{{ route('avatar-item.index', ['category' => 'accessory']) }}"
-                            class="btn {{ $data['category'] === 'accessory' ? 'ot-btn-primary' : 'btn-outline-secondary' }}">{{ ___('settings.accessories') }}</a>
+                        @foreach (App\Models\LearningEngine\AvatarItem::CATEGORIES as $catKey => $catLabel)
+                            <a href="{{ route('avatar-item.index', ['category' => $catKey]) }}"
+                                class="btn {{ $data['category'] === $catKey ? 'ot-btn-primary' : 'btn-outline-secondary' }}">{{ $catLabel }}</a>
+                        @endforeach
                     </div>
                     @if (hasPermission('avatar_item_create'))
                         <a href="{{ route('avatar-item.create', ['category' => $data['category']]) }}" class="btn btn-lg ot-btn-primary">
@@ -36,10 +36,18 @@
                 <div class="card-body">
                     <p class="text-secondary mb-3">
                         @if ($data['category'] === 'avatar')
-                            Full avatar looks students can choose for Kea. Set a price in Coins to make one purchasable in the shop, or 0 to give it to every student for free.
+                            The base character itself — every student always has exactly one of these equipped. Set a price in Coins to make one purchasable, or 0 to give it to every student for free.
+                        @elseif ($data['category'] === 'outfit')
+                            A clothing layer worn over the base character (shirt, hoodie, dress, etc.). Optional — a student can go without one.
+                        @elseif ($data['category'] === 'hat')
+                            A headwear layer worn on top of everything else (cap, headphones, goggles, etc.). Optional.
                         @else
-                            Small badges shown on the corner of a student's chosen avatar. Optional extras, priced the same way as avatar looks.
+                            Small extras a student can wear several of at once (glasses, backpack, a held prop, ...). Optional.
                         @endif
+                    </p>
+                    <p class="text-secondary mb-3">
+                        <i class="fa-solid fa-circle-info"></i>
+                        For layers to line up on the student's avatar, upload every image (across all four categories) at the exact same canvas size and with the character in the exact same position — e.g. 500&times;650px, transparent background. Mismatched artwork will still work, it just won't line up visually.
                     </p>
 
                     @if (hasPermission('avatar_item_delete') || hasPermission('avatar_item_update'))

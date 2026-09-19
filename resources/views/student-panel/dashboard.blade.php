@@ -31,9 +31,10 @@
             $keaSpeakText = implode(' ', $speakParts);
         }
         $avatarProfile = $data['avatar_profile'] ?? null;
-        $keaImage = optional($avatarProfile)->avatar && $avatarProfile->avatar->image
-            ? globalAsset($avatarProfile->avatar->image)
-            : (setting('ai_helper_student_mascot') ? globalAsset(setting('ai_helper_student_mascot')) : null);
+        $keaLayers = collect($data['avatar_layers'] ?? [])->map(fn ($path) => globalAsset($path))->all();
+        if (empty($keaLayers) && setting('ai_helper_student_mascot')) {
+            $keaLayers = [globalAsset(setting('ai_helper_student_mascot'))];
+        }
         $keaName = optional($avatarProfile)->avatar_name ?: ___('common.my_avatar');
         $keaVoicePreset = optional($avatarProfile)->voice_preset ?: 'classic';
 
@@ -82,7 +83,7 @@
             </div>
 
             @if ($keaSpeakText && dashboard_feature_enabled('student', 'kea_voice'))
-                @include('backend.partials.character-voice-avatar', ['image' => $keaImage, 'name' => $keaName, 'speakText' => $keaSpeakText, 'voicePreset' => $keaVoicePreset, 'variant' => 'card'])
+                @include('backend.partials.character-voice-avatar', ['layers' => $keaLayers, 'name' => $keaName, 'speakText' => $keaSpeakText, 'voicePreset' => $keaVoicePreset, 'variant' => 'card'])
             @endif
 
             <div class="bn-dv2-card">

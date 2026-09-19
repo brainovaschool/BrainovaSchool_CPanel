@@ -68,9 +68,11 @@
        dashboard specifically; the character-voice-avatar partial still
        powers the tap-to-speak behavior underneath. */
     .bn-dv2-kea { display: flex; align-items: center; gap: 12px; cursor: pointer; }
-    .bn-dv2-kea img, .bn-dv2-kea .fallback {
-        width: 52px; height: 52px; border-radius: 50%; object-fit: cover; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center; font-size: 1.8rem; background: var(--bn-primary-soft);
+    .bn-dv2-kea__stack { position: relative; width: 64px; height: 64px; flex-shrink: 0; }
+    .bn-dv2-kea__stack img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; }
+    .bn-dv2-kea .fallback {
+        width: 64px; height: 64px; object-fit: contain; flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: var(--bn-primary);
     }
     .bn-dv2-kea .t { font-weight: 700; font-size: .9rem; }
     .bn-dv2-kea .m { font-size: .76rem; color: var(--dv2-ink-mute); }

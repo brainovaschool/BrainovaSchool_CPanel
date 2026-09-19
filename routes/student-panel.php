@@ -46,7 +46,9 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::get('/',                  'index')->name('index');
                         Route::post('/purchase',         'purchase')->name('purchase');
                         Route::post('/select-avatar',    'selectAvatar')->name('select-avatar');
-                        Route::post('/select-accessory', 'selectAccessory')->name('select-accessory');
+                        Route::post('/select-outfit',    'selectOutfit')->name('select-outfit');
+                        Route::post('/select-hat',       'selectHat')->name('select-hat');
+                        Route::post('/toggle-accessory', 'toggleAccessory')->name('toggle-accessory');
                         Route::post('/save-profile',     'saveProfile')->name('save-profile');
                     });
 
