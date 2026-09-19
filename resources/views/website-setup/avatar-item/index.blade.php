@@ -57,11 +57,24 @@
                     </p>
 
                     @if (hasPermission('avatar_item_create'))
-                        <div class="collapse mb-3" id="bulkUploadPanel">
+                        <div class="collapse mb-3 {{ $errors->bulkUpload->any() ? 'show' : '' }}" id="bulkUploadPanel">
                             <form action="{{ route('avatar-item.bulk-store') }}" method="post" enctype="multipart/form-data"
                                 class="p-3" style="border:1px dashed #d7dbe0; border-radius:12px; background:#fbfeff;">
                                 @csrf
                                 <input type="hidden" name="category" value="{{ $data['category'] }}">
+
+                                @if ($errors->bulkUpload->any())
+                                    <div class="alert alert-danger">
+                                        <ul class="mb-0 ps-3">
+                                            @foreach ($errors->bulkUpload->all() as $bulkError)
+                                                <li>{{ $bulkError }}</li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
+
+                                <div id="bulkClientError" class="alert alert-danger" style="display:none;"></div>
+
                                 <div class="row align-items-end">
                                     <div class="col-md-6 mb-2">
                                         <label class="form-label">Pick several images at once</label>
@@ -96,14 +109,43 @@
                             (function () {
                                 var input = document.getElementById('bulkFiles');
                                 var box   = document.getElementById('bulkPlaceholder');
+                                var alert = document.getElementById('bulkClientError');
                                 if (!input || !box) return;
 
+                                var form     = input.closest('form');
+                                var PER_FILE = 5 * 1024 * 1024;
+
+                                function show(message) {
+                                    if (!alert) return;
+                                    alert.textContent = message;
+                                    alert.style.display = message ? '' : 'none';
+                                }
+
                                 input.addEventListener('change', function () {
-                                    var count = input.files ? input.files.length : 0;
-                                    box.placeholder = count === 0 ? 'No files chosen yet'
-                                        : count === 1 ? input.files[0].name
-                                        : count + ' files chosen';
+                                    var files = input.files || [];
+                                    box.placeholder = files.length === 0 ? 'No files chosen yet'
+                                        : files.length === 1 ? files[0].name
+                                        : files.length + ' files chosen';
+
+                                    var tooBig = [];
+                                    for (var i = 0; i < files.length; i++) {
+                                        if (files[i].size > PER_FILE) tooBig.push(files[i].name);
+                                    }
+
+                                    show(tooBig.length
+                                        ? 'These are over 5 MB and need to be smaller: ' + tooBig.join(', ')
+                                        : '');
                                 });
+
+                                // Catch the empty submit before it round-trips and looks like nothing happened.
+                                if (form) {
+                                    form.addEventListener('submit', function (e) {
+                                        if (!input.files || input.files.length === 0) {
+                                            e.preventDefault();
+                                            show('Choose at least one image first — use the Browse button.');
+                                        }
+                                    });
+                                }
                             })();
                             </script>
                             @endpush

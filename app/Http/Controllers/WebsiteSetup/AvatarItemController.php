@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\WebsiteSetup;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use App\Http\Controllers\Controller;
 use App\Models\LearningEngine\AvatarItem;
 use App\Repositories\WebsiteSetup\AvatarItemRepository;
@@ -59,12 +60,29 @@ class AvatarItemController extends Controller
 
     public function bulkStore(Request $request)
     {
-        $request->validate([
+        // An empty $_POST here almost always means the whole upload blew past
+        // the server's post_max_size, in which case PHP throws the body away
+        // and even the CSRF field is gone. Say so plainly instead of failing
+        // as a confusing validation error.
+        if (empty($request->all()) && empty($request->allFiles())) {
+            return redirect()->route('avatar-item.index')
+                ->with('danger', 'That upload was too large for the server to accept in one go. Try again with fewer files at a time.');
+        }
+
+        $validator = Validator::make($request->all(), [
             'category'    => 'required|in:' . implode(',', array_keys(AvatarItem::enabledCategories())),
             'price_coins' => 'nullable|integer|min:0',
             'images'      => 'required|array',
-            'images.*'    => 'image|max:2048',
+            'images.*'    => 'image|max:5120',
+        ], [
+            'images.required' => 'Choose at least one image first.',
+            'images.*.image'  => 'Every file has to be an image (PNG, JPG or WEBP).',
+            'images.*.max'    => 'Each image has to be 5 MB or smaller.',
         ]);
+
+        if ($validator->fails()) {
+            return back()->withErrors($validator, 'bulkUpload')->withInput();
+        }
 
         $result = $this->repo->bulkStore($request);
 
