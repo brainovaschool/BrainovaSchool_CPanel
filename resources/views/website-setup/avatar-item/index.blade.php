@@ -65,8 +65,16 @@
                                 <div class="row align-items-end">
                                     <div class="col-md-6 mb-2">
                                         <label class="form-label">Pick several images at once</label>
-                                        <input type="file" class="form-control" name="images[]" accept="image/*" multiple required>
-                                        <small class="text-secondary">Each file becomes one {{ strtolower(App\Models\LearningEngine\AvatarItem::CATEGORIES[$data['category']]) }}, named after the file.</small>
+                                        {{-- Same browse-button widget the rest of the app uses; a bare
+                                             file input renders near-invisible against this theme. --}}
+                                        <div class="ot_fileUploader left-side mb-2">
+                                            <input class="form-control" type="text" placeholder="No files chosen yet" readonly id="bulkPlaceholder">
+                                            <button class="primary-btn-small-input" type="button">
+                                                <label class="btn btn-lg ot-btn-primary" for="bulkFiles">{{ ___('common.browse') }}</label>
+                                                <input type="file" class="d-none form-control" name="images[]" accept="image/*" id="bulkFiles" multiple>
+                                            </button>
+                                        </div>
+                                        <small class="text-secondary">Hold Ctrl (or Cmd) to pick several. Each file becomes one {{ strtolower(App\Models\LearningEngine\AvatarItem::CATEGORIES[$data['category']]) }}, named after the file.</small>
                                     </div>
                                     <div class="col-md-3 mb-2">
                                         <label class="form-label">{{ ___('settings.price_in_coins') }}</label>
@@ -79,8 +87,26 @@
                                 </div>
                                 <p class="text-secondary mb-0" style="font-size:.82rem;">
                                     They all start at this category's default position — open each one afterwards to fine-tune where it sits.
+                                    Most servers cap a single upload at around 20 files, so use a couple of batches if you have more.
                                 </p>
                             </form>
+
+                            @push('script')
+                            <script>
+                            (function () {
+                                var input = document.getElementById('bulkFiles');
+                                var box   = document.getElementById('bulkPlaceholder');
+                                if (!input || !box) return;
+
+                                input.addEventListener('change', function () {
+                                    var count = input.files ? input.files.length : 0;
+                                    box.placeholder = count === 0 ? 'No files chosen yet'
+                                        : count === 1 ? input.files[0].name
+                                        : count + ' files chosen';
+                                });
+                            })();
+                            </script>
+                            @endpush
                         </div>
                     @endif
 
