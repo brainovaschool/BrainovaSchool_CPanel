@@ -42,9 +42,9 @@
                 <div class="card-body">
                     <p class="text-secondary mb-3">
                         @if ($data['category'] === 'avatar')
-                            The base character itself — every student always has exactly one of these equipped. Set a price in Coins to make one purchasable, or 0 to give it to every student for free.
+                            The whole character — every student always has exactly one of these equipped. Set a price in Coins to make one purchasable, or 0 to give it to every student for free.
                         @elseif ($data['category'] === 'outfit')
-                            A clothing layer worn over the base character (shirt, hoodie, dress, etc.). Optional — a student can go without one.
+                            A clothing layer worn over the outfit (shirt, hoodie, dress, etc.). Optional — a student can go without one.
                         @elseif ($data['category'] === 'hat')
                             A headwear layer worn on top of everything else (cap, headphones, goggles, etc.). Optional.
                         @else
@@ -53,7 +53,7 @@
                     </p>
                     <p class="text-secondary mb-3">
                         <i class="fa-solid fa-circle-info"></i>
-                        For layers to line up on the student's avatar, upload every image (across all four categories) at the exact same canvas size and with the character in the exact same position — e.g. 500&times;650px, transparent background. Mismatched artwork will still work, it just won't line up visually.
+                        For layers to line up on the student's avatar, upload every image (across all categories) at the exact same canvas size and with the character in the exact same position — e.g. 500&times;650px, transparent background. Mismatched artwork will still work, it just won't line up visually.
                     </p>
 
                     @if (hasPermission('avatar_item_create'))

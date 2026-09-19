@@ -6,7 +6,23 @@
 
 @push('css')
 <style>
+/* The whole page sits on a wash of the chosen theme colour, and every panel
+   is tinted from the same brand tokens — so switching theme visibly repaints
+   the page rather than recolouring a few icons. */
+.av-world{
+    background:var(--bn-wash);
+    border-radius:18px;
+    padding:18px;
+}
+.av-world .ot-card{
+    background:var(--bn-surface);
+    border:1px solid var(--bn-surface-line);
+    box-shadow:0 1px 2px rgba(20,20,30,.04), 0 10px 26px -18px rgba(20,20,30,.22);
+}
+.av-world .av-hero-card{ background:var(--bn-banner); }
+
 .av-page-head{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; margin-bottom:16px; }
+.av-page-head h4{ color:var(--bn-primary-strong); }
 .av-coin-pill{
     display:inline-flex; align-items:center; gap:6px; background:#fff8e6; color:#92400e; font-weight:800;
     padding:8px 16px; border-radius:20px; font-size:.95rem;
@@ -36,7 +52,7 @@
 .av-char-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(132px, 1fr)); gap:12px; margin-top:12px; }
 .av-char-card{
     position:relative; text-align:center; padding:12px 10px; border-radius:14px;
-    border:2px solid rgba(15,41,55,.08); background:#fbfeff;
+    border:2px solid var(--bn-surface-line); background:#fff;
 }
 .av-char-card.worn{ border-color:var(--bn-primary); background:var(--bn-primary-soft); }
 .av-char-art{ width:100%; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; color:#9aa4ab; font-size:1.6rem; }
@@ -58,8 +74,8 @@
 
 .av-shop-grid{ flex:2 1 300px; display:grid; grid-template-columns:repeat(auto-fill, minmax(112px, 1fr)); gap:10px; align-content:start; }
 .av-shop-item{
-    text-align:center; padding:10px 8px; border:2px solid rgba(15,41,55,0.08); border-radius:12px;
-    background:#fbfeff;
+    text-align:center; padding:10px 8px; border:2px solid var(--bn-surface-line); border-radius:12px;
+    background:#fff;
 }
 .av-shop-item img{ width:56px; height:56px; border-radius:10px; object-fit:contain; margin-bottom:4px; background:#f4f6f7; }
 .av-shop-item .face-fallback{ width:56px; height:56px; border-radius:10px; background:#eef2f4; margin:0 auto 4px; display:flex; align-items:center; justify-content:center; color:#9aa4ab; }
@@ -68,7 +84,7 @@
 .av-shop-item form{ margin-top:6px; }
 .av-shop-item .btn{ font-size:.72rem; padding:4px 10px; }
 
-.av-inventory{ flex:1 1 220px; max-width:280px; border:1px solid rgba(15,41,55,.08); border-radius:14px; padding:12px; background:#fbfeff; align-self:flex-start; }
+.av-inventory{ flex:1 1 220px; max-width:280px; border:1px solid var(--bn-surface-line); border-radius:14px; padding:12px; background:#fff; align-self:flex-start; }
 .av-inventory__title{ font-size:.8rem; font-weight:800; color:var(--bn-ink); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
 .av-inventory__title i{ color:var(--bn-primary); }
 .av-inventory__list{ display:flex; flex-direction:column; gap:6px; max-height:230px; overflow-y:auto; padding-right:4px; }
@@ -76,7 +92,7 @@
 
 .av-inv-row{
     display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:10px;
-    border:1px solid rgba(15,41,55,.08); background:#fff;
+    border:1px solid var(--bn-surface-line); background:#fff;
 }
 .av-inv-row.worn{ border-color:var(--bn-primary); background:var(--bn-primary-soft); }
 button.av-inv-row{ width:100%; text-align:left; cursor:pointer; font:inherit; -webkit-appearance:none; appearance:none; }
@@ -97,6 +113,7 @@ button.av-inv-row:hover{ background:#f4f8fa; }
 <div class="page-content">
     @include('backend.partials.learning-engine-styles')
 
+    <div class="av-world">
     <div class="av-page-head">
         <h4 class="mb-0">Avatar World</h4>
         <div class="d-flex align-items-center gap-3">
@@ -105,7 +122,7 @@ button.av-inv-row:hover{ background:#f4f8fa; }
         </div>
     </div>
 
-    <div class="card ot-card mb-4">
+    <div class="card ot-card av-hero-card mb-4">
         <div class="card-body">
             <div class="av-hero">
                 <div class="av-preview">
@@ -158,7 +175,7 @@ button.av-inv-row:hover{ background:#f4f8fa; }
 
     <div class="card ot-card mb-4">
         <div class="card-body">
-            <h5 class="mb-0">Base Character</h5>
+            <h5 class="mb-0">Outfit</h5>
             <p class="text-secondary mb-0">The free ones are already yours. Earn coins to unlock the rest.</p>
             @include('student-panel.avatar._character-grid', [
                 'items'    => $data['bodies'],
@@ -171,8 +188,8 @@ button.av-inv-row:hover{ background:#f4f8fa; }
 
     @if (App\Models\LearningEngine\AvatarItem::sectionEnabled('outfit'))
         @include('student-panel.avatar._shop-section', [
-            'title'    => 'Outfit',
-            'hint'     => 'A clothing layer worn over your base character. Optional.',
+            'title'    => 'Clothing Layer',
+            'hint'     => 'A clothing layer worn over your outfit. Optional.',
             'items'    => $data['outfits'],
             'owned'    => $data['owned'],
             'equipped' => optional($data['profile'])->outfit_item_id,
@@ -205,6 +222,7 @@ button.av-inv-row:hover{ background:#f4f8fa; }
             'showInventory' => false,
         ])
     @endif
+    </div>
 </div>
 
 <script>

@@ -27,6 +27,18 @@
         --bn-advanced-soft: #e7f5ee;
         --bn-review: #e8664f;
         --bn-review-soft: #fdeae6;
+
+        /* Surfaces mixed from whatever brand color the active theme sets, so
+           switching theme repaints whole panels and backgrounds rather than
+           just tinting a few icons. Declared once here — every theme below
+           inherits them automatically by redefining --bn-primary/--bn-accent. */
+        --bn-wash: color-mix(in srgb, var(--bn-primary) 10%, #ffffff);
+        --bn-wash-deep: color-mix(in srgb, var(--bn-primary) 20%, #ffffff);
+        --bn-surface: color-mix(in srgb, var(--bn-primary) 4%, #ffffff);
+        --bn-surface-line: color-mix(in srgb, var(--bn-primary) 22%, #ffffff);
+        --bn-banner: linear-gradient(135deg,
+            color-mix(in srgb, var(--bn-primary) 24%, #ffffff),
+            color-mix(in srgb, var(--bn-accent) 20%, #ffffff));
     }
 
     /* Dashboard color themes — a personalization option (Website Setup has

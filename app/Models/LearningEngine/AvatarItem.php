@@ -13,8 +13,8 @@ class AvatarItem extends BaseModel
      *  one; the rest are optional overlays. 'accessory' is the only one a
      *  student can wear several of at once. */
     public const CATEGORIES = [
-        'avatar'    => 'Base Character',
-        'outfit'    => 'Outfit',
+        'avatar'    => 'Outfit',
+        'outfit'    => 'Clothing Layer',
         'hat'       => 'Hat',
         'accessory' => 'Accessory',
     ];

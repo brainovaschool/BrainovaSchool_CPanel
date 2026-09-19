@@ -9,7 +9,7 @@
             @endforeach
         </select>
         @error('category')<div class="invalid-feedback">{{ $message }}</div>@enderror
-        <small class="text-secondary">Base Character is the body itself (always one worn); Accessory is an extra layer drawn on top, and a student can wear several at once. Extra layer types can be switched on in Website Setup &rarr; Dashboard Features.</small>
+        <small class="text-secondary">Outfit is the whole character (every student always wears exactly one); Accessory is an extra layer drawn on top, and a student can wear several at once. Extra layer types can be switched on in Website Setup &rarr; Dashboard Features.</small>
     </div>
 
     <div class="col-md-4 mb-3">
@@ -69,7 +69,7 @@
         <h5 class="mb-1">Where it sits on the avatar</h5>
         <p class="text-secondary" style="font-size:.86rem;">
             Drag the sliders until the item sits correctly on the character below. Whatever you set here is
-            how every student will wear it. A Base Character needs no adjustment — it always fills the frame.
+            how every student will wear it. An Outfit needs no adjustment — it always fills the frame.
         </p>
 
         <div class="row">
@@ -99,7 +99,7 @@
                     </div>
                 @else
                     <p class="text-secondary mt-2" style="font-size:.8rem;">
-                        No Base Characters added yet, so there's nothing to preview against. Add one first, then come back to position this item.
+                        No Outfits added yet, so there's nothing to preview against. Add one first, then come back to position this item.
                     </p>
                 @endif
             </div>

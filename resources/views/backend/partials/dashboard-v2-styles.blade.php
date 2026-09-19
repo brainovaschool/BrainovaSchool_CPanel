@@ -16,13 +16,16 @@
 --}}
 <style>
     .bn-dv2 {
-        --dv2-page: #f3f4f7;
+        /* Page and panel tints are mixed from the active theme's brand colour,
+           so picking a new theme repaints the dashboard rather than only
+           recolouring icons. Card faces stay near-white for readability. */
+        --dv2-page: color-mix(in srgb, var(--bn-primary) 12%, #f3f4f7);
         --dv2-surface: #ffffff;
-        --dv2-surface-2: #f8f9fb;
+        --dv2-surface-2: color-mix(in srgb, var(--bn-primary) 7%, #f8f9fb);
         --dv2-ink: #14161a;
         --dv2-ink-soft: #5c6270;
         --dv2-ink-mute: #9095a1;
-        --dv2-line: #e7e9ee;
+        --dv2-line: color-mix(in srgb, var(--bn-primary) 16%, #e7e9ee);
         --dv2-shadow: 0 1px 2px rgba(20,20,30,.04), 0 12px 28px -16px rgba(20,20,30,.14);
         --dv2-good: var(--bn-advanced);
 
