@@ -67,11 +67,14 @@ class StudentAvatarRepository
         return StudentAvatarEquippedAccessory::where('student_id', $studentId)->pluck('avatar_item_id')->all();
     }
 
-    /** The student's current look as an ordered list of image paths, bottom
-     *  layer first — body, then outfit, then every worn accessory, then the
-     *  hat on top. Empty layers (nothing equipped, or an item with no image
-     *  uploaded yet) are simply skipped. Used to composite the avatar both
-     *  on the Avatar World page and the dashboard's speaking-avatar card. */
+    /** The student's current look as an ordered list of layers, bottom layer
+     *  first — body, then outfit, then every worn accessory, then the hat on
+     *  top. Each layer carries the placement set for that item in Website
+     *  Setup (see the pos_x/pos_y/scale/rotation columns), which is what
+     *  makes a standalone headband image land on the head instead of
+     *  covering the whole character. Items with no image uploaded yet are
+     *  skipped. Used to composite the avatar both on the Avatar World page
+     *  and the dashboard's speaking-avatar card. */
     public function equippedLayers(int $studentId): array
     {
         $profile = $this->getOrCreateProfile($studentId)->load(['avatar', 'outfit', 'hat']);
@@ -81,20 +84,27 @@ class StudentAvatarRepository
             ->orderBy('sort_order')
             ->get();
 
-        $layers = [];
-        if ($profile->avatar && $profile->avatar->image) {
-            $layers[] = $profile->avatar->image;
-        }
-        if ($profile->outfit && $profile->outfit->image) {
-            $layers[] = $profile->outfit->image;
-        }
+        $ordered = array_filter([$profile->avatar, $profile->outfit]);
         foreach ($accessories as $accessory) {
-            if ($accessory->image) {
-                $layers[] = $accessory->image;
-            }
+            $ordered[] = $accessory;
         }
-        if ($profile->hat && $profile->hat->image) {
-            $layers[] = $profile->hat->image;
+        if ($profile->hat) {
+            $ordered[] = $profile->hat;
+        }
+
+        $layers = [];
+        foreach ($ordered as $item) {
+            if (!$item->image) {
+                continue;
+            }
+
+            $layers[] = [
+                'image'    => $item->image,
+                'x'        => $item->pos_x ?? 50,
+                'y'        => $item->pos_y ?? 50,
+                'scale'    => $item->scale ?? 100,
+                'rotation' => $item->rotation ?? 0,
+            ];
         }
 
         return $layers;

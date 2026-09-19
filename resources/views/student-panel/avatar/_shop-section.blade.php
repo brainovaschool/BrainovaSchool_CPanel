@@ -71,7 +71,11 @@
 
                         @if ($isWorn && $kind === 'avatar')
                             <div class="av-inv-row worn">
-                                <img src="{{ globalAsset($item->image) }}" alt="{{ $item->name }}">
+                                @if ($item->image)
+                                    <img src="{{ globalAsset($item->image) }}" alt="{{ $item->name }}">
+                                @else
+                                    <div class="face-fallback"><i class="fa-solid fa-image"></i></div>
+                                @endif
                                 <span class="nm">{{ $item->name }}</span>
                                 <i class="fa-solid fa-check worn-check"></i>
                             </div>

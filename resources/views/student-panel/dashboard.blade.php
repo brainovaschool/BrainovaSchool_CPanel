@@ -31,9 +31,15 @@
             $keaSpeakText = implode(' ', $speakParts);
         }
         $avatarProfile = $data['avatar_profile'] ?? null;
-        $keaLayers = collect($data['avatar_layers'] ?? [])->map(fn ($path) => globalAsset($path))->all();
+        $keaLayers = collect($data['avatar_layers'] ?? [])->map(fn ($layer) => [
+            'url'      => globalAsset($layer['image']),
+            'x'        => $layer['x'],
+            'y'        => $layer['y'],
+            'scale'    => $layer['scale'],
+            'rotation' => $layer['rotation'],
+        ])->all();
         if (empty($keaLayers) && setting('ai_helper_student_mascot')) {
-            $keaLayers = [globalAsset(setting('ai_helper_student_mascot'))];
+            $keaLayers = [['url' => globalAsset(setting('ai_helper_student_mascot')), 'x' => 50, 'y' => 50, 'scale' => 100, 'rotation' => 0]];
         }
         $keaName = optional($avatarProfile)->avatar_name ?: ___('common.my_avatar');
         $keaVoicePreset = optional($avatarProfile)->voice_preset ?: 'classic';

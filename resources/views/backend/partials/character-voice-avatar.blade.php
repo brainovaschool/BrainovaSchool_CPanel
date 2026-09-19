@@ -7,7 +7,7 @@
 
     Usage: @include('backend.partials.character-voice-avatar', [
         'image'       => $image,   // single image URL — used by the 'avatar' variant, and as a fallback for 'card' if $layers is empty
-        'layers'      => $layers,  // optional — ordered array of image URLs to stack (body, outfit, accessories, hat), for the 'card' variant's layered avatar
+        'layers'      => $layers,  // optional — ordered layers to stack for the 'card' variant, bottom first, each ['url' =>, 'x' =>, 'y' =>, 'scale' =>, 'rotation' =>] (see StudentAvatarRepository::equippedLayers())
         'name'        => 'Kea',
         'speakText'   => $speakText,
         'voicePreset' => 'cheerful', // optional — one of StudentAvatarRepository::VOICE_PRESETS, defaults to 'classic'
@@ -21,12 +21,17 @@
     @endphp
     @php $displayName = $name ?? ___('common.my_avatar'); @endphp
     @if (($variant ?? 'avatar') === 'card')
-        @php $cardLayers = !empty($layers) ? $layers : (!empty($image) ? [$image] : []); @endphp
+        @php
+            $cardLayers = !empty($layers)
+                ? $layers
+                : (!empty($image) ? [['url' => $image, 'x' => 50, 'y' => 50, 'scale' => 100, 'rotation' => 0]] : []);
+        @endphp
         <div class="bn-dv2-card bn-dv2-kea" id="bnVoiceAvatarBtn" role="button" tabindex="0" aria-label="{{ ___('common.tap_to_hear_from') }} {{ $displayName }}">
             @if (!empty($cardLayers))
                 <div class="bn-dv2-kea__stack">
-                    @foreach ($cardLayers as $layerUrl)
-                        <img src="{{ $layerUrl }}" alt="{{ $displayName }}">
+                    @foreach ($cardLayers as $layer)
+                        <img src="{{ $layer['url'] }}" alt="{{ $displayName }}"
+                            style="left:{{ $layer['x'] }}%; top:{{ $layer['y'] }}%; width:{{ $layer['scale'] }}%; transform:translate(-50%,-50%) rotate({{ $layer['rotation'] }}deg);">
                     @endforeach
                 </div>
             @else

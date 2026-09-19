@@ -37,6 +37,7 @@ class AvatarItemRepository
             $row->sort_order  = (int) $request->sort_order;
             $row->status      = $request->status;
             $row->image       = $this->uploadImage($request);
+            $this->applyPlacement($row, $request);
             $row->save();
 
             return $this->responseWithSuccess(___('alert.created_successfully'), []);
@@ -60,6 +61,7 @@ class AvatarItemRepository
                 $row->image = $image;
             }
 
+            $this->applyPlacement($row, $request);
             $row->save();
 
             return $this->responseWithSuccess(___('alert.updated_successfully'), []);
@@ -96,6 +98,18 @@ class AvatarItemRepository
         } catch (\Throwable $th) {
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
+    }
+
+    /** Clamped so a stray value can never push a layer off the avatar
+     *  entirely or blow it up past the stage. */
+    private function applyPlacement($row, $request): void
+    {
+        $fallback = AvatarItem::DEFAULT_PLACEMENT[$request->category] ?? AvatarItem::DEFAULT_PLACEMENT['accessory'];
+
+        $row->pos_x    = min(150, max(-50, (float) $request->input('pos_x', $fallback['pos_x'])));
+        $row->pos_y    = min(150, max(-50, (float) $request->input('pos_y', $fallback['pos_y'])));
+        $row->scale    = min(300, max(1, (float) $request->input('scale', $fallback['scale'])));
+        $row->rotation = min(180, max(-180, (int) $request->input('rotation', $fallback['rotation'])));
     }
 
     private function uploadImage($request): ?string

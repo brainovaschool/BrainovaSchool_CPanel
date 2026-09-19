@@ -13,12 +13,14 @@
 }
 
 .av-hero{ display:flex; align-items:center; gap:22px; flex-wrap:wrap; }
-.av-preview{ position:relative; width:160px; height:200px; flex-shrink:0; }
+.av-preview{ position:relative; width:220px; aspect-ratio:1/1; flex-shrink:0; }
 .av-preview .fallback-icon{
     width:100%; height:100%;
     display:flex; align-items:center; justify-content:center; font-size:5rem; color:var(--bn-primary);
 }
-.av-preview .layer{ position:absolute; inset:0; width:100%; height:100%; object-fit:contain; }
+/* Each layer is placed by the position/size/tilt set for that item in
+   Website Setup, anchored on its own centre point. */
+.av-preview .layer{ position:absolute; height:auto; }
 .av-hero-name{ font-weight:800; font-size:1.2rem; color:var(--bn-ink); }
 .av-hero-sub{ color:#7a8790; font-size:.84rem; margin-top:2px; }
 
@@ -80,8 +82,9 @@ button.av-inv-row:hover{ background:#f4f8fa; }
         <div class="card-body">
             <div class="av-hero">
                 <div class="av-preview">
-                    @forelse ($data['layers'] as $layerPath)
-                        <img class="layer" src="{{ globalAsset($layerPath) }}" alt="">
+                    @forelse ($data['layers'] as $layer)
+                        <img class="layer" src="{{ globalAsset($layer['image']) }}" alt=""
+                            style="left:{{ $layer['x'] }}%; top:{{ $layer['y'] }}%; width:{{ $layer['scale'] }}%; transform:translate(-50%,-50%) rotate({{ $layer['rotation'] }}deg);">
                     @empty
                         <div class="fallback-icon"><i class="fa-solid fa-user"></i></div>
                     @endforelse
