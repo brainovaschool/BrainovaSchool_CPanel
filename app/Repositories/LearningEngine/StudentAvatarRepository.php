@@ -84,11 +84,18 @@ class StudentAvatarRepository
             ->orderBy('sort_order')
             ->get();
 
-        $ordered = array_filter([$profile->avatar, $profile->outfit]);
-        foreach ($accessories as $accessory) {
-            $ordered[] = $accessory;
+        // A layer whose section has been switched off in Website Setup stops
+        // showing on the avatar, even if the student had it equipped before.
+        $ordered = array_filter([$profile->avatar]);
+        if ($profile->outfit && dashboard_feature_enabled('student', 'avatar_outfits')) {
+            $ordered[] = $profile->outfit;
         }
-        if ($profile->hat) {
+        if (dashboard_feature_enabled('student', 'avatar_accessories')) {
+            foreach ($accessories as $accessory) {
+                $ordered[] = $accessory;
+            }
+        }
+        if ($profile->hat && dashboard_feature_enabled('student', 'avatar_hats')) {
             $ordered[] = $profile->hat;
         }
 

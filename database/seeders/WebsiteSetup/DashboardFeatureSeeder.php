@@ -37,6 +37,9 @@ class DashboardFeatureSeeder extends Seeder
             ['portal' => 'student', 'feature_key' => 'ai_ask_helper',      'label' => 'AI Study Helper (Ask)',   'description' => 'General homework question helper on the AI Study Helper page.'],
             ['portal' => 'student', 'feature_key' => 'teach_kea',          'label' => 'Teach Kea',               'description' => 'Explain a skill in your own words; Kea checks your understanding.'],
             ['portal' => 'student', 'feature_key' => 'ai_fact_checker',    'label' => 'AI Fact-Checker',         'description' => 'Paste a claim; Brainbot verifies true / false / genuinely unclear.'],
+            ['portal' => 'student', 'feature_key' => 'avatar_accessories', 'label' => 'Avatar World: Accessories', 'description' => 'The Accessories layer — small extras a student can wear several of at once.'],
+            ['portal' => 'student', 'feature_key' => 'avatar_outfits',     'label' => 'Avatar World: Outfits',     'description' => 'The Outfit clothing layer. Off by default — flat clothing images rarely sit convincingly on a posed character; outfit variations usually work better as whole Base Characters.', 'status' => 0],
+            ['portal' => 'student', 'feature_key' => 'avatar_hats',        'label' => 'Avatar World: Hats',        'description' => 'A separate Hat layer, drawn above everything else. Off by default — hats can simply be added as Accessories instead.', 'status' => 0],
 
             // ---- Teacher portal ----
             ['portal' => 'teacher', 'feature_key' => 'skill_mastery_report', 'label' => 'Skill Mastery Report', 'description' => 'Class-wide mastery breakdown, one row per student, never ranked.'],
@@ -69,7 +72,7 @@ class DashboardFeatureSeeder extends Seeder
                     'label'       => $r['label'],
                     'description' => $r['description'],
                     'sort_order'  => $i + 1,
-                    'status'      => 1,
+                    'status'      => $r['status'] ?? 1,
                 ]);
             }
         }

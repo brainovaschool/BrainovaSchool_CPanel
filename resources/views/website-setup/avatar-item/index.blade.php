@@ -21,7 +21,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div class="btn-group">
-                        @foreach (App\Models\LearningEngine\AvatarItem::CATEGORIES as $catKey => $catLabel)
+                        @foreach (App\Models\LearningEngine\AvatarItem::enabledCategories() as $catKey => $catLabel)
                             <a href="{{ route('avatar-item.index', ['category' => $catKey]) }}"
                                 class="btn {{ $data['category'] === $catKey ? 'ot-btn-primary' : 'btn-outline-secondary' }}">{{ $catLabel }}</a>
                         @endforeach

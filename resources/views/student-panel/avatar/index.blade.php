@@ -33,22 +33,22 @@
 
 .av-shop-layout{ display:flex; gap:18px; margin-top:12px; flex-wrap:wrap; align-items:flex-start; }
 
-.av-shop-grid{ flex:2 1 300px; display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:14px; align-content:start; }
+.av-shop-grid{ flex:2 1 300px; display:grid; grid-template-columns:repeat(auto-fill, minmax(112px, 1fr)); gap:10px; align-content:start; }
 .av-shop-item{
-    text-align:center; padding:14px 10px; border:2px solid rgba(15,41,55,0.08); border-radius:14px;
+    text-align:center; padding:10px 8px; border:2px solid rgba(15,41,55,0.08); border-radius:12px;
     background:#fbfeff;
 }
-.av-shop-item img{ width:64px; height:64px; border-radius:12px; object-fit:contain; margin-bottom:6px; background:#f4f6f7; }
-.av-shop-item .face-fallback{ width:64px; height:64px; border-radius:12px; background:#eef2f4; margin:0 auto 6px; display:flex; align-items:center; justify-content:center; color:#9aa4ab; }
+.av-shop-item img{ width:56px; height:56px; border-radius:10px; object-fit:contain; margin-bottom:4px; background:#f4f6f7; }
+.av-shop-item .face-fallback{ width:56px; height:56px; border-radius:10px; background:#eef2f4; margin:0 auto 4px; display:flex; align-items:center; justify-content:center; color:#9aa4ab; }
 .av-shop-item .nm{ font-size:.82rem; font-weight:700; color:var(--bn-ink); }
 .av-shop-item .price{ font-size:.74rem; color:#92400e; margin-top:3px; }
-.av-shop-item form{ margin-top:8px; }
-.av-shop-item .btn{ font-size:.74rem; padding:5px 12px; }
+.av-shop-item form{ margin-top:6px; }
+.av-shop-item .btn{ font-size:.72rem; padding:4px 10px; }
 
-.av-inventory{ flex:1 1 220px; max-width:280px; border:1px solid rgba(15,41,55,.08); border-radius:14px; padding:14px; background:#fbfeff; align-self:flex-start; }
-.av-inventory__title{ font-size:.8rem; font-weight:800; color:var(--bn-ink); margin-bottom:10px; display:flex; align-items:center; gap:6px; }
+.av-inventory{ flex:1 1 220px; max-width:280px; border:1px solid rgba(15,41,55,.08); border-radius:14px; padding:12px; background:#fbfeff; align-self:flex-start; }
+.av-inventory__title{ font-size:.8rem; font-weight:800; color:var(--bn-ink); margin-bottom:8px; display:flex; align-items:center; gap:6px; }
 .av-inventory__title i{ color:var(--bn-primary); }
-.av-inventory__list{ display:flex; flex-direction:column; gap:8px; max-height:280px; overflow-y:auto; padding-right:4px; }
+.av-inventory__list{ display:flex; flex-direction:column; gap:6px; max-height:230px; overflow-y:auto; padding-right:4px; }
 .av-inventory__empty{ font-size:.78rem; color:#7a8790; margin:0; }
 
 .av-inv-row{
@@ -101,13 +101,15 @@ button.av-inv-row:hover{ background:#f4f8fa; }
                 {{-- Accessories live up here rather than down in their shop
                      section, so taking one on or off shows on the avatar
                      right beside it. --}}
-                @include('student-panel.avatar._inventory', [
-                    'items'    => $data['accessories'],
-                    'owned'    => $data['owned'],
-                    'equipped' => $data['equippedAccessories'],
-                    'kind'     => 'accessory',
-                    'invTitle' => 'My Accessories',
-                ])
+                @if (dashboard_feature_enabled('student', 'avatar_accessories'))
+                    @include('student-panel.avatar._inventory', [
+                        'items'    => $data['accessories'],
+                        'owned'    => $data['owned'],
+                        'equipped' => $data['equippedAccessories'],
+                        'kind'     => 'accessory',
+                        'invTitle' => 'My Accessories',
+                    ])
+                @endif
             </div>
 
             <form action="{{ route('student-panel-avatar.save-profile') }}" method="post" class="av-name-voice-row">
@@ -141,36 +143,42 @@ button.av-inv-row:hover{ background:#f4f8fa; }
         'coins'    => $data['coins'],
     ])
 
-    @include('student-panel.avatar._shop-section', [
-        'title'    => 'Outfit',
-        'hint'     => 'A clothing layer worn over your base character. Optional.',
-        'items'    => $data['outfits'],
-        'owned'    => $data['owned'],
-        'equipped' => optional($data['profile'])->outfit_item_id,
-        'kind'     => 'outfit',
-        'coins'    => $data['coins'],
-    ])
+    @if (dashboard_feature_enabled('student', 'avatar_outfits'))
+        @include('student-panel.avatar._shop-section', [
+            'title'    => 'Outfit',
+            'hint'     => 'A clothing layer worn over your base character. Optional.',
+            'items'    => $data['outfits'],
+            'owned'    => $data['owned'],
+            'equipped' => optional($data['profile'])->outfit_item_id,
+            'kind'     => 'outfit',
+            'coins'    => $data['coins'],
+        ])
+    @endif
 
-    @include('student-panel.avatar._shop-section', [
-        'title'    => 'Hat',
-        'hint'     => 'Headwear worn on top of everything else. Optional.',
-        'items'    => $data['hats'],
-        'owned'    => $data['owned'],
-        'equipped' => optional($data['profile'])->hat_item_id,
-        'kind'     => 'hat',
-        'coins'    => $data['coins'],
-    ])
+    @if (dashboard_feature_enabled('student', 'avatar_hats'))
+        @include('student-panel.avatar._shop-section', [
+            'title'    => 'Hat',
+            'hint'     => 'Headwear worn on top of everything else. Optional.',
+            'items'    => $data['hats'],
+            'owned'    => $data['owned'],
+            'equipped' => optional($data['profile'])->hat_item_id,
+            'kind'     => 'hat',
+            'coins'    => $data['coins'],
+        ])
+    @endif
 
-    @include('student-panel.avatar._shop-section', [
-        'title'    => 'Accessories',
-        'hint'     => 'Small extras you can wear several of at once. Everything you own is up beside your avatar.',
-        'items'    => $data['accessories'],
-        'owned'    => $data['owned'],
-        'equipped' => $data['equippedAccessories'],
-        'kind'     => 'accessory',
-        'coins'    => $data['coins'],
-        'showInventory' => false,
-    ])
+    @if (dashboard_feature_enabled('student', 'avatar_accessories'))
+        @include('student-panel.avatar._shop-section', [
+            'title'    => 'Accessories',
+            'hint'     => 'Small extras you can wear several of at once. Everything you own is up beside your avatar.',
+            'items'    => $data['accessories'],
+            'owned'    => $data['owned'],
+            'equipped' => $data['equippedAccessories'],
+            'kind'     => 'accessory',
+            'coins'    => $data['coins'],
+            'showInventory' => false,
+        ])
+    @endif
 </div>
 
 <script>

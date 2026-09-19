@@ -36,6 +36,24 @@ class AvatarItem extends BaseModel
         'scale' => 'float',
     ];
 
+    /** Categories the school currently has switched on (Website Setup >
+     *  Dashboard Features). Base Character is always available — an avatar
+     *  has to be something. */
+    public static function enabledCategories(): array
+    {
+        $gates = [
+            'outfit'    => 'avatar_outfits',
+            'hat'       => 'avatar_hats',
+            'accessory' => 'avatar_accessories',
+        ];
+
+        return array_filter(
+            self::CATEGORIES,
+            fn ($key) => !isset($gates[$key]) || dashboard_feature_enabled('student', $gates[$key]),
+            ARRAY_FILTER_USE_KEY
+        );
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', \App\Enums\Status::ACTIVE);

@@ -18,7 +18,7 @@ class AvatarItemController extends Controller
 
     public function index(Request $request)
     {
-        $category = array_key_exists($request->get('category'), AvatarItem::CATEGORIES)
+        $category = array_key_exists($request->get('category'), AvatarItem::enabledCategories())
             ? $request->get('category')
             : 'avatar';
 
@@ -31,7 +31,7 @@ class AvatarItemController extends Controller
 
     public function create(Request $request)
     {
-        $data['category'] = array_key_exists($request->get('category'), AvatarItem::CATEGORIES) ? $request->get('category') : 'avatar';
+        $data['category'] = array_key_exists($request->get('category'), AvatarItem::enabledCategories()) ? $request->get('category') : 'avatar';
         $data['bodies']   = AvatarItem::active()->category('avatar')->orderBy('sort_order')->get();
         $data['title']    = ___('settings.add_avatar_item');
         return view('website-setup.avatar-item.create', compact('data'));
@@ -40,7 +40,7 @@ class AvatarItemController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'category'    => 'required|in:' . implode(',', array_keys(AvatarItem::CATEGORIES)),
+            'category'    => 'required|in:' . implode(',', array_keys(AvatarItem::enabledCategories())),
             'name'        => 'required|string|max:60',
             'price_coins' => 'nullable|integer|min:0',
             'image'       => 'required|image|max:2048',
@@ -60,7 +60,7 @@ class AvatarItemController extends Controller
     public function bulkStore(Request $request)
     {
         $request->validate([
-            'category'    => 'required|in:' . implode(',', array_keys(AvatarItem::CATEGORIES)),
+            'category'    => 'required|in:' . implode(',', array_keys(AvatarItem::enabledCategories())),
             'price_coins' => 'nullable|integer|min:0',
             'images'      => 'required|array',
             'images.*'    => 'image|max:2048',
@@ -86,7 +86,7 @@ class AvatarItemController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'category'    => 'required|in:' . implode(',', array_keys(AvatarItem::CATEGORIES)),
+            'category'    => 'required|in:' . implode(',', array_keys(AvatarItem::enabledCategories())),
             'name'        => 'required|string|max:60',
             'price_coins' => 'nullable|integer|min:0',
             'image'       => 'nullable|image|max:2048',

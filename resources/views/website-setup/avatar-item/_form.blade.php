@@ -4,12 +4,12 @@
     <div class="col-md-4 mb-3">
         <label class="form-label">{{ ___('common.category') }} <span class="fillable">*</span></label>
         <select class="form-control ot-input @error('category') is-invalid @enderror" name="category">
-            @foreach (App\Models\LearningEngine\AvatarItem::CATEGORIES as $catKey => $catLabel)
+            @foreach (App\Models\LearningEngine\AvatarItem::enabledCategories() as $catKey => $catLabel)
                 <option value="{{ $catKey }}" {{ old('category', $s->category ?? $data['category'] ?? 'avatar') == $catKey ? 'selected' : '' }}>{{ $catLabel }}</option>
             @endforeach
         </select>
         @error('category')<div class="invalid-feedback">{{ $message }}</div>@enderror
-        <small class="text-secondary">Base Character is the body itself (always one worn); Outfit and Hat are optional single layers; Accessory can be worn several at once.</small>
+        <small class="text-secondary">Base Character is the body itself (always one worn); Accessory is an extra layer drawn on top, and a student can wear several at once. Extra layer types can be switched on in Website Setup &rarr; Dashboard Features.</small>
     </div>
 
     <div class="col-md-4 mb-3">
