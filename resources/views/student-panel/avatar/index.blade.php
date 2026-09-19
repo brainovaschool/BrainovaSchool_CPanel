@@ -31,6 +31,29 @@
 .av-name-voice-row{ display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end; margin-top:16px; }
 .av-name-voice-row .field{ flex:1; min-width:160px; }
 
+/* Base Character line-up — every character in one grid, each with its own
+   price and the right action for its state. */
+.av-char-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(132px, 1fr)); gap:12px; margin-top:12px; }
+.av-char-card{
+    position:relative; text-align:center; padding:12px 10px; border-radius:14px;
+    border:2px solid rgba(15,41,55,.08); background:#fbfeff;
+}
+.av-char-card.worn{ border-color:var(--bn-primary); background:var(--bn-primary-soft); }
+.av-char-art{ width:100%; aspect-ratio:1/1; display:flex; align-items:center; justify-content:center; color:#9aa4ab; font-size:1.6rem; }
+.av-char-art img{ width:100%; height:100%; object-fit:contain; }
+.av-char-name{ font-size:.84rem; font-weight:700; color:var(--bn-ink); margin-top:4px; }
+.av-char-price{ font-size:.78rem; font-weight:700; color:#92400e; margin-top:3px; }
+.av-char-price.free{ color:#15803d; }
+.av-char-state{ font-size:.76rem; font-weight:800; color:var(--bn-primary); margin-top:6px; }
+.av-char-locked{ font-size:.7rem; color:#9aa4ab; margin-top:4px; }
+.av-char-card form{ margin-top:8px; }
+.av-char-card .btn{ font-size:.75rem; padding:5px 14px; }
+.av-char-pip{
+    position:absolute; top:8px; right:8px; width:22px; height:22px; border-radius:50%;
+    background:var(--bn-primary); color:#fff; font-size:.65rem;
+    display:flex; align-items:center; justify-content:center;
+}
+
 .av-shop-layout{ display:flex; gap:18px; margin-top:12px; flex-wrap:wrap; align-items:flex-start; }
 
 .av-shop-grid{ flex:2 1 300px; display:grid; grid-template-columns:repeat(auto-fill, minmax(112px, 1fr)); gap:10px; align-content:start; }
@@ -101,7 +124,7 @@ button.av-inv-row:hover{ background:#f4f8fa; }
                 {{-- Accessories live up here rather than down in their shop
                      section, so taking one on or off shows on the avatar
                      right beside it. --}}
-                @if (dashboard_feature_enabled('student', 'avatar_accessories'))
+                @if (App\Models\LearningEngine\AvatarItem::sectionEnabled('accessory'))
                     @include('student-panel.avatar._inventory', [
                         'items'    => $data['accessories'],
                         'owned'    => $data['owned'],
@@ -133,17 +156,20 @@ button.av-inv-row:hover{ background:#f4f8fa; }
         </div>
     </div>
 
-    @include('student-panel.avatar._shop-section', [
-        'title'    => 'Base Character',
-        'hint'     => 'Free looks are yours already. Spend coins to unlock the rest.',
-        'items'    => $data['bodies'],
-        'owned'    => $data['owned'],
-        'equipped' => optional($data['profile'])->avatar_item_id,
-        'kind'     => 'avatar',
-        'coins'    => $data['coins'],
-    ])
+    <div class="card ot-card mb-4">
+        <div class="card-body">
+            <h5 class="mb-0">Base Character</h5>
+            <p class="text-secondary mb-0">The free ones are already yours. Earn coins to unlock the rest.</p>
+            @include('student-panel.avatar._character-grid', [
+                'items'    => $data['bodies'],
+                'owned'    => $data['owned'],
+                'equipped' => optional($data['profile'])->avatar_item_id,
+                'coins'    => $data['coins'],
+            ])
+        </div>
+    </div>
 
-    @if (dashboard_feature_enabled('student', 'avatar_outfits'))
+    @if (App\Models\LearningEngine\AvatarItem::sectionEnabled('outfit'))
         @include('student-panel.avatar._shop-section', [
             'title'    => 'Outfit',
             'hint'     => 'A clothing layer worn over your base character. Optional.',
@@ -155,7 +181,7 @@ button.av-inv-row:hover{ background:#f4f8fa; }
         ])
     @endif
 
-    @if (dashboard_feature_enabled('student', 'avatar_hats'))
+    @if (App\Models\LearningEngine\AvatarItem::sectionEnabled('hat'))
         @include('student-panel.avatar._shop-section', [
             'title'    => 'Hat',
             'hint'     => 'Headwear worn on top of everything else. Optional.',
@@ -167,7 +193,7 @@ button.av-inv-row:hover{ background:#f4f8fa; }
         ])
     @endif
 
-    @if (dashboard_feature_enabled('student', 'avatar_accessories'))
+    @if (App\Models\LearningEngine\AvatarItem::sectionEnabled('accessory'))
         @include('student-panel.avatar._shop-section', [
             'title'    => 'Accessories',
             'hint'     => 'Small extras you can wear several of at once. Everything you own is up beside your avatar.',

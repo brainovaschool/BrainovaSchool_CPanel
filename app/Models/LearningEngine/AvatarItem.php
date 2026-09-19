@@ -36,20 +36,47 @@ class AvatarItem extends BaseModel
         'scale' => 'float',
     ];
 
+    /** Which Dashboard Features row governs each optional layer, and whether
+     *  it shows when no row exists yet. Outfits and hats stay hidden until
+     *  someone deliberately switches them on; accessories are on out of the
+     *  box. (The general dashboard_feature_enabled() helper is fail-open, so
+     *  it can't express an off-by-default section.) */
+    public const SECTION_GATES = [
+        'outfit'    => ['key' => 'avatar_outfits',     'default' => false],
+        'hat'       => ['key' => 'avatar_hats',        'default' => false],
+        'accessory' => ['key' => 'avatar_accessories', 'default' => true],
+    ];
+
+    public static function sectionEnabled(string $category): bool
+    {
+        // Base Character has no gate — an avatar has to be something.
+        $gate = self::SECTION_GATES[$category] ?? null;
+        if (!$gate) {
+            return true;
+        }
+
+        static $flags = null;
+        if ($flags === null) {
+            try {
+                $flags = \App\Models\WebsiteSetup\DashboardFeature::where('portal', 'student')
+                    ->pluck('status', 'feature_key')
+                    ->map(fn ($status) => (int) $status)
+                    ->all();
+            } catch (\Throwable $e) {
+                $flags = [];
+            }
+        }
+
+        return array_key_exists($gate['key'], $flags) ? $flags[$gate['key']] === 1 : $gate['default'];
+    }
+
     /** Categories the school currently has switched on (Website Setup >
-     *  Dashboard Features). Base Character is always available — an avatar
-     *  has to be something. */
+     *  Dashboard Features). */
     public static function enabledCategories(): array
     {
-        $gates = [
-            'outfit'    => 'avatar_outfits',
-            'hat'       => 'avatar_hats',
-            'accessory' => 'avatar_accessories',
-        ];
-
         return array_filter(
             self::CATEGORIES,
-            fn ($key) => !isset($gates[$key]) || dashboard_feature_enabled('student', $gates[$key]),
+            fn ($key) => self::sectionEnabled($key),
             ARRAY_FILTER_USE_KEY
         );
     }

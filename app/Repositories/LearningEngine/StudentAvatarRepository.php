@@ -87,15 +87,15 @@ class StudentAvatarRepository
         // A layer whose section has been switched off in Website Setup stops
         // showing on the avatar, even if the student had it equipped before.
         $ordered = array_filter([$profile->avatar]);
-        if ($profile->outfit && dashboard_feature_enabled('student', 'avatar_outfits')) {
+        if ($profile->outfit && AvatarItem::sectionEnabled('outfit')) {
             $ordered[] = $profile->outfit;
         }
-        if (dashboard_feature_enabled('student', 'avatar_accessories')) {
+        if (AvatarItem::sectionEnabled('accessory')) {
             foreach ($accessories as $accessory) {
                 $ordered[] = $accessory;
             }
         }
-        if ($profile->hat && dashboard_feature_enabled('student', 'avatar_hats')) {
+        if ($profile->hat && AvatarItem::sectionEnabled('hat')) {
             $ordered[] = $profile->hat;
         }
 
