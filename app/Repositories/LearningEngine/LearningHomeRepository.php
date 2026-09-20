@@ -338,10 +338,10 @@ class LearningHomeRepository
     private function awards(array $allMarkedWork, $masteries, ?array $personalBest, $needsReviewDisplay): array
     {
         return [
-            ['icon' => '🌟', 'name' => 'First Skill Mastered', 'earned' => $masteries->where('mastery_level', 'advanced')->isNotEmpty()],
-            ['icon' => '🎯', 'name' => 'Perfect Score',        'earned' => collect($allMarkedWork)->contains(fn ($r) => $r['percent'] >= 100)],
-            ['icon' => '📈', 'name' => 'On The Rise',          'earned' => $personalBest && $personalBest['delta'] > 0],
-            ['icon' => '🧹', 'name' => 'All Caught Up',        'earned' => $needsReviewDisplay->isEmpty()],
+            ['icon' => 'fa-star',          'name' => 'First Skill Mastered', 'earned' => $masteries->where('mastery_level', 'advanced')->isNotEmpty()],
+            ['icon' => 'fa-bullseye',      'name' => 'Perfect Score',        'earned' => collect($allMarkedWork)->contains(fn ($r) => $r['percent'] >= 100)],
+            ['icon' => 'fa-arrow-trend-up','name' => 'On The Rise',          'earned' => $personalBest && $personalBest['delta'] > 0],
+            ['icon' => 'fa-circle-check',  'name' => 'All Caught Up',        'earned' => $needsReviewDisplay->isEmpty()],
         ];
     }
 

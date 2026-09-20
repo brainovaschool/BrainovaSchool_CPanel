@@ -29,6 +29,17 @@
         --dv2-shadow: 0 1px 2px rgba(20,20,30,.04), 0 12px 28px -16px rgba(20,20,30,.14);
         --dv2-good: var(--bn-advanced);
 
+        /* Knowledge Tree palette — foliage follows the theme's green, trunk
+           and soil stay natural so the tree still reads as a tree in every theme. */
+        --bn-tree-trunk: #7d5636;
+        --bn-tree-trunk-dark: #5e3f27;
+        --bn-tree-soil: #b08b66;
+        --bn-tree-soil-top: #c9a582;
+        --bn-tree-leaf: var(--bn-advanced);
+        --bn-tree-leaf-light: color-mix(in srgb, var(--bn-advanced) 68%, #ffffff);
+        --bn-tree-leaf-dark: color-mix(in srgb, var(--bn-advanced) 72%, #14321f);
+        --bn-tree-blossom: #ffd9e8;
+
         background: var(--dv2-page);
         color: var(--dv2-ink);
         font-family: 'Manrope', system-ui, sans-serif;
@@ -60,13 +71,41 @@
         .bn-dv2-grid--hero, .bn-dv2-grid--wide { grid-template-columns: 1fr; }
     }
 
+    /* Cards stretch to the tallest in their row, so their content has to be
+       able to fill that height — otherwise everything sits jammed at the top
+       with a band of dead space underneath. The body grows and centres. */
     .bn-dv2-card {
         background: var(--dv2-surface);
         border: 1px solid var(--dv2-line);
         border-radius: 16px;
         box-shadow: var(--dv2-shadow);
         padding: 16px;
+        display: flex;
+        flex-direction: column;
     }
+    .bn-dv2-card-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    /* Empty states — a card with nothing in it should say so, not render a
+       blank chart or an unexplained gap. */
+    .bn-dv2-empty {
+        flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        text-align: center; gap: 8px; padding: 12px 0; color: var(--dv2-ink-mute);
+    }
+    .bn-dv2-empty i { font-size: 1.5rem; opacity: .45; }
+    .bn-dv2-empty p { margin: 0; font-size: .8rem; max-width: 24ch; line-height: 1.5; }
+
+    /* Three plain figures — the replacement for the old class/subject/teacher
+       counters, which were inventory rather than information. */
+    .bn-dv2-figure-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .bn-dv2-figure { text-align: center; }
+    .bn-dv2-figure .v { font-size: 1.45rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .bn-dv2-figure .v .of { font-size: .85rem; font-weight: 700; color: var(--dv2-ink-mute); }
+    .bn-dv2-figure .k { font-size: .68rem; color: var(--dv2-ink-mute); text-transform: uppercase; letter-spacing: .04em; margin-top: 3px; line-height: 1.3; }
 
     /* Profile card */
     .bn-dv2-profile { display: flex; gap: 12px; align-items: flex-start; }
@@ -129,18 +168,18 @@
     .bn-dv2-trend--up { background: var(--bn-advanced-soft); color: var(--bn-advanced); }
     .bn-dv2-trend--flat { background: var(--dv2-surface-2); color: var(--dv2-ink-mute); }
 
-    /* Knowledge Tree — a real growing plant, not just a label. Leaves fill
-       in toward the next stage; the stem gets taller each stage reached. */
-    .bn-dv2-tree-row { display: flex; align-items: center; gap: 16px; }
-    .bn-dv2-tree-plant { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 84px; flex-shrink: 0; }
-    .bn-dv2-tree-leaves {
-        display: flex; flex-wrap: wrap-reverse; justify-content: center; align-content: flex-end;
-        gap: 1px; min-height: 44px; width: 80px; font-size: 1.05rem; line-height: 1;
-    }
-    .bn-dv2-tree-stem { width: 6px; border-radius: 4px; background: linear-gradient(var(--bn-advanced), color-mix(in srgb, var(--bn-advanced) 55%, var(--dv2-surface))); }
-    .bn-dv2-tree-pot { font-size: 1.6rem; line-height: 1; }
+    /* Knowledge Tree — an actual drawn tree (see partials/knowledge-tree).
+       Foliage follows the theme's green; trunk and soil stay natural, since
+       a pink trunk stops reading as a tree. */
+    .bn-dv2-tree-row { display: flex; align-items: center; gap: 14px; }
+    .bn-tree-svg { width: 96px; height: 112px; flex-shrink: 0; display: block; }
+    .bn-dv2-tree-info { min-width: 0; flex: 1; }
     .bn-dv2-tree-name { font-weight: 800; font-size: .98rem; }
-    .bn-dv2-tree-sub { font-size: .78rem; color: var(--dv2-ink-mute); margin-top: 3px; line-height: 1.5; }
+    .bn-dv2-tree-sub { font-size: .76rem; color: var(--dv2-ink-mute); margin-top: 3px; line-height: 1.5; }
+    .bn-dv2-tree-bar { height: 6px; border-radius: 20px; background: var(--dv2-surface-2); overflow: hidden; margin-top: 8px; }
+    .bn-dv2-tree-bar > span { display: block; height: 100%; border-radius: 20px; background: var(--bn-advanced); }
+
+    .bn-dv2-donut-row { display: flex; gap: 12px; align-items: center; }
 
     /* Donut legend */
     .bn-dv2-legend { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 5px; }
@@ -172,9 +211,9 @@
         width: 44px; height: 44px; border-radius: 12px; background: var(--dv2-surface-2);
         display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 1px solid;
     }
-    .bn-dv2-badge-chip--bronze .icn { background: #fdf1e7; border-color: rgba(161,92,46,.25); }
-    .bn-dv2-badge-chip--silver .icn { background: #f1f4f7; border-color: rgba(91,107,122,.25); }
-    .bn-dv2-badge-chip--gold .icn   { background: #fef8e3; border-color: rgba(161,117,10,.3); }
+    .bn-dv2-badge-chip--bronze .icn { background: #fdf1e7; border-color: rgba(161,92,46,.25); color: #a15c2e; }
+    .bn-dv2-badge-chip--silver .icn { background: #f1f4f7; border-color: rgba(91,107,122,.25); color: #5b6b7a; }
+    .bn-dv2-badge-chip--gold .icn   { background: #fef8e3; border-color: rgba(161,117,10,.3); color: #a1750a; }
 
     /* Verified skills row */
     .bn-dv2-vs-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: .82rem; }

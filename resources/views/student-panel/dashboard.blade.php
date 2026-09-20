@@ -53,7 +53,9 @@
         <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
             <div>
                 <h1 class="bn-dv2-greet">{{ ___('common.welcome_back') }}, {{ @$data['student']->first_name }}! 👋</h1>
-                <p class="bn-dv2-sub">{{ $lh['greeting_line'] ?? ___('common.keep_going_note') }}</p>
+                @if (!empty($lh['greeting_line']))
+                    <p class="bn-dv2-sub">{{ $lh['greeting_line'] }}</p>
+                @endif
             </div>
             <div class="d-flex align-items-center gap-3 flex-wrap">
                 @include('backend.partials.theme-picker', ['onLight' => true])
@@ -93,13 +95,9 @@
                     <div class="name">{{ @$data['student']->first_name }} {{ @$data['student']->last_name }}</div>
                     <ul class="meta">
                         <li><i class="fa-solid fa-graduation-cap"></i>{{ @$data['student']->sessionStudentDetails->class->name }} ({{ @$data['student']->sessionStudentDetails->section->name }})</li>
-                        <li><i class="fa-solid fa-id-card"></i>{{ ___('student_info.admission_no') }}: {{ @$data['student']->admission_no }}</li>
                         <li><i class="fa-solid fa-hashtag"></i>{{ ___('student_info.roll_no') }}: {{ @$data['student']->roll_no }}</li>
                         @if (@$data['student']->parent->guardian_name)
-                            <li><i class="fa-solid fa-user-tie"></i>{{ @$data['student']->parent->guardian_name }}</li>
-                        @endif
-                        @if (@$data['student']->mobile)
-                            <li><i class="fa-solid fa-phone"></i>{{ @$data['student']->mobile }}</li>
+                            <li><i class="fa-solid fa-user-tie"></i>{{ ___('student_info.guardian') }}: {{ @$data['student']->parent->guardian_name }}</li>
                         @endif
                     </ul>
                 </div>
@@ -110,16 +108,32 @@
             @endif
 
             <div class="bn-dv2-card">
-                <div class="bn-dv2-mini-stats">
-                    <div class="bn-dv2-mini-stat"><div class="icn"><i class="fa-solid fa-chalkboard"></i></div><div class="v">{{ $data['totalClass'] }}</div><div class="k">{{ ___('academic.class') }}</div></div>
-                    <div class="bn-dv2-mini-stat"><div class="icn"><i class="fa-solid fa-book"></i></div><div class="v">{{ $data['totalSubject'] }}</div><div class="k">{{ ___('academic.subject') }}</div></div>
-                    <div class="bn-dv2-mini-stat"><div class="icn"><i class="fa-solid fa-chalkboard-user"></i></div><div class="v">{{ $data['totalTeacher'] }}</div><div class="k">{{ ___('academic.teacher') }}</div></div>
-                    <div class="bn-dv2-mini-stat"><div class="icn"><i class="fa-solid fa-calendar-days"></i></div><div class="v">{{ $data['totalEvent'] }}</div><div class="k">{{ ___('settings.event') }}</div></div>
-                </div>
-                <div class="bn-dv2-pill-row">
-                    <div class="bn-dv2-pill"><i class="fa-solid fa-star"></i><div><div class="v">@if(($data['homework_total_marks'] ?? null) !== null){{ $data['homework_total_marks'] }}@else—@endif</div><div class="k">{{ ___('examination.scores') }}</div></div></div>
+                <div class="bn-dv2-card-label"><i class="fa-solid fa-chart-simple"></i>Where you're at</div>
+                <div class="bn-dv2-card-body">
+                    <div class="bn-dv2-figure-row">
+                        <div class="bn-dv2-figure">
+                            <div class="v">{{ ($lh['average_marks'] ?? null) !== null ? $lh['average_marks'] . '%' : '—' }}</div>
+                            <div class="k">{{ ___('common.average_marks') }}</div>
+                        </div>
+                        <div class="bn-dv2-figure">
+                            <div class="v">{{ $mc['advanced'] ?? 0 }}<span class="of">/{{ $lh['skills_total'] ?? 0 }}</span></div>
+                            <div class="k">{{ ___('common.skills_mastered') }}</div>
+                        </div>
+                        <div class="bn-dv2-figure">
+                            <div class="v">{{ !empty($lh['level_trend']) ? $lh['level_trend']['this_week'] : 0 }}</div>
+                            <div class="k">{{ ___('common.points_this_week') }}</div>
+                        </div>
+                    </div>
                     @if (!empty($data['weekly_wins']) && $data['weekly_wins']['has_wins'] && dashboard_feature_enabled('student', 'weekly_wins'))
-                        <div class="bn-dv2-pill"><i class="fa-solid fa-trophy"></i><div><div class="v">{{ $data['weekly_wins']['mastered_titles']->count() }}</div><div class="k">{{ ___('common.mastered_this_week') }}</div></div></div>
+                        <div class="bn-dv2-pill-row">
+                            <div class="bn-dv2-pill">
+                                <i class="fa-solid fa-trophy"></i>
+                                <div>
+                                    <div class="v">{{ $data['weekly_wins']['mastered_titles']->count() }}</div>
+                                    <div class="k">{{ ___('common.mastered_this_week') }}{{ $data['selected_subject_id'] ?? null ? ' · ' . ___('common.all_subjects') : '' }}</div>
+                                </div>
+                            </div>
+                        </div>
                     @endif
                 </div>
             </div>
@@ -132,19 +146,18 @@
                     @php $bl = $lh['brain_level']; $trend = $lh['level_trend'] ?? null; @endphp
                     <div class="bn-dv2-card">
                         <div class="bn-dv2-card-label"><i class="fa-solid fa-brain"></i>{{ ___('common.brain_level') }}</div>
-                        <div class="bn-dv2-ring-wrap">
-                            <div class="bn-ring" data-value="{{ $bl['progress_pct'] }}" data-color="var(--bn-primary)" data-track="var(--bn-primary-soft)"></div>
-                            <div class="bn-dv2-ring-num">{{ $bl['level'] }}</div>
-                            <div class="bn-dv2-ring-cap">{{ $bl['progress_pct'] }}% · {{ ___('common.to_next_level') }} {{ $bl['level'] + 1 }}</div>
-                            @if ($trend)
-                                <div class="bn-dv2-trend {{ $trend['improving'] ? 'bn-dv2-trend--up' : 'bn-dv2-trend--flat' }}">
-                                    <i class="fa-solid {{ $trend['improving'] ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i>
-                                    {{ $trend['delta'] > 0 ? '+' : '' }}{{ $trend['delta'] }} pts vs last week
-                                </div>
-                            @endif
-                            @if (($lh['average_marks'] ?? null) !== null)
-                                <div class="bn-dv2-ring-cap" style="margin-top:6px;">{{ ___('common.average_marks') }}: <b>{{ $lh['average_marks'] }}%</b></div>
-                            @endif
+                        <div class="bn-dv2-card-body">
+                            <div class="bn-dv2-ring-wrap">
+                                <div class="bn-ring" data-value="{{ $bl['progress_pct'] }}" data-color="var(--bn-primary)" data-track="var(--bn-primary-soft)"></div>
+                                <div class="bn-dv2-ring-num">{{ $bl['level'] }}</div>
+                                <div class="bn-dv2-ring-cap">{{ $bl['progress_pct'] }}% · {{ ___('common.to_next_level') }} {{ $bl['level'] + 1 }}</div>
+                                @if ($trend)
+                                    <div class="bn-dv2-trend {{ $trend['improving'] ? 'bn-dv2-trend--up' : 'bn-dv2-trend--flat' }}">
+                                        <i class="fa-solid {{ $trend['improving'] ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i>
+                                        {{ $trend['delta'] > 0 ? '+' : '' }}{{ $trend['delta'] }} {{ ___('common.pts_vs_last_week') }}
+                                    </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                 @endif
@@ -153,22 +166,20 @@
                     @php $kt = $lh['knowledge_tree']; @endphp
                     <div class="bn-dv2-card">
                         <div class="bn-dv2-card-label"><i class="fa-solid fa-seedling"></i>{{ ___('common.knowledge_tree') }}</div>
-                        <div class="bn-dv2-tree-row">
-                            <div class="bn-dv2-tree-plant">
-                                <div class="bn-dv2-tree-leaves">
-                                    @for ($i = 0; $i < max($kt['days_in_band'], $kt['stage_index'] > 0 ? 1 : $kt['days_in_band']); $i++)
-                                        {{ $kt['at_cap'] ? '🌸' : '🍃' }}
-                                    @endfor
-                                </div>
-                                <div class="bn-dv2-tree-stem" style="height:{{ 14 + $kt['stage_index'] * 18 }}px;"></div>
-                                <div class="bn-dv2-tree-pot">🪴</div>
-                            </div>
-                            <div style="min-width:0;">
-                                <div class="bn-dv2-tree-name">{{ $kt['label'] }}</div>
-                                <div class="bn-dv2-tree-sub">
-                                    {{ $kt['active_days'] }} {{ ___('common.days_growing') }}
-                                    @if (!$kt['at_cap'])
-                                        · {{ $kt['days_to_grow'] }} {{ ___('common.more_to_grow_taller') }}
+                        <div class="bn-dv2-card-body">
+                            <div class="bn-dv2-tree-row">
+                                @include('backend.partials.knowledge-tree', ['tree' => $kt])
+                                <div class="bn-dv2-tree-info">
+                                    <div class="bn-dv2-tree-name">{{ $kt['label'] }}</div>
+                                    <div class="bn-dv2-tree-sub">{{ $kt['active_days'] }} {{ ___('common.days_growing') }}</div>
+                                    @if ($kt['at_cap'])
+                                        <div class="bn-dv2-tree-sub"><b>{{ ___('common.fully_grown') }}</b></div>
+                                    @else
+                                        <div class="bn-dv2-tree-bar" role="img"
+                                            aria-label="{{ $kt['days_in_band'] }} of 10 days toward the next stage">
+                                            <span style="width:{{ $kt['days_in_band'] * 10 }}%;"></span>
+                                        </div>
+                                        <div class="bn-dv2-tree-sub">{{ $kt['days_to_grow'] }} {{ ___('common.more_days_to_grow_taller') }}</div>
                                     @endif
                                 </div>
                             </div>
@@ -177,18 +188,30 @@
                 @endif
 
                 @if (dashboard_feature_enabled('student', 'skill_mastery_overview'))
+                    @php $mcTotal = ($mc['not_started'] ?? 0) + ($mc['developing'] ?? 0) + ($mc['proficient'] ?? 0) + ($mc['advanced'] ?? 0); @endphp
                     <div class="bn-dv2-card">
                         <div class="bn-dv2-card-label"><i class="fa-solid fa-chart-pie"></i>{{ ___('common.your_skill_snapshot') }}</div>
-                        <div style="display:flex; gap:12px; align-items:center;">
-                            <div class="bn-donut" style="width:80px;height:80px;flex-shrink:0;"
-                                data-segments="{{ $mc['not_started'] }},{{ $mc['developing'] }},{{ $mc['proficient'] }},{{ $mc['advanced'] }}"
-                                data-colors="var(--bn-not-started),var(--bn-developing),var(--bn-proficient),var(--bn-advanced)"></div>
-                            <ul class="bn-dv2-legend">
-                                <li><span class="dot" style="background:var(--bn-not-started)"></span>{{ ___('common.not_started') }}<b>{{ $mc['not_started'] }}</b></li>
-                                <li><span class="dot" style="background:var(--bn-developing)"></span>{{ ___('common.developing') }}<b>{{ $mc['developing'] }}</b></li>
-                                <li><span class="dot" style="background:var(--bn-proficient)"></span>{{ ___('common.proficient') }}<b>{{ $mc['proficient'] }}</b></li>
-                                <li><span class="dot" style="background:var(--bn-advanced)"></span>{{ ___('common.advanced') }}<b>{{ $mc['advanced'] }}</b></li>
-                            </ul>
+                        <div class="bn-dv2-card-body">
+                            @if ($mcTotal === 0)
+                                {{-- A donut of four zeros draws nothing at all, which reads as a
+                                     broken chart. Say why it's empty instead. --}}
+                                <div class="bn-dv2-empty">
+                                    <i class="fa-solid fa-chart-pie"></i>
+                                    <p>{{ ___('common.no_skills_tracked_here_yet') }}</p>
+                                </div>
+                            @else
+                                <div class="bn-dv2-donut-row">
+                                    <div class="bn-donut" style="width:80px;height:80px;flex-shrink:0;"
+                                        data-segments="{{ $mc['not_started'] }},{{ $mc['developing'] }},{{ $mc['proficient'] }},{{ $mc['advanced'] }}"
+                                        data-colors="var(--bn-not-started),var(--bn-developing),var(--bn-proficient),var(--bn-advanced)"></div>
+                                    <ul class="bn-dv2-legend">
+                                        <li><span class="dot" style="background:var(--bn-not-started)"></span>{{ ___('common.not_started') }}<b>{{ $mc['not_started'] }}</b></li>
+                                        <li><span class="dot" style="background:var(--bn-developing)"></span>{{ ___('common.developing') }}<b>{{ $mc['developing'] }}</b></li>
+                                        <li><span class="dot" style="background:var(--bn-proficient)"></span>{{ ___('common.proficient') }}<b>{{ $mc['proficient'] }}</b></li>
+                                        <li><span class="dot" style="background:var(--bn-advanced)"></span>{{ ___('common.advanced') }}<b>{{ $mc['advanced'] }}</b></li>
+                                    </ul>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 @endif
@@ -225,12 +248,12 @@
                 </div>
             @endif
 
-            {{-- Row 3: What's Next, Mistake Bank, Refresh Time, Badges --}}
-            @if (dashboard_feature_enabled('student', 'whats_next') || dashboard_feature_enabled('student', 'mistake_bank') || dashboard_feature_enabled('student', 'refresh_time') || dashboard_feature_enabled('student', 'badges'))
+            {{-- Row 3: What's Next, Mistake Bank, Refresh Time --}}
+            @if (dashboard_feature_enabled('student', 'whats_next') || dashboard_feature_enabled('student', 'mistake_bank') || dashboard_feature_enabled('student', 'refresh_time'))
                 <div class="bn-dv2-grid bn-dv2-grid--auto">
                     @if (dashboard_feature_enabled('student', 'whats_next'))
                         <div class="bn-dv2-card">
-                            <div class="bn-dv2-card-label"><i class="fa-solid fa-route"></i>{{ ___('common.whats_next') }}</div>
+                            <div class="bn-dv2-card-label"><i class="fa-solid fa-route"></i>What's Next</div>
                             @forelse ($lh['next_skills'] as $skill)
                                 <div class="bn-dv2-list-row">
                                     <span class="num">{{ $loop->iteration }}</span>
@@ -244,7 +267,7 @@
 
                     @if (dashboard_feature_enabled('student', 'mistake_bank') && !empty($lh['needs_review']) && count($lh['needs_review']))
                         <div class="bn-dv2-card">
-                            <div class="bn-dv2-card-label"><i class="fa-solid fa-magnifying-glass"></i>{{ ___('common.lets_investigate') }}</div>
+                            <div class="bn-dv2-card-label"><i class="fa-solid fa-magnifying-glass"></i>Let's Investigate</div>
                             @foreach ($lh['needs_review'] as $row)
                                 <div class="bn-dv2-list-row">
                                     <span class="t">{{ $row['skill']->title }}</span>
@@ -266,51 +289,55 @@
                         </div>
                     @endif
 
-                    @if (dashboard_feature_enabled('student', 'badges'))
-                        <div class="bn-dv2-card">
-                            <div class="bn-dv2-card-label"><i class="fa-solid fa-award"></i>{{ ___('common.achievements') }}</div>
+                </div>
+            @endif
 
-                            @if (!empty($lh['badges']))
-                                <div class="bn-dv2-achieve-group">
-                                    <div class="bn-dv2-achieve-group__label">{{ ___('common.badges') }} · {{ ___('common.mastery_by_subject') }}</div>
-                                    <div class="bn-dv2-badge-shelf">
-                                        @foreach ($lh['badges'] as $badge)
-                                            <div class="bn-dv2-badge-chip bn-dv2-badge-chip--{{ $badge['tier'] }}">
-                                                <div class="icn">🏅</div>
-                                                <div>{{ $badge['subject'] }}</div>
-                                            </div>
-                                        @endforeach
-                                    </div>
-                                </div>
-                            @endif
+            {{-- Achievements get a full-width row of their own: a shelf of chips
+                 needs horizontal room, and squeezed into one column of a 4-up
+                 grid it left a large empty block beside it. --}}
+            @if (dashboard_feature_enabled('student', 'badges'))
+                <div class="bn-dv2-card" style="margin-bottom:14px;">
+                    <div class="bn-dv2-card-label"><i class="fa-solid fa-award"></i>{{ ___('common.achievements') }}</div>
 
-                            @if (!empty($lh['medals']))
-                                <div class="bn-dv2-achieve-group">
-                                    <div class="bn-dv2-achieve-group__label">{{ ___('common.medals') }} · {{ ___('common.knowledge_tree') }}</div>
-                                    <div class="bn-dv2-badge-shelf">
-                                        @foreach ($lh['medals'] as $medal)
-                                            <div class="bn-dv2-badge-chip {{ $medal['earned'] ? 'bn-dv2-badge-chip--gold' : 'bn-dv2-badge-chip--locked' }}">
-                                                <div class="icn">{{ $medal['earned'] ? '🥇' : '🔒' }}</div>
-                                                <div>{{ $medal['name'] }}</div>
-                                            </div>
-                                        @endforeach
+                    @if (!empty($lh['badges']))
+                        <div class="bn-dv2-achieve-group">
+                            <div class="bn-dv2-achieve-group__label">{{ ___('common.badges') }} · {{ ___('common.mastery_by_subject') }}</div>
+                            <div class="bn-dv2-badge-shelf">
+                                @foreach ($lh['badges'] as $badge)
+                                    <div class="bn-dv2-badge-chip bn-dv2-badge-chip--{{ $badge['tier'] }}">
+                                        <div class="icn"><i class="fa-solid fa-medal"></i></div>
+                                        <div>{{ $badge['subject'] }}</div>
                                     </div>
-                                </div>
-                            @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
 
-                            @if (!empty($lh['awards']))
-                                <div class="bn-dv2-achieve-group">
-                                    <div class="bn-dv2-achieve-group__label">{{ ___('common.awards') }}</div>
-                                    <div class="bn-dv2-badge-shelf">
-                                        @foreach ($lh['awards'] as $award)
-                                            <div class="bn-dv2-badge-chip {{ $award['earned'] ? 'bn-dv2-badge-chip--gold' : 'bn-dv2-badge-chip--locked' }}">
-                                                <div class="icn">{{ $award['earned'] ? $award['icon'] : '🔒' }}</div>
-                                                <div>{{ $award['name'] }}</div>
-                                            </div>
-                                        @endforeach
+                    @if (!empty($lh['medals']))
+                        <div class="bn-dv2-achieve-group">
+                            <div class="bn-dv2-achieve-group__label">{{ ___('common.medals') }} · {{ ___('common.knowledge_tree') }}</div>
+                            <div class="bn-dv2-badge-shelf">
+                                @foreach ($lh['medals'] as $medal)
+                                    <div class="bn-dv2-badge-chip {{ $medal['earned'] ? 'bn-dv2-badge-chip--gold' : 'bn-dv2-badge-chip--locked' }}">
+                                        <div class="icn"><i class="fa-solid {{ $medal['earned'] ? 'fa-award' : 'fa-lock' }}"></i></div>
+                                        <div>{{ $medal['name'] }}</div>
                                     </div>
-                                </div>
-                            @endif
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    @if (!empty($lh['awards']))
+                        <div class="bn-dv2-achieve-group">
+                            <div class="bn-dv2-achieve-group__label">{{ ___('common.awards') }}</div>
+                            <div class="bn-dv2-badge-shelf">
+                                @foreach ($lh['awards'] as $award)
+                                    <div class="bn-dv2-badge-chip {{ $award['earned'] ? 'bn-dv2-badge-chip--gold' : 'bn-dv2-badge-chip--locked' }}">
+                                        <div class="icn"><i class="fa-solid {{ $award['earned'] ? $award['icon'] : 'fa-lock' }}"></i></div>
+                                        <div>{{ $award['name'] }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
                     @endif
                 </div>
@@ -348,7 +375,7 @@
 
                     @if (dashboard_feature_enabled('student', 'daily_goals'))
                         <div class="bn-dv2-card">
-                            <div class="bn-dv2-card-label"><i class="fa-solid fa-flag-checkered"></i>{{ ___('common.todays_goals') }}</div>
+                            <div class="bn-dv2-card-label"><i class="fa-solid fa-flag-checkered"></i>Today's Goals</div>
                             <form action="{{ route('student-panel-dashboard.save-daily-goals') }}" method="post">
                                 @csrf
                                 @php $chosenKeys = collect($data['daily_goals'] ?? [])->pluck('key')->all(); @endphp
@@ -369,14 +396,14 @@
 
                     @if (dashboard_feature_enabled('student', 'reflection_journal'))
                         <div class="bn-dv2-card bn-dv2-journal">
-                            <div class="bn-dv2-card-label"><i class="fa-solid fa-feather-pointed"></i>{{ ___('common.todays_reflection') }}</div>
+                            <div class="bn-dv2-card-label"><i class="fa-solid fa-feather-pointed"></i>Today's Reflection</div>
                             <form action="{{ route('student-panel-dashboard.save-reflection') }}" method="post">
                                 @csrf
                                 @php $reflection = $data['reflection_today'] ?? null; @endphp
-                                <div class="bn-dv2-journal-q">{{ ___('common.what_was_hard_today') }}</div>
-                                <textarea name="what_was_hard" rows="2" maxlength="1000" placeholder="{{ ___('common.reflection_hard_placeholder') }}">{{ optional($reflection)->what_was_hard }}</textarea>
-                                <div class="bn-dv2-journal-q">{{ ___('common.what_strategy_worked_today') }}</div>
-                                <textarea name="what_worked" rows="2" maxlength="1000" placeholder="{{ ___('common.reflection_worked_placeholder') }}">{{ optional($reflection)->what_worked }}</textarea>
+                                <div class="bn-dv2-journal-q">What was hard today?</div>
+                                <textarea name="what_was_hard" rows="2" maxlength="1000" placeholder="A tricky question, a word you didn't know...">{{ optional($reflection)->what_was_hard }}</textarea>
+                                <div class="bn-dv2-journal-q">What worked well today?</div>
+                                <textarea name="what_worked" rows="2" maxlength="1000" placeholder="Something that helped you figure it out...">{{ optional($reflection)->what_worked }}</textarea>
                                 <button type="submit" class="btn ot-btn-primary btn-sm mt-2">{{ ___('common.save_reflection') }}</button>
                                 @if ($reflection)
                                     <span class="bn-empty-note" style="margin-left:8px;"><i class="fa-solid fa-circle-check"></i> {{ ___('common.saved_today') }}</span>
