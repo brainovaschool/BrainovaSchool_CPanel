@@ -65,6 +65,14 @@
             </div>
         </div>
 
+        @if (!empty($data['programs']) && count($data['programs']))
+            <div class="bn-dv2-tracks">
+                @foreach ($data['programs'] as $program)
+                    <span class="bn-dv2-track-chip"><span class="pip"></span>{{ $program->title }}</span>
+                @endforeach
+            </div>
+        @endif
+
         @if (!empty($data['subjects']) && count($data['subjects']))
             <form method="get" class="bn-dv2-subject-filter">
                 <label for="bnSubjectFilter">Showing</label>

@@ -28,6 +28,9 @@ use App\Models\Staff\Staff;
 use App\Models\StudentInfo\ParentGuardian;
 use App\Models\StudentInfo\SessionClassStudent;
 use App\Models\StudentInfo\Student;
+use App\Models\StudentInfo\StudentProgramEnrollment;
+use App\Models\WebsiteSetup\Program;
+use App\Models\WebsiteSetup\ProgramCategory;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use App\Repositories\LearningEngine\LearningEventRepository;
@@ -1454,6 +1457,407 @@ class MigrationRunnerController extends Controller
      *  password shown once in a response that's since scrolled away — this
      *  makes every login recoverable in one place, any time. Safe to
      *  re-run — only the password changes, no other data is touched. */
+    /** One-off: builds a full test ecosystem — 2 teachers, 2 parents, 5
+     *  students (demo1..demo5), program enrolments spanning Homeschooling +
+     *  an Electives coding programme + Tutoring/academic-support, plus
+     *  quizzes and homework with varied real scores — so the whole
+     *  dashboard (points, Level, Knowledge Tree, mastery, marked work,
+     *  achievements, Skill Mastery Report, parent view) has real data to
+     *  exercise end to end. Idempotent: safe to re-visit. */
+    public function seedFullDemoEcosystem(string $key, StudentRepository $studentRepo, ParentGuardianRepository $parents, UserRepository $users, LearningEventRepository $events)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $classes = Classes::active()->orderBy('id')->take(2)->get();
+        if ($classes->isEmpty()) {
+            return response('No class exists yet — create at least one Class (Academic → Classes) first.', 422);
+        }
+        $section = Section::first();
+
+        $subjects = Subject::active()->orderBy('id')->take(3)->get();
+        if ($subjects->isEmpty()) {
+            return response('No subject exists yet — create at least one Subject first.', 422);
+        }
+
+        $designation = Designation::first();
+        $department  = Department::first();
+        if (!$designation || !$department) {
+            return response('Create at least one Designation and Department (Staff → Designations / Departments) before this can create demo teachers.', 422);
+        }
+
+        $sessionId      = setting('session');
+        $today          = now()->format('Y-m-d');
+        $sharedPassword = 'Demo@12345';
+        $report         = [];
+
+        // ---- 1. Teachers (2), one per class where possible ----
+        $teacherDefs = [
+            ['first' => 'Hina',   'last' => 'Rizvi',  'email' => 'demo.teacher1@brainovaschool.com'],
+            ['first' => 'Farooq', 'last' => 'Sheikh', 'email' => 'demo.teacher2@brainovaschool.com'],
+        ];
+        $teachers = [];
+        foreach ($teacherDefs as $i => $t) {
+            $staff = Staff::where('email', $t['email'])->first();
+            if (!$staff) {
+                $fakeTeacher = new \Illuminate\Http\Request();
+                $fakeTeacher->merge([
+                    'first_name'  => $t['first'],
+                    'last_name'   => $t['last'],
+                    'email'       => $t['email'],
+                    'phone'       => '030001' . str_pad((string) ($i + 1), 5, '0', STR_PAD_LEFT),
+                    'role'        => 5,
+                    'designation' => $designation->id,
+                    'department'  => $department->id,
+                    'staff_id'    => 'DEMOT-' . ($i + 1),
+                    'status'      => 1,
+                ]);
+                $result = $users->store($fakeTeacher);
+                if ($result !== 1) {
+                    return response("Could not create teacher {$t['email']} (code {$result} — 2 means the staff subscription limit was reached).", 422);
+                }
+                $staff    = Staff::where('email', $t['email'])->latest('id')->first();
+                $report[] = "Created teacher: {$t['first']} {$t['last']} ({$t['email']})";
+            }
+            if ($staff->user) {
+                $staff->user->password = Hash::make($sharedPassword);
+                $staff->user->save();
+            }
+            $teachers[] = $staff;
+        }
+
+        // Assign both teachers to every class, each teaching a different subject.
+        foreach ($classes as $ci => $class) {
+            foreach ($teachers as $ti => $teacher) {
+                $subject = $subjects[($ci + $ti) % $subjects->count()];
+
+                $assign = SubjectAssign::where('session_id', $sessionId)
+                    ->where('classes_id', $class->id)
+                    ->where('section_id', optional($section)->id)
+                    ->first();
+                if (!$assign) {
+                    $assign               = new SubjectAssign();
+                    $assign->session_id   = $sessionId;
+                    $assign->classes_id   = $class->id;
+                    $assign->section_id   = optional($section)->id;
+                    $assign->status       = 1;
+                    $assign->save();
+                }
+
+                $exists = SubjectAssignChildren::where('subject_assign_id', $assign->id)
+                    ->where('subject_id', $subject->id)
+                    ->where('staff_id', $teacher->id)
+                    ->exists();
+                if (!$exists) {
+                    $child                    = new SubjectAssignChildren();
+                    $child->subject_assign_id = $assign->id;
+                    $child->subject_id        = $subject->id;
+                    $child->staff_id          = $teacher->id;
+                    $child->status            = 1;
+                    $child->save();
+                }
+            }
+        }
+
+        // ---- 2. Parents (2) ----
+        $parentDefs = [
+            ['name' => 'Ayesha Malik', 'email' => 'demo.parent1@brainovaschool.com'],
+            ['name' => 'Tariq Nadeem', 'email' => 'demo.parent2@brainovaschool.com'],
+        ];
+        $parentRows = [];
+        foreach ($parentDefs as $i => $p) {
+            $pg = ParentGuardian::where('guardian_email', $p['email'])->first();
+            if (!$pg) {
+                $fakeParent = new \Illuminate\Http\Request();
+                $fakeParent->merge([
+                    'guardian_name'     => $p['name'],
+                    'guardian_email'    => $p['email'],
+                    'guardian_mobile'   => '030002' . str_pad((string) ($i + 1), 5, '0', STR_PAD_LEFT),
+                    'guardian_relation' => 'Father',
+                    'password_type'     => 'custom',
+                    'password'          => $sharedPassword,
+                    'status'            => 1,
+                ]);
+                $result = $parents->store($fakeParent);
+                if (!$result['status']) {
+                    return response("Could not create parent {$p['email']}: {$result['message']}", 422);
+                }
+                $pg       = ParentGuardian::where('guardian_email', $p['email'])->latest('id')->first();
+                $report[] = "Created parent: {$p['name']} ({$p['email']})";
+            } elseif ($pg->user) {
+                $pg->user->password = Hash::make($sharedPassword);
+                $pg->user->save();
+            }
+            $parentRows[] = $pg;
+        }
+
+        // ---- 3. Students (5): demo1..demo5, spread across the classes above ----
+        $studentDefs = [
+            ['first' => 'Demo', 'last' => 'One',   'email' => 'demo1@brainovaschool.com'],
+            ['first' => 'Demo', 'last' => 'Two',   'email' => 'demo2@brainovaschool.com'],
+            ['first' => 'Demo', 'last' => 'Three', 'email' => 'demo3@brainovaschool.com'],
+            ['first' => 'Demo', 'last' => 'Four',  'email' => 'demo4@brainovaschool.com'],
+            ['first' => 'Demo', 'last' => 'Five',  'email' => 'demo5@brainovaschool.com'],
+        ];
+
+        $students        = [];
+        $studentsByClass = [];
+        foreach ($studentDefs as $i => $s) {
+            $class   = $classes[$i % $classes->count()];
+            $student = Student::where('email', $s['email'])->first();
+
+            if (!$student) {
+                $fake = new \Illuminate\Http\Request();
+                $fake->merge([
+                    'first_name'        => $s['first'],
+                    'last_name'         => $s['last'],
+                    'email'             => $s['email'],
+                    'mobile'            => '030010' . str_pad((string) ($i + 1), 5, '0', STR_PAD_LEFT),
+                    'admission_no'      => 'DEMO-' . ($i + 1),
+                    'password_type'     => 'custom',
+                    'password'          => $sharedPassword,
+                    'date_of_birth'     => '2015-01-01',
+                    'admission_date'    => now()->format('Y-m-d'),
+                    'status'            => 1,
+                    'class'             => $class->id,
+                    'section'           => optional($section)->id ?? '',
+                    'siblings_discount' => 0,
+                ]);
+                $result = $studentRepo->store($fake);
+                if (!$result['status']) {
+                    return response("Could not create student {$s['email']}: {$result['message']}", 422);
+                }
+                $student  = Student::where('email', $s['email'])->latest('id')->first();
+                $report[] = "Created student: {$s['first']} {$s['last']} ({$s['email']}) in {$class->name}";
+            } elseif ($student->user) {
+                $student->user->password = Hash::make($sharedPassword);
+                $student->user->save();
+            }
+
+            $student->parent_guardian_id = $parentRows[$i % count($parentRows)]->id;
+            $student->save();
+
+            $students[]                   = $student;
+            $studentsByClass[$class->id][] = $student;
+        }
+
+        // ---- 4. Program enrolments — Homeschooling + a coding elective +
+        // a Tutoring/academic-support programme per student, 2-3 total ----
+        $categoryIds   = ProgramCategory::pluck('id', 'slug');
+        $homeschooling = Program::where('program_category_id', $categoryIds['homeschooling'] ?? 0)->orderBy('sort_order')->get();
+        $tutoring      = Program::where('program_category_id', $categoryIds['tutoring'] ?? 0)->get();
+        $electives     = Program::where('program_category_id', $categoryIds['electives-enrichment'] ?? 0)->get();
+        $clubs         = Program::where('program_category_id', $categoryIds['social-clubs'] ?? 0)->get();
+
+        $coding = $electives->first(fn ($p) => str_contains(strtolower($p->title), 'coding'))
+            ?? $electives->first();
+
+        if ($homeschooling->isEmpty() && $tutoring->isEmpty() && $electives->isEmpty()) {
+            $report[] = 'NOTE: the Programs catalogue is empty, so no program enrolments were created — run the Program Catalog seeder (or visit the public Programs pages once) first if you want the track chips populated.';
+        }
+
+        foreach ($students as $i => $student) {
+            $picks = collect();
+            if ($homeschooling->isNotEmpty()) {
+                $picks->push($homeschooling[$i % $homeschooling->count()]);
+            }
+            if ($coding) {
+                $picks->push($coding);
+            }
+            if ($tutoring->isNotEmpty()) {
+                $picks->push($tutoring[$i % $tutoring->count()]);
+            }
+            if ($i % 2 === 0 && $clubs->isNotEmpty()) {
+                $picks->push($clubs[$i % $clubs->count()]);
+            }
+            $picks = $picks->filter()->unique('id')->values();
+
+            foreach ($picks as $program) {
+                StudentProgramEnrollment::firstOrCreate([
+                    'student_id' => $student->id,
+                    'program_id' => $program->id,
+                ]);
+            }
+
+            if ($picks->isNotEmpty()) {
+                $report[] = "{$student->first_name} {$student->last_name}: enrolled in " . $picks->pluck('title')->implode(', ');
+            }
+        }
+
+        // ---- 5. Homework + a skill-tagged quiz per class, varied real scores ----
+        $createdBy = $teachers[0]->user_id ?? null;
+
+        foreach ($classes as $ci => $class) {
+            $classStudents = collect($studentsByClass[$class->id] ?? [])->values();
+            if ($classStudents->isEmpty()) {
+                continue;
+            }
+
+            $subject = $subjects[$ci % $subjects->count()];
+            $skillA  = Skill::where('classes_id', $class->id)->orderBy('id')->skip(0)->first();
+            $skillB  = Skill::where('classes_id', $class->id)->orderBy('id')->skip(1)->first();
+
+            // ---- Quiz, 4 skill-tagged questions, every student submits with a different score ----
+            $quizTitle = "Demo Cohort Quiz — {$class->name}";
+            $quizId    = DB::table('homework')->where('title', $quizTitle)->where('classes_id', $class->id)->value('id');
+            if (!$quizId) {
+                $quizId = DB::table('homework')->insertGetId([
+                    'session_id'      => $sessionId,
+                    'classes_id'      => $class->id,
+                    'section_id'      => optional($section)->id,
+                    'subject_id'      => $subject->id,
+                    'title'           => $quizTitle,
+                    'topic'           => 'Mixed skills practice',
+                    'task_type'       => 'quiz',
+                    'date'            => $today,
+                    'submission_date' => now()->addDays(5)->format('Y-m-d'),
+                    'marks'           => 20,
+                    'description'     => 'Seeded demo quiz for cohort testing — dashboard/mastery/points flow.',
+                    'status'          => 1,
+                    'created_by'      => $createdBy,
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
+                ]);
+
+                $questions = [
+                    ['question' => 'Sample question 1 for ' . $class->name, 'a' => 'Correct answer', 'b' => 'Wrong answer', 'c' => 'Wrong answer', 'd' => 'Wrong answer', 'correct' => 'A', 'skill' => optional($skillA)->id],
+                    ['question' => 'Sample question 2 for ' . $class->name, 'a' => 'Wrong answer', 'b' => 'Correct answer', 'c' => 'Wrong answer', 'd' => 'Wrong answer', 'correct' => 'B', 'skill' => optional($skillA)->id],
+                    ['question' => 'Sample question 3 for ' . $class->name, 'a' => 'Wrong answer', 'b' => 'Wrong answer', 'c' => 'Correct answer', 'd' => 'Wrong answer', 'correct' => 'C', 'skill' => optional($skillB)->id],
+                    ['question' => 'Sample question 4 for ' . $class->name, 'a' => 'Wrong answer', 'b' => 'Wrong answer', 'c' => 'Wrong answer', 'd' => 'Correct answer', 'correct' => 'D', 'skill' => optional($skillB)->id],
+                ];
+
+                $questionIds = [];
+                foreach ($questions as $q) {
+                    $questionIds[] = DB::table('homework_quiz_questions')->insertGetId([
+                        'homework_id'    => $quizId,
+                        'skill_id'       => $q['skill'],
+                        'question'       => $q['question'],
+                        'option_a'       => $q['a'],
+                        'option_b'       => $q['b'],
+                        'option_c'       => $q['c'],
+                        'option_d'       => $q['d'],
+                        'correct_answer' => $q['correct'],
+                        'created_at'     => now(),
+                        'updated_at'     => now(),
+                    ]);
+                }
+
+                $scorePattern = [4, 3, 2, 1, 4];
+                foreach ($classStudents as $si => $student) {
+                    $correctCount = $scorePattern[$si % count($scorePattern)];
+                    $marksPerQ    = 20 / count($questions);
+                    $earned       = 0;
+                    $answerRows   = [];
+
+                    foreach ($questions as $qi => $q) {
+                        $isCorrect = $qi < $correctCount;
+                        if ($isCorrect) {
+                            $earned += $marksPerQ;
+                        }
+                        $selected     = $isCorrect ? $q['correct'] : (($q['correct'] === 'A') ? 'B' : 'A');
+                        $answerRows[] = [
+                            'homework_id'     => $quizId,
+                            'student_id'      => $student->id,
+                            'question_id'     => $questionIds[$qi],
+                            'selected_answer' => $selected,
+                            'is_correct'      => $isCorrect ? 1 : 0,
+                            'created_at'      => now(),
+                            'updated_at'      => now(),
+                        ];
+                        if ($q['skill']) {
+                            $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $q['skill'], ['correct' => $isCorrect, 'source' => 'homework_quiz']);
+                        }
+                    }
+
+                    DB::table('homework_students')->insert([
+                        'student_id'  => $student->id,
+                        'homework_id' => $quizId,
+                        'homework'    => null,
+                        'marks'       => round($earned, 2),
+                        'date'        => $today,
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]);
+                    DB::table('homework_quiz_answers')->insert($answerRows);
+                }
+
+                $report[] = "{$quizTitle}: 4 skill-tagged questions, {$classStudents->count()} students submitted with varied scores";
+            }
+
+            // ---- A plain graded assignment too, for marks/points variety beyond quizzes ----
+            $assignTitle = "Demo Cohort Assignment — {$class->name}";
+            $assignId    = DB::table('homework')->where('title', $assignTitle)->where('classes_id', $class->id)->value('id');
+            if (!$assignId) {
+                $assignId = DB::table('homework')->insertGetId([
+                    'session_id'      => $sessionId,
+                    'classes_id'      => $class->id,
+                    'section_id'      => optional($section)->id,
+                    'subject_id'      => $subject->id,
+                    'title'           => $assignTitle,
+                    'topic'           => 'Cohort writing task',
+                    'task_type'       => 'assignment',
+                    'date'            => $today,
+                    'submission_date' => now()->addDays(3)->format('Y-m-d'),
+                    'marks'           => 30,
+                    'description'     => 'Seeded demo assignment for cohort testing.',
+                    'status'          => 1,
+                    'created_by'      => $createdBy,
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
+                ]);
+
+                $assignScores = [28, 22, 17, 9, 30];
+                foreach ($classStudents as $si => $student) {
+                    DB::table('homework_students')->insert([
+                        'student_id'  => $student->id,
+                        'homework_id' => $assignId,
+                        'homework'    => null,
+                        'marks'       => $assignScores[$si % count($assignScores)],
+                        'date'        => $today,
+                        'created_at'  => now(),
+                        'updated_at'  => now(),
+                    ]);
+                }
+
+                $report[] = "{$assignTitle}: graded (out of 30) for {$classStudents->count()} students";
+            }
+        }
+
+        // ---- Report ----
+        $lines   = [];
+        $lines[] = '=== EVERYONE SHARES THIS PASSWORD ===';
+        $lines[] = $sharedPassword;
+        $lines[] = '';
+        $lines[] = '=== STUDENTS ===';
+        foreach ($students as $student) {
+            $scs       = SessionClassStudent::where('session_id', $sessionId)->where('student_id', $student->id)->first();
+            $className = optional(Classes::find(optional($scs)->classes_id))->name ?? '?';
+            $lines[]   = "{$student->first_name} {$student->last_name}  |  {$student->email}  |  class {$className}";
+        }
+        $lines[] = '';
+        $lines[] = '=== TEACHERS ===';
+        foreach ($teachers as $teacher) {
+            $lines[] = "{$teacher->first_name} {$teacher->last_name}  |  {$teacher->email}";
+        }
+        $lines[] = '';
+        $lines[] = '=== PARENTS ===';
+        foreach ($parentRows as $pg) {
+            $lines[] = "{$pg->guardian_name}  |  {$pg->guardian_email}";
+        }
+        $lines[] = '';
+        $lines[] = '=== WHAT WAS CREATED / UPDATED THIS RUN ===';
+        $lines   = array_merge($lines, $report ?: ['Nothing new — everything already existed from a previous run.']);
+        $lines[] = '';
+        $lines[] = 'Safe to re-visit this URL any time — it only creates what\'s missing and keeps the password in sync.';
+
+        return response('<pre style="font:14px/1.5 monospace;padding:24px">' . e(implode("\n", $lines)) . '</pre>');
+    }
+
     public function listDemoCredentials(string $key)
     {
         if (!hash_equals(self::KEY, $key)) {

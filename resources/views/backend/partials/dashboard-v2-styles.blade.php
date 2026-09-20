@@ -245,6 +245,15 @@
     .bn-dv2-achieve-group + .bn-dv2-achieve-group { margin-top: 14px; }
     .bn-dv2-achieve-group__label { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--dv2-ink-mute); margin-bottom: 8px; }
 
+    /* Enrolled-program chips — a student can hold several at once, so this
+       is a row of tags rather than a single value. */
+    .bn-dv2-tracks { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .bn-dv2-track-chip {
+        display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 700;
+        padding: 6px 13px; border-radius: 20px; background: var(--dv2-surface); border: 1px solid var(--dv2-line); color: var(--dv2-ink);
+    }
+    .bn-dv2-track-chip .pip { width: 7px; height: 7px; border-radius: 50%; background: var(--bn-primary); flex-shrink: 0; }
+
     /* Subject filter */
     .bn-dv2-subject-filter { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
     .bn-dv2-subject-filter label { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--dv2-ink-mute); }

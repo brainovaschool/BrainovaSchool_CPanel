@@ -169,6 +169,9 @@ Route::middleware(saasMiddleware())->group(function () {
             // One-off: seed 5 students in one class, each with a distinct learning story, all given the same quiz/project/assignment by the demo teacher (admin-only + key).
             Route::get('/db/seed-five-student-cohort/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedFiveStudentCohort']);
 
+            // One-off: full test ecosystem — 2 teachers, 2 parents, demo1..demo5 students enrolled in multiple programs, quizzes + homework with real graded scores (admin-only + key).
+            Route::get('/db/seed-full-demo-ecosystem/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedFullDemoEcosystem']);
+
             // One-off: list every demo student/teacher/parent account and reset each to a known, fixed password (admin-only + key).
             Route::get('/db/list-demo-credentials/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'listDemoCredentials']);
 

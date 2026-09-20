@@ -11,6 +11,7 @@ use App\Models\Academic\ClassRoutine;
 use App\Models\Academic\SubjectAssign;
 use App\Models\Academic\SubjectAssignChildren;
 use App\Models\StudentInfo\SessionClassStudent;
+use App\Models\StudentInfo\StudentProgramEnrollment;
 use App\Interfaces\StudentPanel\DashboardInterface;
 
 class DashboardRepository implements DashboardInterface
@@ -55,6 +56,18 @@ class DashboardRepository implements DashboardInterface
                             ->take(5)
                             ->get();
             $data['student'] = $student;
+
+            // The public Programs catalogue (Website Setup > Programs) linked
+            // to this student's actual enrolments — a student can hold several
+            // at once (e.g. a Homeschooling grade plus a Tutoring subject).
+            $data['programs'] = $student
+                ? StudentProgramEnrollment::where('student_id', $student->id)
+                    ->with('program.category')
+                    ->get()
+                    ->pluck('program')
+                    ->filter()
+                    ->values()
+                : collect();
 
             $data['homework_total_marks'] = null;
             if ($student) {
