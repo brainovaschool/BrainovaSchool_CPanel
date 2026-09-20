@@ -305,6 +305,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     });
 
                     Route::get('/skill-mastery-report', [\App\Http\Controllers\Backend\SkillMasteryReportController::class, 'index'])->name('skill-mastery-report.index');
+                    Route::get('/skill-mastery-report/guide', [\App\Http\Controllers\Backend\SkillMasteryReportController::class, 'guide'])->name('skill-mastery-report.guide');
 
                     Route::controller(LanguageController::class)->middleware(['FeatureCheck:language', 'DenyTeacherAndStudent'])->prefix('languages')->group(function () {
                         Route::get('/',                         'index')->name('languages.index')->middleware('PermissionCheck:language_read');

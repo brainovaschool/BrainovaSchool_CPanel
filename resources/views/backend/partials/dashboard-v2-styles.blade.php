@@ -44,6 +44,14 @@
     .bn-dv2-greet { font-size: 1.35rem; font-weight: 560; }
     .bn-dv2-sub { color: var(--dv2-ink-soft); font-size: .88rem; margin-top: 3px; }
 
+    .bn-dv2-help {
+        display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+        background: var(--dv2-surface); border: 1px solid var(--dv2-line); border-radius: 20px;
+        padding: 7px 14px; font-size: .8rem; font-weight: 700;
+        color: var(--bn-primary-strong); text-decoration: none;
+    }
+    .bn-dv2-help:hover { background: var(--bn-primary-soft); color: var(--bn-primary-strong); }
+
     .bn-dv2-grid { display: grid; gap: 14px; margin-bottom: 14px; }
     .bn-dv2-grid--auto { grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
     .bn-dv2-grid--hero { grid-template-columns: 1.3fr 1fr 1.6fr; }

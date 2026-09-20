@@ -30,6 +30,7 @@ Route::middleware(saasMiddleware())->group(function () {
 
                     Route::controller(DashboardController::class)->prefix('student-panel-dashboard')->group(function () {
                         Route::get('/', 'index')->name('student-panel-dashboard.index');
+                        Route::get('/guide', 'guide')->name('student-panel-dashboard.guide');
                         Route::post('search-student-menu-data', 'searchStudentMenuData')->name('search-student-menu-data');
                         Route::post('daily-goals', 'saveDailyGoals')->name('student-panel-dashboard.save-daily-goals');
                         Route::post('reflection', 'saveReflection')->name('student-panel-dashboard.save-reflection');

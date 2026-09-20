@@ -27,6 +27,17 @@ class SkillMasteryReportController extends Controller
         }
     }
 
+    /** How to read this report — what the four stages mean, where the data
+     *  comes from, and why there's deliberately no ranking. */
+    public function guide()
+    {
+        $this->guard();
+
+        $data['title'] = 'How to read this report';
+
+        return view('backend.skill-mastery-report.guide', compact('data'));
+    }
+
     public function index(Request $request)
     {
         $this->guard();

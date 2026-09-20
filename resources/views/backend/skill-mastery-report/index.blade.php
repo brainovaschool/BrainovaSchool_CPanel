@@ -15,6 +15,11 @@
                         <li class="breadcrumb-item">{{ $data['title'] }}</li>
                     </ol>
                 </div>
+                <div class="col-sm-6 d-flex align-items-start justify-content-sm-end">
+                    <a href="{{ route('skill-mastery-report.guide') }}" class="btn btn-outline-primary">
+                        <i class="fa-solid fa-circle-question"></i> How to read this report
+                    </a>
+                </div>
             </div>
         </div>
 

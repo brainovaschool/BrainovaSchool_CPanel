@@ -66,6 +66,16 @@ class DashboardController extends Controller
         return redirect()->route('student-panel-dashboard.index')->with('success', ___('alert.updated_successfully'));
     }
 
+    /** Plain-language tour of the dashboard, written for the student rather
+     *  than for an adult. Needs no data of its own — it explains how the
+     *  parts work, and the numbers themselves live on the dashboard. */
+    public function guide()
+    {
+        $data['title'] = 'How my dashboard works';
+
+        return view('student-panel.dashboard-guide', compact('data'));
+    }
+
     public function saveReflection(Request $request)
     {
         $student = optional(Auth::user())->student;

@@ -55,7 +55,12 @@
                 <h1 class="bn-dv2-greet">{{ ___('common.welcome_back') }}, {{ @$data['student']->first_name }}! 👋</h1>
                 <p class="bn-dv2-sub">{{ $lh['greeting_line'] ?? ___('common.keep_going_note') }}</p>
             </div>
-            @include('backend.partials.theme-picker', ['onLight' => true])
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                @include('backend.partials.theme-picker', ['onLight' => true])
+                <a href="{{ route('student-panel-dashboard.guide') }}" class="bn-dv2-help">
+                    <i class="fa-solid fa-circle-question"></i> What does this mean?
+                </a>
+            </div>
         </div>
 
         @if (!empty($lh['milestone']) && dashboard_feature_enabled('student', 'milestone_banner'))

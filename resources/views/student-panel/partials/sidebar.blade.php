@@ -27,6 +27,12 @@
                         <span class="on-half-expanded">{{ ___('settings.avatar_world') }}</span>
                     </a>
                 </li>
+                <li class="sidebar-menu-item {{ set_menu(['student-panel-dashboard/guide']) }}">
+                    <a href="{{ route('student-panel-dashboard.guide') }}" class="parent-item-content">
+                        <i class="las la-question-circle"></i>
+                        <span class="on-half-expanded">{{ ___('settings.help_guide') }}</span>
+                    </a>
+                </li>
                 @if (hasFeature('academic'))
                     <li class="sidebar-menu-item {{ set_menu(['student-panel-subject-list*']) }}">
                         <a href="{{ route('student-panel-subject-list.index') }}" class="parent-item-content">

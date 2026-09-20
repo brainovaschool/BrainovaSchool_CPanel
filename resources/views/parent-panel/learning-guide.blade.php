@@ -97,6 +97,22 @@
             </div>
 
             <div class="pg-guide-item">
+                <div class="pg-guide-item__icon" style="background:#0f7a37;"><i class="fa-solid fa-file-lines"></i></div>
+                <div class="pg-guide-item__body">
+                    <h5>XP is not the same as marks</h5>
+                    <p>This is the question we get asked most. <strong>XP and Brain Level are separate from homework and exam marks.</strong> XP is earned from correct answers on skill-tagged questions as your child practices, and it only ever goes up — a difficult week can never take it away. Their actual marks are set by their teacher and shown separately on the dashboard. A child can have a high Brain Level and still be working hard on their marks, and the reverse is equally possible.</p>
+                </div>
+            </div>
+
+            <div class="pg-guide-item">
+                <div class="pg-guide-item__icon" style="background:#92400e;"><i class="fa-solid fa-coins"></i></div>
+                <div class="pg-guide-item__body">
+                    <h5>Coins &amp; Avatar World</h5>
+                    <p>Alongside XP, your child earns Coins for the same correct answers. Coins are spent in "Avatar World" on outfits and accessories for the character that greets them on their dashboard. Spending coins <em>never</em> reduces their XP, Brain Level or mastery — the two are tracked completely separately, so there's no way for them to trade away real progress for a costume. There is no real money involved anywhere in this system.</p>
+                </div>
+            </div>
+
+            <div class="pg-guide-item">
                 <div class="pg-guide-item__icon" style="background:#e8664f;"><i class="fa-solid fa-heart"></i></div>
                 <div class="pg-guide-item__body">
                     <h5>"Good News This Week"</h5>
