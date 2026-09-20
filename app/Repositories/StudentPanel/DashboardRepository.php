@@ -30,6 +30,14 @@ class DashboardRepository implements DashboardInterface
             $data['totalSubject']   = SubjectAssignChildren::where('subject_assign_id', @$subjectTeacher->id)
                             ->distinct('subject_id')
                             ->count();
+            $data['subjects']       = SubjectAssignChildren::where('subject_assign_id', @$subjectTeacher->id)
+                            ->with('subject')
+                            ->get()
+                            ->pluck('subject')
+                            ->filter()
+                            ->unique('id')
+                            ->sortBy('name')
+                            ->values();
             $data['totalTeacher']   = SubjectAssignChildren::where('subject_assign_id', @$subjectTeacher->id)
                             ->distinct('staff_id')
                             ->count();

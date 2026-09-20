@@ -63,6 +63,18 @@
             </div>
         </div>
 
+        @if (!empty($data['subjects']) && count($data['subjects']))
+            <form method="get" class="bn-dv2-subject-filter">
+                <label for="bnSubjectFilter">Showing</label>
+                <select name="subject_id" id="bnSubjectFilter" onchange="this.form.submit()">
+                    <option value="">All subjects</option>
+                    @foreach ($data['subjects'] as $subject)
+                        <option value="{{ $subject->id }}" {{ (int) ($data['selected_subject_id'] ?? 0) === $subject->id ? 'selected' : '' }}>{{ $subject->name }}</option>
+                    @endforeach
+                </select>
+            </form>
+        @endif
+
         @if (!empty($lh['milestone']) && dashboard_feature_enabled('student', 'milestone_banner'))
             <div class="bn-dv2-banner">
                 <i class="fa-solid fa-star"></i>
@@ -117,13 +129,22 @@
             {{-- Row 2: Brain Level, Knowledge Tree, Skill Mastery, Next Best Action --}}
             <div class="bn-dv2-grid bn-dv2-grid--auto">
                 @if (!empty($lh['brain_level']) && dashboard_feature_enabled('student', 'brain_level'))
-                    @php $bl = $lh['brain_level']; @endphp
+                    @php $bl = $lh['brain_level']; $trend = $lh['level_trend'] ?? null; @endphp
                     <div class="bn-dv2-card">
                         <div class="bn-dv2-card-label"><i class="fa-solid fa-brain"></i>{{ ___('common.brain_level') }}</div>
                         <div class="bn-dv2-ring-wrap">
                             <div class="bn-ring" data-value="{{ $bl['progress_pct'] }}" data-color="var(--bn-primary)" data-track="var(--bn-primary-soft)"></div>
                             <div class="bn-dv2-ring-num">{{ $bl['level'] }}</div>
                             <div class="bn-dv2-ring-cap">{{ $bl['progress_pct'] }}% · {{ ___('common.to_next_level') }} {{ $bl['level'] + 1 }}</div>
+                            @if ($trend)
+                                <div class="bn-dv2-trend {{ $trend['improving'] ? 'bn-dv2-trend--up' : 'bn-dv2-trend--flat' }}">
+                                    <i class="fa-solid {{ $trend['improving'] ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down' }}"></i>
+                                    {{ $trend['delta'] > 0 ? '+' : '' }}{{ $trend['delta'] }} pts vs last week
+                                </div>
+                            @endif
+                            @if (($lh['average_marks'] ?? null) !== null)
+                                <div class="bn-dv2-ring-cap" style="margin-top:6px;">{{ ___('common.average_marks') }}: <b>{{ $lh['average_marks'] }}%</b></div>
+                            @endif
                         </div>
                     </div>
                 @endif
@@ -132,10 +153,25 @@
                     @php $kt = $lh['knowledge_tree']; @endphp
                     <div class="bn-dv2-card">
                         <div class="bn-dv2-card-label"><i class="fa-solid fa-seedling"></i>{{ ___('common.knowledge_tree') }}</div>
-                        <div class="bn-dv2-tree">
-                            <div class="icn">{{ $kt['emoji'] }}</div>
-                            <div class="stage">{{ $kt['label'] }}</div>
-                            <div class="days">{{ $kt['active_days'] }} {{ ___('common.days_growing') }}</div>
+                        <div class="bn-dv2-tree-row">
+                            <div class="bn-dv2-tree-plant">
+                                <div class="bn-dv2-tree-leaves">
+                                    @for ($i = 0; $i < max($kt['days_in_band'], $kt['stage_index'] > 0 ? 1 : $kt['days_in_band']); $i++)
+                                        {{ $kt['at_cap'] ? '🌸' : '🍃' }}
+                                    @endfor
+                                </div>
+                                <div class="bn-dv2-tree-stem" style="height:{{ 14 + $kt['stage_index'] * 18 }}px;"></div>
+                                <div class="bn-dv2-tree-pot">🪴</div>
+                            </div>
+                            <div style="min-width:0;">
+                                <div class="bn-dv2-tree-name">{{ $kt['label'] }}</div>
+                                <div class="bn-dv2-tree-sub">
+                                    {{ $kt['active_days'] }} {{ ___('common.days_growing') }}
+                                    @if (!$kt['at_cap'])
+                                        · {{ $kt['days_to_grow'] }} {{ ___('common.more_to_grow_taller') }}
+                                    @endif
+                                </div>
+                            </div>
                         </div>
                     </div>
                 @endif
@@ -166,6 +202,28 @@
                     </div>
                 @endif
             </div>
+
+            @if (!empty($lh['marked_work']))
+                <div class="bn-dv2-card" style="margin-bottom:14px;">
+                    <div class="bn-dv2-card-label"><i class="fa-solid fa-file-lines"></i>{{ ___('common.marked_work') }}</div>
+                    @foreach (array_slice($lh['marked_work'], 0, 6) as $mw)
+                        @php
+                            $barColor = $mw['percent'] >= 80 ? 'var(--bn-advanced)' : ($mw['percent'] >= 50 ? 'var(--bn-proficient)' : ($mw['percent'] >= 30 ? 'var(--bn-developing)' : 'var(--bn-not-started)'));
+                        @endphp
+                        <div class="bn-dv2-mk-row">
+                            <div class="bn-dv2-mk-head">
+                                <span class="t">{{ $mw['title'] }}</span>
+                                <span class="pct" style="color:{{ $barColor }};">{{ $mw['percent'] }}%</span>
+                            </div>
+                            <div class="bn-dv2-mk-bar"><span style="width:{{ $mw['percent'] }}%; background:{{ $barColor }};"></span></div>
+                            <div class="bn-dv2-mk-points">+{{ $mw['points'] }} {{ ___('common.points') }}</div>
+                        </div>
+                    @endforeach
+                    <div class="bn-dv2-mk-rule">
+                        <b>{{ ___('common.one_simple_rule') }}:</b> Your percentage is your points — points add up to your Level, and they never go down.
+                    </div>
+                </div>
+            @endif
 
             {{-- Row 3: What's Next, Mistake Bank, Refresh Time, Badges --}}
             @if (dashboard_feature_enabled('student', 'whats_next') || dashboard_feature_enabled('student', 'mistake_bank') || dashboard_feature_enabled('student', 'refresh_time') || dashboard_feature_enabled('student', 'badges'))
@@ -208,17 +266,51 @@
                         </div>
                     @endif
 
-                    @if (dashboard_feature_enabled('student', 'badges') && !empty($lh['badges']))
+                    @if (dashboard_feature_enabled('student', 'badges'))
                         <div class="bn-dv2-card">
-                            <div class="bn-dv2-card-label"><i class="fa-solid fa-award"></i>{{ ___('common.badges') }}</div>
-                            <div class="bn-dv2-badge-shelf">
-                                @foreach ($lh['badges'] as $badge)
-                                    <div class="bn-dv2-badge-chip bn-dv2-badge-chip--{{ $badge['tier'] }}">
-                                        <div class="icn">🏅</div>
-                                        <div>{{ $badge['subject'] }}</div>
+                            <div class="bn-dv2-card-label"><i class="fa-solid fa-award"></i>{{ ___('common.achievements') }}</div>
+
+                            @if (!empty($lh['badges']))
+                                <div class="bn-dv2-achieve-group">
+                                    <div class="bn-dv2-achieve-group__label">{{ ___('common.badges') }} · {{ ___('common.mastery_by_subject') }}</div>
+                                    <div class="bn-dv2-badge-shelf">
+                                        @foreach ($lh['badges'] as $badge)
+                                            <div class="bn-dv2-badge-chip bn-dv2-badge-chip--{{ $badge['tier'] }}">
+                                                <div class="icn">🏅</div>
+                                                <div>{{ $badge['subject'] }}</div>
+                                            </div>
+                                        @endforeach
                                     </div>
-                                @endforeach
-                            </div>
+                                </div>
+                            @endif
+
+                            @if (!empty($lh['medals']))
+                                <div class="bn-dv2-achieve-group">
+                                    <div class="bn-dv2-achieve-group__label">{{ ___('common.medals') }} · {{ ___('common.knowledge_tree') }}</div>
+                                    <div class="bn-dv2-badge-shelf">
+                                        @foreach ($lh['medals'] as $medal)
+                                            <div class="bn-dv2-badge-chip {{ $medal['earned'] ? 'bn-dv2-badge-chip--gold' : 'bn-dv2-badge-chip--locked' }}">
+                                                <div class="icn">{{ $medal['earned'] ? '🥇' : '🔒' }}</div>
+                                                <div>{{ $medal['name'] }}</div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if (!empty($lh['awards']))
+                                <div class="bn-dv2-achieve-group">
+                                    <div class="bn-dv2-achieve-group__label">{{ ___('common.awards') }}</div>
+                                    <div class="bn-dv2-badge-shelf">
+                                        @foreach ($lh['awards'] as $award)
+                                            <div class="bn-dv2-badge-chip {{ $award['earned'] ? 'bn-dv2-badge-chip--gold' : 'bn-dv2-badge-chip--locked' }}">
+                                                <div class="icn">{{ $award['earned'] ? $award['icon'] : '🔒' }}</div>
+                                                <div>{{ $award['name'] }}</div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     @endif
                 </div>

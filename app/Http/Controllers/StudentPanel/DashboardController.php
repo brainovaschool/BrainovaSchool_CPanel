@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\StudentInfo\SessionClassStudent;
 use App\Repositories\StudentPanel\DashboardRepository;
 use App\Repositories\LearningEngine\LearningHomeRepository;
+use App\Repositories\LearningEngine\LearningEventRepository;
 use App\Repositories\LearningEngine\DailyGoalRepository;
 use App\Repositories\LearningEngine\ReflectionJournalRepository;
 use App\Repositories\LearningEngine\StudentAvatarRepository;
@@ -21,26 +22,33 @@ class DashboardController extends Controller
 {
     private $repo;
     private $learningHome;
+    private $events;
     private $dailyGoals;
     private $reflectionJournal;
     private $avatar;
 
-    function __construct(DashboardRepository $repo, LearningHomeRepository $learningHome, DailyGoalRepository $dailyGoals, ReflectionJournalRepository $reflectionJournal, StudentAvatarRepository $avatar)
+    function __construct(DashboardRepository $repo, LearningHomeRepository $learningHome, LearningEventRepository $events, DailyGoalRepository $dailyGoals, ReflectionJournalRepository $reflectionJournal, StudentAvatarRepository $avatar)
     {
         $this->repo              = $repo;
         $this->learningHome      = $learningHome;
+        $this->events            = $events;
         $this->dailyGoals        = $dailyGoals;
         $this->reflectionJournal = $reflectionJournal;
         $this->avatar            = $avatar;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $data = $this->repo->index();
 
         if ($data && !empty($data['student'])) {
             try {
-                $data['learning_home']      = $this->learningHome->forStudent($data['student']);
+                $this->events->recordVisitIfNeeded($data['student']->id);
+
+                $subjectId = $request->filled('subject_id') ? (int) $request->input('subject_id') : null;
+
+                $data['learning_home']      = $this->learningHome->forStudent($data['student'], $subjectId);
+                $data['selected_subject_id'] = $subjectId;
                 $data['weekly_wins']        = $this->learningHome->weeklyWins($data['student']);
                 $data['daily_goals']        = $this->dailyGoals->forStudent($data['student']->id);
                 $data['reflection_today']   = $this->reflectionJournal->today($data['student']->id);

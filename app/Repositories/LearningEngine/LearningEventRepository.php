@@ -25,6 +25,12 @@ class LearningEventRepository
     public const EVENT_TAUGHT_KEA       = 'taught_kea';
     public const EVENT_REFLECTION_SUBMITTED = 'reflection_submitted';
 
+    /** A bare "the dashboard was opened today" marker — 0 XP, 0 coins,
+     *  deliberately outside the points/Level economy. This is the only
+     *  input to the Knowledge Tree (see LearningHomeRepository::knowledgeTree()),
+     *  which is meant to reward showing up, not performance. */
+    public const EVENT_DASHBOARD_VISIT = 'dashboard_visit';
+
     // Phase 3, idea #8: reward the behavior, not just raw correctness — fixing
     // a past mistake and mastering a skill earn far more than a routine
     // correct answer, on purpose, so the incentive is "learn", not "click
@@ -116,6 +122,26 @@ class LearningEventRepository
     public function totalCoinsEarned(int $studentId): int
     {
         return (int) LearningEvent::where('student_id', $studentId)->sum('coins');
+    }
+
+    /** Marks today as "visited" for the Knowledge Tree, once per day — safe
+     *  to call on every dashboard load, since the dedupe check means a page
+     *  refresh never creates a second row for the same day. */
+    public function recordVisitIfNeeded(int $studentId): void
+    {
+        $alreadyToday = LearningEvent::where('student_id', $studentId)
+            ->where('event_type', self::EVENT_DASHBOARD_VISIT)
+            ->whereDate('created_at', now()->toDateString())
+            ->exists();
+
+        if (!$alreadyToday) {
+            LearningEvent::create([
+                'student_id' => $studentId,
+                'event_type' => self::EVENT_DASHBOARD_VISIT,
+                'xp'         => 0,
+                'coins'      => 0,
+            ]);
+        }
     }
 
     private function updateMastery(int $studentId, int $skillId, bool $correct): array

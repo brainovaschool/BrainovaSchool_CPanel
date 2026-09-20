@@ -121,11 +121,26 @@
     .bn-dv2-ring-num { font-size: 1.3rem; font-weight: 800; margin-top: 4px; }
     .bn-dv2-ring-cap { font-size: .72rem; color: var(--dv2-ink-mute); margin-top: 2px; }
 
-    /* Knowledge Tree mini */
-    .bn-dv2-tree { display: flex; flex-direction: column; align-items: center; text-align: center; }
-    .bn-dv2-tree .icn { font-size: 2.2rem; }
-    .bn-dv2-tree .stage { font-weight: 800; margin-top: 4px; }
-    .bn-dv2-tree .days { font-size: .76rem; color: var(--dv2-ink-mute); }
+    /* "Are you improving" trend chip — Brain Level and Personal Best both use it */
+    .bn-dv2-trend {
+        display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: .72rem; font-weight: 800;
+        padding: 4px 10px; border-radius: 20px;
+    }
+    .bn-dv2-trend--up { background: var(--bn-advanced-soft); color: var(--bn-advanced); }
+    .bn-dv2-trend--flat { background: var(--dv2-surface-2); color: var(--dv2-ink-mute); }
+
+    /* Knowledge Tree — a real growing plant, not just a label. Leaves fill
+       in toward the next stage; the stem gets taller each stage reached. */
+    .bn-dv2-tree-row { display: flex; align-items: center; gap: 16px; }
+    .bn-dv2-tree-plant { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 84px; flex-shrink: 0; }
+    .bn-dv2-tree-leaves {
+        display: flex; flex-wrap: wrap-reverse; justify-content: center; align-content: flex-end;
+        gap: 1px; min-height: 44px; width: 80px; font-size: 1.05rem; line-height: 1;
+    }
+    .bn-dv2-tree-stem { width: 6px; border-radius: 4px; background: linear-gradient(var(--bn-advanced), color-mix(in srgb, var(--bn-advanced) 55%, var(--dv2-surface))); }
+    .bn-dv2-tree-pot { font-size: 1.6rem; line-height: 1; }
+    .bn-dv2-tree-name { font-weight: 800; font-size: .98rem; }
+    .bn-dv2-tree-sub { font-size: .78rem; color: var(--dv2-ink-mute); margin-top: 3px; line-height: 1.5; }
 
     /* Donut legend */
     .bn-dv2-legend { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 5px; }
@@ -166,6 +181,38 @@
     .bn-dv2-vs-row i { color: var(--dv2-good); }
     .bn-dv2-vs-row .t { flex: 1; font-weight: 600; }
     .bn-dv2-vs-row .m { color: var(--dv2-ink-mute); font-size: .72rem; }
+
+    /* Marked work — percentage bars, color read off the same mastery-stage
+       tokens as everything else, so a glance at the color says how it went. */
+    .bn-dv2-mk-row { padding: 8px 0; border-bottom: 1px solid var(--dv2-line); }
+    .bn-dv2-mk-row:last-child { border-bottom: none; }
+    .bn-dv2-mk-head { display: flex; align-items: baseline; gap: 8px; font-size: .82rem; margin-bottom: 5px; }
+    .bn-dv2-mk-head .t { flex: 1; font-weight: 600; color: var(--dv2-ink); }
+    .bn-dv2-mk-head .pct { font-weight: 800; font-variant-numeric: tabular-nums; }
+    .bn-dv2-mk-bar { height: 7px; border-radius: 20px; background: var(--dv2-surface-2); overflow: hidden; }
+    .bn-dv2-mk-bar > span { display: block; height: 100%; border-radius: 20px; }
+    .bn-dv2-mk-points { font-size: .68rem; font-weight: 700; color: var(--bn-advanced); margin-top: 4px; }
+    .bn-dv2-mk-rule {
+        margin-top: 10px; background: var(--dv2-surface-2); border-radius: 10px; padding: 9px 11px;
+        font-size: .78rem; color: var(--dv2-ink-soft); line-height: 1.5;
+    }
+    .bn-dv2-mk-rule b { color: var(--dv2-ink); }
+
+    /* Medals / Awards shelves — same chip pattern as Badges, but a locked
+       (not-yet-earned) chip stays visible in grayscale instead of vanishing,
+       so a student can see what's still ahead of them. */
+    .bn-dv2-badge-chip--locked .icn { background: var(--dv2-surface-2); border-color: var(--dv2-line); color: var(--dv2-ink-mute); filter: grayscale(100%); opacity: .55; }
+    .bn-dv2-badge-chip--locked { opacity: .65; }
+    .bn-dv2-achieve-group + .bn-dv2-achieve-group { margin-top: 14px; }
+    .bn-dv2-achieve-group__label { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--dv2-ink-mute); margin-bottom: 8px; }
+
+    /* Subject filter */
+    .bn-dv2-subject-filter { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .bn-dv2-subject-filter label { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--dv2-ink-mute); }
+    .bn-dv2-subject-filter select {
+        font: inherit; font-size: .84rem; font-weight: 700; color: var(--dv2-ink);
+        background: var(--dv2-surface); border: 1px solid var(--dv2-line); border-radius: 10px; padding: 7px 11px; cursor: pointer;
+    }
 
     /* Daily goals */
     .bn-dv2-goal-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: .84rem; cursor: pointer; }

@@ -3,6 +3,8 @@
 namespace App\Repositories\LearningEngine;
 
 use App\Support\Character;
+use App\Models\Homework;
+use App\Models\HomeworkStudent;
 use App\Models\LearningEngine\Skill;
 use App\Models\StudentInfo\Student;
 use App\Models\LearningEngine\LearningEvent;
@@ -34,7 +36,7 @@ class LearningHomeRepository
         $this->events = $events;
     }
 
-    public function forStudent(Student $student): array
+    public function forStudent(Student $student, ?int $subjectId = null): array
     {
         $classesId = SessionClassStudent::where('session_id', setting('session'))
             ->where('student_id', $student->id)
@@ -61,9 +63,13 @@ class LearningHomeRepository
         // derived from this single collection below.
         $masteries = StudentSkillMastery::where('student_id', $student->id)
             ->with('skill.subject')
+            ->when($subjectId, fn ($q) => $q->whereHas('skill', fn ($sq) => $sq->where('subject_id', $subjectId)))
             ->get();
 
-        $totalSkills = Skill::active()->when($classesId, fn ($q) => $q->where('classes_id', $classesId))->count();
+        $totalSkills = Skill::active()
+            ->when($classesId, fn ($q) => $q->where('classes_id', $classesId))
+            ->when($subjectId, fn ($q) => $q->where('subject_id', $subjectId))
+            ->count();
         $notStarted  = max(0, $totalSkills - $masteries->count());
 
         // take(4): one becomes the featured "Next Best Action" below and is
@@ -80,6 +86,7 @@ class LearningHomeRepository
         $nextSkills  = Skill::active()
             ->with('subject')
             ->when($classesId, fn ($q) => $q->where('classes_id', $classesId))
+            ->when($subjectId, fn ($q) => $q->where('subject_id', $subjectId))
             ->whereNotIn('id', $masteredIds)
             ->orderBy('sort_order')
             ->take(4)
@@ -115,7 +122,17 @@ class LearningHomeRepository
             ->pluck('skill')
             ->filter();
 
-        $brainLevel = $this->brainLevel($this->events->totalXp($student->id));
+        // Points, all-time and unscoped by subject — this is what Level is
+        // built from, alongside skill-practice XP, so it has to see every
+        // subject regardless of which one the student has filtered to.
+        $allMarkedWork  = $this->markedWork($student->id, null);
+        $homeworkPoints = (int) collect($allMarkedWork)->sum('points');
+        $scopedMarked   = $subjectId ? $this->markedWork($student->id, $subjectId) : $allMarkedWork;
+        $averageMarks   = count($scopedMarked) ? (int) round(collect($scopedMarked)->avg('percent')) : null;
+
+        $brainLevel  = $this->brainLevel($this->events->totalXp($student->id) + $homeworkPoints);
+        $tree        = $this->knowledgeTree($student->id);
+        $personalBest = $this->personalBest($student->id);
 
         return [
             'greeting_character' => $character,
@@ -131,11 +148,17 @@ class LearningHomeRepository
             'refresher_line'     => Character::line('kea', 'refresher'),
             'milestone'          => $this->claimMilestone($masteries),
             'brain_level'        => $brainLevel,
-            'knowledge_tree'     => $this->knowledgeTree($student->id, $brainLevel['level']),
+            'level_trend'        => $this->levelTrend($student->id),
+            'knowledge_tree'     => $tree,
             'badges'             => $this->badges($masteries),
-            'personal_best'      => $this->personalBest($student->id),
+            'medals'             => $this->medals($tree['stage_index']),
+            'awards'             => $this->awards($allMarkedWork, $masteries, $personalBest, $needsReviewDisplay),
+            'personal_best'      => $personalBest,
             'verified_skills'    => $this->verifiedSkills($masteries),
             'inactivity_nudge'   => $this->inactivityNudge($masteries),
+            'marked_work'        => $scopedMarked,
+            'average_marks'      => $averageMarks,
+            'skills_total'       => $totalSkills,
             'mastery_counts'     => [
                 'not_started' => $notStarted,
                 'developing'  => $masteries->where('mastery_level', 'developing')->count(),
@@ -146,54 +169,180 @@ class LearningHomeRepository
     }
 
     /**
-     * Phase 3, idea #14: "Brain Level," not Grade Level — a number built
-     * entirely from XP earned through mastery-weighted behavior (see
-     * LearningEventRepository's XP formula), never from age or grade. A
-     * simple, fully transparent curve: level N starts at 25*(N-1)^2 XP, so
-     * each level takes a bit more than the last — no AI, no black box, easy
-     * to explain to a parent or a student.
+     * Phase 3, idea #14: "Brain Level," not Grade Level — a number built from
+     * points, never from age or grade. Points come from two places: XP earned
+     * through mastery-weighted practice (LearningEventRepository's formula)
+     * and marks-based points from homework/exams — every marked task's
+     * percentage is added as that many points (5 out of 30 = 17% = 17
+     * points), so the two feel like one honest number instead of two things
+     * to keep straight. A simple, fully transparent curve: level N starts at
+     * 25*(N-1)^2 points, so each level takes a bit more than the last — no
+     * AI, no black box, easy to explain to a parent or a student. Points only
+     * ever accumulate, so Level can never go down.
      */
-    private function brainLevel(int $totalXp): array
+    private function brainLevel(int $totalPoints): array
     {
-        $level          = (int) floor(sqrt($totalXp / 25)) + 1;
-        $xpAtLevelStart = 25 * ($level - 1) ** 2;
-        $xpAtNextLevel  = 25 * $level ** 2;
-        $xpIntoLevel    = $totalXp - $xpAtLevelStart;
-        $xpForLevel     = max(1, $xpAtNextLevel - $xpAtLevelStart);
+        $level            = (int) floor(sqrt($totalPoints / 25)) + 1;
+        $pointsAtStart    = 25 * ($level - 1) ** 2;
+        $pointsAtNext     = 25 * $level ** 2;
+        $pointsIntoLevel  = $totalPoints - $pointsAtStart;
+        $pointsForLevel   = max(1, $pointsAtNext - $pointsAtStart);
 
         return [
             'level'         => $level,
-            'total_xp'      => $totalXp,
-            'xp_into_level' => $xpIntoLevel,
-            'xp_for_level'  => $xpForLevel,
-            'progress_pct'  => min(100, (int) round($xpIntoLevel / $xpForLevel * 100)),
-            'next_level_at' => $xpAtNextLevel,
+            'total_points'  => $totalPoints,
+            'xp_into_level' => $pointsIntoLevel,
+            'xp_for_level'  => $pointsForLevel,
+            'progress_pct'  => min(100, (int) round($pointsIntoLevel / $pointsForLevel * 100)),
+            'next_level_at' => $pointsAtNext,
         ];
     }
 
     /**
-     * Phase 3: the Knowledge Tree — replaces the streak. Grows with points
-     * (via Brain Level, which is itself XP-driven) and with days actually
-     * spent learning. The critical difference from a streak: it has no way
-     * to go backward. A quiet week just means growth pauses; it can never
-     * "break," so there's nothing here to lose sleep over.
+     * This week's points earned vs last week's — the same "are you
+     * improving" comparison Personal Best already does, applied to Level
+     * instead of accuracy. Returns null rather than a fabricated 0 when
+     * there's been no activity in either week to compare.
      */
-    private function knowledgeTree(int $studentId, int $brainLevel): array
+    private function levelTrend(int $studentId): ?array
     {
-        $stage = match (true) {
-            $brainLevel >= 17 => ['emoji' => '🌳', 'label' => 'Ancient Tree'],
-            $brainLevel >= 12 => ['emoji' => '🌳', 'label' => 'Flourishing Tree'],
-            $brainLevel >= 8  => ['emoji' => '🌲', 'label' => 'Young Tree'],
-            $brainLevel >= 5  => ['emoji' => '🌳', 'label' => 'Sapling'],
-            $brainLevel >= 3  => ['emoji' => '🌿', 'label' => 'Sprout'],
-            default           => ['emoji' => '🌱', 'label' => 'Seed'],
-        };
+        $thisWeek = $this->pointsBetween($studentId, now()->startOfWeek(), now());
+        $lastWeek = $this->pointsBetween($studentId, now()->subWeek()->startOfWeek(), now()->startOfWeek());
+
+        if ($thisWeek === 0 && $lastWeek === 0) {
+            return null;
+        }
+
+        return ['this_week' => $thisWeek, 'last_week' => $lastWeek, 'delta' => $thisWeek - $lastWeek, 'improving' => $thisWeek >= $lastWeek];
+    }
+
+    private function pointsBetween(int $studentId, $start, $end): int
+    {
+        $xp = (int) LearningEvent::where('student_id', $studentId)
+            ->whereBetween('created_at', [$start, $end])
+            ->sum('xp');
+
+        $hwTable = (new Homework)->getTable();
+        $rows = HomeworkStudent::query()
+            ->join($hwTable, $hwTable . '.id', '=', 'homework_students.homework_id')
+            ->where('homework_students.student_id', $studentId)
+            ->whereNotNull('homework_students.marks')
+            ->whereBetween('homework_students.updated_at', [$start, $end])
+            ->select([$hwTable . '.marks as total_marks', 'homework_students.marks as earned_marks'])
+            ->get();
+
+        $hwPoints = 0;
+        foreach ($rows as $row) {
+            $hwPoints += $this->pctPoints($row->earned_marks, $row->total_marks);
+        }
+
+        return $xp + $hwPoints;
+    }
+
+    /** Every marked homework task turned into a percentage and points — the
+     *  single source both Level (unscoped) and the "Marked work" list
+     *  (optionally scoped to one subject) are built from. */
+    private function markedWork(int $studentId, ?int $subjectId): array
+    {
+        $hwTable = (new Homework)->getTable();
+
+        $rows = HomeworkStudent::query()
+            ->join($hwTable, $hwTable . '.id', '=', 'homework_students.homework_id')
+            ->join('subjects', 'subjects.id', '=', $hwTable . '.subject_id')
+            ->where('homework_students.student_id', $studentId)
+            ->whereNotNull('homework_students.marks')
+            ->where($hwTable . '.session_id', setting('session'))
+            ->when($subjectId, fn ($q) => $q->where($hwTable . '.subject_id', $subjectId))
+            ->orderByDesc('homework_students.updated_at')
+            ->select([
+                $hwTable . '.date',
+                $hwTable . '.marks as total_marks',
+                'subjects.name as subject_name',
+                'homework_students.marks as earned_marks',
+                'homework_students.updated_at as marked_at',
+            ])
+            ->get();
+
+        return $rows->map(function ($row) {
+            $percent = $this->pctPoints($row->earned_marks, $row->total_marks);
+
+            return [
+                'title'     => $row->subject_name . ' — ' . \Carbon\Carbon::parse($row->date)->format('d M'),
+                'subject'   => $row->subject_name,
+                'earned'    => (float) $row->earned_marks,
+                'total'     => (float) $row->total_marks,
+                'percent'   => $percent,
+                'points'    => $percent,
+                'marked_at' => $row->marked_at,
+            ];
+        })->values()->all();
+    }
+
+    private function pctPoints($earned, $total): int
+    {
+        $total = (float) $total;
+
+        return $total > 0 ? min(100, (int) round(((float) $earned / $total) * 100)) : 0;
+    }
+
+    /**
+     * Phase 3: the Knowledge Tree — replaces the streak. Grows purely with
+     * how often the dashboard is opened (see
+     * LearningEventRepository::recordVisitIfNeeded()), completely separate
+     * from marks, points or Level — a student who visits daily grows a full
+     * tree even on a rough week. Every 10 distinct days visited, the plant
+     * grows one stage taller; leaves fill back in toward the next stage
+     * after that. Built on a plain COUNT(DISTINCT date), which can only ever
+     * hold steady or grow — so a quiet stretch pauses growth without ever
+     * shrinking the tree back.
+     */
+    private function knowledgeTree(int $studentId): array
+    {
+        $stages = ['Seed', 'Sprout', 'Sapling', 'Young Tree', 'Full Bloom'];
+        $band   = 10;
 
         $activeDays = (int) (LearningEvent::where('student_id', $studentId)
             ->selectRaw('COUNT(DISTINCT DATE(created_at)) as c')
             ->value('c') ?? 0);
 
-        return array_merge($stage, ['active_days' => $activeDays]);
+        $stageIndex = min(intdiv($activeDays, $band), count($stages) - 1);
+        $atCap      = $stageIndex === count($stages) - 1;
+        $daysInBand = $atCap ? ($band - 1) : ($activeDays % $band);
+
+        return [
+            'label'        => $stages[$stageIndex],
+            'stage_index'  => $stageIndex,
+            'active_days'  => $activeDays,
+            'days_in_band' => $daysInBand,
+            'days_to_grow' => $atCap ? null : ($band - $daysInBand),
+            'at_cap'       => $atCap,
+        ];
+    }
+
+    /** Reaching each Knowledge Tree stage earns a medal — recognising
+     *  consistency (showing up) as its own kind of achievement, separate
+     *  from Badges (mastery) and Awards (one-off milestones). */
+    private function medals(int $stageIndex): array
+    {
+        $tiers = ['Sprout', 'Sapling', 'Young Tree', 'Full Bloom'];
+
+        return collect($tiers)
+            ->map(fn ($name, $i) => ['name' => $name, 'earned' => $stageIndex >= ($i + 1)])
+            ->values()
+            ->all();
+    }
+
+    /** Small, evidence-based one-off milestones — same "real evidence, not
+     *  a participation trophy" rule as Badges, just for moments rather than
+     *  ongoing mastery. */
+    private function awards(array $allMarkedWork, $masteries, ?array $personalBest, $needsReviewDisplay): array
+    {
+        return [
+            ['icon' => '🌟', 'name' => 'First Skill Mastered', 'earned' => $masteries->where('mastery_level', 'advanced')->isNotEmpty()],
+            ['icon' => '🎯', 'name' => 'Perfect Score',        'earned' => collect($allMarkedWork)->contains(fn ($r) => $r['percent'] >= 100)],
+            ['icon' => '📈', 'name' => 'On The Rise',          'earned' => $personalBest && $personalBest['delta'] > 0],
+            ['icon' => '🧹', 'name' => 'All Caught Up',        'earned' => $needsReviewDisplay->isEmpty()],
+        ];
     }
 
     /**
