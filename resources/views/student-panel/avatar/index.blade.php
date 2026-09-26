@@ -266,9 +266,9 @@ button.av-inv-row:hover{ background:#f4f8fa; }
     </div>
 
     <div id="avPaneIsland" hidden>
-        <div class="av-island-banner">
+        <div class="av-island-banner" id="islandBanner">
             @if (setting('island_top_image'))
-                <img src="{{ globalAsset(setting('island_top_image')) }}" alt="My Learning Island">
+                <img src="{{ globalAsset(setting('island_top_image')) }}" alt="My Learning Island" id="islandBannerImg">
             @else
                 <div class="empty">Your school hasn't added an island picture yet.</div>
             @endif
@@ -333,6 +333,27 @@ button.av-inv-row:hover{ background:#f4f8fa; }
 
     tabShop.addEventListener('click', function () { show('shop'); });
     tabIsland.addEventListener('click', function () { show('island'); });
+})();
+
+(function () {
+    // Whatever shape the uploaded banner actually is, match the box to it
+    // exactly so it always fills edge-to-edge — no cropping, no blank
+    // letterbox strips down the sides.
+    var banner = document.getElementById('islandBanner');
+    var img    = document.getElementById('islandBannerImg');
+    if (!banner || !img) return;
+
+    function applyRatio() {
+        if (img.naturalWidth && img.naturalHeight) {
+            banner.style.aspectRatio = img.naturalWidth + '/' + img.naturalHeight;
+        }
+    }
+
+    if (img.complete) {
+        applyRatio();
+    } else {
+        img.addEventListener('load', applyRatio);
+    }
 })();
 </script>
 @endsection

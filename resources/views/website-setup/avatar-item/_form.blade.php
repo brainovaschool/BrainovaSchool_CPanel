@@ -188,6 +188,15 @@
         return ISLAND_CATEGORIES.indexOf(cat) !== -1;
     }
 
+    // Match the stage's shape to whatever the actual island banner's shape
+    // is, once it's loaded — so a hub/building's saved position lines up
+    // with the real image no matter what size it was uploaded at.
+    bodyImg.addEventListener('load', function () {
+        if (isIslandCategory(categorySel ? categorySel.value : '') && bodyImg.naturalWidth && bodyImg.naturalHeight) {
+            stage.style.aspectRatio = bodyImg.naturalWidth + '/' + bodyImg.naturalHeight;
+        }
+    });
+
     var controls = {
         pos_x:    { range: document.getElementById('posXRange'),     input: document.getElementById('posXInput'),     out: document.getElementById('posXOut'),     suffix: '%' },
         pos_y:    { range: document.getElementById('posYRange'),     input: document.getElementById('posYInput'),     out: document.getElementById('posYOut'),     suffix: '%' },
