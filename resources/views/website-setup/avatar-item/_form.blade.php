@@ -9,7 +9,19 @@
             @endforeach
         </select>
         @error('category')<div class="invalid-feedback">{{ $message }}</div>@enderror
-        <small class="text-secondary">Outfit is the whole character (every student always wears exactly one); Accessory is an extra layer drawn on top, and a student can wear several at once. Extra layer types can be switched on in Website Setup &rarr; Dashboard Features.</small>
+        <small class="text-secondary">Outfit is the whole character (every student always wears exactly one); Accessory is an extra layer drawn on top, and a student can wear several at once. Extra layer types can be switched on in Website Setup &rarr; Dashboard Features. Hub and Building are placed on My Learning Island instead of on the avatar.</small>
+    </div>
+
+    <div class="col-md-4 mb-3" id="parentHubWrap" style="display:none;">
+        <label class="form-label">{{ ___('common.hub') }} <span class="fillable">*</span></label>
+        <select class="form-control ot-input @error('parent_id') is-invalid @enderror" name="parent_id" id="parentHubSelect">
+            <option value="">— choose a hub —</option>
+            @foreach ($data['hubs'] ?? [] as $hub)
+                <option value="{{ $hub->id }}" {{ old('parent_id', $s->parent_id ?? '') == $hub->id ? 'selected' : '' }}>{{ $hub->name }}</option>
+            @endforeach
+        </select>
+        @error('parent_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        <small class="text-secondary">Which hub this building belongs to. Add the hub first if it isn't in this list yet.</small>
     </div>
 
     <div class="col-md-4 mb-3">
@@ -66,8 +78,8 @@
 
 <div class="card mt-2 mb-3" id="placementCard">
     <div class="card-body">
-        <h5 class="mb-1">Where it sits on the avatar</h5>
-        <p class="text-secondary" style="font-size:.86rem;">
+        <h5 class="mb-1" id="placementTitle">Where it sits on the avatar</h5>
+        <p class="text-secondary" style="font-size:.86rem;" id="placementHint">
             Drag the sliders until the item sits correctly on the character below. Whatever you set here is
             how every student will wear it. An Outfit needs no adjustment — it always fills the frame.
         </p>
@@ -87,21 +99,26 @@
                     </div>
                 </div>
 
-                @if (!empty($data['bodies']) && count($data['bodies']))
-                    <div class="mt-2">
-                        <label class="form-label" style="font-size:.8rem;">Preview on</label>
-                        <select class="form-control ot-input" id="placementBodyPicker">
-                            @foreach ($data['bodies'] as $body)
-                                <option value="{{ $body->image ? globalAsset($body->image) : '' }}">{{ $body->name }}</option>
-                            @endforeach
-                        </select>
-                        <small class="text-secondary">Check the fit against each character — one placement is used for all of them.</small>
-                    </div>
-                @else
-                    <p class="text-secondary mt-2" style="font-size:.8rem;">
-                        No Outfits added yet, so there's nothing to preview against. Add one first, then come back to position this item.
-                    </p>
-                @endif
+                <div id="placementBodyPickerWrap">
+                    @if (!empty($data['bodies']) && count($data['bodies']))
+                        <div class="mt-2">
+                            <label class="form-label" style="font-size:.8rem;">Preview on</label>
+                            <select class="form-control ot-input" id="placementBodyPicker">
+                                @foreach ($data['bodies'] as $body)
+                                    <option value="{{ $body->image ? globalAsset($body->image) : '' }}">{{ $body->name }}</option>
+                                @endforeach
+                            </select>
+                            <small class="text-secondary">Check the fit against each character — one placement is used for all of them.</small>
+                        </div>
+                    @else
+                        <p class="text-secondary mt-2" style="font-size:.8rem;">
+                            No Outfits added yet, so there's nothing to preview against. Add one first, then come back to position this item.
+                        </p>
+                    @endif
+                </div>
+                <p class="text-secondary mt-2" style="font-size:.8rem; display:none;" id="placementNoBannerNote">
+                    No island banner uploaded yet (Website Setup &rarr; Avatar Gallery), so this preview is on a plain background. The position will still line up once one is added.
+                </p>
             </div>
 
             <div class="col-md-7">
@@ -149,16 +166,27 @@
 <script>
 (function () {
     var DEFAULTS = @json(App\Models\LearningEngine\AvatarItem::DEFAULT_PLACEMENT);
+    var ISLAND_CATEGORIES = @json(App\Models\LearningEngine\AvatarItem::ISLAND_CATEGORIES);
+    var islandBannerSrc = @json(setting('island_top_image') ? globalAsset(setting('island_top_image')) : null);
 
     var stage      = document.getElementById('placementStage');
     var bodyImg    = document.getElementById('placementBody');
     var itemImg    = document.getElementById('placementItem');
     var emptyNote  = document.getElementById('placementEmpty');
     var bodyPicker = document.getElementById('placementBodyPicker');
+    var bodyPickerWrap = document.getElementById('placementBodyPickerWrap');
+    var noBannerNote   = document.getElementById('placementNoBannerNote');
+    var placementTitle = document.getElementById('placementTitle');
+    var placementHint  = document.getElementById('placementHint');
+    var parentHubWrap  = document.getElementById('parentHubWrap');
     var categorySel = document.querySelector('select[name="category"]');
     var fileInput  = document.getElementById('fileBrouse');
     var card       = document.getElementById('placementCard');
     if (!stage) return;
+
+    function isIslandCategory(cat) {
+        return ISLAND_CATEGORIES.indexOf(cat) !== -1;
+    }
 
     var controls = {
         pos_x:    { range: document.getElementById('posXRange'),     input: document.getElementById('posXInput'),     out: document.getElementById('posXOut'),     suffix: '%' },
@@ -171,17 +199,47 @@
     var currentItemSrc = @json($s && $s->image ? globalAsset($s->image) : null);
 
     function render() {
-        var isBase = categorySel && categorySel.value === 'avatar';
+        var cat    = categorySel ? categorySel.value : 'avatar';
+        var isBase   = cat === 'avatar';
+        var isIsland = isIslandCategory(cat);
 
         // A base character always fills the stage, so its sliders do nothing —
         // hide them rather than offer a control that has no effect.
         card.querySelector('.col-md-7').style.display = isBase ? 'none' : '';
 
-        if (bodyPicker && bodyPicker.value && !isBase) {
-            bodyImg.src = bodyPicker.value;
-            bodyImg.style.display = '';
+        if (parentHubWrap) parentHubWrap.style.display = cat === 'building' ? '' : 'none';
+
+        if (isIsland) {
+            stage.style.aspectRatio = '1980/1020';
+            stage.style.maxWidth = '100%';
+            placementTitle.textContent = 'Where it sits on My Learning Island';
+            placementHint.textContent = 'Drag the sliders until it sits correctly on the island banner below. This is the same picture students see at the top of the "My Island" tab.';
+            if (bodyPickerWrap) bodyPickerWrap.style.display = 'none';
+
+            if (islandBannerSrc) {
+                bodyImg.src = islandBannerSrc;
+                bodyImg.style.display = '';
+                bodyImg.style.width = '100%';
+                if (noBannerNote) noBannerNote.style.display = 'none';
+            } else {
+                bodyImg.style.display = 'none';
+                if (noBannerNote) noBannerNote.style.display = '';
+            }
         } else {
-            bodyImg.style.display = 'none';
+            stage.style.aspectRatio = '1/1';
+            stage.style.maxWidth = '260px';
+            placementTitle.textContent = 'Where it sits on the avatar';
+            placementHint.textContent = 'Drag the sliders until the item sits correctly on the character below. Whatever you set here is how every student will wear it. An Outfit needs no adjustment — it always fills the frame.';
+            if (bodyPickerWrap) bodyPickerWrap.style.display = '';
+            if (noBannerNote) noBannerNote.style.display = 'none';
+
+            if (bodyPicker && bodyPicker.value && !isBase) {
+                bodyImg.src = bodyPicker.value;
+                bodyImg.style.display = '';
+                bodyImg.style.width = '100%';
+            } else {
+                bodyImg.style.display = 'none';
+            }
         }
 
         if (currentItemSrc) {

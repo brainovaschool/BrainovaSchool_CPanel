@@ -133,6 +133,9 @@ class StudentAvatarRepository
             'outfits'             => AvatarItem::active()->category('outfit')->orderBy('sort_order')->get(),
             'hats'                => AvatarItem::active()->category('hat')->orderBy('sort_order')->get(),
             'accessories'         => AvatarItem::active()->category('accessory')->orderBy('sort_order')->get(),
+            'hubs'                => AvatarItem::active()->category('hub')->with(['children' => function ($q) {
+                $q->active()->orderBy('sort_order');
+            }])->orderBy('sort_order')->get(),
             'voices'              => self::VOICE_PRESETS,
         ];
     }

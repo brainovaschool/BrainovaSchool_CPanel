@@ -33,6 +33,7 @@
                                     <input type="file" class="d-none form-control" name="island_top_image" accept="image/*" id="islandImageFile">
                                 </button>
                             </div>
+                            <small class="text-secondary">Recommended size: 1980&times;1020px. Other sizes still show in full — never cropped — just letterboxed if the ratio doesn't match.</small>
                         </div>
                         <div class="col-md-3 mb-2">
                             <button class="btn btn-lg ot-btn-primary w-100">{{ ___('common.save') }}</button>
@@ -90,14 +91,25 @@
                             A clothing layer worn over the outfit (shirt, hoodie, dress, etc.). Optional — a student can go without one.
                         @elseif ($data['category'] === 'hat')
                             A headwear layer worn on top of everything else (cap, headphones, goggles, etc.). Optional.
+                        @elseif ($data['category'] === 'hub')
+                            A themed zone on My Learning Island, e.g. CodeNova, AI Spark Lab, Math Quest. Upload its picture and set where it sits on the island banner. Price in Coins is unused here.
+                        @elseif ($data['category'] === 'building')
+                            A structure that belongs to one hub — pick which hub below, then set where the building sits on the island banner. Price in Coins is unused here.
                         @else
                             Small extras a student can wear several of at once (glasses, backpack, a held prop, ...). Optional.
                         @endif
                     </p>
-                    <p class="text-secondary mb-3">
-                        <i class="fa-solid fa-circle-info"></i>
-                        For layers to line up on the student's avatar, upload every image (across all categories) at the exact same canvas size and with the character in the exact same position — e.g. 500&times;650px, transparent background. Mismatched artwork will still work, it just won't line up visually.
-                    </p>
+                    @if (in_array($data['category'], App\Models\LearningEngine\AvatarItem::ISLAND_CATEGORIES))
+                        <p class="text-secondary mb-3">
+                            <i class="fa-solid fa-circle-info"></i>
+                            These sit on top of the island banner, so a transparent-background PNG works best. Any size is fine — the placement editor on the next screen scales it to where you drag it.
+                        </p>
+                    @else
+                        <p class="text-secondary mb-3">
+                            <i class="fa-solid fa-circle-info"></i>
+                            For layers to line up on the student's avatar, upload every image (across all categories) at the exact same canvas size and with the character in the exact same position — e.g. 500&times;650px, transparent background. Mismatched artwork will still work, it just won't line up visually.
+                        </p>
+                    @endif
 
                     @if (hasPermission('avatar_item_create'))
                         <div class="collapse mb-3 {{ $errors->bulkUpload->any() ? 'show' : '' }}" id="bulkUploadPanel">

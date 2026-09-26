@@ -36,6 +36,7 @@ class AvatarItemRepository
         try {
             $row              = new $this->model;
             $row->category    = $request->category;
+            $row->parent_id   = $request->category === 'building' ? $request->parent_id : null;
             $row->name        = $request->name;
             $row->price_coins = (int) $request->price_coins;
             $row->sort_order  = (int) $request->sort_order;
@@ -55,6 +56,7 @@ class AvatarItemRepository
         try {
             $row              = $this->model->findOrFail($id);
             $row->category    = $request->category;
+            $row->parent_id   = $request->category === 'building' ? $request->parent_id : null;
             $row->name        = $request->name;
             $row->price_coins = (int) $request->price_coins;
             $row->sort_order  = (int) $request->sort_order;

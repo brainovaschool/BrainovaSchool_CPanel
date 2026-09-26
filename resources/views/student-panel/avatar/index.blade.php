@@ -115,12 +115,24 @@ button.av-inv-row:hover{ background:#f4f8fa; }
 }
 .av-tabs button[aria-selected="true"]{ background:var(--bn-primary); color:#fff; opacity:1; }
 
-/* My Island */
-.av-island-banner{ width:100%; border-radius:16px; overflow:hidden; background:var(--bn-primary-soft); }
-.av-island-banner img{ width:100%; display:block; max-height:320px; object-fit:cover; }
-.av-island-banner .empty{
-    padding:60px 20px; text-align:center; color:var(--bn-ink); opacity:.6; font-size:.9rem;
+/* My Island — the banner is locked to the same 1980:1020 canvas the
+   placement editor previews against, so a hub or building's saved
+   position always lands in the same spot it showed in Website Setup.
+   object-fit:contain means the picture is never cropped, only
+   letterboxed if it isn't uploaded at that exact ratio. */
+.av-island-banner{
+    position:relative; width:100%; aspect-ratio:1980/1020; border-radius:16px;
+    overflow:hidden; background:var(--bn-primary-soft);
 }
+.av-island-banner img{ width:100%; height:100%; display:block; object-fit:contain; }
+.av-island-banner .empty{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    padding:20px; text-align:center; color:var(--bn-ink); opacity:.6; font-size:.9rem;
+}
+.av-island-spot{
+    position:absolute; height:auto; border:none; background:none; padding:0; cursor:default;
+}
+.av-island-spot img{ width:100%; height:auto; display:block; filter:drop-shadow(0 4px 10px rgba(20,20,30,.25)); }
 .av-island-layout{ display:flex; gap:16px; margin-top:16px; align-items:stretch; flex-wrap:wrap; }
 .av-island-side{
     flex:1 1 200px; background:#fff; border:1px dashed var(--bn-surface-line); border-radius:14px;
@@ -260,6 +272,23 @@ button.av-inv-row:hover{ background:#f4f8fa; }
             @else
                 <div class="empty">Your school hasn't added an island picture yet.</div>
             @endif
+
+            @foreach ($data['hubs'] as $hub)
+                @if ($hub->image)
+                    <span class="av-island-spot" title="{{ $hub->name }}"
+                        style="left:{{ $hub->pos_x }}%; top:{{ $hub->pos_y }}%; width:{{ $hub->scale }}%; transform:translate(-50%,-50%) rotate({{ $hub->rotation }}deg);">
+                        <img src="{{ globalAsset($hub->image) }}" alt="{{ $hub->name }}">
+                    </span>
+                @endif
+                @foreach ($hub->children as $building)
+                    @if ($building->image)
+                        <span class="av-island-spot" title="{{ $building->name }}"
+                            style="left:{{ $building->pos_x }}%; top:{{ $building->pos_y }}%; width:{{ $building->scale }}%; transform:translate(-50%,-50%) rotate({{ $building->rotation }}deg);">
+                            <img src="{{ globalAsset($building->image) }}" alt="{{ $building->name }}">
+                        </span>
+                    @endif
+                @endforeach
+            @endforeach
         </div>
         <div class="av-island-layout">
             <div class="av-island-side">More coming here soon.</div>

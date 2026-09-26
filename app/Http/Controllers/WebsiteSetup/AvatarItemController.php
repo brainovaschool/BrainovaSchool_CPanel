@@ -34,6 +34,7 @@ class AvatarItemController extends Controller
     {
         $data['category'] = array_key_exists($request->get('category'), AvatarItem::enabledCategories()) ? $request->get('category') : 'avatar';
         $data['bodies']   = AvatarItem::active()->category('avatar')->orderBy('sort_order')->get();
+        $data['hubs']     = AvatarItem::active()->category('hub')->orderBy('sort_order')->get();
         $data['title']    = ___('settings.add_avatar_item');
         return view('website-setup.avatar-item.create', compact('data'));
     }
@@ -49,6 +50,7 @@ class AvatarItemController extends Controller
             'pos_y'       => 'nullable|numeric',
             'scale'       => 'nullable|numeric',
             'rotation'    => 'nullable|integer',
+            'parent_id'   => 'nullable|required_if:category,building|exists:avatar_items,id',
         ]);
 
         $result = $this->repo->store($request);
@@ -107,6 +109,7 @@ class AvatarItemController extends Controller
             return redirect()->route('avatar-item.index')->with('danger', ___('alert.not_found'));
         }
         $data['bodies'] = AvatarItem::active()->category('avatar')->orderBy('sort_order')->get();
+        $data['hubs']   = AvatarItem::active()->category('hub')->where('id', '!=', $id)->orderBy('sort_order')->get();
         $data['title']  = ___('settings.edit_avatar_item');
         return view('website-setup.avatar-item.edit', compact('data'));
     }
@@ -122,6 +125,7 @@ class AvatarItemController extends Controller
             'pos_y'       => 'nullable|numeric',
             'scale'       => 'nullable|numeric',
             'rotation'    => 'nullable|integer',
+            'parent_id'   => 'nullable|required_if:category,building|exists:avatar_items,id',
         ]);
 
         $result = $this->repo->update($request, $id);
