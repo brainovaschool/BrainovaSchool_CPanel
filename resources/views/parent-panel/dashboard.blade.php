@@ -131,10 +131,23 @@
                     @php $kt = $lh['knowledge_tree']; @endphp
                     <div class="bn-dv2-card">
                         <div class="bn-dv2-card-label"><i class="fa-solid fa-seedling"></i>{{ ___('common.knowledge_tree') }}</div>
-                        <div class="bn-dv2-tree">
-                            <div class="icn">{{ $kt['emoji'] }}</div>
-                            <div class="stage">{{ $kt['label'] }}</div>
-                            <div class="days">{{ $kt['active_days'] }} {{ ___('common.days_growing') }}</div>
+                        <div class="bn-dv2-card-body">
+                            <div class="bn-dv2-tree-row">
+                                @include('backend.partials.knowledge-tree', ['tree' => $kt])
+                                <div class="bn-dv2-tree-info">
+                                    <div class="bn-dv2-tree-name">{{ $kt['label'] }}</div>
+                                    <div class="bn-dv2-tree-sub">{{ $kt['active_days'] }} {{ ___('common.days_growing') }}</div>
+                                    @if ($kt['at_cap'])
+                                        <div class="bn-dv2-tree-sub"><b>{{ ___('common.fully_grown') }}</b></div>
+                                    @else
+                                        <div class="bn-dv2-tree-bar" role="img"
+                                            aria-label="{{ $kt['days_in_band'] }} of 10 days toward the next stage">
+                                            <span style="width:{{ $kt['days_in_band'] * 10 }}%;"></span>
+                                        </div>
+                                        <div class="bn-dv2-tree-sub">{{ $kt['days_to_grow'] }} {{ ___('common.more_days_to_grow_taller') }}</div>
+                                    @endif
+                                </div>
+                            </div>
                         </div>
                     </div>
                 @endif
