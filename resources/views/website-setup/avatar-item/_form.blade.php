@@ -220,6 +220,8 @@
                 bodyImg.src = islandBannerSrc;
                 bodyImg.style.display = '';
                 bodyImg.style.width = '100%';
+                bodyImg.style.height = '100%';
+                bodyImg.style.objectFit = 'contain';
                 if (noBannerNote) noBannerNote.style.display = 'none';
             } else {
                 bodyImg.style.display = 'none';
@@ -237,6 +239,8 @@
                 bodyImg.src = bodyPicker.value;
                 bodyImg.style.display = '';
                 bodyImg.style.width = '100%';
+                bodyImg.style.height = 'auto';
+                bodyImg.style.objectFit = '';
             } else {
                 bodyImg.style.display = 'none';
             }
