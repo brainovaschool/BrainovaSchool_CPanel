@@ -33,7 +33,7 @@
                                     <input type="file" class="d-none form-control" name="island_top_image" accept="image/*" id="islandImageFile">
                                 </button>
                             </div>
-                            <small class="text-secondary">Recommended size: 1980&times;1020px. Other sizes still show in full — never cropped — just letterboxed if the ratio doesn't match.</small>
+                            <small class="text-secondary">Recommended size: 1920&times;1080px. Other sizes still show in full — never cropped — just letterboxed if the ratio doesn't match.</small>
                         </div>
                         <div class="col-md-3 mb-2">
                             <button class="btn btn-lg ot-btn-primary w-100">{{ ___('common.save') }}</button>

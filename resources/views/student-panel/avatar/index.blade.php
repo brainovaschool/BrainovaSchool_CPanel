@@ -115,13 +115,13 @@ button.av-inv-row:hover{ background:#f4f8fa; }
 }
 .av-tabs button[aria-selected="true"]{ background:var(--bn-primary); color:#fff; opacity:1; }
 
-/* My Island — the banner is locked to the same 1980:1020 canvas the
+/* My Island — the banner is locked to the same 1920:1080 canvas the
    placement editor previews against, so a hub or building's saved
    position always lands in the same spot it showed in Website Setup.
    object-fit:contain means the picture is never cropped, only
    letterboxed if it isn't uploaded at that exact ratio. */
 .av-island-banner{
-    position:relative; width:100%; aspect-ratio:1980/1020; border-radius:16px;
+    position:relative; width:100%; aspect-ratio:1920/1080; border-radius:16px;
     overflow:hidden; background:var(--bn-primary-soft);
 }
 .av-island-banner img{ width:100%; height:100%; display:block; object-fit:contain; }

@@ -210,7 +210,7 @@
         if (parentHubWrap) parentHubWrap.style.display = cat === 'building' ? '' : 'none';
 
         if (isIsland) {
-            stage.style.aspectRatio = '1980/1020';
+            stage.style.aspectRatio = '1920/1080';
             stage.style.maxWidth = '100%';
             placementTitle.textContent = 'Where it sits on My Learning Island';
             placementHint.textContent = 'Drag the sliders until it sits correctly on the island banner below. This is the same picture students see at the top of the "My Island" tab.';
