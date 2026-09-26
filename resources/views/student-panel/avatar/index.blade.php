@@ -106,6 +106,28 @@ button.av-inv-row:hover{ background:#f4f8fa; }
     display:flex; align-items:center; justify-content:center; flex-shrink:0; border:none; cursor:pointer; margin-left:auto;
 }
 .remove-x:hover{ background:#be123c; }
+
+/* Shop / My Island tabs */
+.av-tabs{ display:flex; gap:4px; background:var(--bn-surface); border:1px solid var(--bn-surface-line); padding:4px; border-radius:12px; width:fit-content; margin-bottom:16px; }
+.av-tabs button{
+    font:inherit; font-weight:700; font-size:.86rem; padding:8px 18px; border-radius:9px; border:none;
+    background:transparent; color:var(--bn-ink); opacity:.6; cursor:pointer;
+}
+.av-tabs button[aria-selected="true"]{ background:var(--bn-primary); color:#fff; opacity:1; }
+
+/* My Island */
+.av-island-banner{ width:100%; border-radius:16px; overflow:hidden; background:var(--bn-primary-soft); }
+.av-island-banner img{ width:100%; display:block; max-height:320px; object-fit:cover; }
+.av-island-banner .empty{
+    padding:60px 20px; text-align:center; color:var(--bn-ink); opacity:.6; font-size:.9rem;
+}
+.av-island-layout{ display:flex; gap:16px; margin-top:16px; align-items:stretch; flex-wrap:wrap; }
+.av-island-side{
+    flex:1 1 200px; background:#fff; border:1px dashed var(--bn-surface-line); border-radius:14px;
+    padding:16px; min-height:220px; display:flex; align-items:center; justify-content:center;
+    text-align:center; color:#9aa4ab; font-size:.82rem;
+}
+.av-island-center{ flex:2 1 320px; min-height:220px; }
 </style>
 @endpush
 
@@ -115,12 +137,19 @@ button.av-inv-row:hover{ background:#f4f8fa; }
 
     <div class="av-world">
     <div class="av-page-head">
-        <h4 class="mb-0">Avatar World</h4>
+        <h4 class="mb-0">My Learning Island</h4>
         <div class="d-flex align-items-center gap-3">
             @include('backend.partials.theme-picker', ['onLight' => true])
             <span class="av-coin-pill">🪙 {{ $data['coins'] }} coins</span>
         </div>
     </div>
+
+    <div class="av-tabs" role="tablist">
+        <button type="button" id="avTabShop" role="tab" aria-selected="true">Shop</button>
+        <button type="button" id="avTabIsland" role="tab" aria-selected="false">My Island</button>
+    </div>
+
+    <div id="avPaneShop">
 
     <div class="card ot-card av-hero-card mb-4">
         <div class="card-body">
@@ -223,6 +252,22 @@ button.av-inv-row:hover{ background:#f4f8fa; }
         ])
     @endif
     </div>
+
+    <div id="avPaneIsland" hidden>
+        <div class="av-island-banner">
+            @if (setting('island_top_image'))
+                <img src="{{ globalAsset(setting('island_top_image')) }}" alt="My Learning Island">
+            @else
+                <div class="empty">Your school hasn't added an island picture yet.</div>
+            @endif
+        </div>
+        <div class="av-island-layout">
+            <div class="av-island-side">More coming here soon.</div>
+            <div class="av-island-center"></div>
+            <div class="av-island-side">More coming here soon.</div>
+        </div>
+    </div>
+    </div>
 </div>
 
 <script>
@@ -240,6 +285,25 @@ button.av-inv-row:hover{ background:#f4f8fa; }
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utter);
     });
+})();
+
+(function () {
+    var tabShop   = document.getElementById('avTabShop');
+    var tabIsland = document.getElementById('avTabIsland');
+    var paneShop  = document.getElementById('avPaneShop');
+    var paneIsland = document.getElementById('avPaneIsland');
+    if (!tabShop || !tabIsland) return;
+
+    function show(which) {
+        var onShop = which === 'shop';
+        tabShop.setAttribute('aria-selected', onShop ? 'true' : 'false');
+        tabIsland.setAttribute('aria-selected', onShop ? 'false' : 'true');
+        paneShop.hidden = !onShop;
+        paneIsland.hidden = onShop;
+    }
+
+    tabShop.addEventListener('click', function () { show('shop'); });
+    tabIsland.addEventListener('click', function () { show('island'); });
 })();
 </script>
 @endsection

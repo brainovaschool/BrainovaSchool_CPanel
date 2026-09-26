@@ -20,7 +20,7 @@ class AvatarController extends Controller
     {
         $student = Auth::user()->student;
         $data              = $this->repo->forStudent($student->id);
-        $data['title']     = 'Avatar World';
+        $data['title']     = 'My Learning Island';
 
         return view('student-panel.avatar.index', compact('data'));
     }

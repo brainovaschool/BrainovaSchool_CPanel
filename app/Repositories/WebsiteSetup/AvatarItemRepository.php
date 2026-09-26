@@ -3,6 +3,7 @@
 namespace App\Repositories\WebsiteSetup;
 
 use App\Models\LearningEngine\AvatarItem;
+use App\Models\Setting;
 use App\Traits\ReturnFormatTrait;
 use Illuminate\Support\Str;
 
@@ -66,6 +67,33 @@ class AvatarItemRepository
 
             $this->applyPlacement($row, $request);
             $row->save();
+
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
+    /** The single shared banner shown at the top of every student's "My
+     *  Island" tab — a plain website setting, not a catalogue item. */
+    public function updateIslandImage($request): array
+    {
+        if (!$request->hasFile('island_top_image') || !$request->file('island_top_image')->isValid()) {
+            return $this->responseWithError('Choose an image first.', []);
+        }
+
+        try {
+            $path = $this->storeFile($request->file('island_top_image'));
+
+            $setting = Setting::where('name', 'island_top_image')->first();
+            if ($setting) {
+                $setting->value = $path;
+            } else {
+                $setting       = new Setting();
+                $setting->name = 'island_top_image';
+                $setting->value = $path;
+            }
+            $setting->save();
 
             return $this->responseWithSuccess(___('alert.updated_successfully'), []);
         } catch (\Throwable $th) {

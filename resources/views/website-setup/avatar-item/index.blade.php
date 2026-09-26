@@ -17,6 +17,49 @@
             </div>
         </div>
 
+        @if (hasPermission('avatar_item_update'))
+            <div class="card mb-24">
+                <div class="card-header"><h5 class="mb-0">My Learning Island — top banner</h5></div>
+                <div class="card-body">
+                    <p class="text-secondary mb-3">Shown across the top of the "My Island" tab on the student's page. One image, shared by every student.</p>
+                    <form action="{{ route('avatar-item.island-image') }}" method="post" enctype="multipart/form-data" class="row align-items-end">
+                        @csrf
+                        <div class="col-md-6 mb-2">
+                            <label class="form-label">Banner image</label>
+                            <div class="ot_fileUploader left-side mb-2">
+                                <input class="form-control" type="text" placeholder="{{ ___('common.image') }}" readonly id="islandImagePlaceholder">
+                                <button class="primary-btn-small-input" type="button">
+                                    <label class="btn btn-lg ot-btn-primary" for="islandImageFile">{{ ___('common.browse') }}</label>
+                                    <input type="file" class="d-none form-control" name="island_top_image" accept="image/*" id="islandImageFile">
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <button class="btn btn-lg ot-btn-primary w-100">{{ ___('common.save') }}</button>
+                        </div>
+                    </form>
+                    @if (setting('island_top_image'))
+                        <img src="{{ globalAsset(setting('island_top_image')) }}" alt="My Island banner" class="mt-2" style="max-height:120px;border-radius:12px;">
+                    @else
+                        <p class="text-secondary mb-0" style="font-size:.85rem;">No banner uploaded yet — students will see a placeholder until one is added.</p>
+                    @endif
+                </div>
+            </div>
+
+            @push('script')
+            <script>
+            (function () {
+                var input = document.getElementById('islandImageFile');
+                var box   = document.getElementById('islandImagePlaceholder');
+                if (!input || !box) return;
+                input.addEventListener('change', function () {
+                    box.placeholder = input.files && input.files[0] ? input.files[0].name : 'Image';
+                });
+            })();
+            </script>
+            @endpush
+        @endif
+
         <div class="table-content table-basic mt-20">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">

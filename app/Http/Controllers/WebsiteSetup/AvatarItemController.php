@@ -58,6 +58,16 @@ class AvatarItemController extends Controller
         return back()->withInput()->with('danger', $result['message']);
     }
 
+    public function updateIslandImage(Request $request)
+    {
+        $request->validate(['island_top_image' => 'required|image|max:4096']);
+
+        $result = $this->repo->updateIslandImage($request);
+
+        return redirect()->route('avatar-item.index')
+            ->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
     public function bulkStore(Request $request)
     {
         // An empty $_POST here almost always means the whole upload blew past
