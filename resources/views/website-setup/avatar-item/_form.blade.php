@@ -9,7 +9,7 @@
             @endforeach
         </select>
         @error('category')<div class="invalid-feedback">{{ $message }}</div>@enderror
-        <small class="text-secondary">Outfit is the whole character (every student always wears exactly one); Accessory is an extra layer drawn on top, and a student can wear several at once. Extra layer types can be switched on in Website Setup &rarr; Dashboard Features. Hub and Building are placed on My Learning Island instead of on the avatar.</small>
+        <small class="text-secondary">Outfit is the whole character (every student always wears exactly one); Accessory is an extra layer drawn on top, and a student can wear several at once. Extra layer types can be switched on in Website Setup &rarr; Dashboard Features. Hub, Building and Base are placed on My Learning Island instead of on the avatar — Base is the only one of the three a student buys, and it's theirs to drag around inside its hub.</small>
     </div>
 
     <div class="col-md-4 mb-3" id="parentHubWrap" style="display:none;">
@@ -21,7 +21,19 @@
             @endforeach
         </select>
         @error('parent_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-        <small class="text-secondary">Which hub this building belongs to. Add the hub first if it isn't in this list yet.</small>
+        <small class="text-secondary">Which hub this belongs to — a Base can only ever be placed inside its own hub's area on the island. Add the hub first if it isn't in this list yet.</small>
+    </div>
+
+    <div class="col-md-4 mb-3" id="hubProgramWrap" style="display:none;">
+        <label class="form-label">Unlocks with</label>
+        <select class="form-control ot-input @error('program_id') is-invalid @enderror" name="program_id">
+            <option value="">Always open to everyone</option>
+            @foreach ($data['programs'] ?? [] as $program)
+                <option value="{{ $program->id }}" {{ old('program_id', $s->program_id ?? '') == $program->id ? 'selected' : '' }}>{{ $program->title }}</option>
+            @endforeach
+        </select>
+        @error('program_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        <small class="text-secondary">Pick a program and this hub (and everything in it) shows dulled to students not enrolled in it — a nudge to try every subject. Leave blank to keep it open to all.</small>
     </div>
 
     <div class="col-md-4 mb-3">
@@ -167,6 +179,7 @@
 (function () {
     var DEFAULTS = @json(App\Models\LearningEngine\AvatarItem::DEFAULT_PLACEMENT);
     var ISLAND_CATEGORIES = @json(App\Models\LearningEngine\AvatarItem::ISLAND_CATEGORIES);
+    var HUB_CHILD_CATEGORIES = @json(App\Models\LearningEngine\AvatarItem::HUB_CHILD_CATEGORIES);
     var islandBannerSrc = @json(setting('island_top_image') ? globalAsset(setting('island_top_image')) : null);
 
     var stage      = document.getElementById('placementStage');
@@ -179,6 +192,7 @@
     var placementTitle = document.getElementById('placementTitle');
     var placementHint  = document.getElementById('placementHint');
     var parentHubWrap  = document.getElementById('parentHubWrap');
+    var hubProgramWrap = document.getElementById('hubProgramWrap');
     var categorySel = document.querySelector('select[name="category"]');
     var fileInput  = document.getElementById('fileBrouse');
     var card       = document.getElementById('placementCard');
@@ -216,7 +230,8 @@
         // hide them rather than offer a control that has no effect.
         card.querySelector('.col-md-7').style.display = isBase ? 'none' : '';
 
-        if (parentHubWrap) parentHubWrap.style.display = cat === 'building' ? '' : 'none';
+        if (parentHubWrap)  parentHubWrap.style.display  = HUB_CHILD_CATEGORIES.indexOf(cat) !== -1 ? '' : 'none';
+        if (hubProgramWrap) hubProgramWrap.style.display = cat === 'hub' ? '' : 'none';
 
         if (isIsland) {
             stage.style.aspectRatio = '1920/1080';

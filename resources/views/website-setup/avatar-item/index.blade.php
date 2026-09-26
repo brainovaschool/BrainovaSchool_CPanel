@@ -59,6 +59,45 @@
             })();
             </script>
             @endpush
+
+            <div class="card mb-24">
+                <div class="card-header"><h5 class="mb-0">Shop tab names &amp; order</h5></div>
+                <div class="card-body">
+                    <p class="text-secondary mb-3">
+                        Rename any of these tabs and set the order they appear in on the student's Shop. Each one keeps
+                        its own built-in behaviour (Outfit is worn as the whole character, Base is placed on the
+                        island, etc.) — this only changes what it's called and where it sits.
+                    </p>
+                    <form action="{{ route('avatar-item.tab-labels') }}" method="post">
+                        @csrf
+                        <div class="table-responsive">
+                            <table class="table table-bordered class-table">
+                                <thead class="thead">
+                                    <tr>
+                                        <th>Built-in type</th>
+                                        <th style="width:260px;">Shown to students as</th>
+                                        <th style="width:120px;">Order</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="tbody">
+                                    @foreach ($data['shopTabs'] as $tab)
+                                        <tr>
+                                            <td class="text-secondary">{{ App\Models\LearningEngine\AvatarItem::CATEGORIES[$tab['key']] }}</td>
+                                            <td>
+                                                <input class="form-control ot-input" name="label[{{ $tab['key'] }}]" value="{{ $tab['label'] }}" maxlength="30">
+                                            </td>
+                                            <td>
+                                                <input class="form-control ot-input" type="number" min="0" name="order[{{ $tab['key'] }}]" value="{{ $tab['order'] }}">
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        <button class="btn btn-lg ot-btn-primary">{{ ___('common.save') }}</button>
+                    </form>
+                </div>
+            </div>
         @endif
 
         <div class="table-content table-basic mt-20">
@@ -91,6 +130,8 @@
                             A clothing layer worn over the outfit (shirt, hoodie, dress, etc.). Optional — a student can go without one.
                         @elseif ($data['category'] === 'hat')
                             A headwear layer worn on top of everything else (cap, headphones, goggles, etc.). Optional.
+                        @elseif ($data['category'] === 'base')
+                            Something a student buys and places inside one hub on their own island (a mosque, a rocket, a trophy stand, ...) — pick which hub below. Set a price in Coins; once bought it appears on their island automatically, and they can drag it anywhere inside that hub's area.
                         @elseif ($data['category'] === 'hub')
                             A themed zone on My Learning Island, e.g. CodeNova, AI Spark Lab, Math Quest. Upload its picture and set where it sits on the island banner. Price in Coins is unused here.
                         @elseif ($data['category'] === 'building')

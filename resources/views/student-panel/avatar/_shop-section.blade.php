@@ -15,10 +15,12 @@
         'equipped' => $data['equippedAccessories'],    // array (accessory) or single id/null (others)
         'kind'     => 'accessory',
         'coins'    => $data['coins'],
+        'locked'   => $data['lockedBaseIds'] ?? [],    // optional — item ids that can't be bought yet
     ])
 --}}
 @php
     $shopItems = $items->reject(fn ($i) => in_array($i->id, $owned, true))->values();
+    $locked    = $locked ?? [];
 @endphp
 <div class="card ot-card mb-4">
     <div class="card-body">
@@ -28,19 +30,27 @@
         <div class="av-shop-layout">
             <div class="av-shop-grid">
                 @forelse ($shopItems as $item)
-                    <div class="av-shop-item">
+                    @php $isLocked = in_array($item->id, $locked, true); @endphp
+                    <div class="av-shop-item {{ $isLocked ? 'av-shop-item--locked' : '' }}">
                         @if ($item->image)
                             <img src="{{ globalAsset($item->image) }}" alt="{{ $item->name }}">
                         @else
                             <div class="face-fallback"><i class="fa-solid fa-image"></i></div>
                         @endif
                         <div class="nm">{{ $item->name }}</div>
-                        <div class="price">🪙 {{ $item->price_coins }}</div>
-                        <form action="{{ route('student-panel-avatar.purchase') }}" method="post">
-                            @csrf
-                            <input type="hidden" name="item_id" value="{{ $item->id }}">
-                            <button class="btn btn-outline-primary" {{ $coins < $item->price_coins ? 'disabled' : '' }}>Buy</button>
-                        </form>
+                        @if ($isLocked)
+                            <div class="price">🔒 Locked</div>
+                            <p class="text-secondary" style="font-size:.72rem;margin-top:2px;">
+                                Enroll in {{ optional($item->parent)->name ?? 'its' }}'s program to unlock
+                            </p>
+                        @else
+                            <div class="price">🪙 {{ $item->price_coins }}</div>
+                            <form action="{{ route('student-panel-avatar.purchase') }}" method="post">
+                                @csrf
+                                <input type="hidden" name="item_id" value="{{ $item->id }}">
+                                <button class="btn btn-outline-primary" {{ $coins < $item->price_coins ? 'disabled' : '' }}>Buy</button>
+                            </form>
+                        @endif
                     </div>
                 @empty
                     <p class="text-secondary">

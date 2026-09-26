@@ -95,4 +95,31 @@ class AvatarController extends Controller
         return redirect()->route('student-panel-avatar.index')
             ->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
+
+    public function placeItem(Request $request)
+    {
+        $request->validate([
+            'item_id' => 'required|integer',
+            'pos_x'   => 'required|numeric|between:0,100',
+            'pos_y'   => 'required|numeric|between:0,100',
+        ]);
+        $student = Auth::user()->student;
+
+        $result = $this->repo->placeItem($student->id, (int) $request->input('item_id'), (float) $request->input('pos_x'), (float) $request->input('pos_y'));
+
+        return response()->json(['ok' => $result['status'], 'message' => $result['message'], 'data' => $result['data'] ?? []]);
+    }
+
+    public function placeAvatar(Request $request)
+    {
+        $request->validate([
+            'pos_x' => 'required|numeric|between:0,100',
+            'pos_y' => 'required|numeric|between:0,100',
+        ]);
+        $student = Auth::user()->student;
+
+        $result = $this->repo->placeAvatar($student->id, (float) $request->input('pos_x'), (float) $request->input('pos_y'));
+
+        return response()->json(['ok' => $result['status'], 'message' => $result['message'], 'data' => $result['data'] ?? []]);
+    }
 }

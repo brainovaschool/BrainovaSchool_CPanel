@@ -36,7 +36,8 @@ class AvatarItemRepository
         try {
             $row              = new $this->model;
             $row->category    = $request->category;
-            $row->parent_id   = $request->category === 'building' ? $request->parent_id : null;
+            $row->parent_id   = in_array($request->category, AvatarItem::HUB_CHILD_CATEGORIES, true) ? $request->parent_id : null;
+            $row->program_id  = $request->category === 'hub' ? $request->input('program_id') ?: null : null;
             $row->name        = $request->name;
             $row->price_coins = (int) $request->price_coins;
             $row->sort_order  = (int) $request->sort_order;
@@ -56,7 +57,8 @@ class AvatarItemRepository
         try {
             $row              = $this->model->findOrFail($id);
             $row->category    = $request->category;
-            $row->parent_id   = $request->category === 'building' ? $request->parent_id : null;
+            $row->parent_id   = in_array($request->category, AvatarItem::HUB_CHILD_CATEGORIES, true) ? $request->parent_id : null;
+            $row->program_id  = $request->category === 'hub' ? $request->input('program_id') ?: null : null;
             $row->name        = $request->name;
             $row->price_coins = (int) $request->price_coins;
             $row->sort_order  = (int) $request->sort_order;
@@ -94,6 +96,40 @@ class AvatarItemRepository
                 $setting       = new Setting();
                 $setting->name = 'island_top_image';
                 $setting->value = $path;
+            }
+            $setting->save();
+
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
+    /** The school's own names + order for the student Shop's tabs (Outfit,
+     *  Clothing Layer, Hat, Accessory, Base). Stored as one JSON setting
+     *  rather than a table — there are only ever five of these, fixed by
+     *  AvatarItem::SHOP_CATEGORIES, and each one already has its own
+     *  built-in behaviour, so this only ever renames/reorders, never adds
+     *  a new one (see AvatarItem::shopTabs()). */
+    public function updateTabLabels($request): array
+    {
+        try {
+            $data = [];
+            foreach (AvatarItem::SHOP_CATEGORIES as $key) {
+                $label = trim((string) $request->input("label.$key"));
+                $data[$key] = [
+                    'label' => $label !== '' ? $label : AvatarItem::CATEGORIES[$key],
+                    'order' => (int) $request->input("order.$key", 0),
+                ];
+            }
+
+            $setting = Setting::where('name', 'avatar_tab_labels')->first();
+            if ($setting) {
+                $setting->value = json_encode($data);
+            } else {
+                $setting          = new Setting();
+                $setting->name    = 'avatar_tab_labels';
+                $setting->value   = json_encode($data);
             }
             $setting->save();
 

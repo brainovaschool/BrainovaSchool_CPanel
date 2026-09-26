@@ -115,6 +115,16 @@ button.av-inv-row:hover{ background:#f4f8fa; }
 }
 .av-tabs button[aria-selected="true"]{ background:var(--bn-primary); color:#fff; opacity:1; }
 
+/* Shop's own sub-tabs (Outfit / Clothing / Hat / Accessories / Base) —
+   smaller and underline-style so they read as a level below the main
+   Shop/My Island tabs rather than competing with them. */
+.av-subtabs{ display:flex; gap:6px; flex-wrap:wrap; border-bottom:1px solid var(--bn-surface-line); margin-bottom:16px; }
+.av-subtabs button{
+    font:inherit; font-weight:700; font-size:.82rem; padding:9px 4px; border:none; border-bottom:3px solid transparent;
+    background:transparent; color:var(--bn-ink); opacity:.55; cursor:pointer; margin-right:14px;
+}
+.av-subtabs button[aria-selected="true"]{ opacity:1; border-bottom-color:var(--bn-primary); color:var(--bn-primary-strong); }
+
 /* My Island — the banner is locked to the same 1920:1080 canvas the
    placement editor previews against, so a hub or building's saved
    position always lands in the same spot it showed in Website Setup.
@@ -133,6 +143,37 @@ button.av-inv-row:hover{ background:#f4f8fa; }
     position:absolute; height:auto; border:none; background:none; padding:0; cursor:default;
 }
 .av-island-spot img{ width:100%; height:auto; display:block; filter:drop-shadow(0 4px 10px rgba(20,20,30,.25)); }
+/* A hub (and anything inside it) the student isn't enrolled in yet — still
+   visible so they know it's there, just visibly not "theirs" until they
+   sign up for the program it represents. */
+.av-island-spot--locked img{ filter:grayscale(1) brightness(.75) drop-shadow(0 4px 10px rgba(20,20,30,.25)); opacity:.6; }
+
+/* The avatar and every owned base are pick-up-and-move objects: click (or
+   tap) to lift one for the keyboard arrows, or just drag it straight away
+   with the mouse/finger. touch-action:none stops the browser's own
+   scroll/zoom gestures from fighting the drag on phones/tablets. */
+.av-place-obj{
+    position:absolute; height:auto; border:none; background:none; padding:0; margin:0;
+    cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; z-index:5;
+}
+.av-place-obj img{ width:100%; height:auto; display:block; filter:drop-shadow(0 4px 10px rgba(20,20,30,.3)); pointer-events:none; }
+/* The avatar is several stacked, individually-positioned layers (see
+   .av-preview .layer) rather than one image, so — like .av-preview — it
+   needs its own real height for those absolutely-positioned layers to
+   show up in; a plain Base/Building icon is a single normal-flow <img>
+   and doesn't need this. */
+.av-place-obj--avatar{ aspect-ratio:1/1; }
+.av-place-obj.picked{ cursor:grabbing; z-index:40; }
+.av-place-obj.picked img{ filter:drop-shadow(0 0 0 3px var(--bn-primary)) drop-shadow(0 6px 14px rgba(20,20,30,.35)); }
+.av-place-obj:focus-visible img{ outline:3px solid var(--bn-primary); outline-offset:3px; border-radius:8px; }
+
+/* Dashed circle shown while a base is picked up, marking the hub area it
+   can't be dragged outside of. */
+.av-hub-zone{
+    position:absolute; border:2px dashed rgba(255,255,255,.85); border-radius:50%; pointer-events:none;
+    transform:translate(-50%,-50%); box-shadow:0 0 0 2000px rgba(10,20,30,.18); z-index:4;
+}
+
 .av-island-layout{ display:flex; gap:16px; margin-top:16px; align-items:stretch; flex-wrap:wrap; }
 .av-island-side{
     flex:1 1 200px; background:#fff; border:1px dashed var(--bn-surface-line); border-radius:14px;
@@ -140,6 +181,22 @@ button.av-inv-row:hover{ background:#f4f8fa; }
     text-align:center; color:#9aa4ab; font-size:.82rem;
 }
 .av-island-center{ flex:2 1 320px; min-height:220px; }
+
+/* Bottom inventory tray — quick-select handles for the avatar + every
+   owned base, easier to click than hunting for a small icon on the map. */
+.av-tray{
+    margin-top:14px; background:#fff; border:1px solid var(--bn-surface-line); border-radius:14px; padding:12px 14px;
+}
+.av-tray__title{ font-size:.8rem; font-weight:800; color:var(--bn-ink); margin-bottom:8px; }
+.av-tray__list{ display:flex; gap:10px; flex-wrap:wrap; }
+.av-tray-thumb{
+    display:flex; flex-direction:column; align-items:center; gap:4px; width:64px; border:2px solid var(--bn-surface-line);
+    border-radius:12px; background:#fff; padding:6px 4px; cursor:pointer; font:inherit;
+}
+.av-tray-thumb.picked{ border-color:var(--bn-primary); background:var(--bn-primary-soft); }
+.av-tray-thumb img{ width:36px; height:36px; object-fit:contain; }
+.av-tray-thumb span{ font-size:.66rem; font-weight:700; color:var(--bn-ink); text-align:center; line-height:1.1; }
+.av-tray__empty{ font-size:.78rem; color:#7a8790; margin:0; }
 </style>
 @endpush
 
@@ -157,11 +214,11 @@ button.av-inv-row:hover{ background:#f4f8fa; }
     </div>
 
     <div class="av-tabs" role="tablist">
-        <button type="button" id="avTabShop" role="tab" aria-selected="true">Shop</button>
-        <button type="button" id="avTabIsland" role="tab" aria-selected="false">My Island</button>
+        <button type="button" id="avTabIsland" role="tab" aria-selected="true">My Island</button>
+        <button type="button" id="avTabShop" role="tab" aria-selected="false">Shop</button>
     </div>
 
-    <div id="avPaneShop">
+    <div id="avPaneShop" hidden>
 
     <div class="card ot-card av-hero-card mb-4">
         <div class="card-body">
@@ -214,58 +271,89 @@ button.av-inv-row:hover{ background:#f4f8fa; }
         </div>
     </div>
 
-    <div class="card ot-card mb-4">
-        <div class="card-body">
-            <h5 class="mb-0">Outfit</h5>
-            <p class="text-secondary mb-0">The free ones are already yours. Earn coins to unlock the rest.</p>
-            @include('student-panel.avatar._character-grid', [
-                'items'    => $data['bodies'],
-                'owned'    => $data['owned'],
-                'equipped' => optional($data['profile'])->avatar_item_id,
-                'coins'    => $data['coins'],
-            ])
+    @php
+        $shopSectionMap = [
+            'avatar'    => 'char-grid',
+            'outfit'    => 'outfit',
+            'hat'       => 'hat',
+            'accessory' => 'accessory',
+            'base'      => 'base',
+        ];
+        $visibleShopTabs = collect($data['shopTabs'])->filter(
+            fn ($tab) => \App\Models\LearningEngine\AvatarItem::sectionEnabled($tab['key'])
+        )->values();
+    @endphp
+
+    <div class="av-subtabs" role="tablist">
+        @foreach ($visibleShopTabs as $i => $tab)
+            <button type="button" class="av-subtab-btn" data-target="avShop-{{ $tab['key'] }}" role="tab" aria-selected="{{ $i === 0 ? 'true' : 'false' }}">{{ $tab['label'] }}</button>
+        @endforeach
+    </div>
+
+    @foreach ($visibleShopTabs as $i => $tab)
+        <div id="avShop-{{ $tab['key'] }}" class="av-shop-pane" @if ($i !== 0) hidden @endif>
+            @if ($tab['key'] === 'avatar')
+                <div class="card ot-card mb-4">
+                    <div class="card-body">
+                        <h5 class="mb-0">{{ $tab['label'] }}</h5>
+                        <p class="text-secondary mb-0">The free ones are already yours. Earn coins to unlock the rest.</p>
+                        @include('student-panel.avatar._character-grid', [
+                            'items'    => $data['bodies'],
+                            'owned'    => $data['owned'],
+                            'equipped' => optional($data['profile'])->avatar_item_id,
+                            'coins'    => $data['coins'],
+                        ])
+                    </div>
+                </div>
+            @elseif ($tab['key'] === 'outfit')
+                @include('student-panel.avatar._shop-section', [
+                    'title'    => $tab['label'],
+                    'hint'     => 'A clothing layer worn over your outfit. Optional.',
+                    'items'    => $data['outfits'],
+                    'owned'    => $data['owned'],
+                    'equipped' => optional($data['profile'])->outfit_item_id,
+                    'kind'     => 'outfit',
+                    'coins'    => $data['coins'],
+                ])
+            @elseif ($tab['key'] === 'hat')
+                @include('student-panel.avatar._shop-section', [
+                    'title'    => $tab['label'],
+                    'hint'     => 'Headwear worn on top of everything else. Optional.',
+                    'items'    => $data['hats'],
+                    'owned'    => $data['owned'],
+                    'equipped' => optional($data['profile'])->hat_item_id,
+                    'kind'     => 'hat',
+                    'coins'    => $data['coins'],
+                ])
+            @elseif ($tab['key'] === 'accessory')
+                @include('student-panel.avatar._shop-section', [
+                    'title'    => $tab['label'],
+                    'hint'     => 'Small extras you can wear several of at once. Everything you own is up beside your avatar.',
+                    'items'    => $data['accessories'],
+                    'owned'    => $data['owned'],
+                    'equipped' => $data['equippedAccessories'],
+                    'kind'     => 'accessory',
+                    'coins'    => $data['coins'],
+                    'showInventory' => false,
+                ])
+            @elseif ($tab['key'] === 'base')
+                @include('student-panel.avatar._shop-section', [
+                    'title'    => $tab['label'],
+                    'hint'     => 'Buy one and it appears on My Island right away, inside its own hub — drag it wherever you like from there.',
+                    'items'    => $data['bases'],
+                    'owned'    => $data['owned'],
+                    'equipped' => [],
+                    'kind'     => 'base',
+                    'coins'    => $data['coins'],
+                    'showInventory' => false,
+                    'locked'   => $data['lockedBaseIds'],
+                ])
+            @endif
         </div>
+    @endforeach
     </div>
 
-    @if (App\Models\LearningEngine\AvatarItem::sectionEnabled('outfit'))
-        @include('student-panel.avatar._shop-section', [
-            'title'    => 'Clothing Layer',
-            'hint'     => 'A clothing layer worn over your outfit. Optional.',
-            'items'    => $data['outfits'],
-            'owned'    => $data['owned'],
-            'equipped' => optional($data['profile'])->outfit_item_id,
-            'kind'     => 'outfit',
-            'coins'    => $data['coins'],
-        ])
-    @endif
-
-    @if (App\Models\LearningEngine\AvatarItem::sectionEnabled('hat'))
-        @include('student-panel.avatar._shop-section', [
-            'title'    => 'Hat',
-            'hint'     => 'Headwear worn on top of everything else. Optional.',
-            'items'    => $data['hats'],
-            'owned'    => $data['owned'],
-            'equipped' => optional($data['profile'])->hat_item_id,
-            'kind'     => 'hat',
-            'coins'    => $data['coins'],
-        ])
-    @endif
-
-    @if (App\Models\LearningEngine\AvatarItem::sectionEnabled('accessory'))
-        @include('student-panel.avatar._shop-section', [
-            'title'    => 'Accessories',
-            'hint'     => 'Small extras you can wear several of at once. Everything you own is up beside your avatar.',
-            'items'    => $data['accessories'],
-            'owned'    => $data['owned'],
-            'equipped' => $data['equippedAccessories'],
-            'kind'     => 'accessory',
-            'coins'    => $data['coins'],
-            'showInventory' => false,
-        ])
-    @endif
-    </div>
-
-    <div id="avPaneIsland" hidden>
+    <div id="avPaneIsland">
         <div class="av-island-banner" id="islandBanner">
             @if (setting('island_top_image'))
                 <img src="{{ globalAsset(setting('island_top_image')) }}" alt="My Learning Island" id="islandBannerImg">
@@ -274,22 +362,85 @@ button.av-inv-row:hover{ background:#f4f8fa; }
             @endif
 
             @foreach ($data['hubs'] as $hub)
+                @php $hubLocked = in_array($hub->id, $data['lockedHubIds'], true); @endphp
                 @if ($hub->image)
-                    <span class="av-island-spot" title="{{ $hub->name }}"
+                    <span class="av-island-spot {{ $hubLocked ? 'av-island-spot--locked' : '' }}"
+                        title="{{ $hub->name }}{{ $hubLocked ? ' (enroll to unlock)' : '' }}"
                         style="left:{{ $hub->pos_x }}%; top:{{ $hub->pos_y }}%; width:{{ $hub->scale }}%; transform:translate(-50%,-50%) rotate({{ $hub->rotation }}deg);">
                         <img src="{{ globalAsset($hub->image) }}" alt="{{ $hub->name }}">
                     </span>
                 @endif
                 @foreach ($hub->children as $building)
                     @if ($building->image)
-                        <span class="av-island-spot" title="{{ $building->name }}"
+                        <span class="av-island-spot {{ $hubLocked ? 'av-island-spot--locked' : '' }}" title="{{ $building->name }}"
                             style="left:{{ $building->pos_x }}%; top:{{ $building->pos_y }}%; width:{{ $building->scale }}%; transform:translate(-50%,-50%) rotate({{ $building->rotation }}deg);">
                             <img src="{{ globalAsset($building->image) }}" alt="{{ $building->name }}">
                         </span>
                     @endif
                 @endforeach
             @endforeach
+
+            {{-- Owned Base items — each placed wherever this student last
+                 left it (or its default spot inside its hub, the first
+                 time). Pick one up with a click/tap, then drag it or nudge
+                 it with the arrow keys; click it again to set it down. --}}
+            @foreach ($data['bases'] as $base)
+                @continue(!in_array($base->id, $data['owned'], true) || !$base->image)
+                @php
+                    $placed = $data['placements']->get($base->id);
+                    $px = optional($placed)->pos_x ?? $base->pos_x;
+                    $py = optional($placed)->pos_y ?? $base->pos_y;
+                    $hub = $base->parent;
+                @endphp
+                <button type="button" class="av-place-obj" id="base-{{ $base->id }}" data-kind="base" data-item="{{ $base->id }}"
+                    data-hub-x="{{ optional($hub)->pos_x }}" data-hub-y="{{ optional($hub)->pos_y }}" data-hub-radius="{{ $hub ? max($hub->scale * 1.6, 14) : '' }}"
+                    aria-label="{{ $base->name }}"
+                    style="left:{{ $px }}%; top:{{ $py }}%; width:{{ $base->scale }}%;">
+                    <img src="{{ globalAsset($base->image) }}" alt="{{ $base->name }}">
+                </button>
+            @endforeach
+
+            {{-- The student's own dressed-up avatar, standing on the
+                 island — free to roam anywhere, not locked to a hub. --}}
+            @php
+                $avatarPos = ['x' => optional($data['profile'])->island_pos_x ?? 50, 'y' => optional($data['profile'])->island_pos_y ?? 78];
+            @endphp
+            <button type="button" class="av-place-obj av-place-obj--avatar" id="islandAvatarObj" data-kind="avatar" aria-label="Your avatar"
+                style="left:{{ $avatarPos['x'] }}%; top:{{ $avatarPos['y'] }}%; width:11%;">
+                @forelse ($data['layers'] as $layer)
+                    <img src="{{ globalAsset($layer['image']) }}" alt=""
+                        style="position:absolute; left:{{ $layer['x'] }}%; top:{{ $layer['y'] }}%; width:{{ $layer['scale'] }}%; transform:translate(-50%,-50%) rotate({{ $layer['rotation'] }}deg);">
+                @empty
+                    <i class="fa-solid fa-user" style="font-size:2rem;color:var(--bn-primary);"></i>
+                @endforelse
+            </button>
         </div>
+
+        <div class="av-tray">
+            <div class="av-tray__title">My Island — drag or select to move</div>
+            <div class="av-tray__list">
+                <button type="button" class="av-tray-thumb" data-target="islandAvatarObj">
+                    @if (!empty($data['layers']))
+                        <img src="{{ globalAsset($data['layers'][0]['image']) }}" alt="">
+                    @else
+                        <i class="fa-solid fa-user"></i>
+                    @endif
+                    <span>{{ optional($data['profile'])->avatar_name ?: 'You' }}</span>
+                </button>
+                @php $ownedBases = $data['bases']->filter(fn ($b) => in_array($b->id, $data['owned'], true)); @endphp
+                @forelse ($ownedBases as $base)
+                    <button type="button" class="av-tray-thumb" data-target="base-{{ $base->id }}">
+                        @if ($base->image)
+                            <img src="{{ globalAsset($base->image) }}" alt="">
+                        @endif
+                        <span>{{ $base->name }}</span>
+                    </button>
+                @empty
+                    <p class="av-tray__empty">No base items yet — buy some from the Shop's Base tab and they'll show up here too.</p>
+                @endforelse
+            </div>
+        </div>
+
         <div class="av-island-layout">
             <div class="av-island-side">More coming here soon.</div>
             <div class="av-island-center"></div>
@@ -354,6 +505,199 @@ button.av-inv-row:hover{ background:#f4f8fa; }
     } else {
         img.addEventListener('load', applyRatio);
     }
+})();
+
+(function () {
+    // The Shop's own sub-tabs (Outfit / Clothing / Hat / Accessories / Base).
+    var buttons = document.querySelectorAll('.av-subtab-btn');
+    if (!buttons.length) return;
+
+    buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            buttons.forEach(function (b) {
+                var pane = document.getElementById(b.dataset.target);
+                var on   = b === btn;
+                b.setAttribute('aria-selected', on ? 'true' : 'false');
+                if (pane) pane.hidden = !on;
+            });
+        });
+    });
+})();
+
+(function () {
+    // Pick up the avatar or any owned Base item, then either drag it with
+    // the mouse/finger or nudge it with the arrow keys, and set it down
+    // with another click/tap. Bases can't leave their own hub's circle;
+    // the avatar can stand anywhere on the island.
+    var banner = document.getElementById('islandBanner');
+    var objects = document.querySelectorAll('.av-place-obj');
+    if (!banner || !objects.length) return;
+
+    var csrfInput = document.querySelector('input[name="_token"]');
+    var CSRF = csrfInput ? csrfInput.value : '';
+    var PLACE_ITEM_URL   = '{{ route('student-panel-avatar.place-item') }}';
+    var PLACE_AVATAR_URL = '{{ route('student-panel-avatar.place-avatar') }}';
+
+    var DRAG_THRESHOLD = 5;
+    var zoneEl = null;
+    var saveTimers = new WeakMap();
+
+    function clamp(el, x, y) {
+        if (el.dataset.kind === 'base' && el.dataset.hubX) {
+            var hx = parseFloat(el.dataset.hubX), hy = parseFloat(el.dataset.hubY), hr = parseFloat(el.dataset.hubRadius);
+            var dx = x - hx, dy = y - hy, dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > hr && dist > 0) {
+                var ratio = hr / dist;
+                x = hx + dx * ratio;
+                y = hy + dy * ratio;
+            }
+            return [Math.min(99, Math.max(1, x)), Math.min(99, Math.max(1, y))];
+        }
+        return [Math.min(96, Math.max(4, x)), Math.min(96, Math.max(4, y))];
+    }
+
+    function setPosition(el, x, y) {
+        var c = clamp(el, x, y);
+        el.style.left = c[0] + '%';
+        el.style.top  = c[1] + '%';
+        el.dataset.x  = c[0];
+        el.dataset.y  = c[1];
+    }
+
+    function currentPosition(el) {
+        return [parseFloat(el.dataset.x || el.style.left), parseFloat(el.dataset.y || el.style.top)];
+    }
+
+    function save(el) {
+        var pos = currentPosition(el);
+        var url = el.dataset.kind === 'avatar' ? PLACE_AVATAR_URL : PLACE_ITEM_URL;
+        var body = { pos_x: pos[0], pos_y: pos[1] };
+        if (el.dataset.kind === 'base') body.item_id = el.dataset.item;
+
+        fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+            body: JSON.stringify(body)
+        }).catch(function () {});
+    }
+
+    function scheduleSave(el) {
+        var existing = saveTimers.get(el);
+        if (existing) clearTimeout(existing);
+        saveTimers.set(el, setTimeout(function () { save(el); }, 500));
+    }
+
+    function showZone(el) {
+        hideZone();
+        if (el.dataset.kind !== 'base' || !el.dataset.hubX) return;
+        zoneEl = document.createElement('div');
+        zoneEl.className = 'av-hub-zone';
+        var d = parseFloat(el.dataset.hubRadius) * 2;
+        zoneEl.style.left = el.dataset.hubX + '%';
+        zoneEl.style.top  = el.dataset.hubY + '%';
+        zoneEl.style.width  = d + '%';
+        zoneEl.style.height = d + '%';
+        banner.appendChild(zoneEl);
+    }
+
+    function hideZone() {
+        if (zoneEl && zoneEl.parentNode) zoneEl.parentNode.removeChild(zoneEl);
+        zoneEl = null;
+    }
+
+    function setTrayPicked(el, picked) {
+        var thumb = document.querySelector('.av-tray-thumb[data-target="' + el.id + '"]');
+        if (thumb) thumb.classList.toggle('picked', picked);
+    }
+
+    function deselect(el) {
+        el.classList.remove('picked');
+        setTrayPicked(el, false);
+        hideZone();
+        save(el);
+    }
+
+    function select(el) {
+        document.querySelectorAll('.av-place-obj.picked').forEach(function (o) {
+            if (o !== el) deselect(o);
+        });
+        el.classList.add('picked');
+        setTrayPicked(el, true);
+        showZone(el);
+    }
+
+    function toggle(el) {
+        if (el.classList.contains('picked')) {
+            deselect(el);
+        } else {
+            select(el);
+        }
+    }
+
+    objects.forEach(function (el) {
+        var pointerId = null, moved = false, startX = 0, startY = 0;
+
+        el.addEventListener('pointerdown', function (e) {
+            pointerId = e.pointerId;
+            moved = false;
+            startX = e.clientX;
+            startY = e.clientY;
+            el.setPointerCapture(pointerId);
+            e.preventDefault();
+        });
+
+        el.addEventListener('pointermove', function (e) {
+            if (e.pointerId !== pointerId) return;
+            if (!moved && Math.hypot(e.clientX - startX, e.clientY - startY) < DRAG_THRESHOLD) return;
+            if (!moved) {
+                moved = true;
+                if (!el.classList.contains('picked')) select(el);
+            }
+            var rect = banner.getBoundingClientRect();
+            setPosition(el, (e.clientX - rect.left) / rect.width * 100, (e.clientY - rect.top) / rect.height * 100);
+        });
+
+        el.addEventListener('pointerup', function (e) {
+            if (e.pointerId !== pointerId) return;
+            pointerId = null;
+            if (moved) {
+                save(el);
+            } else {
+                toggle(el);
+            }
+        });
+    });
+
+    document.addEventListener('keydown', function (e) {
+        var picked = document.querySelector('.av-place-obj.picked');
+        if (!picked) return;
+
+        var active = document.activeElement;
+        if (active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName)) return;
+
+        var step = e.shiftKey ? 4 : 1.5;
+        var pos = currentPosition(picked);
+        if (e.key === 'ArrowLeft')       pos[0] -= step;
+        else if (e.key === 'ArrowRight') pos[0] += step;
+        else if (e.key === 'ArrowUp')    pos[1] -= step;
+        else if (e.key === 'ArrowDown')  pos[1] += step;
+        else if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); deselect(picked); return; }
+        else return;
+
+        e.preventDefault();
+        setPosition(picked, pos[0], pos[1]);
+        if (picked.dataset.kind === 'base') showZone(picked);
+        scheduleSave(picked);
+    });
+
+    document.querySelectorAll('.av-tray-thumb').forEach(function (thumb) {
+        thumb.addEventListener('click', function () {
+            var target = document.getElementById(thumb.dataset.target);
+            if (!target) return;
+            toggle(target);
+            target.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+        });
+    });
 })();
 </script>
 @endsection

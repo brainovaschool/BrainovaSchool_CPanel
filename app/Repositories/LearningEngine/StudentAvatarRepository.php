@@ -6,6 +6,8 @@ use App\Models\LearningEngine\AvatarItem;
 use App\Models\LearningEngine\StudentAvatarProfile;
 use App\Models\LearningEngine\StudentAvatarPurchase;
 use App\Models\LearningEngine\StudentAvatarEquippedAccessory;
+use App\Models\LearningEngine\StudentIslandPlacement;
+use App\Models\StudentInfo\StudentProgramEnrollment;
 use App\Traits\ReturnFormatTrait;
 
 /**
@@ -65,6 +67,34 @@ class StudentAvatarRepository
     public function equippedAccessoryIds(int $studentId): array
     {
         return StudentAvatarEquippedAccessory::where('student_id', $studentId)->pluck('avatar_item_id')->all();
+    }
+
+    /** Hubs a student can't fully use yet because they aren't enrolled in
+     *  the program that hub represents — a hub with no program picked in
+     *  Website Setup is never locked. */
+    public function lockedHubIds(int $studentId): array
+    {
+        $gatedHubs = AvatarItem::active()->category('hub')->whereNotNull('program_id')->get(['id', 'program_id']);
+        if ($gatedHubs->isEmpty()) {
+            return [];
+        }
+
+        $enrolled = StudentProgramEnrollment::where('student_id', $studentId)->pluck('program_id')->all();
+
+        return $gatedHubs->filter(fn ($hub) => !in_array($hub->program_id, $enrolled, true))->pluck('id')->all();
+    }
+
+    /** Base items that live inside a locked hub — these still show in the
+     *  shop (so the student can see what they're missing) but can't be
+     *  bought until the hub unlocks. */
+    public function lockedBaseItemIds(int $studentId): array
+    {
+        $locked = $this->lockedHubIds($studentId);
+        if (empty($locked)) {
+            return [];
+        }
+
+        return AvatarItem::active()->category('base')->whereIn('parent_id', $locked)->pluck('id')->all();
     }
 
     /** The student's current look as an ordered list of layers, bottom layer
@@ -133,9 +163,14 @@ class StudentAvatarRepository
             'outfits'             => AvatarItem::active()->category('outfit')->orderBy('sort_order')->get(),
             'hats'                => AvatarItem::active()->category('hat')->orderBy('sort_order')->get(),
             'accessories'         => AvatarItem::active()->category('accessory')->orderBy('sort_order')->get(),
+            'bases'               => AvatarItem::active()->category('base')->with('parent')->orderBy('sort_order')->get(),
             'hubs'                => AvatarItem::active()->category('hub')->with(['children' => function ($q) {
-                $q->active()->orderBy('sort_order');
+                $q->active()->where('category', 'building')->orderBy('sort_order');
             }])->orderBy('sort_order')->get(),
+            'lockedHubIds'        => $this->lockedHubIds($studentId),
+            'lockedBaseIds'       => $this->lockedBaseItemIds($studentId),
+            'placements'          => StudentIslandPlacement::where('student_id', $studentId)->get()->keyBy('avatar_item_id'),
+            'shopTabs'            => AvatarItem::shopTabs(),
             'voices'              => self::VOICE_PRESETS,
         ];
     }
@@ -151,6 +186,10 @@ class StudentAvatarRepository
             return $this->responseWithError('You already own this.', []);
         }
 
+        if ($item->category === 'base' && $item->parent_id && in_array($item->parent_id, $this->lockedHubIds($studentId), true)) {
+            return $this->responseWithError("You need to be enrolled in that hub's program to unlock this first.", []);
+        }
+
         if ($this->availableCoins($studentId) < $item->price_coins) {
             return $this->responseWithError("You don't have enough coins for this yet — keep earning XP!", []);
         }
@@ -161,7 +200,77 @@ class StudentAvatarRepository
             'price_paid'     => $item->price_coins,
         ]);
 
+        // A base appears on the student's island the moment it's bought, at
+        // the spot the admin set as its default — no separate "place it"
+        // step needed before it shows up.
+        if ($item->category === 'base') {
+            StudentIslandPlacement::updateOrCreate(
+                ['student_id' => $studentId, 'avatar_item_id' => $item->id],
+                ['pos_x' => $item->pos_x, 'pos_y' => $item->pos_y]
+            );
+        }
+
         return $this->responseWithSuccess("You got it! \"{$item->name}\" is now yours.", []);
+    }
+
+    /** Keeps a dragged/nudged base item inside its own hub's area — a
+     *  circle centred on the hub's own placement point, sized off the
+     *  hub's own scale, so no separate zone-drawing tool is needed. */
+    private function clampToHub(AvatarItem $item, float $x, float $y): array
+    {
+        $hub = $item->parent_id ? AvatarItem::active()->category('hub')->find($item->parent_id) : null;
+
+        if (!$hub) {
+            return [min(96, max(4, $x)), min(96, max(4, $y))];
+        }
+
+        $radius = max((float) $hub->scale * 1.6, 14.0);
+        $dx     = $x - (float) $hub->pos_x;
+        $dy     = $y - (float) $hub->pos_y;
+        $dist   = sqrt($dx * $dx + $dy * $dy);
+
+        if ($dist > $radius && $dist > 0) {
+            $ratio = $radius / $dist;
+            $x     = (float) $hub->pos_x + $dx * $ratio;
+            $y     = (float) $hub->pos_y + $dy * $ratio;
+        }
+
+        return [min(99, max(1, $x)), min(99, max(1, $y))];
+    }
+
+    /** Saves where a student has dragged or nudged one of their owned bases
+     *  to. Clamped server-side too, so a tampered request can't place it
+     *  outside its hub. */
+    public function placeItem(int $studentId, int $itemId, float $x, float $y): array
+    {
+        $item = AvatarItem::active()->category('base')->find($itemId);
+        if (!$item || !in_array($itemId, $this->ownedItemIds($studentId), true)) {
+            return $this->responseWithError('You need to own this first.', []);
+        }
+
+        [$x, $y] = $this->clampToHub($item, $x, $y);
+
+        StudentIslandPlacement::updateOrCreate(
+            ['student_id' => $studentId, 'avatar_item_id' => $itemId],
+            ['pos_x' => $x, 'pos_y' => $y]
+        );
+
+        return $this->responseWithSuccess(___('alert.updated_successfully'), ['pos_x' => $x, 'pos_y' => $y]);
+    }
+
+    /** Saves where the student's own avatar is standing on the island —
+     *  free to roam anywhere on the banner, not locked to any one hub. */
+    public function placeAvatar(int $studentId, float $x, float $y): array
+    {
+        $profile = $this->getOrCreateProfile($studentId);
+        $profile->island_pos_x = min(96, max(4, $x));
+        $profile->island_pos_y = min(96, max(4, $y));
+        $profile->save();
+
+        return $this->responseWithSuccess(___('alert.updated_successfully'), [
+            'pos_x' => $profile->island_pos_x,
+            'pos_y' => $profile->island_pos_y,
+        ]);
     }
 
     public function selectAvatar(int $studentId, int $itemId): array

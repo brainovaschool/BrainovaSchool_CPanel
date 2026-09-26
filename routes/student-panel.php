@@ -51,6 +51,8 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::post('/select-hat',       'selectHat')->name('select-hat');
                         Route::post('/toggle-accessory', 'toggleAccessory')->name('toggle-accessory');
                         Route::post('/save-profile',     'saveProfile')->name('save-profile');
+                        Route::post('/place-item',       'placeItem')->name('place-item');
+                        Route::post('/place-avatar',     'placeAvatar')->name('place-avatar');
                     });
 
                     Route::controller(ProfileController::class)->prefix('student-panel')->group(function () {

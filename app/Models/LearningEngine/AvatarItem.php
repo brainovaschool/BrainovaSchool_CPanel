@@ -10,35 +10,45 @@ class AvatarItem extends BaseModel
 {
     protected $guarded = ['id'];
 
-    /** The four layers a student's look is built from, bottom to top,
-     *  plus two more categories that live in this same table but are
-     *  never worn and never reach the student's Shop tab — Hub (a themed
-     *  zone on My Learning Island, e.g. "CodeNova") and Building (a
-     *  structure that belongs to one Hub). They reuse this table purely
-     *  because they need the exact same tools: an image upload and the
-     *  pos_x/pos_y/scale/rotation placement editor. price_coins is simply
-     *  unused for both. See sectionEnabled() — 'avatar' is the base
-     *  character — every student always has exactly one; the rest are
-     *  optional overlays. 'accessory' is the only one a student can wear
-     *  several of at once. */
+    /** The four layers a student's look is built from, bottom to top, plus
+     *  three more categories that live in this same table but aren't worn
+     *  — Hub (a themed zone on My Learning Island, e.g. "CodeNova"),
+     *  Building (a fixed structure belonging to one Hub, placed once by the
+     *  admin) and Base (a purchasable item belonging to one Hub that each
+     *  student places — and re-places — on their own island). They reuse
+     *  this table because they need the same tools: an image upload and the
+     *  pos_x/pos_y/scale/rotation placement editor. price_coins is unused
+     *  for Hub/Building but very much used for Base. See sectionEnabled() —
+     *  'avatar' is the base character — every student always has exactly
+     *  one; the rest are optional overlays. 'accessory' is the only worn
+     *  one a student can have several of at once. */
     public const CATEGORIES = [
         'avatar'    => 'Outfit',
         'outfit'    => 'Clothing Layer',
         'hat'       => 'Hat',
         'accessory' => 'Accessory',
+        'base'      => 'Base',
         'hub'       => 'Hub',
         'building'  => 'Building',
     ];
 
-    /** Categories placed on My Learning Island rather than worn by the
-     *  avatar. Admin-only content: never gated by Dashboard Features,
-     *  never shown on the student's Shop tab. */
-    public const ISLAND_CATEGORIES = ['hub', 'building'];
+    /** Categories whose placement editor previews against the island
+     *  banner instead of the avatar stage. Hub/Building are admin-only —
+     *  never gated, never shown on the student's Shop tab. Base is the odd
+     *  one out: also placed against the island banner in Website Setup
+     *  (for its default spot + fixed size), but it DOES sell in the
+     *  student's Shop, and each student then drags their own copy around
+     *  within its hub — see student_island_placements. */
+    public const ISLAND_CATEGORIES = ['hub', 'building', 'base'];
+
+    /** Which categories need a parent Hub picked (My Learning Island only
+     *  makes sense to place a Building or a Base inside a themed zone). */
+    public const HUB_CHILD_CATEGORIES = ['building', 'base'];
 
     /** Starting placement for a brand-new item of each category — a rough
      *  "about where this usually sits" so the admin only fine-tunes rather
      *  than positioning from scratch. A base character always fills the
-     *  whole stage. Hub/Building placements are percentages across the
+     *  whole stage. Hub/Building/Base placements are percentages across the
      *  island banner, not the avatar stage — much smaller by default since
      *  that canvas is a wide scene, not a square close-up. */
     public const DEFAULT_PLACEMENT = [
@@ -46,6 +56,7 @@ class AvatarItem extends BaseModel
         'outfit'    => ['pos_x' => 50, 'pos_y' => 58, 'scale' => 60,  'rotation' => 0],
         'hat'       => ['pos_x' => 50, 'pos_y' => 22, 'scale' => 40,  'rotation' => 0],
         'accessory' => ['pos_x' => 50, 'pos_y' => 45, 'scale' => 30,  'rotation' => 0],
+        'base'      => ['pos_x' => 50, 'pos_y' => 65, 'scale' => 8,   'rotation' => 0],
         'hub'       => ['pos_x' => 50, 'pos_y' => 50, 'scale' => 16,  'rotation' => 0],
         'building'  => ['pos_x' => 50, 'pos_y' => 60, 'scale' => 9,   'rotation' => 0],
     ];
@@ -111,15 +122,46 @@ class AvatarItem extends BaseModel
         return $query->where('category', $category);
     }
 
-    /** A Building's Hub. */
+    /** A Building or Base's Hub. */
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id', 'id');
     }
 
-    /** A Hub's Buildings. */
+    /** A Hub's Buildings and Bases together. */
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id', 'id')->orderBy('sort_order');
+    }
+
+    /** The Program a Hub represents, for enrollment-based gating. Only set
+     *  on category='hub' rows. */
+    public function program(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\WebsiteSetup\Program::class, 'program_id', 'id');
+    }
+
+    /** Shop-tab categories (the ones a student can browse/buy from),
+     *  in the school's chosen order, with the school's chosen labels —
+     *  falling back to the built-in label and declaration order when
+     *  nothing has been customised in Website Setup. */
+    public const SHOP_CATEGORIES = ['avatar', 'outfit', 'hat', 'accessory', 'base'];
+
+    public static function shopTabs(): array
+    {
+        $overrides = json_decode((string) setting('avatar_tab_labels'), true) ?: [];
+
+        $tabs = [];
+        foreach (self::SHOP_CATEGORIES as $i => $key) {
+            $tabs[] = [
+                'key'   => $key,
+                'label' => $overrides[$key]['label'] ?? self::CATEGORIES[$key],
+                'order' => (int) ($overrides[$key]['order'] ?? $i),
+            ];
+        }
+
+        usort($tabs, fn ($a, $b) => $a['order'] <=> $b['order']);
+
+        return $tabs;
     }
 }
