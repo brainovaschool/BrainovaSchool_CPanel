@@ -34,6 +34,7 @@ use App\Models\WebsiteSetup\ProgramCategory;
 use App\Models\User;
 use App\Models\LearningEngine\AvatarItem;
 use App\Models\LearningEngine\Mission;
+use App\Models\Gender;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
 use App\Repositories\LearningEngine\LearningEventRepository;
@@ -239,6 +240,7 @@ class MigrationRunnerController extends Controller
         if (!$designation || !$department) {
             return response('Create at least one Designation and Department (Staff → Designations / Departments) before generating a demo teacher.', 422);
         }
+        $gender = Gender::first() ?: Gender::create(['name' => 'Male']);
 
         $suffix = now()->format('YmdHis');
 
@@ -278,7 +280,8 @@ class MigrationRunnerController extends Controller
             'role'        => 5, // Teacher role id
             'designation' => $designation->id,
             'department'  => $department->id,
-            'staff_id'    => 'DEMOT-' . $suffix,
+            'gender'      => $gender->id,
+            'staff_id'    => (int) substr($suffix, -8),
             'status'      => 1,
         ]);
 
@@ -391,12 +394,18 @@ class MigrationRunnerController extends Controller
 
         $designation = Designation::first() ?: Designation::create(['name' => 'Teacher', 'status' => 1]);
         $department  = Department::first() ?: Department::create(['name' => 'Academics', 'status' => 1]);
+        $gender      = Gender::first() ?: Gender::create(['name' => 'Male']);
 
         $suffix = now()->format('YmdHis');
 
         // ---------------------------------------------------------------
         // 3) Teacher
         // ---------------------------------------------------------------
+        // staff_id is an INTEGER column on `staff` (not a code string), and
+        // gender_id is a required foreign key with no default — both are
+        // easy to miss since neither is enforced at the PHP level, only by
+        // the database, so a bad value here fails silently as far as this
+        // repository's caller can tell (its catch-all returns plain `false`).
         $teacherEmail = "teacher.maths.g5.{$suffix}@brainovaschool.com";
         $fakeTeacher = new \Illuminate\Http\Request();
         $fakeTeacher->merge([
@@ -407,7 +416,8 @@ class MigrationRunnerController extends Controller
             'role'        => 5,
             'designation' => $designation->id,
             'department'  => $department->id,
-            'staff_id'    => 'MATHS-G5-' . $suffix,
+            'gender'      => $gender->id,
+            'staff_id'    => (int) substr($suffix, -8),
             'status'      => 1,
         ]);
         $teacherResult = $staffRepo->store($fakeTeacher);
@@ -1546,6 +1556,7 @@ class MigrationRunnerController extends Controller
             if (!$designation || !$department) {
                 return response('Create at least one Designation and Department (Staff → Designations / Departments) before this can auto-create a demo teacher.', 422);
             }
+            $gender = Gender::first() ?: Gender::create(['name' => 'Male']);
 
             $suffix       = now()->format('YmdHis');
             $teacherEmail = "demo.teacher.{$suffix}@brainovaschool.com";
@@ -1559,7 +1570,8 @@ class MigrationRunnerController extends Controller
                 'role'        => 5, // Teacher role id
                 'designation' => $designation->id,
                 'department'  => $department->id,
-                'staff_id'    => 'DEMOT-' . $suffix,
+                'gender'      => $gender->id,
+                'staff_id'    => (int) substr($suffix, -8),
                 'status'      => 1,
             ]);
 
@@ -1892,6 +1904,7 @@ class MigrationRunnerController extends Controller
         if (!$designation || !$department) {
             return response('Create at least one Designation and Department (Staff → Designations / Departments) before this can create demo teachers.', 422);
         }
+        $gender = Gender::first() ?: Gender::create(['name' => 'Male']);
 
         $sessionId      = setting('session');
         $today          = now()->format('Y-m-d');
@@ -1916,7 +1929,8 @@ class MigrationRunnerController extends Controller
                     'role'        => 5,
                     'designation' => $designation->id,
                     'department'  => $department->id,
-                    'staff_id'    => 'DEMOT-' . ($i + 1),
+                    'gender'      => $gender->id,
+                    'staff_id'    => 9000 + $i,
                     'status'      => 1,
                 ]);
                 $result = $users->store($fakeTeacher);
