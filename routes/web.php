@@ -139,6 +139,12 @@ Route::middleware(saasMiddleware())->group(function () {
             // One-off: create a demo parent + teacher linked to the latest demo student (admin-only + key).
             Route::get('/db/create-demo-family/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'createDemoFamily']);
 
+            // DESTRUCTIVE one-off: deletes every student/parent/teacher and everything tied to them, then
+            // rebuilds one clean Grade 5 Maths example (2 students, 1 guardian login each, 1 teacher, a
+            // skill-tagged quiz homework, and a Mission wrapping it). Revisiting this wipes and rebuilds
+            // again — there is no undo (admin-only + key).
+            Route::get('/db/reset-to-maths-g5-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'resetToMathsG5Demo']);
+
             // View the tail of the Laravel error log from the browser (admin-only + key) — for hosts without SSH/file-manager log access.
             Route::get('/db/logs/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'viewLogs']);
 

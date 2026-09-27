@@ -32,7 +32,10 @@ use App\Models\StudentInfo\StudentProgramEnrollment;
 use App\Models\WebsiteSetup\Program;
 use App\Models\WebsiteSetup\ProgramCategory;
 use App\Models\User;
+use App\Models\LearningEngine\AvatarItem;
+use App\Models\LearningEngine\Mission;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use App\Repositories\LearningEngine\LearningEventRepository;
 use App\Repositories\LearningEngine\ReflectionJournalRepository;
 use App\Repositories\StudentInfo\ParentGuardianRepository;
@@ -311,6 +314,391 @@ class MigrationRunnerController extends Controller
             . "  Password: 123456   (staff accounts always start with this password, unrelated to this tool)\n\n"
             . "The teacher is now assigned to teach {$subject->name} in the demo student's class/section,\n"
             . "so Skill Mastery Report -> that class should show the demo student's real data."
+            . "</pre>"
+        );
+    }
+
+    /**
+     * ONE-OFF, DESTRUCTIVE. Wipes every Student, Parent/Guardian and Staff
+     * (Teacher) record — and everything hanging off them (marks, attendance,
+     * skill mastery, avatar/island data, exam results, subject assignments)
+     * — then builds exactly one clean example from scratch: a Grade 5 Maths
+     * class, one teacher, two students, one guardian login per student, a
+     * skill-tagged quiz homework for "Addition of numbers between 100 and
+     * thousands" (Term 1, Unit 1: Numbers, Module 1: Addition, Lesson 1),
+     * one student scoring full marks and one scoring below average on it,
+     * and a Mission wrapping that homework so the Building it unlocks is
+     * reachable by one student and locked for the other.
+     *
+     * The guardian schema only supports one login per student (father/mother
+     * are fields on that one row, not separate accounts) — so this creates
+     * one parent login per student, not two, with both parents' names on it.
+     *
+     * Not idempotent in the usual sense: revisiting this URL wipes again and
+     * rebuilds the same clean example fresh. There is no undo.
+     */
+    public function resetToMathsG5Demo(string $key, StudentRepository $studentRepo, ParentGuardianRepository $parentRepo, UserRepository $staffRepo, LearningEventRepository $events)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        // ---------------------------------------------------------------
+        // 1) WIPE — every student/parent/teacher and everything tied to them.
+        // FK checks are dropped for this one transaction so the order of
+        // these deletes doesn't have to be perfect; anything not listed
+        // here (a rarely-used table this audit missed) is simply left with
+        // harmless orphaned rows rather than blocking the whole reset.
+        // ---------------------------------------------------------------
+        DB::transaction(function () {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0');
+
+            $childTables = [
+                'learning_events', 'student_skill_masteries', 'reflection_journal_entries',
+                'student_avatar_profiles', 'student_avatar_purchases', 'student_avatar_equipped_accessories',
+                'student_island_placements', 'student_program_enrollments',
+                'homework_quiz_answers', 'answer_childrens', 'answers',
+                'homework_students', 'session_class_students',
+                'attendances', 'subject_attendances', 'student_absent_notifications',
+                'marks_register_childrens', 'examination_results', 'mark_sheet_approvals',
+                'online_exam_children_students', 'subject_assign_childrens', 'subject_assigns',
+                'students', 'parent_guardians', 'staff',
+            ];
+
+            foreach ($childTables as $table) {
+                if (Schema::hasTable($table)) {
+                    DB::table($table)->delete();
+                }
+            }
+
+            // Role 5 = Teacher, 6 = Student, 7 = Guardian — the admin's own
+            // login (role 1) and anything else is never touched.
+            DB::table('users')->whereIn('role_id', [5, 6, 7])->delete();
+
+            DB::statement('SET FOREIGN_KEY_CHECKS=1');
+        });
+
+        // ---------------------------------------------------------------
+        // 2) Class / Section / Subject — find or create.
+        // ---------------------------------------------------------------
+        $class = Classes::where('name', 'like', '%5%')->first() ?: Classes::create(['name' => 'Grade 5', 'status' => 1]);
+        $section = Section::first() ?: Section::create(['name' => 'A', 'status' => 1]);
+        $subject = Subject::where('name', 'like', '%math%')->first() ?: Subject::create(['name' => 'Maths', 'status' => 1]);
+
+        $designation = Designation::first() ?: Designation::create(['name' => 'Teacher', 'status' => 1]);
+        $department  = Department::first() ?: Department::create(['name' => 'Academics', 'status' => 1]);
+
+        $suffix = now()->format('YmdHis');
+
+        // ---------------------------------------------------------------
+        // 3) Teacher
+        // ---------------------------------------------------------------
+        $teacherEmail = "teacher.maths.g5.{$suffix}@brainovaschool.com";
+        $fakeTeacher = new \Illuminate\Http\Request();
+        $fakeTeacher->merge([
+            'first_name'  => 'Usman',
+            'last_name'   => 'Tariq',
+            'email'       => $teacherEmail,
+            'phone'       => '03001110001',
+            'role'        => 5,
+            'designation' => $designation->id,
+            'department'  => $department->id,
+            'staff_id'    => 'MATHS-G5-' . $suffix,
+            'status'      => 1,
+        ]);
+        $teacherResult = $staffRepo->store($fakeTeacher);
+        if ($teacherResult !== 1) {
+            return response('Wipe done, but could not create the teacher (code ' . var_export($teacherResult, true) . ').', 422);
+        }
+        $teacher = Staff::where('email', $teacherEmail)->latest('id')->first();
+
+        $assign = SubjectAssign::create([
+            'session_id' => setting('session'),
+            'classes_id' => $class->id,
+            'section_id' => $section->id,
+            'status'     => 1,
+        ]);
+        SubjectAssignChildren::create([
+            'subject_assign_id' => $assign->id,
+            'subject_id'        => $subject->id,
+            'staff_id'          => $teacher->id,
+            'status'            => 1,
+        ]);
+
+        // ---------------------------------------------------------------
+        // 4) Two students + one guardian login each (see docblock — the
+        // schema has one login per student, with both parents' names on it).
+        // ---------------------------------------------------------------
+        $studentDefs = [
+            [
+                'first' => 'Zainab', 'last' => 'Farooq', 'tag' => 'top',
+                'father' => 'Farooq Ahmed', 'mother' => 'Sana Farooq',
+            ],
+            [
+                'first' => 'Hamza', 'last' => 'Sheikh', 'tag' => 'below',
+                'father' => 'Imran Sheikh', 'mother' => 'Ayesha Sheikh',
+            ],
+        ];
+
+        $students = [];
+        $logins   = [];
+
+        foreach ($studentDefs as $i => $def) {
+            $studentEmail    = "student.{$def['tag']}.g5maths.{$suffix}@brainovaschool.com";
+            $studentPassword = 'Demo@' . substr($suffix, -6) . $i;
+
+            $fakeStudent = new \Illuminate\Http\Request();
+            $fakeStudent->merge([
+                'first_name'     => $def['first'],
+                'last_name'      => $def['last'],
+                'email'          => $studentEmail,
+                'mobile'         => '0300222000' . $i,
+                'admission_no'   => 'G5MATHS-' . $suffix . '-' . $i,
+                'password_type'  => 'custom',
+                'password'       => $studentPassword,
+                'date_of_birth'  => '2015-04-10',
+                'admission_date' => now()->format('Y-m-d'),
+                'status'         => 1,
+                'class'          => $class->id,
+                'section'        => $section->id,
+                'siblings_discount' => 0,
+            ]);
+
+            $result = $studentRepo->store($fakeStudent);
+            if (!$result['status']) {
+                return response('Wipe and teacher done, but could not create student "' . $def['first'] . '": ' . $result['message'], 422);
+            }
+
+            $student = Student::where('email', $studentEmail)->latest('id')->first();
+
+            $parentEmail    = "parent.{$def['tag']}.g5maths.{$suffix}@brainovaschool.com";
+            $parentPassword = 'Demo@' . substr($suffix, -6) . $i;
+
+            $fakeParent = new \Illuminate\Http\Request();
+            $fakeParent->merge([
+                'guardian_name'     => $def['father'],
+                'guardian_email'    => $parentEmail,
+                'guardian_mobile'   => '0300333000' . $i,
+                'guardian_relation' => 'Father',
+                'father_name'       => $def['father'],
+                'mother_name'       => $def['mother'],
+                'password_type'     => 'custom',
+                'password'          => $parentPassword,
+                'status'            => 1,
+            ]);
+            $parentResult = $parentRepo->store($fakeParent);
+            if (!$parentResult['status']) {
+                return response('Student created, but could not create the guardian for ' . $def['first'] . ': ' . $parentResult['message'], 422);
+            }
+            $guardian = ParentGuardian::where('guardian_email', $parentEmail)->latest('id')->first();
+            $student->parent_guardian_id = $guardian->id;
+            $student->save();
+
+            $students[$def['tag']] = $student;
+            $logins[] = [
+                'role' => 'Student (' . ($def['tag'] === 'top' ? 'full marks' : 'below average') . ')',
+                'name' => $def['first'] . ' ' . $def['last'],
+                'email' => $studentEmail, 'password' => $studentPassword,
+            ];
+            $logins[] = [
+                'role' => 'Parent of ' . $def['first'] . ' (father: ' . $def['father'] . ', mother: ' . $def['mother'] . ')',
+                'name' => $def['father'],
+                'email' => $parentEmail, 'password' => $parentPassword,
+            ];
+        }
+
+        // ---------------------------------------------------------------
+        // 5) The Skill — Term 1, Unit 1: Numbers, Module 1: Addition,
+        // Lesson 1: Addition of numbers between 100 and thousands.
+        // ---------------------------------------------------------------
+        $skill = Skill::create([
+            'subject_id'  => $subject->id,
+            'classes_id'  => $class->id,
+            'title'       => 'Addition of numbers between 100 and thousands',
+            'slug'        => 'addition-100-to-thousands-' . $suffix,
+            'description' => 'Term 1 · Unit 1: Numbers · Module 1: Addition · Lesson 1',
+            'sort_order'  => 0,
+            'status'      => 1,
+        ]);
+
+        // ---------------------------------------------------------------
+        // 6) The Homework (quiz-type) + its 5 questions.
+        // ---------------------------------------------------------------
+        $homeworkId = DB::table('homework')->insertGetId([
+            'session_id'      => setting('session'),
+            'classes_id'      => $class->id,
+            'section_id'      => $section->id,
+            'subject_id'      => $subject->id,
+            'title'           => 'Addition of Numbers Between 100 and Thousands',
+            'topic'           => 'Unit 1: Numbers · Module 1: Addition · Lesson 1',
+            'task_type'       => 'quiz',
+            'date'            => now()->format('Y-m-d'),
+            'submission_date' => now()->addDays(7)->format('Y-m-d'),
+            'marks'           => 5,
+            'description'     => 'Practice adding three- and four-digit numbers. Five questions, one mark each.',
+            'status'          => 1,
+            'created_by'      => $teacher->user_id ?? null,
+            'created_at'      => now(),
+            'updated_at'      => now(),
+        ]);
+
+        $questionDefs = [
+            ['q' => '245 + 378 = ?', 'opts' => ['613', '623', '633', '643'], 'correct' => '623', 'difficulty' => 1,
+                'hint' => 'Add the ones first, then the tens, then the hundreds.', 'explanation' => '245 + 378: 5+8=13 (write 3, carry 1); 4+7+1=12 (write 2, carry 1); 2+3+1=6 → 623.'],
+            ['q' => '512 + 289 = ?', 'opts' => ['791', '801', '811', '701'], 'correct' => '801', 'difficulty' => 1,
+                'hint' => 'Watch for carrying when the ones add up past 9.', 'explanation' => '512 + 289: 2+9=11 (write 1, carry 1); 1+8+1=10 (write 0, carry 1); 5+2+1=8 → 801.'],
+            ['q' => '674 + 158 = ?', 'opts' => ['822', '832', '842', '852'], 'correct' => '832', 'difficulty' => 2,
+                'hint' => 'Line the digits up by place value before adding.', 'explanation' => '674 + 158: 4+8=12 (write 2, carry 1); 7+5+1=13 (write 3, carry 1); 6+1+1=8 → 832.'],
+            ['q' => '999 + 1 = ?', 'opts' => ['1000', '990', '1010', '909'], 'correct' => '1000', 'difficulty' => 2,
+                'hint' => 'What happens when every column carries at once?', 'explanation' => '999 + 1 carries all the way through: 9+1=10, 9+1(carry)=10, 9+1(carry)=10, plus the final carry → 1000.'],
+            ['q' => '356 + 647 = ?', 'opts' => ['993', '1003', '1013', '903'], 'correct' => '1003', 'difficulty' => 3,
+                'hint' => 'This one crosses into four digits — don\'t forget the extra carry.', 'explanation' => '356 + 647: 6+7=13 (write 3, carry 1); 5+4+1=10 (write 0, carry 1); 3+6+1=10 → 1003.'],
+        ];
+
+        $questionIds = [];
+        foreach ($questionDefs as $qd) {
+            $questionIds[] = DB::table('homework_quiz_questions')->insertGetId([
+                'homework_id'     => $homeworkId,
+                'question'        => $qd['q'],
+                'option_a'        => $qd['opts'][0],
+                'option_b'        => $qd['opts'][1],
+                'option_c'        => $qd['opts'][2],
+                'option_d'        => $qd['opts'][3],
+                'correct_answer'  => $qd['correct'],
+                'hint'            => $qd['hint'],
+                'explanation'     => $qd['explanation'],
+                'skill_id'        => $skill->id,
+                'difficulty'      => $qd['difficulty'],
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+        }
+
+        // ---------------------------------------------------------------
+        // 7) Submissions — one student gets every question right, the
+        // other gets 2 of 5 (below average), exactly as asked. Mirrors
+        // HomeworkController::submitInteractiveQuiz()'s own logic so this
+        // reads identically to a real submission everywhere else in the app.
+        // ---------------------------------------------------------------
+        $submissions = [
+            'top'   => [true, true, true, true, true],
+            'below' => [true, false, false, true, false],
+        ];
+
+        foreach ($submissions as $tag => $correctness) {
+            $student = $students[$tag];
+            $earned = 0;
+
+            foreach ($questionIds as $i => $qId) {
+                $isCorrect = $correctness[$i];
+                $qd        = $questionDefs[$i];
+                $selected  = $isCorrect ? $qd['correct'] : collect($qd['opts'])->first(fn ($o) => $o !== $qd['correct']);
+
+                DB::table('homework_quiz_answers')->insert([
+                    'homework_id'     => $homeworkId,
+                    'student_id'      => $student->id,
+                    'question_id'     => $qId,
+                    'selected_answer' => $selected,
+                    'is_correct'      => $isCorrect ? 1 : 0,
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
+                ]);
+
+                if ($isCorrect) {
+                    $earned += 1;
+                }
+
+                $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skill->id, [
+                    'correct' => $isCorrect, 'source' => 'homework_quiz',
+                ]);
+            }
+
+            DB::table('homework_students')->insert([
+                'student_id'  => $student->id,
+                'homework_id' => $homeworkId,
+                'homework'    => null,
+                'marks'       => $earned,
+                'date'        => now()->format('Y-m-d'),
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+
+            $events->markTodayActive($student->id);
+        }
+
+        // ---------------------------------------------------------------
+        // 8) Hub ("Math Quest") + Building ("Addition Tower") — data only.
+        // No image yet: upload one for each in Website Setup → Avatar
+        // Gallery before they'll actually show on the island banner.
+        // ---------------------------------------------------------------
+        $hub = AvatarItem::create([
+            'category'    => 'hub',
+            'name'        => 'Math Quest',
+            'price_coins' => 0,
+            'sort_order'  => 0,
+            'status'      => 1,
+            'pos_x' => 50, 'pos_y' => 50, 'scale' => 16, 'rotation' => 0,
+        ]);
+        $building = AvatarItem::create([
+            'category'    => 'building',
+            'parent_id'   => $hub->id,
+            'name'        => 'Addition Tower',
+            'price_coins' => 0,
+            'sort_order'  => 0,
+            'status'      => 1,
+            'pos_x' => 50, 'pos_y' => 60, 'scale' => 9, 'rotation' => 0,
+        ]);
+
+        // ---------------------------------------------------------------
+        // 9) The Mission — Treasure Hunt theme, wraps the homework above.
+        // ---------------------------------------------------------------
+        $mission = Mission::create([
+            'hub_id'       => $hub->id,
+            'building_id'  => $building->id,
+            'theme'        => 'treasure',
+            'character'    => 'kea',
+            'title'        => "The Sunken Chest of Sandy Cove",
+            'intro_line'   => "Ahoy! An old sailor's map washed up on the shore, its numbers smudged by salt water. Kea thinks you're just the explorer who can add up the clues and find the chest!",
+            'clue_lines'   => [
+                'The map shows the ship left port at 245 paces from the lighthouse, then sailed on 378 more — how far from the lighthouse is that in total?',
+                'From there, add 289 paces to reach Gull Rock.',
+                'From Gull Rock, add 158 paces more to reach the sandbank.',
+                "One tricky stretch: add just 1 pace and the count rolls over completely — that's where the tide line is.",
+                'The final leg: add 647 paces from the tide line — that\'s exactly where X marks the spot.',
+            ],
+            'ending_line'  => 'You found it! The Sunken Chest of Sandy Cove creaks open, spilling out golden coins. Kea cheers — every one of those numbers led you exactly where you needed to go.',
+            'reward_note'  => 'Unlocks: Addition Tower in Math Quest',
+            'linkable_type' => 'homework',
+            'linkable_id'   => $homeworkId,
+            'sort_order'   => 0,
+            'status'       => 1,
+        ]);
+
+        // ---------------------------------------------------------------
+        // Summary
+        // ---------------------------------------------------------------
+        $loginLines = collect($logins)->map(fn ($l) => "  {$l['role']}\n    Email: {$l['email']}\n    Password: {$l['password']}")->implode("\n\n");
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Full reset done. Every previous student, parent and teacher (and everything tied to them) was deleted.\n\n"
+            . "Rebuilt: Grade 5, Section {$section->name}, Subject {$subject->name}\n\n"
+            . "TEACHER LOGIN\n"
+            . "  Usman Tariq\n"
+            . "  Email: {$teacherEmail}\n"
+            . "  Password: 123456   (staff accounts always start with this)\n\n"
+            . $loginLines . "\n\n"
+            . "Homework: \"Addition of Numbers Between 100 and Thousands\" (5 questions, 1 mark each)\n"
+            . "  - Zainab Farooq scored 5/5 (100%) -> mission complete, Addition Tower unlocked for her.\n"
+            . "  - Hamza Sheikh scored 2/5 (40%) -> mission still locked, clues partly revealed.\n\n"
+            . "Mission: \"The Sunken Chest of Sandy Cove\" (Treasure Hunt theme) — Website Setup -> Missions\n"
+            . "Hub: \"Math Quest\" and Building: \"Addition Tower\" — Website Setup -> Avatar Gallery\n"
+            . "  Both need a picture uploaded before they're visible on the island banner (no art was made up for this).\n\n"
+            . "Log in as either student and open My Learning Island to see the difference between the two."
             . "</pre>"
         );
     }
