@@ -150,6 +150,11 @@ Route::middleware(saasMiddleware())->group(function () {
             // itself. Does not wipe anything (admin-only + key).
             Route::get('/db/build-maths-g5-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'buildMathsG5DemoAroundTeacher']);
 
+            // One-off: builds the same example around a teacher AND students you already created by
+            // hand — reads their real class/section/subject and enrollment instead of guessing
+            // (admin-only + key).
+            Route::get('/db/build-maths-demo-existing/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'buildMathsDemoAroundExisting']);
+
             // View the tail of the Laravel error log from the browser (admin-only + key) — for hosts without SSH/file-manager log access.
             Route::get('/db/logs/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'viewLogs']);
 

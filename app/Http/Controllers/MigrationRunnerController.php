@@ -993,6 +993,240 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /**
+     * For when the teacher, students and guardian were already created by
+     * hand (Staff -> Add Staff, Student -> Add Student, etc.) instead of by
+     * either tool above. Creates nothing about the people themselves —
+     * finds the most recently added teacher, reads which class/section/
+     * subject they were actually assigned to teach (Academic -> Subject
+     * Assign), finds the two students really enrolled in that class and
+     * section, and builds the academic content around exactly those real
+     * records: the skill, the homework, one student scoring full marks and
+     * the other below average on it, the Hub/Building, and the Mission.
+     * Never touches the guardian — whatever was already linked stays as is.
+     */
+    public function buildMathsDemoAroundExisting(string $key, LearningEventRepository $events)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $teacher = Staff::latest('id')->first();
+        if (!$teacher) {
+            return response('No teacher exists yet — create one first via Staff -> Add Staff, then revisit this URL.', 422);
+        }
+
+        $assignChild = \App\Models\Academic\SubjectAssignChildren::where('staff_id', $teacher->id)
+            ->with(['subjectAssign', 'subject'])
+            ->latest('id')
+            ->first();
+
+        if (!$assignChild || !$assignChild->subjectAssign) {
+            return response("Found the teacher ({$teacher->first_name} {$teacher->last_name}), but they aren't assigned to teach any class/section/subject yet — set that up via Academic -> Subject Assign first.", 422);
+        }
+
+        $subject = $assignChild->subject;
+        $class   = Classes::find($assignChild->subjectAssign->classes_id);
+        $section = Section::find($assignChild->subjectAssign->section_id);
+
+        if (!$subject || !$class) {
+            return response('Found the teacher\'s assignment, but the subject or class it points to no longer exists.', 422);
+        }
+
+        $enrolled = SessionClassStudent::where('session_id', setting('session'))
+            ->where('classes_id', $class->id)
+            ->when($section, fn ($q) => $q->where('section_id', $section->id), fn ($q) => $q->whereNull('section_id'))
+            ->with('student')
+            ->orderBy('student_id')
+            ->get()
+            ->pluck('student')
+            ->filter()
+            ->values();
+
+        if ($enrolled->count() < 2) {
+            return response("Found {$teacher->first_name}'s class ({$class->name}" . ($section ? "/{$section->name}" : '') . "), but only {$enrolled->count()} student(s) are enrolled there — need at least 2.", 422);
+        }
+
+        $students = ['top' => $enrolled[0], 'below' => $enrolled[1]];
+        $suffix   = now()->format('YmdHis');
+
+        // ---------------------------------------------------------------
+        // The Skill, the Homework + questions, the two scored submissions,
+        // the Hub/Building, and the Mission — same content as the other two
+        // tools, built around these real, already-existing records.
+        // ---------------------------------------------------------------
+        $skill = Skill::create([
+            'subject_id'  => $subject->id,
+            'classes_id'  => $class->id,
+            'title'       => 'Addition of numbers between 100 and thousands',
+            'slug'        => 'addition-100-to-thousands-' . $suffix,
+            'description' => 'Term 1 · Unit 1: Numbers · Module 1: Addition · Lesson 1',
+            'sort_order'  => 0,
+            'status'      => 1,
+        ]);
+
+        $homeworkId = DB::table('homework')->insertGetId([
+            'session_id'      => setting('session'),
+            'classes_id'      => $class->id,
+            'section_id'      => $section->id ?? null,
+            'subject_id'      => $subject->id,
+            'title'           => 'Addition of Numbers Between 100 and Thousands',
+            'topic'           => 'Unit 1: Numbers · Module 1: Addition · Lesson 1',
+            'task_type'       => 'quiz',
+            'date'            => now()->format('Y-m-d'),
+            'submission_date' => now()->addDays(7)->format('Y-m-d'),
+            'marks'           => 5,
+            'description'     => 'Practice adding three- and four-digit numbers. Five questions, one mark each.',
+            'status'          => 1,
+            'created_by'      => $teacher->user_id ?? null,
+            'created_at'      => now(),
+            'updated_at'      => now(),
+        ]);
+
+        $questionDefs = [
+            ['q' => '245 + 378 = ?', 'opts' => ['613', '623', '633', '643'], 'correct' => '623', 'difficulty' => 1,
+                'hint' => 'Add the ones first, then the tens, then the hundreds.', 'explanation' => '245 + 378: 5+8=13 (write 3, carry 1); 4+7+1=12 (write 2, carry 1); 2+3+1=6 → 623.'],
+            ['q' => '512 + 289 = ?', 'opts' => ['791', '801', '811', '701'], 'correct' => '801', 'difficulty' => 1,
+                'hint' => 'Watch for carrying when the ones add up past 9.', 'explanation' => '512 + 289: 2+9=11 (write 1, carry 1); 1+8+1=10 (write 0, carry 1); 5+2+1=8 → 801.'],
+            ['q' => '674 + 158 = ?', 'opts' => ['822', '832', '842', '852'], 'correct' => '832', 'difficulty' => 2,
+                'hint' => 'Line the digits up by place value before adding.', 'explanation' => '674 + 158: 4+8=12 (write 2, carry 1); 7+5+1=13 (write 3, carry 1); 6+1+1=8 → 832.'],
+            ['q' => '999 + 1 = ?', 'opts' => ['1000', '990', '1010', '909'], 'correct' => '1000', 'difficulty' => 2,
+                'hint' => 'What happens when every column carries at once?', 'explanation' => '999 + 1 carries all the way through: 9+1=10, 9+1(carry)=10, 9+1(carry)=10, plus the final carry → 1000.'],
+            ['q' => '356 + 647 = ?', 'opts' => ['993', '1003', '1013', '903'], 'correct' => '1003', 'difficulty' => 3,
+                'hint' => 'This one crosses into four digits — don\'t forget the extra carry.', 'explanation' => '356 + 647: 6+7=13 (write 3, carry 1); 5+4+1=10 (write 0, carry 1); 3+6+1=10 → 1003.'],
+        ];
+
+        $questionIds = [];
+        foreach ($questionDefs as $qd) {
+            $questionIds[] = DB::table('homework_quiz_questions')->insertGetId([
+                'homework_id'     => $homeworkId,
+                'question'        => $qd['q'],
+                'option_a'        => $qd['opts'][0],
+                'option_b'        => $qd['opts'][1],
+                'option_c'        => $qd['opts'][2],
+                'option_d'        => $qd['opts'][3],
+                'correct_answer'  => $qd['correct'],
+                'hint'            => $qd['hint'],
+                'explanation'     => $qd['explanation'],
+                'skill_id'        => $skill->id,
+                'difficulty'      => $qd['difficulty'],
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+        }
+
+        $submissions = [
+            'top'   => [true, true, true, true, true],
+            'below' => [true, false, false, true, false],
+        ];
+
+        foreach ($submissions as $tag => $correctness) {
+            $student = $students[$tag];
+
+            // Skip cleanly if this student already has a submission for
+            // this exact homework (only possible if this URL is revisited
+            // after already succeeding once) rather than erroring on the
+            // unique-key constraint.
+            if (DB::table('homework_students')->where('homework_id', $homeworkId)->where('student_id', $student->id)->exists()) {
+                continue;
+            }
+
+            $earned = 0;
+
+            foreach ($questionIds as $i => $qId) {
+                $isCorrect = $correctness[$i];
+                $qd        = $questionDefs[$i];
+                $selected  = $isCorrect ? $qd['correct'] : collect($qd['opts'])->first(fn ($o) => $o !== $qd['correct']);
+
+                DB::table('homework_quiz_answers')->insert([
+                    'homework_id'     => $homeworkId,
+                    'student_id'      => $student->id,
+                    'question_id'     => $qId,
+                    'selected_answer' => $selected,
+                    'is_correct'      => $isCorrect ? 1 : 0,
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
+                ]);
+
+                if ($isCorrect) {
+                    $earned += 1;
+                }
+
+                $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skill->id, [
+                    'correct' => $isCorrect, 'source' => 'homework_quiz',
+                ]);
+            }
+
+            DB::table('homework_students')->insert([
+                'student_id'  => $student->id,
+                'homework_id' => $homeworkId,
+                'homework'    => null,
+                'marks'       => $earned,
+                'date'        => now()->format('Y-m-d'),
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+
+            $events->markTodayActive($student->id);
+        }
+
+        $hub = AvatarItem::create([
+            'category' => 'hub', 'name' => 'Math Quest', 'price_coins' => 0, 'sort_order' => 0, 'status' => 1,
+            'pos_x' => 50, 'pos_y' => 50, 'scale' => 16, 'rotation' => 0,
+        ]);
+        $building = AvatarItem::create([
+            'category' => 'building', 'parent_id' => $hub->id, 'name' => 'Addition Tower', 'price_coins' => 0, 'sort_order' => 0, 'status' => 1,
+            'pos_x' => 50, 'pos_y' => 60, 'scale' => 9, 'rotation' => 0,
+        ]);
+
+        Mission::create([
+            'hub_id'       => $hub->id,
+            'building_id'  => $building->id,
+            'theme'        => 'treasure',
+            'character'    => 'kea',
+            'title'        => "The Sunken Chest of Sandy Cove",
+            'intro_line'   => "Ahoy! An old sailor's map washed up on the shore, its numbers smudged by salt water. Kea thinks you're just the explorer who can add up the clues and find the chest!",
+            'clue_lines'   => [
+                'The map shows the ship left port at 245 paces from the lighthouse, then sailed on 378 more — how far from the lighthouse is that in total?',
+                'From there, add 289 paces to reach Gull Rock.',
+                'From Gull Rock, add 158 paces more to reach the sandbank.',
+                "One tricky stretch: add just 1 pace and the count rolls over completely — that's where the tide line is.",
+                'The final leg: add 647 paces from the tide line — that\'s exactly where X marks the spot.',
+            ],
+            'ending_line'  => 'You found it! The Sunken Chest of Sandy Cove creaks open, spilling out golden coins. Kea cheers — every one of those numbers led you exactly where you needed to go.',
+            'reward_note'  => 'Unlocks: Addition Tower in Math Quest',
+            'linkable_type' => 'homework',
+            'linkable_id'   => $homeworkId,
+            'sort_order'   => 0,
+            'status'       => 1,
+        ]);
+
+        $topName   = trim($students['top']->first_name . ' ' . $students['top']->last_name);
+        $belowName = trim($students['below']->first_name . ' ' . $students['below']->last_name);
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Built around what you already created:\n"
+            . "  Teacher: {$teacher->first_name} {$teacher->last_name} ({$teacher->email})\n"
+            . "  Class / Section / Subject: {$class->name}" . ($section ? " / {$section->name}" : '') . " / {$subject->name}\n"
+            . "  Students: {$topName}, {$belowName}\n\n"
+            . "Homework: \"Addition of Numbers Between 100 and Thousands\" (5 questions, 1 mark each)\n"
+            . "  - {$topName} scored 5/5 (100%) -> mission complete, Addition Tower unlocked.\n"
+            . "  - {$belowName} scored 2/5 (40%) -> mission still locked, clues partly revealed.\n"
+            . "  (First-enrolled student got full marks, the other got below average — swap their\n"
+            . "   logins if you wanted it the other way around.)\n\n"
+            . "Mission: \"The Sunken Chest of Sandy Cove\" (Treasure Hunt theme) — Website Setup -> Missions\n"
+            . "Hub: \"Math Quest\" and Building: \"Addition Tower\" — Website Setup -> Avatar Gallery\n"
+            . "  Both need a picture uploaded before they're visible on the island banner (no art was made up for this).\n\n"
+            . "Log in as either student (their existing password) and open My Learning Island to see the difference."
+            . "</pre>"
+        );
+    }
+
     /** One-off: builds a full test fixture for the Phase 1 learning-engine
      *  work — 3 skills, a real graded exam (visible in Online Examination →
      *  Question Bank / Online Exam like any other), and enough additional
