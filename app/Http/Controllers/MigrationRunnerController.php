@@ -713,6 +713,286 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /**
+     * Same end result as resetToMathsG5Demo(), minus the part that kept
+     * failing: it never creates a Staff/teacher record itself. Instead it
+     * takes whichever teacher was most recently added through the normal
+     * Staff -> Add Staff screen, assigns them to teach Maths for Grade 5,
+     * and builds the rest of the example around them (2 students, 1
+     * guardian login each, the skill, the homework, both scores, the
+     * Hub/Building, and the Mission). Does not wipe anything — run the
+     * wipe separately first if a clean slate is still needed.
+     */
+    public function buildMathsG5DemoAroundTeacher(string $key, StudentRepository $studentRepo, ParentGuardianRepository $parentRepo, LearningEventRepository $events)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $teacher = Staff::latest('id')->first();
+        if (!$teacher) {
+            return response('No teacher exists yet — create one first via Staff -> Add Staff, then revisit this URL.', 422);
+        }
+
+        $class   = Classes::where('name', 'like', '%5%')->first() ?: Classes::create(['name' => 'Grade 5', 'status' => 1]);
+        $section = Section::first() ?: Section::create(['name' => 'A', 'status' => 1]);
+        $subject = Subject::where('name', 'like', '%math%')->first() ?: Subject::create(['name' => 'Maths', 'status' => 1]);
+
+        $suffix = now()->format('YmdHis');
+
+        $assign = SubjectAssign::create([
+            'session_id' => setting('session'),
+            'classes_id' => $class->id,
+            'section_id' => $section->id,
+            'status'     => 1,
+        ]);
+        SubjectAssignChildren::create([
+            'subject_assign_id' => $assign->id,
+            'subject_id'        => $subject->id,
+            'staff_id'          => $teacher->id,
+            'status'            => 1,
+        ]);
+
+        // ---------------------------------------------------------------
+        // Two students + one guardian login each (see resetToMathsG5Demo()'s
+        // docblock — the schema has one login per student, with both
+        // parents' names on it, not two separate logins).
+        // ---------------------------------------------------------------
+        $studentDefs = [
+            ['first' => 'Zainab', 'last' => 'Farooq', 'tag' => 'top', 'father' => 'Farooq Ahmed', 'mother' => 'Sana Farooq'],
+            ['first' => 'Hamza',  'last' => 'Sheikh', 'tag' => 'below', 'father' => 'Imran Sheikh', 'mother' => 'Ayesha Sheikh'],
+        ];
+
+        $students = [];
+        $logins   = [];
+
+        foreach ($studentDefs as $i => $def) {
+            $studentEmail    = "student.{$def['tag']}.g5maths.{$suffix}@brainovaschool.com";
+            $studentPassword = 'Demo@' . substr($suffix, -6) . $i;
+
+            $fakeStudent = new \Illuminate\Http\Request();
+            $fakeStudent->merge([
+                'first_name'     => $def['first'],
+                'last_name'      => $def['last'],
+                'email'          => $studentEmail,
+                'mobile'         => '0300222000' . $i,
+                'admission_no'   => 'G5MATHS-' . $suffix . '-' . $i,
+                'password_type'  => 'custom',
+                'password'       => $studentPassword,
+                'date_of_birth'  => '2015-04-10',
+                'admission_date' => now()->format('Y-m-d'),
+                'status'         => 1,
+                'class'          => $class->id,
+                'section'        => $section->id,
+                'siblings_discount' => 0,
+            ]);
+
+            $result = $studentRepo->store($fakeStudent);
+            if (!$result['status']) {
+                return response('Teacher assigned, but could not create student "' . $def['first'] . '": ' . $result['message'] . ' — check /db/logs/' . self::KEY . ' for the real reason.', 422);
+            }
+
+            $student = Student::where('email', $studentEmail)->latest('id')->first();
+
+            $parentEmail    = "parent.{$def['tag']}.g5maths.{$suffix}@brainovaschool.com";
+            $parentPassword = 'Demo@' . substr($suffix, -6) . $i;
+
+            $fakeParent = new \Illuminate\Http\Request();
+            $fakeParent->merge([
+                'guardian_name'     => $def['father'],
+                'guardian_email'    => $parentEmail,
+                'guardian_mobile'   => '0300333000' . $i,
+                'guardian_relation' => 'Father',
+                'father_name'       => $def['father'],
+                'mother_name'       => $def['mother'],
+                'password_type'     => 'custom',
+                'password'          => $parentPassword,
+                'status'            => 1,
+            ]);
+            $parentResult = $parentRepo->store($fakeParent);
+            if (!$parentResult['status']) {
+                return response('Student created, but could not create the guardian for ' . $def['first'] . ': ' . $parentResult['message'], 422);
+            }
+            $guardian = ParentGuardian::where('guardian_email', $parentEmail)->latest('id')->first();
+            $student->parent_guardian_id = $guardian->id;
+            $student->save();
+
+            $students[$def['tag']] = $student;
+            $logins[] = [
+                'role' => 'Student (' . ($def['tag'] === 'top' ? 'full marks' : 'below average') . ')',
+                'name' => $def['first'] . ' ' . $def['last'],
+                'email' => $studentEmail, 'password' => $studentPassword,
+            ];
+            $logins[] = [
+                'role' => 'Parent of ' . $def['first'] . ' (father: ' . $def['father'] . ', mother: ' . $def['mother'] . ')',
+                'name' => $def['father'],
+                'email' => $parentEmail, 'password' => $parentPassword,
+            ];
+        }
+
+        // ---------------------------------------------------------------
+        // The Skill, the Homework + questions, the two scored submissions,
+        // the Hub/Building, and the Mission — identical to resetToMathsG5Demo().
+        // ---------------------------------------------------------------
+        $skill = Skill::create([
+            'subject_id'  => $subject->id,
+            'classes_id'  => $class->id,
+            'title'       => 'Addition of numbers between 100 and thousands',
+            'slug'        => 'addition-100-to-thousands-' . $suffix,
+            'description' => 'Term 1 · Unit 1: Numbers · Module 1: Addition · Lesson 1',
+            'sort_order'  => 0,
+            'status'      => 1,
+        ]);
+
+        $homeworkId = DB::table('homework')->insertGetId([
+            'session_id'      => setting('session'),
+            'classes_id'      => $class->id,
+            'section_id'      => $section->id,
+            'subject_id'      => $subject->id,
+            'title'           => 'Addition of Numbers Between 100 and Thousands',
+            'topic'           => 'Unit 1: Numbers · Module 1: Addition · Lesson 1',
+            'task_type'       => 'quiz',
+            'date'            => now()->format('Y-m-d'),
+            'submission_date' => now()->addDays(7)->format('Y-m-d'),
+            'marks'           => 5,
+            'description'     => 'Practice adding three- and four-digit numbers. Five questions, one mark each.',
+            'status'          => 1,
+            'created_by'      => $teacher->user_id ?? null,
+            'created_at'      => now(),
+            'updated_at'      => now(),
+        ]);
+
+        $questionDefs = [
+            ['q' => '245 + 378 = ?', 'opts' => ['613', '623', '633', '643'], 'correct' => '623', 'difficulty' => 1,
+                'hint' => 'Add the ones first, then the tens, then the hundreds.', 'explanation' => '245 + 378: 5+8=13 (write 3, carry 1); 4+7+1=12 (write 2, carry 1); 2+3+1=6 → 623.'],
+            ['q' => '512 + 289 = ?', 'opts' => ['791', '801', '811', '701'], 'correct' => '801', 'difficulty' => 1,
+                'hint' => 'Watch for carrying when the ones add up past 9.', 'explanation' => '512 + 289: 2+9=11 (write 1, carry 1); 1+8+1=10 (write 0, carry 1); 5+2+1=8 → 801.'],
+            ['q' => '674 + 158 = ?', 'opts' => ['822', '832', '842', '852'], 'correct' => '832', 'difficulty' => 2,
+                'hint' => 'Line the digits up by place value before adding.', 'explanation' => '674 + 158: 4+8=12 (write 2, carry 1); 7+5+1=13 (write 3, carry 1); 6+1+1=8 → 832.'],
+            ['q' => '999 + 1 = ?', 'opts' => ['1000', '990', '1010', '909'], 'correct' => '1000', 'difficulty' => 2,
+                'hint' => 'What happens when every column carries at once?', 'explanation' => '999 + 1 carries all the way through: 9+1=10, 9+1(carry)=10, 9+1(carry)=10, plus the final carry → 1000.'],
+            ['q' => '356 + 647 = ?', 'opts' => ['993', '1003', '1013', '903'], 'correct' => '1003', 'difficulty' => 3,
+                'hint' => 'This one crosses into four digits — don\'t forget the extra carry.', 'explanation' => '356 + 647: 6+7=13 (write 3, carry 1); 5+4+1=10 (write 0, carry 1); 3+6+1=10 → 1003.'],
+        ];
+
+        $questionIds = [];
+        foreach ($questionDefs as $qd) {
+            $questionIds[] = DB::table('homework_quiz_questions')->insertGetId([
+                'homework_id'     => $homeworkId,
+                'question'        => $qd['q'],
+                'option_a'        => $qd['opts'][0],
+                'option_b'        => $qd['opts'][1],
+                'option_c'        => $qd['opts'][2],
+                'option_d'        => $qd['opts'][3],
+                'correct_answer'  => $qd['correct'],
+                'hint'            => $qd['hint'],
+                'explanation'     => $qd['explanation'],
+                'skill_id'        => $skill->id,
+                'difficulty'      => $qd['difficulty'],
+                'created_at'      => now(),
+                'updated_at'      => now(),
+            ]);
+        }
+
+        $submissions = [
+            'top'   => [true, true, true, true, true],
+            'below' => [true, false, false, true, false],
+        ];
+
+        foreach ($submissions as $tag => $correctness) {
+            $student = $students[$tag];
+            $earned = 0;
+
+            foreach ($questionIds as $i => $qId) {
+                $isCorrect = $correctness[$i];
+                $qd        = $questionDefs[$i];
+                $selected  = $isCorrect ? $qd['correct'] : collect($qd['opts'])->first(fn ($o) => $o !== $qd['correct']);
+
+                DB::table('homework_quiz_answers')->insert([
+                    'homework_id'     => $homeworkId,
+                    'student_id'      => $student->id,
+                    'question_id'     => $qId,
+                    'selected_answer' => $selected,
+                    'is_correct'      => $isCorrect ? 1 : 0,
+                    'created_at'      => now(),
+                    'updated_at'      => now(),
+                ]);
+
+                if ($isCorrect) {
+                    $earned += 1;
+                }
+
+                $events->record($student->id, LearningEventRepository::EVENT_ANSWER_SUBMITTED, $skill->id, [
+                    'correct' => $isCorrect, 'source' => 'homework_quiz',
+                ]);
+            }
+
+            DB::table('homework_students')->insert([
+                'student_id'  => $student->id,
+                'homework_id' => $homeworkId,
+                'homework'    => null,
+                'marks'       => $earned,
+                'date'        => now()->format('Y-m-d'),
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+
+            $events->markTodayActive($student->id);
+        }
+
+        $hub = AvatarItem::create([
+            'category' => 'hub', 'name' => 'Math Quest', 'price_coins' => 0, 'sort_order' => 0, 'status' => 1,
+            'pos_x' => 50, 'pos_y' => 50, 'scale' => 16, 'rotation' => 0,
+        ]);
+        $building = AvatarItem::create([
+            'category' => 'building', 'parent_id' => $hub->id, 'name' => 'Addition Tower', 'price_coins' => 0, 'sort_order' => 0, 'status' => 1,
+            'pos_x' => 50, 'pos_y' => 60, 'scale' => 9, 'rotation' => 0,
+        ]);
+
+        Mission::create([
+            'hub_id'       => $hub->id,
+            'building_id'  => $building->id,
+            'theme'        => 'treasure',
+            'character'    => 'kea',
+            'title'        => "The Sunken Chest of Sandy Cove",
+            'intro_line'   => "Ahoy! An old sailor's map washed up on the shore, its numbers smudged by salt water. Kea thinks you're just the explorer who can add up the clues and find the chest!",
+            'clue_lines'   => [
+                'The map shows the ship left port at 245 paces from the lighthouse, then sailed on 378 more — how far from the lighthouse is that in total?',
+                'From there, add 289 paces to reach Gull Rock.',
+                'From Gull Rock, add 158 paces more to reach the sandbank.',
+                "One tricky stretch: add just 1 pace and the count rolls over completely — that's where the tide line is.",
+                'The final leg: add 647 paces from the tide line — that\'s exactly where X marks the spot.',
+            ],
+            'ending_line'  => 'You found it! The Sunken Chest of Sandy Cove creaks open, spilling out golden coins. Kea cheers — every one of those numbers led you exactly where you needed to go.',
+            'reward_note'  => 'Unlocks: Addition Tower in Math Quest',
+            'linkable_type' => 'homework',
+            'linkable_id'   => $homeworkId,
+            'sort_order'   => 0,
+            'status'       => 1,
+        ]);
+
+        $loginLines = collect($logins)->map(fn ($l) => "  {$l['role']}\n    Email: {$l['email']}\n    Password: {$l['password']}")->implode("\n\n");
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Built around your existing teacher: {$teacher->first_name} {$teacher->last_name} ({$teacher->email})\n"
+            . "Now assigned to teach {$subject->name} for Grade 5, Section {$section->name}.\n\n"
+            . $loginLines . "\n\n"
+            . "Homework: \"Addition of Numbers Between 100 and Thousands\" (5 questions, 1 mark each)\n"
+            . "  - Zainab Farooq scored 5/5 (100%) -> mission complete, Addition Tower unlocked for her.\n"
+            . "  - Hamza Sheikh scored 2/5 (40%) -> mission still locked, clues partly revealed.\n\n"
+            . "Mission: \"The Sunken Chest of Sandy Cove\" (Treasure Hunt theme) — Website Setup -> Missions\n"
+            . "Hub: \"Math Quest\" and Building: \"Addition Tower\" — Website Setup -> Avatar Gallery\n"
+            . "  Both need a picture uploaded before they're visible on the island banner (no art was made up for this).\n\n"
+            . "Log in as either student and open My Learning Island to see the difference between the two."
+            . "</pre>"
+        );
+    }
+
     /** One-off: builds a full test fixture for the Phase 1 learning-engine
      *  work — 3 skills, a real graded exam (visible in Online Examination →
      *  Question Bank / Online Exam like any other), and enough additional

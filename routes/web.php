@@ -145,6 +145,11 @@ Route::middleware(saasMiddleware())->group(function () {
             // again — there is no undo (admin-only + key).
             Route::get('/db/reset-to-maths-g5-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'resetToMathsG5Demo']);
 
+            // One-off: builds the same Grade 5 Maths example, but around whichever teacher was most
+            // recently added through the normal Staff -> Add Staff screen, instead of creating one
+            // itself. Does not wipe anything (admin-only + key).
+            Route::get('/db/build-maths-g5-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'buildMathsG5DemoAroundTeacher']);
+
             // View the tail of the Laravel error log from the browser (admin-only + key) — for hosts without SSH/file-manager log access.
             Route::get('/db/logs/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'viewLogs']);
 
