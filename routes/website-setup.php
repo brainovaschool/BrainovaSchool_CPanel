@@ -26,6 +26,7 @@ use App\Http\Controllers\WebsiteSetup\SkillController;
 use App\Http\Controllers\WebsiteSetup\DashboardFeatureController;
 use App\Http\Controllers\WebsiteSetup\AvatarItemController;
 use App\Http\Controllers\WebsiteSetup\CharacterLineController;
+use App\Http\Controllers\WebsiteSetup\MissionController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -198,6 +199,17 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:character_line_delete', 'DemoCheck');
                     Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:character_line_delete', 'DemoCheck');
                     Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:character_line_update', 'DemoCheck');
+                });
+
+                Route::controller(MissionController::class)->prefix('mission')->name('mission.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:mission_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:mission_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:mission_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:mission_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:mission_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:mission_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:mission_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:mission_update', 'DemoCheck');
                 });
 
                 Route::controller(TrialSlotController::class)->prefix('trial-slot')->name('trial-slot.')->group(function () {

@@ -4,6 +4,7 @@ namespace App\Repositories\StudentPanel\Homework;
 
 use App\Models\Homework;
 use App\Models\HomeworkStudent;
+use App\Repositories\LearningEngine\LearningEventRepository;
 use App\Traits\CommonHelperTrait;
 use App\Traits\ReturnFormatTrait;
 use Illuminate\Support\Facades\Auth;
@@ -14,10 +15,12 @@ class HomeworkRepository implements HomeworkInterface
     use ReturnFormatTrait, CommonHelperTrait;
 
     private $model;
+    private $learningEvents;
 
-    public function __construct(Homework $model)
+    public function __construct(Homework $model, LearningEventRepository $learningEvents)
     {
-        $this->model = $model;
+        $this->model          = $model;
+        $this->learningEvents = $learningEvents;
     }
 
     /**
@@ -101,6 +104,13 @@ class HomeworkRepository implements HomeworkInterface
 
             $homework_student->save();
             DB::commit();
+
+            // A file-upload submission can't be auto-graded against a skill,
+            // so it never reaches LearningEventRepository::record() — stamp
+            // today's activity directly instead, so it still counts as the
+            // day's learning for pet/tree care and the island's learning-first gate.
+            $this->learningEvents->markTodayActive($student->id);
+
             return $homework_student;
 
         } catch (\Throwable $th) {

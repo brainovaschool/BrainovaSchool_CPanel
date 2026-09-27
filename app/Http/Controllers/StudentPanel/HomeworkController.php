@@ -295,6 +295,11 @@ class HomeworkController extends Controller
                 );
             }
 
+            // The student is doing this right now, whether or not any
+            // question happened to be skill-tagged — counts as today's
+            // learning activity either way.
+            $this->learningEvents->markTodayActive($student->id);
+
             return response()->json([
                 'status'    => 'success',
                 'message'   => 'Quiz submitted!',

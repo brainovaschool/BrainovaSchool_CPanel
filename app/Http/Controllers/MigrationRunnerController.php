@@ -60,6 +60,7 @@ class MigrationRunnerController extends Controller
         'dashboard_features' => ['read' => 'dashboard_features_read', 'update' => 'dashboard_features_update', 'delete' => 'dashboard_features_delete'],
         'avatar_item'      => ['read' => 'avatar_item_read', 'create' => 'avatar_item_create', 'update' => 'avatar_item_update', 'delete' => 'avatar_item_delete'],
         'character_line'   => ['read' => 'character_line_read', 'create' => 'character_line_create', 'update' => 'character_line_update', 'delete' => 'character_line_delete'],
+        'mission'          => ['read' => 'mission_read', 'create' => 'mission_create', 'update' => 'mission_update', 'delete' => 'mission_delete'],
     ];
 
     public function run(string $key)

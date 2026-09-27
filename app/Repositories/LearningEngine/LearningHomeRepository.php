@@ -10,6 +10,8 @@ use App\Models\StudentInfo\Student;
 use App\Models\LearningEngine\LearningEvent;
 use App\Models\StudentInfo\SessionClassStudent;
 use App\Models\LearningEngine\StudentSkillMastery;
+use App\Models\Attendance\Attendance;
+use App\Enums\AttendanceType;
 
 /**
  * Builds the "Personal Learning Home" panel shown at the top of the student
@@ -45,7 +47,9 @@ class LearningHomeRepository
         $lastEvent = LearningEvent::where('student_id', $student->id)->latest('created_at')->first();
 
         $isFirstVisit = !$lastEvent;
-        $isComeback   = $lastEvent && $lastEvent->created_at->diffInDays(now()) >= self::COMEBACK_GAP_DAYS;
+        $isComeback   = $lastEvent
+            && $lastEvent->created_at->diffInDays(now()) >= self::COMEBACK_GAP_DAYS
+            && !$this->wasExcusedAbsence($student->id, $lastEvent->created_at);
 
         if ($isFirstVisit) {
             $character = 'kea';
@@ -166,6 +170,23 @@ class LearningHomeRepository
                 'advanced'    => $masteries->where('mastery_level', 'advanced')->count(),
             ],
         ];
+    }
+
+    /** Section 10.2 of the product plan: "absences can be marked as excused
+     *  so the student is not shown as behind." If the school marked any day
+     *  in the gap as Leave in the real Attendance module, this isn't a
+     *  student quietly drifting away — it's a known, approved absence, so
+     *  it gets the plain welcome instead of the "comeback" framing. */
+    private function wasExcusedAbsence(int $studentId, \Carbon\Carbon $since): bool
+    {
+        try {
+            return Attendance::where('student_id', $studentId)
+                ->where('attendance', AttendanceType::LEAVE)
+                ->whereDate('date', '>=', $since->toDateString())
+                ->exists();
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**

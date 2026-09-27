@@ -1025,6 +1025,12 @@
                                 </li>
                             @endif
 
+                            @if (hasPermission('mission_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['mission*']) }}">
+                                    <a href="{{ route('mission.index') }}">Missions</a>
+                                </li>
+                            @endif
+
                         </ul>
                     </li>
                 @endif

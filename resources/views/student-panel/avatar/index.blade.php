@@ -147,6 +147,9 @@ button.av-inv-row:hover{ background:#f4f8fa; }
    visible so they know it's there, just visibly not "theirs" until they
    sign up for the program it represents. */
 .av-island-spot--locked img{ filter:grayscale(1) brightness(.75) drop-shadow(0 4px 10px rgba(20,20,30,.25)); opacity:.6; }
+.av-island-building{ cursor:pointer; }
+.av-island-building:not(:disabled):hover img{ filter:drop-shadow(0 4px 10px rgba(20,20,30,.25)) brightness(1.08); transform:scale(1.04); }
+.av-island-building:disabled{ cursor:not-allowed; }
 
 /* The avatar and every owned base are pick-up-and-move objects: click (or
    tap) to lift one for the keyboard arrows, or just drag it straight away
@@ -197,6 +200,48 @@ button.av-inv-row:hover{ background:#f4f8fa; }
 .av-tray-thumb img{ width:36px; height:36px; object-fit:contain; }
 .av-tray-thumb span{ font-size:.66rem; font-weight:700; color:var(--bn-ink); text-align:center; line-height:1.1; }
 .av-tray__empty{ font-size:.78rem; color:#7a8790; margin:0; }
+
+/* The learning-first rule blocking a shop/decorate action — shown briefly,
+   never a blocking popup, since the point is "not yet", not "no". */
+.av-gate-msg{
+    background:var(--amber-soft, #fbf0dd); color:#92400e; border:1px solid #f3d9a4; border-radius:12px;
+    padding:10px 16px; font-size:.86rem; font-weight:600; margin-bottom:14px;
+}
+
+.av-term-celebrate{
+    background:#fff8e6; border:1px solid #f3d9a4; color:#92400e; border-radius:12px; padding:14px 18px;
+    font-size:.95rem; margin-bottom:16px;
+}
+.av-theme-picker{ background:#fff; border:1px solid var(--bn-surface-line); border-radius:14px; padding:18px; margin-bottom:18px; }
+.av-theme-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:10px; }
+.av-theme-grid form{ margin:0; }
+.av-theme-card{
+    width:100%; padding:16px 10px; border-radius:12px; border:2px solid var(--bn-surface-line); background:#fff;
+    font-weight:700; font-size:.9rem; color:var(--bn-ink); cursor:pointer;
+}
+.av-theme-card:hover{ border-color:var(--bn-primary); background:var(--bn-primary-soft); }
+.av-term-pill{
+    display:inline-block; background:var(--bn-primary-soft); color:var(--bn-primary-strong); font-weight:700;
+    font-size:.82rem; padding:6px 14px; border-radius:20px; margin-bottom:14px;
+}
+
+.av-pet-tree{
+    display:flex; align-items:center; gap:14px; background:#fff; border:1px solid var(--bn-surface-line);
+    border-radius:14px; padding:14px 18px; margin-top:16px;
+}
+.av-pet-tree__icon{ font-size:1.8rem; line-height:1; flex-shrink:0; }
+.av-pet-tree__title{ font-weight:800; color:var(--bn-ink); font-size:.95rem; }
+.av-pet-tree__sub{ margin:2px 0 0; color:#7a8790; font-size:.82rem; }
+.av-pet-tree--happy{ border-color:#bbe8d5; background:#f2fbf7; }
+.av-pet-tree--sad{ border-color:#f3d9a4; background:#fffaf0; }
+
+.av-exam-results{ background:#fff; border:1px solid var(--bn-surface-line); border-radius:14px; padding:14px 18px; margin-top:12px; }
+.av-exam-results__title{ font-weight:800; font-size:.9rem; color:var(--bn-ink); margin-bottom:8px; }
+.av-exam-results__title i{ color:#c98a26; }
+.av-exam-chip{
+    display:inline-block; background:#fbf0dd; color:#92400e; font-size:.78rem; font-weight:700;
+    padding:5px 12px; border-radius:20px; margin:0 6px 6px 0;
+}
 </style>
 @endpush
 
@@ -354,6 +399,35 @@ button.av-inv-row:hover{ background:#f4f8fa; }
     </div>
 
     <div id="avPaneIsland">
+        @if (!empty($data['justAdvancedTerm']))
+            <div class="av-term-celebrate">
+                🎉 <strong>Term {{ optional($data['profile'])->current_term - 1 }} complete!</strong> Time for a new theme — pick one below to start Term {{ optional($data['profile'])->current_term }}.
+            </div>
+        @endif
+
+        @if (!optional($data['profile'])->theme)
+            <div class="av-theme-picker">
+                <h5 class="mb-1">Choose this term's story</h5>
+                <p class="text-secondary mb-3" style="font-size:.86rem;">
+                    Term {{ optional($data['profile'])->current_term ?? 1 }} of 6. Pick one — it stays until the term ends.
+                </p>
+                <div class="av-theme-grid">
+                    @foreach (App\Models\LearningEngine\Mission::THEMES as $key => $label)
+                        <form action="{{ route('student-panel-avatar.choose-theme') }}" method="post">
+                            @csrf
+                            <input type="hidden" name="theme" value="{{ $key }}">
+                            <button type="submit" class="av-theme-card">{{ $label }}</button>
+                        </form>
+                    @endforeach
+                </div>
+            </div>
+        @else
+            <div class="av-term-pill">
+                Term {{ optional($data['profile'])->current_term }} of 6 — {{ App\Models\LearningEngine\Mission::THEMES[$data['profile']->theme] ?? $data['profile']->theme }}
+            </div>
+        @endif
+
+        <div class="av-gate-msg" id="islandGateMsg" hidden></div>
         <div class="av-island-banner" id="islandBanner">
             @if (setting('island_top_image'))
                 <img src="{{ globalAsset(setting('island_top_image')) }}" alt="My Learning Island" id="islandBannerImg">
@@ -372,10 +446,11 @@ button.av-inv-row:hover{ background:#f4f8fa; }
                 @endif
                 @foreach ($hub->children as $building)
                     @if ($building->image)
-                        <span class="av-island-spot {{ $hubLocked ? 'av-island-spot--locked' : '' }}" title="{{ $building->name }}"
+                        <button type="button" class="av-island-spot av-island-building {{ $hubLocked ? 'av-island-spot--locked' : '' }}"
+                            title="{{ $building->name }}" data-building="{{ $building->id }}" {{ $hubLocked ? 'disabled' : '' }}
                             style="left:{{ $building->pos_x }}%; top:{{ $building->pos_y }}%; width:{{ $building->scale }}%; transform:translate(-50%,-50%) rotate({{ $building->rotation }}deg);">
                             <img src="{{ globalAsset($building->image) }}" alt="{{ $building->name }}">
-                        </span>
+                        </button>
                     @endif
                 @endforeach
             @endforeach
@@ -442,12 +517,56 @@ button.av-inv-row:hover{ background:#f4f8fa; }
             </div>
         </div>
 
+        @php $pt = $data['petTree']; @endphp
+        <div class="av-pet-tree av-pet-tree--{{ $pt['mood'] }}">
+            <div class="av-pet-tree__icon">{{ $pt['mood'] === 'happy' ? '🐣🌳' : ($pt['mood'] === 'sleepy' ? '😴🍂' : '🥺🥀') }}</div>
+            <div>
+                <div class="av-pet-tree__title">
+                    @if ($pt['earned_today'])
+                        Fed and watered for today!
+                    @elseif ($pt['mood'] === 'happy')
+                        Waiting for today's care
+                    @elseif ($pt['mood'] === 'sleepy')
+                        Your pet is getting sleepy
+                    @else
+                        Your pet and tree miss you
+                    @endif
+                </div>
+                <p class="av-pet-tree__sub">
+                    @if (!$pt['earned_today'])
+                        Do one small activity today — a quiz question, homework, anything — to feed them.
+                    @else
+                        Nothing else to do here today. Come back tomorrow!
+                    @endif
+                </p>
+            </div>
+        </div>
+
+        @if ($data['approvedExamResults']->isNotEmpty())
+            <div class="av-exam-results">
+                <div class="av-exam-results__title"><i class="fa-solid fa-award"></i> Results are in</div>
+                @foreach ($data['approvedExamResults'] as $approval)
+                    <span class="av-exam-chip">{{ optional($approval->exam_type)->name ?? 'Exam' }} — approved</span>
+                @endforeach
+            </div>
+        @endif
+
         <div class="av-island-layout">
             <div class="av-island-side">More coming here soon.</div>
             <div class="av-island-center"></div>
             <div class="av-island-side">More coming here soon.</div>
         </div>
     </div>
+    </div>
+</div>
+
+<div class="modal fade" id="roomModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" id="roomModalContent">
+            <div class="modal-body text-center py-5">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -579,7 +698,27 @@ button.av-inv-row:hover{ background:#f4f8fa; }
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
             body: JSON.stringify(body)
-        }).catch(function () {});
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                // The server (not just this page) enforces the learning-first
+                // rule, so a request can come back rejected even though the
+                // move already happened visually — say why, so it doesn't
+                // just look like a bug when the position resets on reload.
+                if (data && data.ok === false) {
+                    showGateMessage(data.message);
+                }
+            })
+            .catch(function () {});
+    }
+
+    function showGateMessage(message) {
+        var box = document.getElementById('islandGateMsg');
+        if (!box || !message) return;
+        box.textContent = message;
+        box.hidden = false;
+        clearTimeout(showGateMessage._t);
+        showGateMessage._t = setTimeout(function () { box.hidden = true; }, 4000);
     }
 
     function scheduleSave(el) {
@@ -697,6 +836,31 @@ button.av-inv-row:hover{ background:#f4f8fa; }
             if (!target) return;
             toggle(target);
             target.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+        });
+    });
+})();
+
+(function () {
+    // Tapping a Building opens its Room — the story wrapped around
+    // whatever real Homework/Online Exam it's linked to.
+    var modalEl = document.getElementById('roomModal');
+    var content = document.getElementById('roomModalContent');
+    if (!modalEl || typeof bootstrap === 'undefined') return;
+    var modal = new bootstrap.Modal(modalEl);
+    var ROOM_URL_TEMPLATE = '{{ route('student-panel-avatar.room', ['buildingId' => '__ID__']) }}';
+
+    document.querySelectorAll('.av-island-building').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (btn.disabled) return;
+            content.innerHTML = '<div class="modal-body text-center py-5"><i class="fa-solid fa-spinner fa-spin"></i></div>';
+            modal.show();
+
+            fetch(ROOM_URL_TEMPLATE.replace('__ID__', btn.dataset.building))
+                .then(function (r) { return r.text(); })
+                .then(function (html) { content.innerHTML = html; })
+                .catch(function () {
+                    content.innerHTML = '<div class="modal-body text-center py-5 text-secondary">Couldn\'t load this right now.</div>';
+                });
         });
     });
 })();

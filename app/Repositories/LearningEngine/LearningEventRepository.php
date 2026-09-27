@@ -5,6 +5,7 @@ namespace App\Repositories\LearningEngine;
 use App\Models\LearningEngine\Skill;
 use App\Models\LearningEngine\LearningEvent;
 use App\Models\LearningEngine\StudentSkillMastery;
+use App\Models\LearningEngine\StudentAvatarProfile;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -92,6 +93,29 @@ class LearningEventRepository
             ]);
         } catch (\Throwable $th) {
             Log::warning('Learning event record failed: ' . $th->getMessage());
+        }
+    }
+
+    /** Stamps today as "a real learning activity happened" for this
+     *  student — read by pet/tree daily care and the island's
+     *  learning-first gate. Deliberately NOT called automatically from
+     *  record(): an Online Exam answer can be graded by a teacher days
+     *  after the student submitted it, and record() runs at grading time —
+     *  auto-stamping there would mark the student "active today" on a day
+     *  they did nothing. So every real caller stamps explicitly, at the
+     *  moment the STUDENT themselves acts: homework submission (quiz and
+     *  file-upload), Online Exam submission, Teach Kea, and Reflection
+     *  Journal. Safe to call more than once a day — it's just today's
+     *  date, not a counter. */
+    public function markTodayActive(int $studentId): void
+    {
+        try {
+            StudentAvatarProfile::updateOrCreate(
+                ['student_id' => $studentId],
+                ['last_activity_date' => now()->toDateString()]
+            );
+        } catch (\Throwable $th) {
+            Log::warning('markTodayActive failed: ' . $th->getMessage());
         }
     }
 

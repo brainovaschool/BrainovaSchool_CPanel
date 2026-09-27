@@ -53,6 +53,8 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::post('/save-profile',     'saveProfile')->name('save-profile');
                         Route::post('/place-item',       'placeItem')->name('place-item');
                         Route::post('/place-avatar',     'placeAvatar')->name('place-avatar');
+                        Route::post('/choose-theme',     'chooseTheme')->name('choose-theme');
+                        Route::get('/room/{buildingId}', 'room')->name('room');
                     });
 
                     Route::controller(ProfileController::class)->prefix('student-panel')->group(function () {

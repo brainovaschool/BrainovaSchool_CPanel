@@ -43,6 +43,8 @@ class ReflectionJournalRepository
             $this->events->record($studentId, LearningEventRepository::EVENT_REFLECTION_SUBMITTED, null, ['source' => 'reflection_journal']);
         }
 
+        $this->events->markTodayActive($studentId);
+
         return $entry;
     }
 }

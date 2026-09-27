@@ -9,6 +9,7 @@ use App\Models\OnlineExamination\OnlineExam;
 use App\Models\OnlineExamination\OnlineExamChildrenStudents;
 use App\Models\StudentInfo\SessionClassStudent;
 use App\Models\StudentInfo\Student;
+use App\Repositories\LearningEngine\LearningEventRepository;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,14 @@ use App\Traits\ReturnFormatTrait;
 class OnlineExaminationRepository implements OnlineExaminationInterface
 {
     use ReturnFormatTrait;
-    
+
+    private $learningEvents;
+
+    public function __construct(LearningEventRepository $learningEvents)
+    {
+        $this->learningEvents = $learningEvents;
+    }
+
     public function index(){
         $student        = Student::where('user_id', Auth::user()->id)->first();
         $classSection   = SessionClassStudent::where('session_id', setting('session'))->where('student_id', $student->id)->latest()->first();
@@ -75,6 +83,13 @@ class OnlineExaminationRepository implements OnlineExaminationInterface
             }
 
             DB::commit();
+
+            // Grading (and any skill-mastery credit) happens later when a
+            // teacher marks it — but sitting the exam is itself the day's
+            // learning activity, so it counts right away for pet/tree care
+            // and the island's learning-first gate.
+            $this->learningEvents->markTodayActive($student->id);
+
             return $this->responseWithSuccess(___('alert.Submitted successfully'), []);
         } catch (\Throwable $th) {
             DB::rollBack();

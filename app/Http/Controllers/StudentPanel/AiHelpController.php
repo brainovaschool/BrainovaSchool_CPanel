@@ -89,6 +89,7 @@ class AiHelpController extends Controller
                 $skill->id,
                 ['understood' => $result['understood']]
             );
+            $this->learningEvents->markTodayActive(Auth::user()->student->id);
         }
 
         return response()->json($result);
