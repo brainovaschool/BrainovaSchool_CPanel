@@ -339,7 +339,7 @@ button.av-inv-row:hover{ background:#f4f8fa; }
             @elseif ($tab['key'] === 'base')
                 @include('student-panel.avatar._shop-section', [
                     'title'    => $tab['label'],
-                    'hint'     => 'Buy one and it appears on My Island right away, inside its own hub — drag it wherever you like from there.',
+                    'hint'     => 'Buy one and it appears on your island right away — drag it anywhere you like, or nudge it with the keyboard.',
                     'items'    => $data['bases'],
                     'owned'    => $data['owned'],
                     'equipped' => [],
@@ -380,10 +380,11 @@ button.av-inv-row:hover{ background:#f4f8fa; }
                 @endforeach
             @endforeach
 
-            {{-- Owned Base items — each placed wherever this student last
-                 left it (or its default spot inside its hub, the first
-                 time). Pick one up with a click/tap, then drag it or nudge
-                 it with the arrow keys; click it again to set it down. --}}
+            {{-- Owned Yard Decorations — each placed wherever this student
+                 last left it (or its default spot, the first time), free
+                 to move anywhere on the island. Pick one up with a
+                 click/tap, then drag it or nudge it with the arrow keys;
+                 click it again to set it down. --}}
             @foreach ($data['bases'] as $base)
                 @continue(!in_array($base->id, $data['owned'], true) || !$base->image)
                 @php

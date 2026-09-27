@@ -1019,6 +1019,12 @@
                                 </li>
                             @endif
 
+                            @if (hasPermission('character_line_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['character-line*']) }}">
+                                    <a href="{{ route('character-line.index') }}">Character Lines</a>
+                                </li>
+                            @endif
+
                         </ul>
                     </li>
                 @endif

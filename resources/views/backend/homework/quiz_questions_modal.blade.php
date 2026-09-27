@@ -35,7 +35,8 @@
                             <th>Correct Answer</th>
                             <th>Hint</th>
                             @if (dashboard_feature_enabled('teacher', 'quiz_skill_tagging'))
-                                <th style="width:200px;">Skill</th>
+                                <th style="width:180px;">Skill</th>
+                                <th style="width:110px;">Difficulty</th>
                             @endif
                         </tr>
                     </thead>
@@ -69,6 +70,14 @@
                                         @endforeach
                                     </select>
                                 </td>
+                                <td>
+                                    <select class="form-control form-control-sm quiz-question-difficulty" data-question-id="{{ $q->id }}">
+                                        <option value="">Not set</option>
+                                        <option value="1" {{ ($q->difficulty ?? null) == 1 ? 'selected' : '' }}>1 — Easy</option>
+                                        <option value="2" {{ ($q->difficulty ?? null) == 2 ? 'selected' : '' }}>2 — Medium</option>
+                                        <option value="3" {{ ($q->difficulty ?? null) == 3 ? 'selected' : '' }}>3 — Hard</option>
+                                    </select>
+                                </td>
                             @endif
                         </tr>
                         @endforeach
@@ -98,6 +107,22 @@
                 body: JSON.stringify({
                     question_id: select.getAttribute('data-question-id'),
                     skill_id: select.value,
+                }),
+            });
+        });
+    });
+
+    document.querySelectorAll('.quiz-question-difficulty').forEach(function (select) {
+        select.addEventListener('change', function () {
+            fetch('{{ route("homework.quiz-question.skill") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                },
+                body: JSON.stringify({
+                    question_id: select.getAttribute('data-question-id'),
+                    difficulty: select.value,
                 }),
             });
         });

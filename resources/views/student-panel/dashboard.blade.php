@@ -212,11 +212,12 @@
                                     <div class="bn-donut" style="width:80px;height:80px;flex-shrink:0;"
                                         data-segments="{{ $mc['not_started'] }},{{ $mc['developing'] }},{{ $mc['proficient'] }},{{ $mc['advanced'] }}"
                                         data-colors="var(--bn-not-started),var(--bn-developing),var(--bn-proficient),var(--bn-advanced)"></div>
+                                    @php $stageLabels = App\Models\LearningEngine\StudentSkillMastery::stageLabels(); @endphp
                                     <ul class="bn-dv2-legend">
-                                        <li><span class="dot" style="background:var(--bn-not-started)"></span>{{ ___('common.not_started') }}<b>{{ $mc['not_started'] }}</b></li>
-                                        <li><span class="dot" style="background:var(--bn-developing)"></span>{{ ___('common.developing') }}<b>{{ $mc['developing'] }}</b></li>
-                                        <li><span class="dot" style="background:var(--bn-proficient)"></span>{{ ___('common.proficient') }}<b>{{ $mc['proficient'] }}</b></li>
-                                        <li><span class="dot" style="background:var(--bn-advanced)"></span>{{ ___('common.advanced') }}<b>{{ $mc['advanced'] }}</b></li>
+                                        <li><span class="dot" style="background:var(--bn-not-started)"></span>{{ $stageLabels['not_started'] }}<b>{{ $mc['not_started'] }}</b></li>
+                                        <li><span class="dot" style="background:var(--bn-developing)"></span>{{ $stageLabels['developing'] }}<b>{{ $mc['developing'] }}</b></li>
+                                        <li><span class="dot" style="background:var(--bn-proficient)"></span>{{ $stageLabels['proficient'] }}<b>{{ $mc['proficient'] }}</b></li>
+                                        <li><span class="dot" style="background:var(--bn-advanced)"></span>{{ $stageLabels['advanced'] }}<b>{{ $mc['advanced'] }}</b></li>
                                     </ul>
                                 </div>
                             @endif

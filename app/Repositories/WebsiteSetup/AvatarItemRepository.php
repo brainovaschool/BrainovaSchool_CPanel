@@ -139,6 +139,35 @@ class AvatarItemRepository
         }
     }
 
+    /** The school's own names for the four mastery stages (default: Seed,
+     *  Sprout, Bloom, Mighty Tree) — shown to students and parents instead
+     *  of the internal not_started/developing/proficient/advanced words.
+     *  Stored the same way as the shop tab labels above. */
+    public function updateStageLabels($request): array
+    {
+        try {
+            $data = [];
+            foreach (\App\Models\LearningEngine\StudentSkillMastery::DEFAULT_STAGE_LABELS as $level => $default) {
+                $label = trim((string) $request->input("label.$level"));
+                $data[$level] = $label !== '' ? $label : $default;
+            }
+
+            $setting = Setting::where('name', 'mastery_stage_labels')->first();
+            if ($setting) {
+                $setting->value = json_encode($data);
+            } else {
+                $setting        = new Setting();
+                $setting->name  = 'mastery_stage_labels';
+                $setting->value = json_encode($data);
+            }
+            $setting->save();
+
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
     /** Creates one item per uploaded file, named after the file, priced and
      *  placed from the category defaults. Positioning is still per-item, but
      *  building a wardrobe no longer means repeating the whole form for

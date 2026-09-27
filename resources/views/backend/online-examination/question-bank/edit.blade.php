@@ -121,6 +121,16 @@
                                     </select>
                                     <small class="text-secondary">{{ ___('settings.tag_a_skill_to_track_progress_note') }}</small>
                                 </div>
+
+                                <div class="col-md-3 mb-3">
+                                    <label class="form-label">Difficulty (optional)</label>
+                                    <select class="form-control ot-input" name="difficulty">
+                                        <option value="">Not set</option>
+                                        <option value="1" {{ old('difficulty', $data['question_bank']->difficulty) == 1 ? 'selected' : '' }}>1 — Easy</option>
+                                        <option value="2" {{ old('difficulty', $data['question_bank']->difficulty) == 2 ? 'selected' : '' }}>2 — Medium</option>
+                                        <option value="3" {{ old('difficulty', $data['question_bank']->difficulty) == 3 ? 'selected' : '' }}>3 — Hard</option>
+                                    </select>
+                                </div>
                                 {{-- second row --}}
 
 

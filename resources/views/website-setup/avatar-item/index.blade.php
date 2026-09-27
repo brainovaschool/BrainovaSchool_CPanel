@@ -65,8 +65,8 @@
                 <div class="card-body">
                     <p class="text-secondary mb-3">
                         Rename any of these tabs and set the order they appear in on the student's Shop. Each one keeps
-                        its own built-in behaviour (Outfit is worn as the whole character, Base is placed on the
-                        island, etc.) — this only changes what it's called and where it sits.
+                        its own built-in behaviour (Outfit is worn as the whole character, Yard Decoration is placed on
+                        the island, etc.) — this only changes what it's called and where it sits.
                     </p>
                     <form action="{{ route('avatar-item.tab-labels') }}" method="post">
                         @csrf
@@ -95,6 +95,29 @@
                             </table>
                         </div>
                         <button class="btn btn-lg ot-btn-primary">{{ ___('common.save') }}</button>
+                    </form>
+                </div>
+            </div>
+
+            @php $stageLabels = App\Models\LearningEngine\StudentSkillMastery::stageLabels(); @endphp
+            <div class="card mb-24">
+                <div class="card-header"><h5 class="mb-0">Skill stage names</h5></div>
+                <div class="card-body">
+                    <p class="text-secondary mb-3">
+                        What a student sees for how far along a skill they are, instead of the plain "not started /
+                        developing / proficient / advanced" wording. Shown on the student and parent dashboards.
+                    </p>
+                    <form action="{{ route('avatar-item.stage-labels') }}" method="post" class="row">
+                        @csrf
+                        @foreach (App\Models\LearningEngine\StudentSkillMastery::DEFAULT_STAGE_LABELS as $level => $default)
+                            <div class="col-md-3 mb-2">
+                                <label class="form-label text-secondary" style="font-size:.8rem;">{{ ucfirst(str_replace('_', ' ', $level)) }}</label>
+                                <input class="form-control ot-input" name="label[{{ $level }}]" value="{{ $stageLabels[$level] }}" maxlength="20" placeholder="{{ $default }}">
+                            </div>
+                        @endforeach
+                        <div class="col-12 mt-2">
+                            <button class="btn btn-lg ot-btn-primary">{{ ___('common.save') }}</button>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -131,11 +154,11 @@
                         @elseif ($data['category'] === 'hat')
                             A headwear layer worn on top of everything else (cap, headphones, goggles, etc.). Optional.
                         @elseif ($data['category'] === 'base')
-                            Something a student buys and places inside one hub on their own island (a mosque, a rocket, a trophy stand, ...) — pick which hub below. Set a price in Coins; once bought it appears on their island automatically, and they can drag it anywhere inside that hub's area.
+                            Something a student buys and places anywhere on their own island (a mosque, a rocket, a trophy stand, ...) — not tied to any one Base. Set a price in Coins; once bought it appears on their island automatically, and they can drag it wherever they like.
                         @elseif ($data['category'] === 'hub')
-                            A themed zone on My Learning Island, e.g. CodeNova, AI Spark Lab, Math Quest. Upload its picture and set where it sits on the island banner. Price in Coins is unused here.
+                            A themed subject zone on My Learning Island, e.g. CodeNova, AI Spark Lab, Math Quest. Upload its picture and set where it sits on the island banner. Price in Coins is unused here.
                         @elseif ($data['category'] === 'building')
-                            A structure that belongs to one hub — pick which hub below, then set where the building sits on the island banner. Price in Coins is unused here.
+                            A structure that belongs to one Base — pick which Base below, then set where the building sits on the island banner. Price in Coins is unused here.
                         @else
                             Small extras a student can wear several of at once (glasses, backpack, a held prop, ...). Optional.
                         @endif

@@ -59,6 +59,7 @@ class MigrationRunnerController extends Controller
         'skill'            => ['read' => 'skill_read', 'create' => 'skill_create', 'update' => 'skill_update', 'delete' => 'skill_delete'],
         'dashboard_features' => ['read' => 'dashboard_features_read', 'update' => 'dashboard_features_update', 'delete' => 'dashboard_features_delete'],
         'avatar_item'      => ['read' => 'avatar_item_read', 'create' => 'avatar_item_create', 'update' => 'avatar_item_update', 'delete' => 'avatar_item_delete'],
+        'character_line'   => ['read' => 'character_line_read', 'create' => 'character_line_create', 'update' => 'character_line_update', 'delete' => 'character_line_delete'],
     ];
 
     public function run(string $key)
@@ -116,6 +117,17 @@ class MigrationRunnerController extends Controller
             $features = 'error: ' . $e->getMessage();
         }
 
+        // Brainbot/Kea dialogue, moved out of config/characters.php into the
+        // database (idempotent — matched on the exact line text, so an
+        // admin-edited or admin-deleted line is never re-created).
+        $lines = 'skipped';
+        try {
+            (new \Database\Seeders\LearningEngine\CharacterLineSeeder())->run();
+            $lines = 'ok — character lines synced';
+        } catch (\Throwable $e) {
+            $lines = 'error: ' . $e->getMessage();
+        }
+
         return response(
             '<pre style="font:14px/1.5 monospace;padding:24px">'
             . e($migrate) . "\n\nPermissions: " . e($perms)
@@ -123,6 +135,7 @@ class MigrationRunnerController extends Controller
             . "\nTestimonials seed: " . e($tm)
             . "\nNotice seed: " . e($notice)
             . "\nDashboard features seed: " . e($features)
+            . "\nCharacter lines seed: " . e($lines)
             . "</pre>"
         );
     }

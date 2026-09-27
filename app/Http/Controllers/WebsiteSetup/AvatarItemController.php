@@ -82,6 +82,14 @@ class AvatarItemController extends Controller
             ->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    public function updateStageLabels(Request $request)
+    {
+        $result = $this->repo->updateStageLabels($request);
+
+        return redirect()->route('avatar-item.index')
+            ->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
     public function bulkStore(Request $request)
     {
         // An empty $_POST here almost always means the whole upload blew past

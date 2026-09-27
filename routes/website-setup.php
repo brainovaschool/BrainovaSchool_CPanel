@@ -25,6 +25,7 @@ use App\Http\Controllers\WebsiteSetup\AiHelperController;
 use App\Http\Controllers\WebsiteSetup\SkillController;
 use App\Http\Controllers\WebsiteSetup\DashboardFeatureController;
 use App\Http\Controllers\WebsiteSetup\AvatarItemController;
+use App\Http\Controllers\WebsiteSetup\CharacterLineController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -180,11 +181,23 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/bulk-store',     'bulkStore')->name('bulk-store')->middleware('PermissionCheck:avatar_item_create', 'DemoCheck');
                     Route::post('/island-image',   'updateIslandImage')->name('island-image')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
                     Route::post('/tab-labels',     'updateTabLabels')->name('tab-labels')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
+                    Route::post('/stage-labels',   'updateStageLabels')->name('stage-labels')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
                     Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:avatar_item_update');
                     Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:avatar_item_delete', 'DemoCheck');
                     Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:avatar_item_delete', 'DemoCheck');
                     Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
+                });
+
+                Route::controller(CharacterLineController::class)->prefix('character-line')->name('character-line.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:character_line_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:character_line_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:character_line_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:character_line_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:character_line_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:character_line_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:character_line_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:character_line_update', 'DemoCheck');
                 });
 
                 Route::controller(TrialSlotController::class)->prefix('trial-slot')->name('trial-slot.')->group(function () {

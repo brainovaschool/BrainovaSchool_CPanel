@@ -478,9 +478,13 @@ class HomeworkController extends Controller
         ]);
     }
 
-    /** Tags one homework quiz question with a Skill (or clears it) — this is
-     *  what lets a graded answer to that question feed the skill-mastery
-     *  system the same way a tagged Online Exam question already does. */
+    /** Tags one homework quiz question with a Skill and/or a difficulty
+     *  level (or clears either). The Skill tag is what lets a graded answer
+     *  to that question feed the skill-mastery system the same way a
+     *  tagged Online Exam question already does; difficulty is separate
+     *  metadata used by later features. The two dropdowns each call this
+     *  independently, so only the field actually present in the request
+     *  is touched — changing one never clears the other. */
     public function updateQuizQuestionSkill(Request $request)
     {
         if (!dashboard_feature_enabled('teacher', 'quiz_skill_tagging')) {
@@ -488,15 +492,22 @@ class HomeworkController extends Controller
         }
 
         $questionId = (int) $request->input('question_id');
-        $skillId    = $request->input('skill_id');
 
         if ($questionId < 1) {
             return response()->json(['status' => 'error', 'message' => 'Invalid question.'], 422);
         }
 
-        DB::table('homework_quiz_questions')
-            ->where('id', $questionId)
-            ->update(['skill_id' => $skillId ?: null]);
+        $values = [];
+        if ($request->has('skill_id')) {
+            $values['skill_id'] = $request->input('skill_id') ?: null;
+        }
+        if ($request->has('difficulty')) {
+            $values['difficulty'] = $request->input('difficulty') ?: null;
+        }
+
+        if (!empty($values)) {
+            DB::table('homework_quiz_questions')->where('id', $questionId)->update($values);
+        }
 
         return response()->json(['status' => 'success']);
     }

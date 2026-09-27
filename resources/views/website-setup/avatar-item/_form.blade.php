@@ -9,19 +9,19 @@
             @endforeach
         </select>
         @error('category')<div class="invalid-feedback">{{ $message }}</div>@enderror
-        <small class="text-secondary">Outfit is the whole character (every student always wears exactly one); Accessory is an extra layer drawn on top, and a student can wear several at once. Extra layer types can be switched on in Website Setup &rarr; Dashboard Features. Hub, Building and Base are placed on My Learning Island instead of on the avatar — Base is the only one of the three a student buys, and it's theirs to drag around inside its hub.</small>
+        <small class="text-secondary">Outfit is the whole character (every student always wears exactly one); Accessory is an extra layer drawn on top, and a student can wear several at once. Extra layer types can be switched on in Website Setup &rarr; Dashboard Features. Base, Building and Yard Decoration are placed on My Learning Island instead of on the avatar. A Building belongs to one Base and unlocks there; a Yard Decoration is bought by a student and placed anywhere on their own island, not tied to any one Base.</small>
     </div>
 
     <div class="col-md-4 mb-3" id="parentHubWrap" style="display:none;">
-        <label class="form-label">{{ ___('common.hub') }} <span class="fillable">*</span></label>
+        <label class="form-label">Base <span class="fillable">*</span></label>
         <select class="form-control ot-input @error('parent_id') is-invalid @enderror" name="parent_id" id="parentHubSelect">
-            <option value="">— choose a hub —</option>
+            <option value="">— choose a base —</option>
             @foreach ($data['hubs'] ?? [] as $hub)
                 <option value="{{ $hub->id }}" {{ old('parent_id', $s->parent_id ?? '') == $hub->id ? 'selected' : '' }}>{{ $hub->name }}</option>
             @endforeach
         </select>
         @error('parent_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-        <small class="text-secondary">Which hub this belongs to — a Base can only ever be placed inside its own hub's area on the island. Add the hub first if it isn't in this list yet.</small>
+        <small class="text-secondary">Which Base this building belongs to. Add the Base first if it isn't in this list yet.</small>
     </div>
 
     <div class="col-md-4 mb-3" id="hubProgramWrap" style="display:none;">
@@ -33,7 +33,7 @@
             @endforeach
         </select>
         @error('program_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
-        <small class="text-secondary">Pick a program and this hub (and everything in it) shows dulled to students not enrolled in it — a nudge to try every subject. Leave blank to keep it open to all.</small>
+        <small class="text-secondary">Pick a program and this Base (and everything in it) shows dulled to students not enrolled in it — a nudge to try every subject. Leave blank to keep it open to all.</small>
     </div>
 
     <div class="col-md-4 mb-3">

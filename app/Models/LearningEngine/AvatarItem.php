@@ -12,45 +12,52 @@ class AvatarItem extends BaseModel
 
     /** The four layers a student's look is built from, bottom to top, plus
      *  three more categories that live in this same table but aren't worn
-     *  — Hub (a themed zone on My Learning Island, e.g. "CodeNova"),
-     *  Building (a fixed structure belonging to one Hub, placed once by the
-     *  admin) and Base (a purchasable item belonging to one Hub that each
-     *  student places — and re-places — on their own island). They reuse
-     *  this table because they need the same tools: an image upload and the
+     *  — Base (a themed subject zone on My Learning Island, e.g.
+     *  "CodeNova"; category key stays 'hub' internally — only the label
+     *  changed), Building (a fixed structure belonging to one Base, placed
+     *  once by the admin, unlocks for a student at mastery) and Yard
+     *  Decoration (category key stays 'base' internally — a purchasable
+     *  item each student places, and re-places, anywhere on their own
+     *  island; NOT tied to any one Base, unlike Building). They reuse this
+     *  table because they need the same tools: an image upload and the
      *  pos_x/pos_y/scale/rotation placement editor. price_coins is unused
-     *  for Hub/Building but very much used for Base. See sectionEnabled() —
-     *  'avatar' is the base character — every student always has exactly
-     *  one; the rest are optional overlays. 'accessory' is the only worn
-     *  one a student can have several of at once. */
+     *  for Base/Building but very much used for Yard Decoration. See
+     *  sectionEnabled() — 'avatar' is the base character — every student
+     *  always has exactly one; the rest are optional overlays. 'accessory'
+     *  is the only worn one a student can have several of at once. */
     public const CATEGORIES = [
         'avatar'    => 'Outfit',
         'outfit'    => 'Clothing Layer',
         'hat'       => 'Hat',
         'accessory' => 'Accessory',
-        'base'      => 'Base',
-        'hub'       => 'Hub',
+        'base'      => 'Yard Decoration',
+        'hub'       => 'Base',
         'building'  => 'Building',
     ];
 
     /** Categories whose placement editor previews against the island
-     *  banner instead of the avatar stage. Hub/Building are admin-only —
-     *  never gated, never shown on the student's Shop tab. Base is the odd
-     *  one out: also placed against the island banner in Website Setup
-     *  (for its default spot + fixed size), but it DOES sell in the
-     *  student's Shop, and each student then drags their own copy around
-     *  within its hub — see student_island_placements. */
+     *  banner instead of the avatar stage. Base ('hub')/Building are
+     *  admin-only — never gated, never shown on the student's Shop tab.
+     *  Yard Decoration ('base') is the odd one out: also placed against
+     *  the island banner in Website Setup (for its default spot and fixed
+     *  size), but it DOES sell in the student's Shop, and each student
+     *  then drags their own copy anywhere on their own island — see
+     *  student_island_placements. */
     public const ISLAND_CATEGORIES = ['hub', 'building', 'base'];
 
-    /** Which categories need a parent Hub picked (My Learning Island only
-     *  makes sense to place a Building or a Base inside a themed zone). */
-    public const HUB_CHILD_CATEGORIES = ['building', 'base'];
+    /** Which categories need a parent Base picked. Only Building — a Yard
+     *  Decoration isn't tied to any one Base, so it never asks for one
+     *  (see the 2026_09_29 migration that cleared parent_id off any that
+     *  had one from before this was decided). */
+    public const HUB_CHILD_CATEGORIES = ['building'];
 
     /** Starting placement for a brand-new item of each category — a rough
      *  "about where this usually sits" so the admin only fine-tunes rather
      *  than positioning from scratch. A base character always fills the
-     *  whole stage. Hub/Building/Base placements are percentages across the
-     *  island banner, not the avatar stage — much smaller by default since
-     *  that canvas is a wide scene, not a square close-up. */
+     *  whole stage. Base/Building/Yard Decoration placements are
+     *  percentages across the island banner, not the avatar stage — much
+     *  smaller by default since that canvas is a wide scene, not a square
+     *  close-up. */
     public const DEFAULT_PLACEMENT = [
         'avatar'    => ['pos_x' => 50, 'pos_y' => 50, 'scale' => 100, 'rotation' => 0],
         'outfit'    => ['pos_x' => 50, 'pos_y' => 58, 'scale' => 60,  'rotation' => 0],
@@ -122,19 +129,19 @@ class AvatarItem extends BaseModel
         return $query->where('category', $category);
     }
 
-    /** A Building or Base's Hub. */
+    /** A Building's Base. */
     public function parent(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_id', 'id');
     }
 
-    /** A Hub's Buildings and Bases together. */
+    /** A Base's Buildings. */
     public function children(): HasMany
     {
         return $this->hasMany(self::class, 'parent_id', 'id')->orderBy('sort_order');
     }
 
-    /** The Program a Hub represents, for enrollment-based gating. Only set
+    /** The Program a Base represents, for enrollment-based gating. Only set
      *  on category='hub' rows. */
     public function program(): BelongsTo
     {
