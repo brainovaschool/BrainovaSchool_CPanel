@@ -3062,6 +3062,47 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /** Read-only: shows the live server's actual PHP upload limits, so
+     *  "file too large" on Home Videos can be diagnosed without SSH/cPanel
+     *  access — our own app-level cap (50MB) is separate from these and
+     *  checked after these, so a file can fail here even when it's well
+     *  under 50MB. */
+    public function phpUploadLimits(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $rows = [
+            'upload_max_filesize' => ini_get('upload_max_filesize'),
+            'post_max_size'       => ini_get('post_max_size'),
+            'max_execution_time'  => ini_get('max_execution_time') . 's',
+            'max_input_time'      => ini_get('max_input_time') . 's',
+            'memory_limit'        => ini_get('memory_limit'),
+        ];
+
+        return response(
+            '<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">'
+            . "This server's real PHP upload limits right now:\n\n"
+            . implode("\n", array_map(fn ($k, $v) => str_pad($k, 22) . " = {$v}", array_keys($rows), $rows))
+            . "\n\nA Home Video upload will fail below our own 50MB app limit if either\n"
+            . "upload_max_filesize or post_max_size above is smaller than the file.\n"
+            . "post_max_size must be bigger than upload_max_filesize (it covers the\n"
+            . "whole form, not just the video) — if they're equal or post_max_size is\n"
+            . "smaller, that's the actual problem.\n\n"
+            . "To raise them on cPanel hosting: cPanel -> Software -> MultiPHP INI\n"
+            . "Editor -> select this site's domain -> Editor Mode -> raise\n"
+            . "upload_max_filesize and post_max_size (make post_max_size a bit bigger\n"
+            . "than upload_max_filesize) -> Apply. No code change needed, takes effect\n"
+            . "immediately."
+            . '</pre>'
+        );
+    }
+
     private function syncPermissions(): string
     {
         $added      = [];

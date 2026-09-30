@@ -159,6 +159,7 @@ Route::middleware(saasMiddleware())->group(function () {
             // number (admin-only + key).
             Route::get('/db/fix-social-contact/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'fixSocialAndContactInfo']);
             Route::get('/db/seed-test-video/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedTestHomeVideo']);
+            Route::get('/db/php-upload-limits/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'phpUploadLimits']);
 
             // View the tail of the Laravel error log from the browser (admin-only + key) — for hosts without SSH/file-manager log access.
             Route::get('/db/logs/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'viewLogs']);
