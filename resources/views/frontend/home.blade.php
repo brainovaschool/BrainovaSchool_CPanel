@@ -77,6 +77,8 @@
 
     @include('frontend.partials.home.mascots')
 
+    @include('frontend.partials.home.videos', ['videos' => $data['videos']])
+
     {{-- Mission/Vision ("statement") and "Why study at" ("services") now live only on the About page. --}}
 
     <!-- EXPLORER_AREA::START  -->

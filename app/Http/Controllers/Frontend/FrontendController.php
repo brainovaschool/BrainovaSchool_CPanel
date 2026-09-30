@@ -72,6 +72,8 @@ class FrontendController extends Controller
         $data['gallery']          = $this->repo->gallery();
         $data['latestNews']       = $this->repo->latestNews();
         $data['comingEvents']     = $this->repo->comingEvents();
+        $data['videos']           = \App\Models\WebsiteSetup\HomeVideo::active()
+            ->orderBy('sort_order')->orderByDesc('id')->limit(12)->get();
 
         $data['programCategories'] = \App\Models\WebsiteSetup\ProgramCategory::query()
             ->where('status', 1)
