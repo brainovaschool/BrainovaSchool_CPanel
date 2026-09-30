@@ -155,6 +155,10 @@ Route::middleware(saasMiddleware())->group(function () {
             // (admin-only + key).
             Route::get('/db/build-maths-demo-existing/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'buildMathsDemoAroundExisting']);
 
+            // One-off: fixes the website's Instagram/TikTok links (brainova.bc handle) and public phone
+            // number (admin-only + key).
+            Route::get('/db/fix-social-contact/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'fixSocialAndContactInfo']);
+
             // View the tail of the Laravel error log from the browser (admin-only + key) — for hosts without SSH/file-manager log access.
             Route::get('/db/logs/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'viewLogs']);
 

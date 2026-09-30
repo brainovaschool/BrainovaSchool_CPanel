@@ -1227,6 +1227,80 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /**
+     * One-off: website fix list items H5 (wrong social accounts) and H7
+     * (missing phone number). Updates the Instagram link to the new
+     * brainova.bc handle, adds a TikTok row for the same handle (there
+     * wasn't one before), and sets the public phone number. Deliberately
+     * leaves Facebook alone — the fix list flags which Facebook account is
+     * official as still undecided (D1) — and doesn't add YouTube, since
+     * the channel hasn't been renamed yet per the fix list's own note.
+     * Safe to re-visit: it updates in place rather than duplicating rows.
+     */
+    public function fixSocialAndContactInfo(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $report = [];
+
+        $section = \App\Models\WebsiteSetup\PageSections::where('key', 'social_links')->first();
+        if ($section) {
+            $links = $section->data ?? [];
+
+            $foundInstagram = false;
+            $foundTiktok    = false;
+
+            foreach ($links as $i => $link) {
+                if (strcasecmp($link['name'] ?? '', 'Instagram') === 0) {
+                    $links[$i]['link'] = 'https://www.instagram.com/brainova.bc';
+                    $foundInstagram = true;
+                }
+                if (strcasecmp($link['name'] ?? '', 'TikTok') === 0) {
+                    $links[$i]['link'] = 'https://www.tiktok.com/@brainova.bc';
+                    $foundTiktok = true;
+                }
+            }
+
+            if (!$foundInstagram) {
+                $links[] = ['name' => 'Instagram', 'icon' => 'fab fa-instagram', 'link' => 'https://www.instagram.com/brainova.bc'];
+            }
+            if (!$foundTiktok) {
+                $links[] = ['name' => 'TikTok', 'icon' => 'fab fa-tiktok', 'link' => 'https://www.tiktok.com/@brainova.bc'];
+            }
+
+            $section->data = $links;
+            $section->save();
+            $report[] = 'Instagram and TikTok now point to brainova.bc (' . count($links) . ' social links total). Facebook left untouched — D1 not yet settled.';
+        } else {
+            $report[] = 'No social_links section found to update — check Website Setup -> Sections.';
+        }
+
+        $phoneSetting = \App\Models\Setting::where('name', 'phone')->first();
+        if ($phoneSetting) {
+            $phoneSetting->value = '+92 325 2202555';
+        } else {
+            $phoneSetting        = new \App\Models\Setting();
+            $phoneSetting->name  = 'phone';
+            $phoneSetting->value = '+92 325 2202555';
+        }
+        $phoneSetting->save();
+        $report[] = 'Phone number set to +92 325 2202555 (shown in header/footer/contact via setting("phone")).';
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . implode("\n", $report)
+            . "\n\nStill open: which email is the one public address (D2), and which Facebook page is official (D1) —"
+            . "\nboth need your decision before I can fix them the same way."
+            . "</pre>"
+        );
+    }
+
     /** One-off: builds a full test fixture for the Phase 1 learning-engine
      *  work — 3 skills, a real graded exam (visible in Online Examination →
      *  Question Bank / Online Exam like any other), and enough additional

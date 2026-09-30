@@ -2,6 +2,9 @@
 @section('title')
     {{ ___('frontend.about_US') }}
 @endsection
+@section('meta_description')
+    Learn about Brainova — an online school built around real business thinking, small live classes and a curriculum that goes Beyond Classrooms.
+@endsection
 
 @section('main')
     {{-- HERO ------------------------------------------------------------------ --}}

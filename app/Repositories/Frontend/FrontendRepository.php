@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Models\GalleryCategory;
 use App\Jobs\NotificationSendJob;
+use App\Models\WebsiteSetup\ProgramWaitlistEntry;
 use App\Traits\CommonHelperTrait;
 use App\Models\WebsiteSetup\About;
 use App\Models\Academic\ClassSetup;
@@ -382,6 +383,28 @@ class FrontendRepository implements FrontendInterface
             return response()->json([___('frontend.Success'), ___('frontend.send_successfully'), 'success', ___('frontend.OK')]);
         } catch (\Throwable $th) {
             return response()->json([___('frontend.Error'), ___('frontend.something_went_wrong'), 'error', ___('frontend.OK')]);
+        }
+    }
+
+    /** A parent joining the waitlist for a program that hasn't launched
+     *  yet — see the website fix list, H1/H12. Plain redirect-back-with-
+     *  flash, not AJAX, so it works even if the page's JS hasn't loaded. */
+    public function waitlist($request)
+    {
+        try {
+            ProgramWaitlistEntry::create([
+                'program_category_id' => $request->input('program_category_id') ?: null,
+                'parent_name'         => $request->input('parent_name'),
+                'whatsapp_number'     => $request->input('whatsapp_number'),
+                'child_grade'         => $request->input('child_grade'),
+            ]);
+
+            return redirect()->back()
+                ->with('waitlist_success', "You're on the list — we'll reach out on WhatsApp as soon as this opens.");
+        } catch (\Throwable $th) {
+            return redirect()->back()
+                ->withInput()
+                ->with('waitlist_error', 'Something went wrong — please try again.');
         }
     }
 

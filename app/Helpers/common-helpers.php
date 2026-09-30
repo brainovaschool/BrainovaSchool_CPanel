@@ -901,10 +901,9 @@ if (!function_exists('online_admission_programs')) {
         // config value fails to load (e.g. a stale config cache on the host).
         return [
             'Homeschooling',
-            'Tutoring',
+            'Academic Support',
             'Electives & Enrichment',
             'Social Clubs',
-            'Online Short Courses',
         ];
     }
 }

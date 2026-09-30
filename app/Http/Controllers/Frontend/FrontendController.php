@@ -622,4 +622,16 @@ class FrontendController extends Controller
     {
         return $this->repo->subscribe($request);
     }
+
+    public function storeWaitlist(Request $request)
+    {
+        $request->validate([
+            'parent_name'          => 'required|string|max:120',
+            'whatsapp_number'      => 'required|string|max:40',
+            'child_grade'          => 'nullable|string|max:80',
+            'program_category_id'  => 'nullable|integer|exists:program_categories,id',
+        ]);
+
+        return $this->repo->waitlist($request);
+    }
 }

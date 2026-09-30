@@ -2,6 +2,9 @@
 @section('title')
     {{ ___('frontend.contact_us') }}
 @endsection
+@section('meta_description')
+    Get in touch with Brainova — ask a question, book a free demo class, or chat with us on WhatsApp.
+@endsection
 
 @section('main')
 

@@ -1,6 +1,9 @@
 @extends('frontend.master')
 @section('title')
-    {{ settingLocale('application_name') }}
+    Online Homeschooling, Academic Support & Future Skills Courses
+@endsection
+@section('meta_description')
+    Brainova is an online school offering Homeschooling, Academic Support, Electives & Enrichment (coding, AI, design) and Social Clubs for students aged 5 to 16. Book a free demo class today.
 @endsection
 
 @section('main')

@@ -45,6 +45,7 @@ Route::middleware(saasMiddleware())->group(function () {
 
                 Route::post('/contact',         'storeContact')->name('frontend.contact.store');
                 Route::post('/subscribe',       'storeSubscribe')->name('frontend.subscribe');
+                Route::post('/waitlist',        'storeWaitlist')->name('frontend.waitlist.store');
                 Route::post('/online-admission','storeOnlineAdmission')->name('frontend.online-admission.store');
                 Route::post('/online-admission-fees','storeOnlineAdmissionFees')->name('frontend.online-admission-fees-store');
 

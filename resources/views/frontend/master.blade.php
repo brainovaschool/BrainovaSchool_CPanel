@@ -4,5 +4,7 @@
 
 @yield('main')
 
+@include('frontend.partials.whatsapp-button')
+
 @include('frontend.partials.footer-content')
 @include('frontend.partials.footer')

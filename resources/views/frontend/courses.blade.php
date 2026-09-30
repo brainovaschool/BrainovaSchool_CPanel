@@ -3,6 +3,9 @@
 @section('title')
     {{ ___('frontend.Courses') }}
 @endsection
+@section('meta_description')
+    Explore Brainova's programs — Homeschooling, Academic Support, Electives & Enrichment (coding, AI, Canva) and Social Clubs, for students aged 5 to 16.
+@endsection
 
 @push('css')
 <link rel="stylesheet" href="{{ global_asset('frontend') }}/css/frontend-courses.css">

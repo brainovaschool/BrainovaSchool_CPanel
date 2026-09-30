@@ -142,8 +142,13 @@
                         <div class="header__right">
                             <div class="contact_wrap d-flex align-items-center">
                                 <div class="contact_btn d-none d-lg-flex gap_15 align-items-center">
+                                    {{-- The "Contact Us" label itself used to link to "#" — it only ever
+                                         worked as a hover trigger for the dropdown below, so on touch
+                                         devices (no hover) tapping it did nothing at all. It now goes to
+                                         the real Contact page; the hover dropdown still offers the two
+                                         quick shortcuts for anyone who wants them. --}}
                                     <div class="bn-dropdown">
-                                        <a href="#" class="theme_btn small_btn3 min_windth_150 text-center">Contact Us</a>
+                                        <a href="{{ route('frontend.contact') }}" class="theme_btn small_btn3 min_windth_150 text-center">Contact Us</a>
                                         <ul class="bn-dropdown-menu">
                                             <li><a href="{{ route('frontend.online-admission') }}">{{ ___('frontend.online_admission') }}</a></li>
                                             <li><a href="{{ route('frontend.book-free-trial') }}">Demo Class</a></li>

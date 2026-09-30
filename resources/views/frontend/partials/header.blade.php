@@ -6,8 +6,15 @@
     <meta charset="utf-8">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
     <link rel="shortcut icon" type="image/x-icon" href="{{ @globalAsset(setting('favicon'), '40X40.webp')}}">
-    <title>Brainova School</title>
-    <meta name="description" content="{{setting('application_name')}}">
+    {{-- Every page template already sets @section('title') and, where it
+         matters for SEO/sharing, @section('meta_description') — this used
+         to be ignored entirely (a hardcoded "Brainova School" and the
+         generic application_name setting showed on every single page).
+         Centralising the " | Brainova School | Beyond Classrooms" suffix
+         here means every page gets it automatically, with no per-page
+         template needing to repeat it. --}}
+    <title>@yield('title', 'Home') | Brainova School | Beyond Classrooms</title>
+    <meta name="description" content="@yield('meta_description', setting('application_name'))">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <input type="hidden" name="url" id="url" value="{{ url('') }}">

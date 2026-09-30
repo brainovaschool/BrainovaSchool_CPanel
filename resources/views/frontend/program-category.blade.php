@@ -9,6 +9,14 @@
     $total      = $data['total'] ?? 0;
     $trust      = $data['trust'] ?? [];
     $heroImg    = $category->image;
+
+    // Same "don't promise what isn't live" status as the homepage cards
+    // (see frontend/partials/home/programs.blade.php) — kept in sync by
+    // slug rather than shared code, since this is a stopgap until launch
+    // status becomes a real admin-editable field on Program Category.
+    $comingSoonSlugs = ['homeschooling', 'social-clubs'];
+    $isComingSoon    = in_array($category->slug, $comingSoonSlugs, true);
+    $launchNote      = $isComingSoon ? 'Starts around March 2027.' : null;
 @endphp
 
 @section('title')
@@ -33,10 +41,20 @@
                     @if ($category->hero_subtitle)
                         <p class="fe-courses-hero-lead">{{ $category->hero_subtitle }}</p>
                     @endif
-                    <div class="fe-courses-hero-cta">
-                        <a href="{{ route('frontend.contact') }}" class="fe-btn-pill fe-btn-primary">Talk to admissions</a>
-                        <a href="{{ route('frontend.online-admission') }}" class="fe-btn-pill fe-btn-ghost">Start online admission</a>
-                    </div>
+                    @if ($isComingSoon)
+                        <p style="display:inline-block;background:#fff3d6;color:#8a5b00;font-weight:600;font-size:.85rem;padding:6px 14px;border-radius:20px;margin-bottom:14px;">
+                            Coming soon — {{ $launchNote }}
+                        </p>
+                        <div class="fe-courses-hero-cta">
+                            <a href="#waitlist" class="fe-btn-pill fe-btn-primary">Join the waitlist</a>
+                            <a href="{{ route('frontend.contact') }}" class="fe-btn-pill fe-btn-ghost">Ask a question</a>
+                        </div>
+                    @else
+                        <div class="fe-courses-hero-cta">
+                            <a href="{{ route('frontend.contact') }}" class="fe-btn-pill fe-btn-primary">Talk to admissions</a>
+                            <a href="{{ route('frontend.online-admission') }}" class="fe-btn-pill fe-btn-ghost">Start online admission</a>
+                        </div>
+                    @endif
                 </div>
                 @if ($heroImg)
                     <div class="col-lg-5 d-none d-lg-block">
@@ -93,12 +111,20 @@
                                 </div>
                                 <div class="fe-course-card-body">
                                     <h3 class="fe-course-card-title">{{ $program->title }}</h3>
+                                    {{-- M4: every program is a Brainova program — spelled out once here
+                                         rather than only next to named sub-brands like CODENOVA/AI Sparklab,
+                                         since there's no reliable way to tell those apart from a plain
+                                         program title without a dedicated field. --}}
+                                    <p style="font-size:.72rem;letter-spacing:.04em;color:#8a97a3;margin:-6px 0 8px;">A Brainova program</p>
                                     <p class="fe-course-card-desc">{{ \Illuminate\Support\Str::limit(strip_tags($program->description ?? ''), 120) }}</p>
 
                                     @if ($program->price)
                                         <div class="fe-course-card-price-wrap" aria-label="Course fee">
                                             <span class="fe-course-card-price-label">Fee</span>
                                             <div class="fe-course-card-price">{{ $program->price }}</div>
+                                            @if (\Illuminate\Support\Str::contains(\Illuminate\Support\Str::lower($program->price), 'contact'))
+                                                <div style="font-size:.72rem;color:#8a97a3;">We reply within 1 business day</div>
+                                            @endif
                                         </div>
                                     @endif
 
@@ -124,9 +150,19 @@
                 </div>
 
                 @include('frontend.partials.courses-pagination', ['paginator' => $paginator])
+            @elseif ($isComingSoon)
+                <div class="fe-courses-empty fe-is-visible">
+                    <p>{{ $category->name }} hasn't launched yet — {{ \Illuminate\Support\Str::lower($launchNote) }} Join the waitlist below and we'll let you know as soon as it opens.</p>
+                </div>
             @else
                 <div class="fe-courses-empty fe-is-visible">
-                    <p>Only Registered members can avail this facility. For registration, <a href="{{ route('frontend.contact') }}">contact our representative</a>.</p>
+                    <p>No programs are listed here yet. <a href="{{ route('frontend.contact') }}">Contact us</a> and we'll point you in the right direction.</p>
+                </div>
+            @endif
+
+            @if ($isComingSoon)
+                <div id="waitlist" style="margin-top:40px;">
+                    @include('frontend.partials.waitlist-form', ['category' => $category, 'launchNote' => $launchNote])
                 </div>
             @endif
         </div>
