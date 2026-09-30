@@ -78,8 +78,18 @@ class HomeVideo extends BaseModel
             return ['type' => 'file', 'src' => $url, 'thumb' => null];
         }
 
-        // Anything else (Canva share links, Vimeo, ...) — best effort as
-        // a plain iframe using the link exactly as given.
+        // Canva's normal watch/view/share pages refuse to be framed on
+        // another site (plain iframe = blank box) — they only allow it
+        // with an `embed` flag on the URL, which is what Canva's own
+        // "Share -> Embed" button adds automatically. Adding it here
+        // means the admin can just paste the plain share link.
+        if (stripos($host, 'canva.com') !== false || stripos($host, 'canva.link') !== false) {
+            $sep = (strpos($url, '?') !== false) ? '&' : '?';
+            return ['type' => 'canva', 'src' => $url . $sep . 'embed', 'thumb' => null];
+        }
+
+        // Anything else (Vimeo, etc.) — best effort as a plain iframe
+        // using the link exactly as given.
         return ['type' => 'embed', 'src' => $url, 'thumb' => null];
     }
 }
