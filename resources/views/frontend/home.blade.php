@@ -24,10 +24,10 @@
                                 <h3>{{ @$item->defaultTranslate->name }}</span></h3>
                                 <p>{{ @$item->defaultTranslate->description }}</p>
                                 <div class="d-flex align-items-center gap_24 justify-content-center flex-wrap">
-                                    <a href="{{ route('frontend.about') }}"
-                                        class="theme_btn min_windth_200">{{ ___('frontend.read_more') }}</a>
                                     <a href="{{ route('frontend.contact') }}"
-                                        class="theme_line_btn min_windth_200">{{ ___('frontend.contact_us') }}</a>
+                                        class="theme_btn min_windth_200">{{ ___('frontend.contact_us') }}</a>
+                                    <a href="{{ route('frontend.about') }}"
+                                        class="theme_line_btn min_windth_200">{{ ___('frontend.read_more') }}</a>
                                 </div>
                             </div>
                         </div>

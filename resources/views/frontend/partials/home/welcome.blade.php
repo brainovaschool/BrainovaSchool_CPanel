@@ -16,7 +16,7 @@
             shared straight to your parent account.
         </p>
         <div class="bn-welcome-cta">
-            <a href="{{ route('frontend.book-free-trial') }}" class="bn-btn bn-btn--primary">Book a free trial</a>
+            <a href="{{ route('frontend.contact') }}" class="bn-btn bn-btn--primary">Talk to admissions</a>
             <a href="{{ route('frontend.courses') }}" class="bn-btn bn-btn--ghost">Explore all programs</a>
         </div>
     </div>

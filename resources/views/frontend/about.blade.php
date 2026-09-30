@@ -254,11 +254,11 @@
                 <div class="bn-handbook-inner bn-aurora">
                     <div>
                         <h2>See Brainova with your own child</h2>
-                        <p>Book a free trial and watch a real live session, or start your application when you&rsquo;re ready.</p>
+                        <p>Talk to our admissions team about your child, or book a free trial and watch a real live session.</p>
                     </div>
                     <div class="bn-handbook-actions">
-                        <a href="{{ route('frontend.book-free-trial') }}" class="bn-btn bn-btn--primary">Book a free trial</a>
-                        <a href="{{ route('frontend.online-admission') }}" class="bn-btn bn-btn--ghost">Start online admission</a>
+                        <a href="{{ route('frontend.contact') }}" class="bn-btn bn-btn--primary">Talk to admissions</a>
+                        <a href="{{ route('frontend.book-free-trial') }}" class="bn-btn bn-btn--ghost">Book a free trial</a>
                     </div>
                 </div>
             </section>

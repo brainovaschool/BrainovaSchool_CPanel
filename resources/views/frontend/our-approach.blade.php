@@ -115,11 +115,11 @@
             <div class="bn-handbook-inner bn-aurora">
                 <div>
                     <h2>See it in a real week</h2>
-                    <p>The best way to understand the Brainova approach is to watch your child in a session.</p>
+                    <p>The best way to understand the Brainova approach is to talk to us, or watch your child in a session.</p>
                 </div>
                 <div class="bn-handbook-actions">
-                    <a href="{{ route('frontend.book-free-trial') }}" class="bn-btn bn-btn--primary">Book a free trial</a>
-                    <a href="{{ route('frontend.courses') }}" class="bn-btn bn-btn--ghost">Explore programs</a>
+                    <a href="{{ route('frontend.contact') }}" class="bn-btn bn-btn--primary">Talk to admissions</a>
+                    <a href="{{ route('frontend.book-free-trial') }}" class="bn-btn bn-btn--ghost">Book a free trial</a>
                 </div>
             </div>
         </section>
