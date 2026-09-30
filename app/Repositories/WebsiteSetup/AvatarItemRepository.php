@@ -168,6 +168,36 @@ class AvatarItemRepository
         }
     }
 
+    /** Two settings saved together from the one form: the master on/off
+     *  switch, and which specific students can still see the Island while
+     *  it's off for everyone else — see AvatarItem::islandVisibleFor(). */
+    public function updateIslandVisibility($request): array
+    {
+        try {
+            $this->setSettingValue('island_visible_to_all', $request->input('visible_to_all') ? '1' : '0');
+
+            $testerIds = array_values(array_filter(array_map('intval', (array) $request->input('tester_ids', []))));
+            $this->setSettingValue('island_tester_student_ids', json_encode($testerIds));
+
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
+    private function setSettingValue(string $name, string $value): void
+    {
+        $setting = Setting::where('name', $name)->first();
+        if ($setting) {
+            $setting->value = $value;
+        } else {
+            $setting        = new Setting();
+            $setting->name  = $name;
+            $setting->value = $value;
+        }
+        $setting->save();
+    }
+
     /** Creates one item per uploaded file, named after the file, priced and
      *  placed from the category defaults. Positioning is still per-item, but
      *  building a wardrobe no longer means repeating the whole form for

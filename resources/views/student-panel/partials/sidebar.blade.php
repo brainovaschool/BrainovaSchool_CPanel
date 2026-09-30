@@ -21,12 +21,14 @@
                         <span class="on-half-expanded">{{ ___('settings.ai_help_student') }}</span>
                     </a>
                 </li>
-                <li class="sidebar-menu-item {{ set_menu(['student-panel-avatar*']) }}">
-                    <a href="{{ route('student-panel-avatar.index') }}" class="parent-item-content">
-                        <i class="las la-umbrella-beach"></i>
-                        <span class="on-half-expanded">{{ ___('settings.my_learning_island') }}</span>
-                    </a>
-                </li>
+                @if (auth()->user()->student && App\Models\LearningEngine\AvatarItem::islandVisibleFor(auth()->user()->student->id))
+                    <li class="sidebar-menu-item {{ set_menu(['student-panel-avatar*']) }}">
+                        <a href="{{ route('student-panel-avatar.index') }}" class="parent-item-content">
+                            <i class="las la-umbrella-beach"></i>
+                            <span class="on-half-expanded">{{ ___('settings.my_learning_island') }}</span>
+                        </a>
+                    </li>
+                @endif
                 <li class="sidebar-menu-item {{ set_menu(['student-panel-dashboard/guide']) }}">
                     <a href="{{ route('student-panel-dashboard.guide') }}" class="parent-item-content">
                         <i class="las la-question-circle"></i>

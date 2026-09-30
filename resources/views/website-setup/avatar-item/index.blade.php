@@ -121,6 +121,69 @@
                     </form>
                 </div>
             </div>
+
+            <div class="card mb-24" style="border-color:{{ $data['islandVisibleToAll'] ? '' : '#f3d9a4' }};">
+                <div class="card-header"><h5 class="mb-0">My Learning Island — who can see it</h5></div>
+                <div class="card-body">
+                    <p class="text-secondary mb-3">
+                        My Learning Island (the Shop and My Island tabs together) is still being built. While it's off,
+                        real students see the normal dashboard with no trace of it — no unfinished tab, nothing to be
+                        confused by. Turn it on for everyone once it's ready.
+                    </p>
+                    @if (!$data['islandVisibleToAll'])
+                        <p class="mb-3" style="font-size:.85rem; color:#92400e; background:#fbf0dd; border:1px solid #f3d9a4; border-radius:8px; padding:8px 12px;">
+                            <i class="fa-solid fa-eye-slash"></i> Currently hidden from every student except the ones checked below.
+                        </p>
+                    @endif
+                    <form action="{{ route('avatar-item.island-visibility') }}" method="post">
+                        @csrf
+                        <div class="form-check form-switch mb-3">
+                            <input class="form-check-input" type="checkbox" role="switch" id="islandVisibleToAll" name="visible_to_all" value="1" {{ $data['islandVisibleToAll'] ? 'checked' : '' }}>
+                            <label class="form-check-label" for="islandVisibleToAll">Show My Learning Island to every student</label>
+                        </div>
+
+                        <div id="islandTesterList" style="{{ $data['islandVisibleToAll'] ? 'display:none;' : '' }}">
+                            <label class="form-label">Testers — can always see it, even while it's off for everyone else</label>
+                            @if ($data['students']->isEmpty())
+                                <p class="text-secondary" style="font-size:.85rem;">No students exist yet.</p>
+                            @else
+                                <div style="max-height:260px; overflow-y:auto; border:1px solid #e7e9ee; border-radius:10px; padding:10px 14px;">
+                                    @foreach ($data['students'] as $student)
+                                        @php
+                                            $scs = $student->session_class_student;
+                                            $where = $scs ? trim(optional($scs->class)->name . ' ' . optional($scs->section)->name) : '';
+                                        @endphp
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="tester_ids[]" value="{{ $student->id }}"
+                                                id="tester_{{ $student->id }}" {{ in_array($student->id, $data['islandTesterIds'], true) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="tester_{{ $student->id }}">
+                                                {{ $student->first_name }} {{ $student->last_name }}
+                                                @if ($where)
+                                                    <span class="text-secondary">— {{ $where }}</span>
+                                                @endif
+                                            </label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+
+                        <button class="btn btn-lg ot-btn-primary mt-3">{{ ___('common.save') }}</button>
+                    </form>
+                </div>
+            </div>
+            @push('script')
+            <script>
+            (function () {
+                var toggle = document.getElementById('islandVisibleToAll');
+                var list   = document.getElementById('islandTesterList');
+                if (!toggle || !list) return;
+                toggle.addEventListener('change', function () {
+                    list.style.display = toggle.checked ? 'none' : '';
+                });
+            })();
+            </script>
+            @endpush
         @endif
 
         <div class="table-content table-basic mt-20">

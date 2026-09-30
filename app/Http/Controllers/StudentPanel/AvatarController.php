@@ -5,6 +5,7 @@ namespace App\Http\Controllers\StudentPanel;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Models\LearningEngine\AvatarItem;
 use App\Models\LearningEngine\Mission;
 use App\Repositories\LearningEngine\StudentAvatarRepository;
 use App\Repositories\LearningEngine\StudentMissionRepository;
@@ -20,9 +21,23 @@ class AvatarController extends Controller
         $this->missions = $missions;
     }
 
+    /** My Learning Island is still being built — hidden from every student
+     *  except the ones Website Setup marks as testers (see
+     *  AvatarItem::islandVisibleFor()). Checked here, not just in the
+     *  sidebar, so a student can't reach any of this by typing the URL
+     *  directly. A blocked request 404s rather than showing an "access
+     *  denied" page — the point is that this doesn't visibly exist yet. */
+    private function ensureIslandAccess($student): void
+    {
+        if (!$student || !AvatarItem::islandVisibleFor($student->id)) {
+            abort(404);
+        }
+    }
+
     public function index()
     {
         $student = Auth::user()->student;
+        $this->ensureIslandAccess($student);
         $profile = $this->repo->getOrCreateProfile($student->id);
 
         // Checked on every visit rather than only when work is submitted,
@@ -41,6 +56,7 @@ class AvatarController extends Controller
     {
         $request->validate(['theme' => 'required|in:' . implode(',', array_keys(Mission::THEMES))]);
         $student = Auth::user()->student;
+        $this->ensureIslandAccess($student);
 
         $result = $this->repo->chooseTheme($student->id, $request->input('theme'));
 
@@ -54,6 +70,7 @@ class AvatarController extends Controller
     public function room($buildingId)
     {
         $student = Auth::user()->student;
+        $this->ensureIslandAccess($student);
         $profile = $this->repo->getOrCreateProfile($student->id);
 
         $data['building'] = \App\Models\LearningEngine\AvatarItem::active()->category('building')->find($buildingId);
@@ -66,6 +83,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'required|integer']);
         $student = Auth::user()->student;
+        $this->ensureIslandAccess($student);
 
         $result = $this->repo->purchase($student->id, (int) $request->input('item_id'));
 
@@ -77,6 +95,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'required|integer']);
         $student = Auth::user()->student;
+        $this->ensureIslandAccess($student);
 
         $result = $this->repo->selectAvatar($student->id, (int) $request->input('item_id'));
 
@@ -88,6 +107,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'nullable|integer']);
         $student = Auth::user()->student;
+        $this->ensureIslandAccess($student);
 
         $itemId = $request->filled('item_id') ? (int) $request->input('item_id') : null;
         $result = $this->repo->selectOutfit($student->id, $itemId);
@@ -100,6 +120,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'nullable|integer']);
         $student = Auth::user()->student;
+        $this->ensureIslandAccess($student);
 
         $itemId = $request->filled('item_id') ? (int) $request->input('item_id') : null;
         $result = $this->repo->selectHat($student->id, $itemId);
@@ -112,6 +133,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'required|integer']);
         $student = Auth::user()->student;
+        $this->ensureIslandAccess($student);
 
         $result = $this->repo->toggleAccessory($student->id, (int) $request->input('item_id'));
 
@@ -126,6 +148,7 @@ class AvatarController extends Controller
             'voice_preset' => 'required|string',
         ]);
         $student = Auth::user()->student;
+        $this->ensureIslandAccess($student);
 
         $result = $this->repo->saveProfile($student->id, $request->input('avatar_name'), $request->input('voice_preset'));
 
@@ -141,6 +164,7 @@ class AvatarController extends Controller
             'pos_y'   => 'required|numeric|between:0,100',
         ]);
         $student = Auth::user()->student;
+        $this->ensureIslandAccess($student);
 
         $result = $this->repo->placeItem($student->id, (int) $request->input('item_id'), (float) $request->input('pos_x'), (float) $request->input('pos_y'));
 
@@ -154,6 +178,7 @@ class AvatarController extends Controller
             'pos_y' => 'required|numeric|between:0,100',
         ]);
         $student = Auth::user()->student;
+        $this->ensureIslandAccess($student);
 
         $result = $this->repo->placeAvatar($student->id, (float) $request->input('pos_x'), (float) $request->input('pos_y'));
 

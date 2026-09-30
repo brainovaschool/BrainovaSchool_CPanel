@@ -183,6 +183,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/island-image',   'updateIslandImage')->name('island-image')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
                     Route::post('/tab-labels',     'updateTabLabels')->name('tab-labels')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
                     Route::post('/stage-labels',   'updateStageLabels')->name('stage-labels')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
+                    Route::post('/island-visibility', 'updateIslandVisibility')->name('island-visibility')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
                     Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:avatar_item_update');
                     Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:avatar_item_update', 'DemoCheck');
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:avatar_item_delete', 'DemoCheck');

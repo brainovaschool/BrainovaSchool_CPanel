@@ -171,4 +171,29 @@ class AvatarItem extends BaseModel
 
         return $tabs;
     }
+
+    /** My Learning Island (Shop + My Island — one page, one nav item) is
+     *  still being built, so by default it's hidden from every student
+     *  except the ones Website Setup explicitly marks as testers — fails
+     *  closed: an unset setting means hidden, not visible, so a fresh
+     *  install never accidentally exposes an unfinished feature. Flip
+     *  "island_visible_to_all" on once it's ready for everyone; the
+     *  tester list stops mattering at that point but is left alone rather
+     *  than cleared, so switching back to testing-only later needs no
+     *  re-entry. */
+    public static function islandVisibleFor(int $studentId): bool
+    {
+        if ((string) setting('island_visible_to_all') === '1') {
+            return true;
+        }
+
+        return in_array($studentId, self::islandTesterIds(), true);
+    }
+
+    public static function islandTesterIds(): array
+    {
+        $ids = json_decode((string) setting('island_tester_student_ids'), true) ?: [];
+
+        return array_map('intval', $ids);
+    }
 }
