@@ -1292,11 +1292,26 @@ class MigrationRunnerController extends Controller
         $phoneSetting->save();
         $report[] = 'Phone number set to +92 325 2202555 (shown in header/footer/contact via setting("phone")).';
 
+        $emailSetting = \App\Models\Setting::where('name', 'email')->first();
+        if ($emailSetting) {
+            $emailSetting->value = 'admin@brainovaschool.com';
+        } else {
+            $emailSetting        = new \App\Models\Setting();
+            $emailSetting->name  = 'email';
+            $emailSetting->value = 'admin@brainovaschool.com';
+        }
+        $emailSetting->save();
+        $report[] = 'Header email set to admin@brainovaschool.com (setting("email")).';
+
+        $emailCardsUpdated = \App\Models\ContactInfoTranslate::where('address', 'like', '%@%')->update([
+            'address' => 'admin@brainovaschool.com',
+        ]);
+        $report[] = "Contact page email card(s) updated to admin@brainovaschool.com ({$emailCardsUpdated} row(s) across all languages).";
+
         return response(
             '<pre style="font:14px/1.5 monospace;padding:24px">'
             . implode("\n", $report)
-            . "\n\nStill open: which email is the one public address (D2), and which Facebook page is official (D1) —"
-            . "\nboth need your decision before I can fix them the same way."
+            . "\n\nStill open: which Facebook page is official (D1) — needs your decision before I can fix that link."
             . "</pre>"
         );
     }
