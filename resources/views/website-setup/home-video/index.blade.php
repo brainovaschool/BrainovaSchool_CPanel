@@ -61,7 +61,15 @@
                                             <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
                                         @endif
                                         <td>{{ $row->title ?: '—' }}</td>
-                                        <td><a href="{{ $row->video_url }}" target="_blank" rel="noopener" style="word-break:break-all;">{{ \Illuminate\Support\Str::limit($row->video_url, 45) }}</a></td>
+                                        <td>
+                                            @if ($row->upload_id && $row->upload)
+                                                <a href="{{ globalAsset($row->upload->path) }}" target="_blank" rel="noopener">{{ $row->upload->name }}</a>
+                                            @elseif ($row->video_url)
+                                                <a href="{{ $row->video_url }}" target="_blank" rel="noopener" style="word-break:break-all;">{{ \Illuminate\Support\Str::limit($row->video_url, 45) }}</a>
+                                            @else
+                                                —
+                                            @endif
+                                        </td>
                                         <td><span class="badge-basic-success-text">{{ ucfirst($embed['type']) }}</span></td>
                                         <td>{{ App\Models\WebsiteSetup\HomeVideo::ORIENTATIONS[$row->orientation] ?? $row->orientation }}</td>
                                         <td>

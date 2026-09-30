@@ -20,7 +20,7 @@
 
         <div class="card ot-card">
             <div class="card-body">
-                <form action="{{ route('home-video.update', $data['item']->id) }}" method="post">
+                <form action="{{ route('home-video.update', $data['item']->id) }}" method="post" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     @include('website-setup.home-video._form')

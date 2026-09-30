@@ -2,14 +2,34 @@
     $s = $data['item'] ?? null;
 @endphp
 
+@if ($s && $s->upload_id && $s->upload)
+    <div class="alert alert-info d-flex align-items-center justify-content-between" style="font-size:.88rem;">
+        <span><i class="fa-solid fa-circle-play me-1"></i> Currently using an uploaded file: <strong>{{ $s->upload->name }}</strong></span>
+        <a href="{{ globalAsset($s->upload->path) }}" target="_blank" rel="noopener">Preview</a>
+    </div>
+@endif
+
 <div class="row">
-    <div class="col-md-8 mb-3">
-        <label class="form-label">Video link <span class="fillable">*</span></label>
+    <div class="col-md-6 mb-3">
+        <label class="form-label">Video link</label>
         <input class="form-control ot-input @error('video_url') is-invalid @enderror" name="video_url"
             value="{{ old('video_url', $s->video_url ?? '') }}"
-            placeholder="A YouTube, Facebook or Instagram link, or a direct link to a video you host yourself">
+            placeholder="A YouTube, Facebook or Instagram link, or a direct link to a video you host elsewhere">
         @error('video_url')<div class="invalid-feedback">{{ $message }}</div>@enderror
-        <small class="text-secondary">The video itself is never uploaded here — only the link, so the site stays light.</small>
+        <small class="text-secondary">Lightest option — the video plays from YouTube/Facebook/Instagram's own servers, not ours.</small>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label class="form-label">— or upload a video file —</label>
+        <div class="ot_fileUploader left-side mb-2 @error('video_file') is-invalid @enderror">
+            <input class="form-control" type="text" placeholder="Video file" readonly id="placeholder">
+            <button class="primary-btn-small-input" type="button">
+                <label class="btn btn-lg ot-btn-primary" for="fileBrouse">{{ ___('common.browse') }}</label>
+                <input type="file" class="d-none form-control" name="video_file" accept="video/*" id="fileBrouse">
+            </button>
+        </div>
+        @error('video_file')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        <small class="text-secondary">Served from this server instead of a third party — heavier on the site, up to 50MB. Uploading a new file replaces any existing link or file.</small>
     </div>
 
     <div class="col-md-4 mb-3">

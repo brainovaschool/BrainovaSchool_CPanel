@@ -3,6 +3,7 @@
 namespace App\Models\WebsiteSetup;
 
 use App\Models\BaseModel;
+use App\Models\Upload;
 
 class HomeVideo extends BaseModel
 {
@@ -22,6 +23,11 @@ class HomeVideo extends BaseModel
         return $query->where('status', \App\Enums\Status::ACTIVE);
     }
 
+    public function upload()
+    {
+        return $this->belongsTo(Upload::class, 'upload_id', 'id');
+    }
+
     /** True only for platforms whose embed genuinely supports autoplay.
      *  Instagram's embed widget has no autoplay parameter at all — the
      *  admin checkbox is ignored for it rather than silently failing. */
@@ -37,6 +43,13 @@ class HomeVideo extends BaseModel
      *  video host that exists. */
     public function resolveEmbed(): array
     {
+        // An uploaded file always wins over a link — no ambiguity, and
+        // no third-party branding at all since it's served from our own
+        // storage.
+        if ($this->upload_id && $this->upload) {
+            return ['type' => 'file', 'src' => globalAsset($this->upload->path), 'thumb' => null];
+        }
+
         $url  = trim((string) $this->video_url);
         $host = parse_url($url, PHP_URL_HOST) ?: '';
 

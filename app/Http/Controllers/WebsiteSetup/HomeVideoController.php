@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\WebsiteSetup\HomeVideo;
 use App\Repositories\WebsiteSetup\HomeVideoRepository;
+use Illuminate\Validation\ValidationException;
 
 class HomeVideoController extends Controller
 {
@@ -52,7 +53,7 @@ class HomeVideoController extends Controller
 
     public function update(Request $request, $id)
     {
-        $this->validateRequest($request);
+        $this->validateRequest($request, $this->repo->show($id));
 
         $result = $this->repo->update($request, $id);
         if ($result['status']) {
@@ -96,15 +97,32 @@ class HomeVideoController extends Controller
         return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
     }
 
-    private function validateRequest(Request $request): void
+    /** video_url and video_file are both optional on their own — what's
+     *  required is at least one of: a link, a freshly uploaded file, or
+     *  (on update) a file/link the row already had. 50MB cap on uploads
+     *  is a reasonable default, not a verified server limit — a host's
+     *  own php.ini upload_max_filesize/post_max_size can still reject a
+     *  file before this validation even runs. */
+    private function validateRequest(Request $request, ?HomeVideo $existing = null): void
     {
         $request->validate([
             'title'       => 'nullable|string|max:150',
-            'video_url'   => 'required|string|max:500|url',
+            'video_url'   => 'nullable|string|max:500|url',
+            'video_file'  => 'nullable|file|mimes:mp4,mov,webm,ogg,avi,m4v|max:51200',
             'orientation' => 'required|in:' . implode(',', array_keys(HomeVideo::ORIENTATIONS)),
             'autoplay'    => 'nullable|boolean',
             'sort_order'  => 'nullable|integer',
             'status'      => 'required',
         ]);
+
+        $hasLink        = $request->filled('video_url');
+        $hasFile        = $request->hasFile('video_file');
+        $hasExisting    = $existing && ($existing->upload_id || $existing->video_url);
+
+        if (!$hasLink && !$hasFile && !$hasExisting) {
+            throw ValidationException::withMessages([
+                'video_url' => 'Paste a video link, or upload a video file below.',
+            ]);
+        }
     }
 }

@@ -20,7 +20,7 @@
 
         <div class="card ot-card">
             <div class="card-body">
-                <form action="{{ route('home-video.store') }}" method="post">
+                <form action="{{ route('home-video.store') }}" method="post" enctype="multipart/form-data">
                     @csrf
                     @include('website-setup.home-video._form')
                 </form>
