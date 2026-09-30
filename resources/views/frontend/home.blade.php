@@ -71,13 +71,13 @@
     </div>
     <!-- FACILITES_AREA::END  -->
 
+    @include('frontend.partials.home.videos', ['videos' => $data['videos']])
+
     @include('frontend.partials.home.programs')
 
     @include('frontend.partials.home.how-it-works')
 
     @include('frontend.partials.home.mascots')
-
-    @include('frontend.partials.home.videos', ['videos' => $data['videos']])
 
     {{-- Mission/Vision ("statement") and "Why study at" ("services") now live only on the About page. --}}
 
