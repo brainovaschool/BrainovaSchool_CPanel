@@ -8,7 +8,7 @@
                         <div class="footer_widget">
                             <div class="footer_logo">
                                 <a href="#">
-                                    <img height="60" src="{{ @globalAsset(setting('light_logo'), '154X38.webp') }}" alt="Logo">
+                                    <img height="60" src="{{ @globalAsset(setting('light_logo'), '154X38.webp') }}" alt="Brainova School">
                                 </a>
                             </div>
                             <p class="description_text">At Brainova, we combine nurturing care with advanced AI-powered learning to create a safe, interactive, and future-focused environment guided by experienced professionals.</p>
@@ -53,6 +53,8 @@
                             <div class="subcribe-form mb_20 theme_mailChimp2">
                                 <form action="" method="get" class="subscription relative">
                                     <input name="email" class="email form-control" placeholder="{{ ___('frontend.type_email_address') }}" onfocus="this.placeholder = ''" onblur="this.placeholder = 'Type e-mail address…'" required="" type="email">
+                                    {{-- H10: honeypot — invisible to people, bots fill it in and get silently rejected server-side --}}
+                                    <input type="text" name="website" class="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
                                     <button type="submit" class="submit-btn">{{ ___('frontend.Subscribe') }}</button>
                                 </form>
                             </div>

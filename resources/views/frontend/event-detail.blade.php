@@ -53,7 +53,7 @@
                         <!-- single_latest_single -->
                         <div class="single_latest_news_list">
                             <a href="{{ route('frontend.events-detail',$item->id) }}" class="icon_thumb">
-                                <img src="{{ @globalAsset(@$item->upload->path, '40X40.webp') }}" alt="Image" class="img-fluid">
+                                <img src="{{ @globalAsset(@$item->upload->path, '40X40.webp') }}" alt="{{ @$item->defaultTranslate->title ?: 'Brainova event' }}" class="img-fluid">
                             </a>
                             <div class="content_text">
                                 <h4>

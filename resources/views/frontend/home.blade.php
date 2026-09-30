@@ -54,7 +54,7 @@
                         <div class="facilites_box d-flex align-items-center mb_30">
                             <div class="facilites_box_icon">
                                 <img height="75" src="{{ @globalAsset(@$item->upload->path, '90X60.webp') }}"
-                                    alt="Icon">
+                                    alt="" role="presentation">
                             </div>
                             <div class="facilites_box_content">
                                 <h4>{{ @$item->defaultTranslate->total_count }}+</h4>
@@ -87,7 +87,7 @@
                     <div class="explorer_imgs">
                         <div class="explorer_thumb mb_30">
                             <img src="{{ @globalAsset(@$sections['explore']->upload->path, '512X512.webp') }}"
-                                alt="Image" class="img-fluid">
+                                alt="{{ @$sections['explore']->defaultTranslate->name ?: 'Explore Brainova' }}" class="img-fluid">
                         </div>
                     </div>
                 </div>
@@ -178,7 +178,7 @@
                                     aria-labelledby="event{{ $key }}-tab">
                                     <div class="event_wrapper_img">
                                         <img src="{{ @globalAsset(@$item->upload->path, '800X500.webp') }}"
-                                            alt="Image" class="img-fluid">
+                                            alt="{{ @$item->defaultTranslate->title ?: 'Upcoming event' }}" class="img-fluid">
                                     </div>
                                 </div>
                             @endforeach
@@ -235,7 +235,7 @@
                         @if ($key == 0 || $key == 3)
                             <div class="blog_widget">
                                 <a href="{{ route('frontend.news-detail', $item->id) }}" class="thumb">
-                                    <img src="{{ @globalAsset(@$item->upload->path, '340X410.webp') }}" alt="Image"
+                                    <img src="{{ @globalAsset(@$item->upload->path, '340X410.webp') }}" alt="{{ @$item->defaultTranslate->title ?: 'Brainova news' }}"
                                         class="w-100">
                                 </a>
                                 <div class="blog_meta">
@@ -257,7 +257,7 @@
                         @else
                             <div class="blog_widget style2 ">
                                 <a href="{{ route('frontend.news-detail', $item->id) }}" class="thumb">
-                                    <img src="{{ @globalAsset(@$item->upload->path, '600X480.webp') }}" alt=""
+                                    <img src="{{ @globalAsset(@$item->upload->path, '600X480.webp') }}" alt="{{ @$item->defaultTranslate->title ?: 'Brainova news' }}"
                                         class="w-100">
                                 </a>
                                 <div class="blog_meta">
@@ -313,7 +313,7 @@
                             <a href="{{ @globalAsset(@$item->upload->path, '340X340.webp') }}"
                                 class="thumb overflow-hidden popup-image d-block">
                                 <img src="{{ @globalAsset(@$item->upload->path, '340X340.webp') }}" class="img-fluid"
-                                    alt="">
+                                    alt="{{ @$item->category->defaultTranslate->name ? 'Brainova gallery — ' . $item->category->defaultTranslate->name : 'Brainova gallery photo' }}">
                             </a>
                         </div>
                     </div>

@@ -13,6 +13,7 @@ use App\Http\Controllers\WebsiteSetup\SubscribeController;
 use App\Http\Controllers\WebsiteSetup\ContactInfoController;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 use App\Http\Controllers\WebsiteSetup\ContactMessageController;
+use App\Http\Controllers\WebsiteSetup\ProgramWaitlistController;
 use App\Http\Controllers\WebsiteSetup\GalleryCategoryController;
 use App\Http\Controllers\WebsiteSetup\DepartmentContactController;
 use App\Http\Controllers\WebsiteSetup\PagesController;
@@ -275,6 +276,10 @@ Route::middleware(saasMiddleware())->group(function () {
                 });
                 Route::controller(ContactMessageController::class)->prefix('contact-message')->group(function () {
                     Route::get('/',                         'index')->name('contact-message.index')->middleware('PermissionCheck:contact_message_read');
+                });
+                Route::controller(ProgramWaitlistController::class)->prefix('program-waitlist')->group(function () {
+                    Route::get('/',                         'index')->name('program-waitlist.index')->middleware('PermissionCheck:program_waitlist_read');
+                    Route::delete('/delete/{id}',            'delete')->name('program-waitlist.delete')->middleware('PermissionCheck:program_waitlist_delete', 'DemoCheck');
                 });
 
             });

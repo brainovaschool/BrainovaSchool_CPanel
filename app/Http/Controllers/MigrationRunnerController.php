@@ -65,6 +65,7 @@ class MigrationRunnerController extends Controller
         'avatar_item'      => ['read' => 'avatar_item_read', 'create' => 'avatar_item_create', 'update' => 'avatar_item_update', 'delete' => 'avatar_item_delete'],
         'character_line'   => ['read' => 'character_line_read', 'create' => 'character_line_create', 'update' => 'character_line_update', 'delete' => 'character_line_delete'],
         'mission'          => ['read' => 'mission_read', 'create' => 'mission_create', 'update' => 'mission_update', 'delete' => 'mission_delete'],
+        'program_waitlist' => ['read' => 'program_waitlist_read', 'delete' => 'program_waitlist_delete'],
     ];
 
     public function run(string $key)

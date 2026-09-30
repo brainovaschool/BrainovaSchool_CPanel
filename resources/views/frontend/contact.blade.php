@@ -45,7 +45,7 @@
                     @foreach ($data['contactInfo'] as $item)
                         <div class="find_content_widget d-flex flex-column align-items-center">
                             <div class="icon">
-                                <img src="{{ @globalAsset(@$item->upload->path,'65X90.webp') }}" alt="Icon">
+                                <img src="{{ @globalAsset(@$item->upload->path,'65X90.webp') }}" alt="">
                             </div>
                             <h3>{{ @$item->defaultTranslate->name }}</h3>
                             <p>{{ str_ireplace('G-9, Islamabad', 'Islamabad', @$item->defaultTranslate->address) }}</p>
@@ -106,6 +106,8 @@
                                             <label class="primary_label">{{ ___('frontend.Message') }}</label>
                                             <textarea class="message primary_textarea mb_30" name="message" placeholder="{{ ___('frontend.write_your_message') }}" onfocus="this.placeholder = ''" onblur="this.placeholder = 'Write your message'" required=""></textarea>
                                         </div>
+                                        {{-- H10: honeypot — invisible to people, bots fill it in and get silently rejected server-side --}}
+                                        <input type="text" name="website" class="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
                                         <div class="col-xl-12 text-left">
                                             <button type="submit" class="theme_btn submit-btn text-center d-inline-flex gap_14 align-items-center m-0">{{ ___('frontend.send_message') }} <i class="fab fa-telegram-plane f_s_20"></i></button>
                                             {{-- mail-script.js --}}

@@ -33,7 +33,7 @@
             <div class="col-xl-4 col-lg-4 col-md-4 mb_24 grid-item cat4">
                 <div class="blog_page_widget">
                     <a href="{{ route('frontend.notice-detail',$item->id) }}" class="event_thumb">
-                        <img src="{{ @globalAsset(@$item->attachmentFile->path, '600X480.webp') }}" alt="Image" class="img-fluid">
+                        <img src="{{ @globalAsset(@$item->attachmentFile->path, '600X480.webp') }}" alt="{{ @$item->defaultTranslate->title ?: 'Brainova notice' }}" class="img-fluid">
                     </a>
                     <div class="blog_page_meta">
                         <h4>

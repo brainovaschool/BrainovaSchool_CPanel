@@ -149,6 +149,19 @@
                                     @enderror
                                 </div>
 
+                                {{-- H10: honeypot — invisible to people, bots fill it in and get silently rejected server-side --}}
+                                <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
+
+                                <div class="col-xl-12 mb_20">
+                                    <div class="form-check">
+                                        <input class="form-check-input @error('consent') is-invalid @enderror" type="checkbox" name="consent" id="admissionConsent" value="1" {{ old('consent') ? 'checked' : '' }} required>
+                                        <label class="form-check-label" for="admissionConsent">
+                                            I agree Brainova may contact me about this application, and I've read the <a href="{{ route('frontend.page', 'privacy-policy') }}" target="_blank">Privacy Policy</a>.
+                                        </label>
+                                        @error('consent')<small class="text-danger d-block">{{ $message }}</small>@enderror
+                                    </div>
+                                </div>
+
                                 <div class="col-xl-12 text-left d-flex">
                                     <button type="submit"
                                         class="theme_btn2 submit-btn text-center d-flex align-items-center m-0 w-100 justify-content-center text-uppercase large_btn">{{ ___('frontend.Submit') }}</button>

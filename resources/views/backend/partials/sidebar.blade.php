@@ -889,6 +889,16 @@
                 @endif
                 <!-- Subscription layout end -->
 
+                <!-- Program waitlist layout start -->
+                @if (hasPermission('program_waitlist_read'))
+                    <li class="sidebar-menu-item {{ set_menu(['program-waitlist*']) }}">
+                        <a href="{{ route('program-waitlist.index') }}" class="parent-item-content">
+                            <i class="las la-clock"></i>
+                            <span class="on-half-expanded">Program Waitlist</span>
+                        </a>
+                    </li>
+                @endif
+                <!-- Program waitlist layout end -->
 
                 <!-- Website setup start -->
                 @if (

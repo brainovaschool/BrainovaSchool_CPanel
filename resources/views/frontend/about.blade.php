@@ -78,7 +78,7 @@
                             <div class="accreditation_wrapper mb_30">
                                 <div class="thumb">
                                     <img src="{{ @globalAsset(@$sections['statement']->upload->path, '512X512.webp') }}"
-                                        alt="Image" class="img-fluid">
+                                        alt="{{ @$sections['statement']->defaultTranslate->name ?: 'Our mission and vision' }}" class="img-fluid">
                                 </div>
                             </div>
                         </div>
@@ -180,11 +180,11 @@
                             @if ($key % 2 == 0)
                                 <div class="single_about_gallery">
                                     <div class="single_about_gallery_thumb">
-                                        <img src="{{ @globalAsset(@$item->upload->path, '800X500.webp') }}" alt="Image" class="img-fluid">
+                                        <img src="{{ @globalAsset(@$item->upload->path, '800X500.webp') }}" alt="{{ @$item->defaultTranslate->name ?: 'Brainova' }}" class="img-fluid">
                                     </div>
                                     <div class="single_about_content">
                                         <div class="iconImg">
-                                            <img src="{{ @globalAsset(@$item->icon_upload->path, '90X60.webp') }}" alt="Image" class="img-fluid">
+                                            <img src="{{ @globalAsset(@$item->icon_upload->path, '90X60.webp') }}" alt="" class="img-fluid">
                                         </div>
                                         <h4>{{ @$item->defaultTranslate->name }}</h4>
                                         <p>{{ @$item->defaultTranslate->description }}</p>
@@ -194,13 +194,13 @@
                                 <div class="single_about_gallery">
                                     <div class="single_about_content">
                                         <div class="iconImg">
-                                            <img src="{{ @globalAsset(@$item->icon_upload->path, '65X90.webp') }}" alt="Image" class="img-fluid">
+                                            <img src="{{ @globalAsset(@$item->icon_upload->path, '65X90.webp') }}" alt="" class="img-fluid">
                                         </div>
                                         <h4>{{ @$item->defaultTranslate->name }}</h4>
                                         <p>{{ @$item->defaultTranslate->description }}</p>
                                     </div>
                                     <div class="single_about_gallery_thumb">
-                                        <img src="{{ @globalAsset(@$item->upload->path, '800X500.webp') }}" alt="Image" class="img-fluid">
+                                        <img src="{{ @globalAsset(@$item->upload->path, '800X500.webp') }}" alt="{{ @$item->defaultTranslate->name ?: 'Brainova' }}" class="img-fluid">
                                     </div>
                                 </div>
                             @endif
@@ -229,7 +229,7 @@
                         <div class="col-md-6 col-lg-4 col-xl-3">
                             <div class="single_instractor mb_30 position-relative">
                                 <a href="#" class="thumb">
-                                    <img src="{{ @globalAsset(@$item->upload->path, '340X340.webp') }}" alt="Image">
+                                    <img src="{{ @globalAsset(@$item->upload->path, '340X340.webp') }}" alt="{{ trim(@$item->first_name . ' ' . @$item->last_name) ?: 'Brainova teacher' }}">
                                 </a>
                                 <div class="instractor_info text-center">
                                     <div class="instractor_info_content">

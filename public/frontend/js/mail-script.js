@@ -12,6 +12,7 @@
             var email = $("form#myForm .email").val();
             var subject = $("form#myForm .subject").val();
             var message = $("form#myForm .message").val();
+            var website = $("form#myForm .website").val();
 
             var url = $('#url').val();
 
@@ -20,7 +21,8 @@
                 phone: phone,
                 email: email,
                 subject: subject,
-                message: message
+                message: message,
+                website: website
             }
 
             $.ajax({
@@ -65,10 +67,12 @@
             e.preventDefault(); // prevent default form submit
 
             var email = $("form.subscription .email").val();
+            var website = $("form.subscription .website").val();
             var url = $('#url').val();
 
             var formData = {
                 email: email,
+                website: website,
             }
 
             $.ajax({

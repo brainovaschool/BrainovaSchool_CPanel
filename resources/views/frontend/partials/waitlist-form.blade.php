@@ -39,6 +39,15 @@
             <label class="form-label">Child's grade</label>
             <input type="text" name="child_grade" class="form-control" value="{{ old('child_grade') }}" placeholder="e.g. Grade 5">
         </div>
+        {{-- H10: honeypot — invisible to people, bots fill it in and get silently rejected server-side --}}
+        <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
+        <div class="mb-3 form-check">
+            <input class="form-check-input @error('consent') is-invalid @enderror" type="checkbox" name="consent" id="waitlistConsent" value="1" {{ old('consent') ? 'checked' : '' }} required>
+            <label class="form-check-label" for="waitlistConsent" style="font-size:.85rem;">
+                I agree to be contacted on WhatsApp about this program.
+            </label>
+            @error('consent')<small class="text-danger d-block">{{ $message }}</small>@enderror
+        </div>
         <button type="submit" class="fe-btn-pill fe-btn-primary" style="border:none;">Join the waitlist</button>
     </form>
 </div>

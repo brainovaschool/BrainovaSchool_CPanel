@@ -72,8 +72,8 @@
                         <div class="header__left d-flex align-items-center">
                             <div class="logo_img">
                                 <a href="{{ route('frontend.home') }}">
-                                    <img class="logo dark_logo" src="{{ @globalAsset(setting('dark_logo'), 'dark.png') }}" alt="Logo">
-                                    <img class="logo light_logo" src="{{ @globalAsset(setting('light_logo'), 'light.png') }}" alt="Logo">
+                                    <img class="logo dark_logo" src="{{ @globalAsset(setting('dark_logo'), 'dark.png') }}" alt="Brainova School">
+                                    <img class="logo light_logo" src="{{ @globalAsset(setting('light_logo'), 'light.png') }}" alt="Brainova School">
                                 </a>
                             </div>
                         </div>

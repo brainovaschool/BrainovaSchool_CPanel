@@ -528,6 +528,13 @@ class FrontendController extends Controller
 
     public function storeFreeTrial(Request $request)
     {
+        // H10: honeypot — a real visitor never sees or fills this field, only a bot would.
+        // Pretend success so the bot doesn't learn to try elsewhere, but never save it.
+        if (trim((string) $request->input('website')) !== '') {
+            return redirect()->route('frontend.book-free-trial')
+                ->with('message', 'Thanks! Your request has been received — our team will contact you shortly.');
+        }
+
         if (setting('free_trial_page_mode') === 'demo') {
             $request->validate([
                 'student_name'    => 'required|string|max:120',
@@ -537,6 +544,7 @@ class FrontendController extends Controller
                 'student_age'     => 'required|string|max:40',
                 'city'            => 'required|string|max:100',
                 'country'         => 'required|string|max:100',
+                'consent'         => 'required|accepted',
             ]);
 
             $this->repo->demoClass($request);
@@ -553,6 +561,7 @@ class FrontendController extends Controller
             'program'       => ['required', 'string', 'max:150', \Illuminate\Validation\Rule::in(array_merge(online_admission_programs(), ['Not sure yet']))],
             'trial_slot_id' => 'nullable|integer|exists:trial_slots,id',
             'message'       => 'nullable|string|max:2000',
+            'consent'       => 'required|accepted',
         ]);
 
         $result = $this->repo->freeTrial($request);
@@ -587,6 +596,12 @@ class FrontendController extends Controller
         }
 
     public function storeOnlineAdmission(OnlineAdmissionStoreRequest $request) {
+        // H10: honeypot — a real visitor never sees or fills this field, only a bot would.
+        // Pretend success so the bot doesn't learn to try elsewhere, but never save it.
+        if (trim((string) $request->input('website')) !== '') {
+            return redirect()->route('frontend.online-admission')->with('message', 'Your application has been submitted successfully! We will contact you shortly.');
+        }
+
         $admission = $this->repo->onlineAdmission($request);
 
         if (!$admission instanceof OnlineAdmission) {
@@ -625,11 +640,19 @@ class FrontendController extends Controller
 
     public function storeWaitlist(Request $request)
     {
+        // H10: honeypot — a real visitor never sees or fills this field, only a bot would.
+        // Pretend success so the bot doesn't learn to try elsewhere, but never save it.
+        if (trim((string) $request->input('website')) !== '') {
+            return redirect()->back()
+                ->with('waitlist_success', "You're on the list — we'll reach out on WhatsApp as soon as this opens.");
+        }
+
         $request->validate([
             'parent_name'          => 'required|string|max:120',
             'whatsapp_number'      => 'required|string|max:40',
             'child_grade'          => 'nullable|string|max:80',
             'program_category_id'  => 'nullable|integer|exists:program_categories,id',
+            'consent'              => 'required|accepted',
         ]);
 
         return $this->repo->waitlist($request);

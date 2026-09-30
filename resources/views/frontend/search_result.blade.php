@@ -32,7 +32,7 @@
                     <!-- search_result_print_view_header  -->
                     <div class="search_result_print_view_header">
                         <div class="search_result_print_view_header_logo">
-                            <img height="75" src="{{ @globalAsset(setting('light_logo'), '154X38.webp') }}" alt="Logo">
+                            <img height="75" src="{{ @globalAsset(setting('light_logo'), '154X38.webp') }}" alt="Brainova School">
                         </div>
                         <div class="search_result_print_view_header_content">
                             <h3>{{ settingLocale('application_name') }}</h3>

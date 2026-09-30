@@ -33,7 +33,7 @@
                 <div class="col-xl-4 col-lg-4 col-md-4 mb_24">
                     <div class="eventList_widget">
                         <a href="{{route('frontend.events-detail',$item->id)}}" class="event_thumb">
-                            <img src="{{ @globalAsset(@$item->upload->path, '600X480px') }}" alt="" class="img-fluid">
+                            <img src="{{ @globalAsset(@$item->upload->path, '600X480px') }}" alt="{{ @$item->defaultTranslate->title ?: 'Brainova event' }}" class="img-fluid">
                         </a>
                         <div class="eventList_meta">
                             <div class="eventList_title d-flex align-items-center justify-content-between">

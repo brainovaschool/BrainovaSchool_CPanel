@@ -353,6 +353,12 @@ class FrontendRepository implements FrontendInterface
     }
 
     public function contact($request){
+        // H10: honeypot — a real visitor never sees or fills this field, only a bot would.
+        // Pretend success so the bot doesn't learn to try elsewhere, but never save/notify.
+        if (trim((string) $request->input('website')) !== '') {
+            return response()->json([___('frontend.Success'), ___('frontend.send_successfully'), 'success', ___('frontend.OK')]);
+        }
+
         try {
             $row          = new Contact();
             $row->name    = $request->name;
@@ -409,6 +415,11 @@ class FrontendRepository implements FrontendInterface
     }
 
     public function subscribe($request){
+        // H10: honeypot — see contact() above for why this pretends success.
+        if (trim((string) $request->input('website')) !== '') {
+            return response()->json([___('frontend.Success'),___('frontend.Subscribed'), 'success', ___('frontend.OK')]);
+        }
+
         try {
             $row          = Subscribe::where('email', $request->email)->first();
             if($row)

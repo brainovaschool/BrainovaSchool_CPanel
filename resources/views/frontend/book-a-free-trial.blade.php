@@ -105,6 +105,19 @@
                                     <textarea name="message" rows="4" class="form-control ot-textarea mb_30"
                                         placeholder="Tell us about your child’s needs or goals">{{ old('message') }}</textarea>
                                 </div>
+                                {{-- H10: honeypot — invisible to people, bots fill it in and get silently rejected server-side --}}
+                                <input type="text" name="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
+
+                                <div class="col-xl-12 mb_20">
+                                    <div class="form-check">
+                                        <input class="form-check-input @error('consent') is-invalid @enderror" type="checkbox" name="consent" id="trialConsent" value="1" {{ old('consent') ? 'checked' : '' }} required>
+                                        <label class="form-check-label" for="trialConsent">
+                                            I agree Brainova may contact me about this request, and I've read the <a href="{{ route('frontend.page', 'privacy-policy') }}" target="_blank">Privacy Policy</a>.
+                                        </label>
+                                        @error('consent')<small class="text-danger d-block">{{ $message }}</small>@enderror
+                                    </div>
+                                </div>
+
                                 <div class="col-xl-12">
                                     <button type="submit" class="theme_btn small_btn3 min_windth_200 text-center">Request my free trial</button>
                                 </div>
