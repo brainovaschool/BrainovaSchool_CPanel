@@ -6,7 +6,7 @@
                 <p class="bn-eyebrow">The full picture</p>
                 <h2>How Brainova teaches</h2>
                 <p>Our pedagogy, the E&#8310; core values, AI-enabled learning, and how the
-                curriculum is built &mdash; the thinking behind every programme.</p>
+                curriculum is built &mdash; the thinking behind every program.</p>
             </div>
             <div class="bn-handbook-actions">
                 <a href="{{ route('frontend.our-approach') }}" class="bn-btn bn-btn--primary">Explore our approach</a>

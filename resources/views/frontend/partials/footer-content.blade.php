@@ -52,7 +52,7 @@
                             <p class="subscribe_text">{{ ___('frontend.join_us_and_get_weekly_inspiration') }}</p>
                             <div class="subcribe-form mb_20 theme_mailChimp2">
                                 <form action="" method="get" class="subscription relative">
-                                    <input name="email" class="email form-control" placeholder="{{ ___('frontend.type_email_address') }}" onfocus="this.placeholder = ''" onblur="this.placeholder = 'Type e-mail address…'" required="" type="email">
+                                    <input name="email" class="email form-control" placeholder="{{ ___('frontend.type_email_address') }}" onfocus="this.placeholder = ''" onblur="this.placeholder = 'Type email address…'" required="" type="email">
                                     {{-- H10: honeypot — invisible to people, bots fill it in and get silently rejected server-side --}}
                                     <input type="text" name="website" class="website" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0;">
                                     <button type="submit" class="submit-btn">{{ ___('frontend.Subscribe') }}</button>

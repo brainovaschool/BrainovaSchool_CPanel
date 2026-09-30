@@ -10,7 +10,7 @@
             <div class="bn-step">
                 <span class="bn-step__num">1</span>
                 <h3>Tell us about your child</h3>
-                <p>Share their grade and what you&rsquo;re looking for. Our admissions team suggests a starting point &mdash; a short diagnostic or straight enrolment.</p>
+                <p>Share their grade and what you&rsquo;re looking for. Our admissions team suggests a starting point &mdash; a short diagnostic or straight enrollment.</p>
                 <a href="{{ route('frontend.contact') }}" class="bn-step__link">Contact admissions &rarr;</a>
             </div>
             <div class="bn-step">
@@ -21,7 +21,7 @@
             </div>
             <div class="bn-step">
                 <span class="bn-step__num">3</span>
-                <h3>Enrol and begin</h3>
+                <h3>Enroll and begin</h3>
                 <p>Complete online admission. Your child is set up on the learning portal with weekly progress shared to your parent account.</p>
                 <a href="{{ route('frontend.online-admission') }}" class="bn-step__link">Start online admission &rarr;</a>
             </div>

@@ -9,7 +9,7 @@
     <div class="container">
         <div class="breadcam_wrap text-center">
             <h3>Our Approach</h3>
-            <p>The pedagogy, values and curriculum thinking behind every Brainova programme.</p>
+            <p>The pedagogy, values and curriculum thinking behind every Brainova program.</p>
         </div>
     </div>
 </div>

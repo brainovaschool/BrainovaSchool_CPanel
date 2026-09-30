@@ -35,7 +35,7 @@
                             @if ($status)
                                 {{ $status['label'] }}
                             @elseif ($cat->programs_count > 0)
-                                {{ $cat->programs_count }} {{ \Illuminate\Support\Str::plural('programme', $cat->programs_count) }}
+                                {{ $cat->programs_count }} {{ \Illuminate\Support\Str::plural('program', $cat->programs_count) }}
                             @else
                                 Coming soon
                             @endif

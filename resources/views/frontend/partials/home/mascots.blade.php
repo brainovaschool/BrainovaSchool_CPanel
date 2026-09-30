@@ -36,7 +36,7 @@
                     <h3>Kea</h3>
                     <p>The clever, playful parrot who loves to question and explore. Kea leads
                     investigations, hands-on projects and &ldquo;why does that happen?&rdquo; moments &mdash;
-                    the spirit of inquiry that runs through every Brainova programme.</p>
+                    the spirit of inquiry that runs through every Brainova program.</p>
                 </div>
             </article>
         </div>

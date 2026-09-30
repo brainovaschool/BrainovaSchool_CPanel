@@ -95,7 +95,7 @@
                                         </div>
                                         <div class="col-xl-6">
                                             <label class="primary_label">{{ ___('frontend.email_address') }}</label>
-                                            <input name="email" placeholder="{{ ___('frontend.type_email_address') }}" pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{1,63}$" onfocus="this.placeholder = ''" onblur="this.placeholder = 'Type e-mail address'" class="email primary_input mb_30" required="" type="email">
+                                            <input name="email" placeholder="{{ ___('frontend.type_email_address') }}" pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{1,63}$" onfocus="this.placeholder = ''" onblur="this.placeholder = 'Type email address'" class="email primary_input mb_30" required="" type="email">
 
                                         </div>
                                         <div class="col-xl-6">
