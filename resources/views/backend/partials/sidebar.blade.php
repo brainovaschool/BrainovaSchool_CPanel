@@ -900,6 +900,17 @@
                 @endif
                 <!-- Program waitlist layout end -->
 
+                <!-- Home videos layout start -->
+                @if (hasPermission('home_video_read'))
+                    <li class="sidebar-menu-item {{ set_menu(['home-video*']) }}">
+                        <a href="{{ route('home-video.index') }}" class="parent-item-content">
+                            <i class="las la-video"></i>
+                            <span class="on-half-expanded">Home Videos</span>
+                        </a>
+                    </li>
+                @endif
+                <!-- Home videos layout end -->
+
                 <!-- Website setup start -->
                 @if (
                     !cannotAccessSchoolSettings() &&

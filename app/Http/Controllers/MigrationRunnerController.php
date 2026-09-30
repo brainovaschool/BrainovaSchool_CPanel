@@ -66,6 +66,7 @@ class MigrationRunnerController extends Controller
         'character_line'   => ['read' => 'character_line_read', 'create' => 'character_line_create', 'update' => 'character_line_update', 'delete' => 'character_line_delete'],
         'mission'          => ['read' => 'mission_read', 'create' => 'mission_create', 'update' => 'mission_update', 'delete' => 'mission_delete'],
         'program_waitlist' => ['read' => 'program_waitlist_read', 'delete' => 'program_waitlist_delete'],
+        'home_video'       => ['read' => 'home_video_read', 'create' => 'home_video_create', 'update' => 'home_video_update', 'delete' => 'home_video_delete'],
     ];
 
     public function run(string $key)
@@ -3014,6 +3015,49 @@ class MigrationRunnerController extends Controller
             '<pre style="font:12px/1.5 monospace;padding:24px;white-space:pre-wrap;word-break:break-word">'
             . e('Showing: ' . basename($path) . "\n\n")
             . e(implode("\n\n", $blocks))
+            . '</pre>'
+        );
+    }
+
+    /** One-off: seeds a single Home Videos row for trying the feature at
+     *  /test-video-page before anything goes on the real homepage. Safe
+     *  to re-run — updates the same row (matched by title) instead of
+     *  piling up duplicates. */
+    public function seedTestHomeVideo(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $row = \App\Models\WebsiteSetup\HomeVideo::firstOrNew(['title' => 'Canva test video']);
+        $row->video_url   = 'https://canva.link/4gvedxwcsb277j8';
+        $row->orientation = 'landscape';
+        $row->autoplay    = true;
+        $row->sort_order  = 0;
+        $row->status      = \App\Enums\Status::ACTIVE;
+        $row->save();
+
+        $embed = $row->resolveEmbed();
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px;white-space:pre-wrap;">'
+            . "Home Video row #{$row->id} ready.\n\n"
+            . "Detected type: {$embed['type']}\n\n"
+            . ($embed['type'] === 'embed'
+                ? "This is a Canva share link, not a public embed link — Canva treats it as\n"
+                . "private/edit-only, so it will most likely NOT display for real visitors\n"
+                . "(it returned 403 Forbidden when checked without your Canva login).\n\n"
+                . "Fix: in Canva, open this design -> Share -> make sure it's set to\n"
+                . "'Anyone with the link can view' -> then use Share -> More -> Embed to\n"
+                . "get the public embed link, and paste THAT into Website Setup -> Home\n"
+                . "Videos -> edit this row's video link. No code change needed.\n\n"
+                : '')
+            . "View the test page at: " . route('frontend.test-video-page') . "\n"
+            . "Edit this video at: " . route('home-video.edit', $row->id)
             . '</pre>'
         );
     }

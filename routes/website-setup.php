@@ -28,6 +28,7 @@ use App\Http\Controllers\WebsiteSetup\DashboardFeatureController;
 use App\Http\Controllers\WebsiteSetup\AvatarItemController;
 use App\Http\Controllers\WebsiteSetup\CharacterLineController;
 use App\Http\Controllers\WebsiteSetup\MissionController;
+use App\Http\Controllers\WebsiteSetup\HomeVideoController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -212,6 +213,17 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:mission_delete', 'DemoCheck');
                     Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:mission_delete', 'DemoCheck');
                     Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:mission_update', 'DemoCheck');
+                });
+
+                Route::controller(HomeVideoController::class)->prefix('home-video')->name('home-video.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:home_video_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:home_video_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:home_video_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:home_video_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:home_video_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:home_video_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:home_video_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:home_video_update', 'DemoCheck');
                 });
 
                 Route::controller(TrialSlotController::class)->prefix('trial-slot')->name('trial-slot.')->group(function () {

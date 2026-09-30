@@ -144,6 +144,14 @@ class FrontendController extends Controller
         return view('frontend.our-approach');
     }
 
+    /** Throwaway page for trying out the Home Videos feature before it
+     *  goes on the real homepage — not linked from any menu. */
+    public function testVideoPage()
+    {
+        $data['videos'] = \App\Models\WebsiteSetup\HomeVideo::active()->orderBy('sort_order')->orderByDesc('id')->get();
+        return view('frontend.test-video-page', compact('data'));
+    }
+
     // News / Blog (same table, split by the `type` column)
     public function news(Request $request)
     {
