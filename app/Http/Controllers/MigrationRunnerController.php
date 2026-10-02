@@ -3108,6 +3108,41 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /** Read-only: shows every staff row's real status/role_id against what
+     *  the About page's "Our Featured Teachers" query actually filters on
+     *  (status=ACTIVE, role_id=5) — used to work out why an active teacher
+     *  isn't showing up there. */
+    public function inspectTeachers(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $rows = Staff::with('role')->orderBy('id')->get();
+
+        $lines = ["ACTIVE constant value: " . \App\Enums\Status::ACTIVE, "Query the About page runs: status = ACTIVE AND role_id = 5\n"];
+        foreach ($rows as $s) {
+            $passes = ((int) $s->status === (int) \App\Enums\Status::ACTIVE) && ((int) $s->role_id === 5);
+            $lines[] = sprintf(
+                '#%d %-20s status=%s(%s) role_id=%s(%s) upload_id=%s -> %s',
+                $s->id,
+                $s->first_name . ' ' . $s->last_name,
+                $s->status,
+                (int) $s->status === (int) \App\Enums\Status::ACTIVE ? 'active' : 'NOT active',
+                $s->role_id,
+                optional($s->role)->name ?: 'no role row',
+                $s->upload_id ?: 'none',
+                $passes ? 'WOULD show on About page' : 'excluded'
+            );
+        }
+
+        return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
+    }
+
     private function syncPermissions(): string
     {
         $added      = [];

@@ -5,12 +5,11 @@
     and each video can sit inside an admin-picked frame image.
 
     Usage: @include('frontend.partials.watch-learn-carousel', [
-        'videos' => $data['landscape'], 'orientation' => 'landscape', 'heading' => 'Landscape videos',
+        'videos' => $data['landscape'], 'orientation' => 'landscape',
     ])
 --}}
 @if (($videos ?? collect())->count())
 <div class="bn-wl-zone bn-wl-zone--{{ $orientation }}">
-    <h3 class="bn-wl-zone-heading">{{ $heading }}</h3>
     <div class="bn-wl-carousel">
         <button type="button" class="bn-wl-arrow bn-wl-arrow--prev" aria-label="Previous videos">
             <i class="fas fa-chevron-left"></i>
@@ -54,7 +53,6 @@
     @push('css')
     <style>
         .bn-wl-zone{margin-bottom:48px;}
-        .bn-wl-zone-heading{text-align:center;margin-bottom:22px;}
         .bn-wl-carousel{position:relative;display:flex;align-items:center;gap:8px;max-width:1200px;margin:0 auto;padding:0 20px;}
         .bn-wl-viewport{overflow:hidden;flex:1 1 auto;}
         .bn-wl-track{display:flex;gap:18px;transition:transform .35s ease;}

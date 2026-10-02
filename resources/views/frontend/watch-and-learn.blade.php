@@ -35,8 +35,8 @@
             @if ($data['landscape']->isEmpty() && $data['portrait']->isEmpty())
                 <p class="text-center text-secondary">No videos here yet — check back soon.</p>
             @else
-                @include('frontend.partials.watch-learn-carousel', ['videos' => $data['landscape'], 'orientation' => 'landscape', 'heading' => 'Landscape videos'])
-                @include('frontend.partials.watch-learn-carousel', ['videos' => $data['portrait'], 'orientation' => 'portrait', 'heading' => 'Portrait videos'])
+                @include('frontend.partials.watch-learn-carousel', ['videos' => $data['landscape'], 'orientation' => 'landscape'])
+                @include('frontend.partials.watch-learn-carousel', ['videos' => $data['portrait'], 'orientation' => 'portrait'])
             @endif
 
         </div>
