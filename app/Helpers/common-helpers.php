@@ -908,6 +908,27 @@ if (!function_exists('online_admission_programs')) {
     }
 }
 
+if (!function_exists('youtube_embed_src')) {
+    /** Turns any YouTube URL shape (watch/short/share link) into an
+     *  embeddable iframe src, or null if it isn't a recognisable YouTube
+     *  link. Used anywhere a single admin-pasted YouTube link needs to
+     *  become a video embed without pulling in the full multi-platform
+     *  HomeVideo resolver. */
+    function youtube_embed_src(?string $url): ?string
+    {
+        $url = trim((string) $url);
+        if ($url === '') {
+            return null;
+        }
+
+        if (preg_match('/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{6,})/i', $url, $m)) {
+            return "https://www.youtube-nocookie.com/embed/{$m[1]}?rel=0";
+        }
+
+        return null;
+    }
+}
+
 if (!function_exists('admission_fields')) {
     function admission_fields()
     {

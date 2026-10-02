@@ -4,17 +4,10 @@ namespace App\Models\WebsiteSetup;
 
 use App\Models\BaseModel;
 use App\Models\Upload;
-use App\Traits\ResolvesVideoEmbed;
 
-class HomeVideo extends BaseModel
+class WatchLearnTemplate extends BaseModel
 {
-    use ResolvesVideoEmbed;
-
     protected $guarded = ['id'];
-
-    protected $casts = [
-        'autoplay' => 'boolean',
-    ];
 
     public const ORIENTATIONS = [
         'landscape' => 'Landscape (wide)',

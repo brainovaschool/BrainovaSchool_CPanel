@@ -22,6 +22,9 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/pdf-download/{id}/{type}/{class}/{section}', 'downloadPDF')->name('frontend.result.pdf-download');
 
                 Route::get('/test-video-page',  'testVideoPage')->name('frontend.test-video-page');
+                Route::get('/watch-and-learn',  'watchAndLearn')->name('frontend.watch-and-learn');
+                Route::get('/knowledge-hub',    'knowledgeHub')->name('frontend.knowledge-hub');
+                Route::get('/knowledge-hub/{slug}', 'knowledgeHubPage')->name('frontend.knowledge-hub-page');
                 Route::get('/about',            'about')->name('frontend.about');
                 Route::get('/our-approach',     'ourApproach')->name('frontend.our-approach');
                 Route::get('/news',             'news')->name('frontend.news');

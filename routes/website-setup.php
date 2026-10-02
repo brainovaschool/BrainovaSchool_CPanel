@@ -14,6 +14,11 @@ use App\Http\Controllers\WebsiteSetup\ContactInfoController;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 use App\Http\Controllers\WebsiteSetup\ContactMessageController;
 use App\Http\Controllers\WebsiteSetup\ProgramWaitlistController;
+use App\Http\Controllers\WebsiteSetup\WatchLearnTabController;
+use App\Http\Controllers\WebsiteSetup\WatchLearnTemplateController;
+use App\Http\Controllers\WebsiteSetup\WatchLearnVideoController;
+use App\Http\Controllers\WebsiteSetup\KnowledgeHubPageController;
+use App\Http\Controllers\WebsiteSetup\KnowledgeHubTopicController;
 use App\Http\Controllers\WebsiteSetup\GalleryCategoryController;
 use App\Http\Controllers\WebsiteSetup\DepartmentContactController;
 use App\Http\Controllers\WebsiteSetup\PagesController;
@@ -213,6 +218,61 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:mission_delete', 'DemoCheck');
                     Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:mission_delete', 'DemoCheck');
                     Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:mission_update', 'DemoCheck');
+                });
+
+                Route::controller(WatchLearnTabController::class)->prefix('watch-learn-tab')->name('watch-learn-tab.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:watch_learn_tab_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:watch_learn_tab_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:watch_learn_tab_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:watch_learn_tab_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:watch_learn_tab_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:watch_learn_tab_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:watch_learn_tab_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:watch_learn_tab_update', 'DemoCheck');
+                });
+
+                Route::controller(WatchLearnTemplateController::class)->prefix('watch-learn-template')->name('watch-learn-template.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:watch_learn_template_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:watch_learn_template_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:watch_learn_template_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:watch_learn_template_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:watch_learn_template_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:watch_learn_template_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:watch_learn_template_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:watch_learn_template_update', 'DemoCheck');
+                });
+
+                Route::controller(WatchLearnVideoController::class)->prefix('watch-learn-video')->name('watch-learn-video.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:watch_learn_video_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:watch_learn_video_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:watch_learn_video_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:watch_learn_video_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:watch_learn_video_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:watch_learn_video_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:watch_learn_video_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:watch_learn_video_update', 'DemoCheck');
+                });
+
+                Route::controller(KnowledgeHubPageController::class)->prefix('knowledge-hub-page')->name('knowledge-hub-page.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:knowledge_hub_page_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:knowledge_hub_page_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:knowledge_hub_page_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:knowledge_hub_page_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:knowledge_hub_page_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:knowledge_hub_page_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:knowledge_hub_page_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:knowledge_hub_page_update', 'DemoCheck');
+                });
+
+                Route::controller(KnowledgeHubTopicController::class)->prefix('knowledge-hub-topic/{page}')->name('knowledge-hub-topic.')->group(function () {
+                    Route::get('/',                'index')->name('index')->middleware('PermissionCheck:knowledge_hub_topic_read');
+                    Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:knowledge_hub_topic_create');
+                    Route::post('/store',          'store')->name('store')->middleware('PermissionCheck:knowledge_hub_topic_create', 'DemoCheck');
+                    Route::get('/edit/{id}',        'edit')->name('edit')->middleware('PermissionCheck:knowledge_hub_topic_update');
+                    Route::put('/update/{id}',      'update')->name('update')->middleware('PermissionCheck:knowledge_hub_topic_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',   'delete')->name('delete')->middleware('PermissionCheck:knowledge_hub_topic_delete', 'DemoCheck');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:knowledge_hub_topic_delete', 'DemoCheck');
+                    Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:knowledge_hub_topic_update', 'DemoCheck');
                 });
 
                 Route::controller(HomeVideoController::class)->prefix('home-video')->name('home-video.')->group(function () {

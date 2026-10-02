@@ -154,6 +154,42 @@ class FrontendController extends Controller
         return view('frontend.test-video-page', compact('data'));
     }
 
+    public function watchAndLearn(Request $request)
+    {
+        $tabId = $request->get('tab');
+
+        $data['tabs']      = \App\Models\WebsiteSetup\WatchLearnTab::active()->orderBy('sort_order')->get();
+        $data['activeTab'] = $tabId;
+        $data['landscape'] = \App\Models\WebsiteSetup\WatchLearnVideo::active()->landscape()
+            ->with(['template.upload'])
+            ->when($tabId, fn ($q) => $q->where('tab_id', $tabId))
+            ->orderBy('sort_order')->orderByDesc('id')->get();
+        $data['portrait']  = \App\Models\WebsiteSetup\WatchLearnVideo::active()->portrait()
+            ->with(['template.upload'])
+            ->when($tabId, fn ($q) => $q->where('tab_id', $tabId))
+            ->orderBy('sort_order')->orderByDesc('id')->get();
+
+        return view('frontend.watch-and-learn', compact('data'));
+    }
+
+    public function knowledgeHub()
+    {
+        $data['pages'] = \App\Models\WebsiteSetup\KnowledgeHubPage::active()
+            ->withCount('activeTopics')->orderBy('sort_order')->get();
+        return view('frontend.knowledge-hub', compact('data'));
+    }
+
+    public function knowledgeHubPage(string $slug)
+    {
+        $page = \App\Models\WebsiteSetup\KnowledgeHubPage::active()->where('slug', $slug)->first();
+        if (!$page) {
+            abort(404);
+        }
+        $data['page']   = $page;
+        $data['topics'] = $page->activeTopics()->get();
+        return view('frontend.knowledge-hub-page', compact('data'));
+    }
+
     // News / Blog (same table, split by the `type` column)
     public function news(Request $request)
     {

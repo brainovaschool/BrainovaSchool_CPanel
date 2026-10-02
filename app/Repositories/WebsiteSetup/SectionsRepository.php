@@ -97,7 +97,8 @@ class SectionsRepository implements SectionsInterface
                         'description' => $request->data['description'][$key],
                     ];
                 }
-                $row->data = $data;
+                $row->data      = $data;
+                $row->video_url = $request->video_url ?: null;
             }
 
             if ($row->key == 'study_at') {

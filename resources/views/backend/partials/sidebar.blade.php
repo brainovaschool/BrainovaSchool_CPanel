@@ -911,6 +911,45 @@
                 @endif
                 <!-- Home videos layout end -->
 
+                <!-- Watch & Learn layout start -->
+                @if (hasPermission('watch_learn_tab_read') || hasPermission('watch_learn_template_read') || hasPermission('watch_learn_video_read'))
+                    <li class="sidebar-menu-item {{ set_menu(['watch-learn-tab*', 'watch-learn-template*', 'watch-learn-video*']) }}">
+                        <a class="parent-item-content has-arrow">
+                            <i class="las la-film"></i>
+                            <span class="on-half-expanded">Watch & Learn</span>
+                        </a>
+                        <ul class="child-menu-list">
+                            @if (hasPermission('watch_learn_video_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['watch-learn-video*']) }}">
+                                    <a href="{{ route('watch-learn-video.index') }}">Videos</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('watch_learn_tab_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['watch-learn-tab*']) }}">
+                                    <a href="{{ route('watch-learn-tab.index') }}">Tabs</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('watch_learn_template_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['watch-learn-template*']) }}">
+                                    <a href="{{ route('watch-learn-template.index') }}">Tile Templates</a>
+                                </li>
+                            @endif
+                        </ul>
+                    </li>
+                @endif
+                <!-- Watch & Learn layout end -->
+
+                <!-- Knowledge Hub layout start -->
+                @if (hasPermission('knowledge_hub_page_read'))
+                    <li class="sidebar-menu-item {{ set_menu(['knowledge-hub-*']) }}">
+                        <a href="{{ route('knowledge-hub-page.index') }}" class="parent-item-content">
+                            <i class="las la-book"></i>
+                            <span class="on-half-expanded">Knowledge Hub</span>
+                        </a>
+                    </li>
+                @endif
+                <!-- Knowledge Hub layout end -->
+
                 <!-- Website setup start -->
                 @if (
                     !cannotAccessSchoolSettings() &&

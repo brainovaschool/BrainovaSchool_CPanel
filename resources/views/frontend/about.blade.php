@@ -76,10 +76,18 @@
                         </div>
                         <div class="col-xl-5 col-lg-6">
                             <div class="accreditation_wrapper mb_30">
-                                <div class="thumb">
-                                    <img src="{{ @globalAsset(@$sections['statement']->upload->path, '512X512.webp') }}"
-                                        alt="{{ @$sections['statement']->defaultTranslate->name ?: 'Our mission and vision' }}" class="img-fluid">
-                                </div>
+                                @php $statementVideo = youtube_embed_src(@$sections['statement']->video_url ?? null); @endphp
+                                @if ($statementVideo)
+                                    <div class="thumb" style="aspect-ratio:16/9;border-radius:12px;overflow:hidden;">
+                                        <iframe src="{{ $statementVideo }}" loading="lazy" style="width:100%;height:100%;border:0;"
+                                            allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+                                    </div>
+                                @else
+                                    <div class="thumb">
+                                        <img src="{{ @globalAsset(@$sections['statement']->upload->path, '512X512.webp') }}"
+                                            alt="{{ @$sections['statement']->defaultTranslate->name ?: 'Our mission and vision' }}" class="img-fluid">
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>

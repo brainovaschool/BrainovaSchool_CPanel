@@ -67,6 +67,11 @@ class MigrationRunnerController extends Controller
         'mission'          => ['read' => 'mission_read', 'create' => 'mission_create', 'update' => 'mission_update', 'delete' => 'mission_delete'],
         'program_waitlist' => ['read' => 'program_waitlist_read', 'delete' => 'program_waitlist_delete'],
         'home_video'       => ['read' => 'home_video_read', 'create' => 'home_video_create', 'update' => 'home_video_update', 'delete' => 'home_video_delete'],
+        'watch_learn_tab'      => ['read' => 'watch_learn_tab_read', 'create' => 'watch_learn_tab_create', 'update' => 'watch_learn_tab_update', 'delete' => 'watch_learn_tab_delete'],
+        'watch_learn_template' => ['read' => 'watch_learn_template_read', 'create' => 'watch_learn_template_create', 'update' => 'watch_learn_template_update', 'delete' => 'watch_learn_template_delete'],
+        'watch_learn_video'    => ['read' => 'watch_learn_video_read', 'create' => 'watch_learn_video_create', 'update' => 'watch_learn_video_update', 'delete' => 'watch_learn_video_delete'],
+        'knowledge_hub_page'   => ['read' => 'knowledge_hub_page_read', 'create' => 'knowledge_hub_page_create', 'update' => 'knowledge_hub_page_update', 'delete' => 'knowledge_hub_page_delete'],
+        'knowledge_hub_topic'  => ['read' => 'knowledge_hub_topic_read', 'create' => 'knowledge_hub_topic_create', 'update' => 'knowledge_hub_topic_update', 'delete' => 'knowledge_hub_topic_delete'],
     ];
 
     public function run(string $key)

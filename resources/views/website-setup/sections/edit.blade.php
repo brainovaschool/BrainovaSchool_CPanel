@@ -133,6 +133,13 @@
                                 @endif
                                 {{-- Statement Section --}}
                                 @if (@$data['sections']->key == 'statement')
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">YouTube video (optional)</label>
+                                        <input class="form-control ot-input" name="video_url"
+                                            value="{{ old('video_url', @$data['sections']->video_url) }}"
+                                            placeholder="https://www.youtube.com/watch?v=...">
+                                        <small class="text-secondary">When set, this replaces the image on the right with this video — landscape works best. Leave blank to keep showing the image.</small>
+                                    </div>
                                     <div class="col-md-12">
                                         <h3 class="mt-3">{{ ___('common.Details') }}</h3>
                                         <div class="row">

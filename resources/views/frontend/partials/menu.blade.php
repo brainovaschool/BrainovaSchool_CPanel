@@ -128,6 +128,8 @@
                                         <ul class="submenu">
                                             <li><a href="{{ route('frontend.news', ['type' => 'blog']) }}">Blog</a></li>
                                             <li><a href="{{ route('frontend.news') }}">News</a></li>
+                                            <li><a href="{{ route('frontend.watch-and-learn') }}">Watch & Learn</a></li>
+                                            <li><a href="{{ route('frontend.knowledge-hub') }}">Knowledge Hub</a></li>
                                         </ul>
                                     </li>
 
