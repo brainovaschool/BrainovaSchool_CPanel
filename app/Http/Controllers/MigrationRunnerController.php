@@ -3143,6 +3143,14 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
     }
 
+    /** These are all Website Setup / admin-only screens — nothing a
+     *  Teacher, Parent or Student role should ever see. Earlier versions
+     *  of this method granted them to any role holding 'news_read' (meant
+     *  to catch a front-desk/content role), but Teacher also legitimately
+     *  has 'news_read' to view school announcements, so every one of
+     *  these ended up leaking into the Teacher sidebar too. Fixed to
+     *  admin-only (role_id 1), and the stale grants already saved on
+     *  other roles are stripped the same run. */
     private function syncPermissions(): string
     {
         $added      = [];
@@ -3156,14 +3164,28 @@ class MigrationRunnerController extends Controller
             $allKeywords = array_merge($allKeywords, array_values($keywords));
         }
 
+        $strippedFrom = [];
         foreach (Role::all() as $role) {
             $rolePerms = is_array($role->permissions) ? $role->permissions : [];
-            if ((int) $role->id === 1 || in_array('news_read', $rolePerms, true)) {
+
+            if ((int) $role->id === 1) {
                 $role->permissions = array_values(array_unique(array_merge($rolePerms, $allKeywords)));
                 $role->save();
+                continue;
+            }
+
+            $cleaned = array_values(array_diff($rolePerms, $allKeywords));
+            if (count($cleaned) !== count($rolePerms)) {
+                $role->permissions = $cleaned;
+                $role->save();
+                $strippedFrom[] = $role->name ?? ('role #' . $role->id);
             }
         }
 
-        return $added ? ('added ' . implode(', ', $added)) : 'all present';
+        $summary = $added ? ('added ' . implode(', ', $added)) : 'all present';
+        if ($strippedFrom) {
+            $summary .= ' — removed leaked website-setup permissions from: ' . implode(', ', $strippedFrom);
+        }
+        return $summary;
     }
 }
