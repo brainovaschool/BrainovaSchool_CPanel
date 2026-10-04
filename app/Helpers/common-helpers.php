@@ -617,11 +617,19 @@ if (!function_exists('hasFeature')) {
 }
 
 
+/** The student's one PRIMARY (main/grade) enrollment — a student may
+ *  also hold secondary short-course enrollments, deliberately excluded
+ *  here so this stays "the" class for the ~25 call sites (mostly the
+ *  mobile app) that already assume a single class. Ordered by latest id
+ *  as a safety net; application code never allows two primary rows for
+ *  the same student to exist at once. */
 function sessionClassStudent()
 {
 
     $sesionClassStudent = SessionClassStudent::query()
         ->where('student_id', request()->filled('student_id') ? request('student_id') : @auth()->user()->student->id)
+        ->primary()
+        ->latest('id')
         ->first();
 
     if ($sesionClassStudent) {
@@ -635,10 +643,11 @@ function sessionClassStudent()
     if (isStudentAccessInAPI()) {
         $data = SessionClassStudent::query()
             ->where('student_id', request()->filled('student_id') ? request('student_id') : @auth()->user()->student->id)
+            ->primary()
             ->whereHas('session', function ($q) {
                 $q->whereYear('start_date', '<=', date('Y'))
                     ->whereYear('end_date', '>=', date('Y'));
-            })->first();
+            })->latest('id')->first();
 
         return $data;
     }
@@ -1035,6 +1044,8 @@ if (!function_exists('sessionClassStudentByParent')) {
                 $q->whereYear('start_date', '<=', date('Y'))
                     ->whereYear('end_date', '>=', date('Y'));
             })
+            ->primary()
+            ->latest('id')
             ->first();
     }
 }

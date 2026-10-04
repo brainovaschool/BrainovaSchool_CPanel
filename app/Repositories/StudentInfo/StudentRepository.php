@@ -179,6 +179,7 @@ class StudentRepository implements StudentInterface
             $session_class->shift_id            = $request->shift != "" ? $request->shift :  NULL;
             $session_class->student_id          = $row->id;
             $session_class->roll                = $request->roll_no;
+            $session_class->enrollment_type      = SessionClassStudent::PRIMARY;
             $session_class->save();
 
             DB::commit();
@@ -251,12 +252,23 @@ class StudentRepository implements StudentInterface
             $row->department_id        = $request->department_id;
             $row->save();
 
-            $session_class                      = SessionClassStudent::where('session_id', setting('session'))->where('student_id', $row->id)->first();
+            // Edit always targets the student's PRIMARY enrollment only —
+            // never a secondary (short-course) row, which a student can
+            // have any number of alongside this one. Falls back to
+            // creating the primary row if one is somehow missing, rather
+            // than fatal-erroring on null.
+            $session_class = SessionClassStudent::where('session_id', setting('session'))
+                ->where('student_id', $row->id)
+                ->primary()
+                ->latest('id')
+                ->first() ?? new SessionClassStudent();
+            $session_class->session_id          = setting('session');
             $session_class->classes_id          = $request->class;
             $session_class->section_id          = $request->section != "" ? $request->section :  NULL;
             $session_class->shift_id            = $request->shift != "" ? $request->shift :  NULL;
             $session_class->student_id          = $row->id;
             $session_class->roll                = $request->roll_no;
+            $session_class->enrollment_type      = SessionClassStudent::PRIMARY;
             $session_class->save();
 
             DB::commit();

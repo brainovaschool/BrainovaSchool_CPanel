@@ -16,6 +16,26 @@ class SessionClassStudent extends BaseModel
 {
     use HasFactory;
 
+    public const PRIMARY   = 'primary';
+    public const SECONDARY = 'secondary';
+
+    /** A student's one main/grade enrollment. Every lookup that means
+     *  "the student's class" (dashboards, ID cards, fees, leave
+     *  requests, the mobile app, etc.) should go through this scope —
+     *  not a bare where('student_id', ...), which would be ambiguous
+     *  for a student who also has a short-course (secondary) row. */
+    public function scopePrimary($query)
+    {
+        return $query->where('enrollment_type', self::PRIMARY);
+    }
+
+    /** A short-course / elective enrollment — additive, alongside the
+     *  student's primary class. A student can have any number of these. */
+    public function scopeSecondary($query)
+    {
+        return $query->where('enrollment_type', self::SECONDARY);
+    }
+
     public function subjectAssignChildren()
     {
         return $this->hasMany(SubjectAssignChildren::class, 'subject_assign_id', 'classes_id'); // Adjust as necessary

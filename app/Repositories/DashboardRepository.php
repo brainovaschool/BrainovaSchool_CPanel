@@ -27,7 +27,9 @@ class DashboardRepository implements DashboardInterface
     {
         $sessionId = setting('session');
         $data['teacher_assigned_subjects'] = collect();
-        $data['student'] = SessionClassStudent::where('session_id', $sessionId)->count();
+        // distinct() — a student with a secondary (short-course) enrollment
+        // has 2+ rows here; this stat should still count the person once.
+        $data['student'] = SessionClassStudent::where('session_id', $sessionId)->distinct('student_id')->count('student_id');
         $data['parent']  = ParentGuardian::count();
         $data['teacher'] = Staff::where('role_id',5)->count();
         $data['session'] = Session::count();

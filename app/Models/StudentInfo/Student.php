@@ -64,9 +64,26 @@ class Student extends BaseModel
         return $query->where('status', \App\Enums\Status::ACTIVE);
     }
 
+    /** Always the student's PRIMARY (main/grade) enrollment — a student
+     *  can also hold any number of secondary (short-course) enrollments,
+     *  which this deliberately excludes so every existing "the student's
+     *  class" caller keeps working exactly as before. Order is a safety
+     *  net only; application code never allows two primary rows to
+     *  exist for the same student. */
     public function session_class_student()
     {
-        return $this->belongsTo(SessionClassStudent::class, 'id', 'student_id');
+        return $this->belongsTo(SessionClassStudent::class, 'id', 'student_id')
+            ->where('enrollment_type', SessionClassStudent::PRIMARY)
+            ->latest('id');
+    }
+
+    /** All of this student's active enrollments (primary + any
+     *  secondary short courses) — used wherever something should cover
+     *  every class the student is in, not just their main one (homework,
+     *  exams, attendance visibility). */
+    public function session_class_students()
+    {
+        return $this->hasMany(SessionClassStudent::class, 'student_id', 'id');
     }
 
     public function user()
@@ -104,9 +121,14 @@ class Student extends BaseModel
         return $this->belongsTo(ParentGuardian::class, 'parent_guardian_id', 'id');
     }
 
+    /** Same as session_class_student() above — kept as a separate method
+     *  only because existing code calls it by this name too; both must
+     *  stay in sync (primary enrollment only). */
     public function sessionStudentDetails()
     {
-        return $this->belongsTo(SessionClassStudent::class, 'id', 'student_id');
+        return $this->belongsTo(SessionClassStudent::class, 'id', 'student_id')
+            ->where('enrollment_type', SessionClassStudent::PRIMARY)
+            ->latest('id');
     }
 
     public function studentCategory()

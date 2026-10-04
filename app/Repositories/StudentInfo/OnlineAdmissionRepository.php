@@ -177,6 +177,7 @@ class OnlineAdmissionRepository implements OnlineAdmissionInterface
             $session_class->shift_id            = $request->shift != ""? $request->shift :  NULL;
             $session_class->student_id          = $row->id;
             $session_class->roll                = $request->roll_no;
+            $session_class->enrollment_type      = SessionClassStudent::PRIMARY;
             $session_class->save();
             // End student information
 
