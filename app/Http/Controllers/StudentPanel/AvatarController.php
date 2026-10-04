@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\LearningEngine\AvatarItem;
+use App\Models\LearningEngine\FeatureAccess;
 use App\Models\LearningEngine\Mission;
 use App\Repositories\LearningEngine\StudentAvatarRepository;
 use App\Repositories\LearningEngine\StudentMissionRepository;
@@ -21,12 +22,29 @@ class AvatarController extends Controller
         $this->missions = $missions;
     }
 
-    /** My Learning Island is still being built — hidden from every student
-     *  except the ones Website Setup marks as testers (see
-     *  AvatarItem::islandVisibleFor()). Checked here, not just in the
-     *  sidebar, so a student can't reach any of this by typing the URL
-     *  directly. A blocked request 404s rather than showing an "access
-     *  denied" page — the point is that this doesn't visibly exist yet. */
+    /** Avatar (character/outfit/hat/accessories) and Learning Island
+     *  (the room/building/mission world) are separate, independently
+     *  gated features from Website Setup -> Student Feature Access —
+     *  but both still live on this one combined page today, so reaching
+     *  the page at all only needs ONE of the two. The view itself still
+     *  shows island elements to an avatar-only student (not yet split
+     *  into two pages); those elements just won't respond, since every
+     *  island action below is gated on its own. A blocked request 404s
+     *  rather than showing an "access denied" page. */
+    private function ensurePageAccess($student): void
+    {
+        if (!$student || (!FeatureAccess::isVisibleFor('avatar', $student->id) && !AvatarItem::islandVisibleFor($student->id))) {
+            abort(404);
+        }
+    }
+
+    private function ensureAvatarAccess($student): void
+    {
+        if (!$student || !FeatureAccess::isVisibleFor('avatar', $student->id)) {
+            abort(404);
+        }
+    }
+
     private function ensureIslandAccess($student): void
     {
         if (!$student || !AvatarItem::islandVisibleFor($student->id)) {
@@ -37,7 +55,7 @@ class AvatarController extends Controller
     public function index()
     {
         $student = Auth::user()->student;
-        $this->ensureIslandAccess($student);
+        $this->ensurePageAccess($student);
         $profile = $this->repo->getOrCreateProfile($student->id);
 
         // Checked on every visit rather than only when work is submitted,
@@ -45,9 +63,11 @@ class AvatarController extends Controller
         // happens on the school's own schedule, not the student's.
         $justAdvanced = $this->missions->maybeAdvanceTerm($student->id, $profile);
 
-        $data                = $this->repo->forStudent($student->id);
-        $data['title']       = 'My Learning Island';
+        $data                     = $this->repo->forStudent($student->id);
+        $data['title']            = 'My Learning Island';
         $data['justAdvancedTerm'] = $justAdvanced;
+        $data['hasAvatarAccess']  = FeatureAccess::isVisibleFor('avatar', $student->id);
+        $data['hasIslandAccess']  = AvatarItem::islandVisibleFor($student->id);
 
         return view('student-panel.avatar.index', compact('data'));
     }
@@ -95,7 +115,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'required|integer']);
         $student = Auth::user()->student;
-        $this->ensureIslandAccess($student);
+        $this->ensureAvatarAccess($student);
 
         $result = $this->repo->selectAvatar($student->id, (int) $request->input('item_id'));
 
@@ -107,7 +127,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'nullable|integer']);
         $student = Auth::user()->student;
-        $this->ensureIslandAccess($student);
+        $this->ensureAvatarAccess($student);
 
         $itemId = $request->filled('item_id') ? (int) $request->input('item_id') : null;
         $result = $this->repo->selectOutfit($student->id, $itemId);
@@ -120,7 +140,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'nullable|integer']);
         $student = Auth::user()->student;
-        $this->ensureIslandAccess($student);
+        $this->ensureAvatarAccess($student);
 
         $itemId = $request->filled('item_id') ? (int) $request->input('item_id') : null;
         $result = $this->repo->selectHat($student->id, $itemId);
@@ -133,7 +153,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'required|integer']);
         $student = Auth::user()->student;
-        $this->ensureIslandAccess($student);
+        $this->ensureAvatarAccess($student);
 
         $result = $this->repo->toggleAccessory($student->id, (int) $request->input('item_id'));
 
@@ -148,7 +168,7 @@ class AvatarController extends Controller
             'voice_preset' => 'required|string',
         ]);
         $student = Auth::user()->student;
-        $this->ensureIslandAccess($student);
+        $this->ensureAvatarAccess($student);
 
         $result = $this->repo->saveProfile($student->id, $request->input('avatar_name'), $request->input('voice_preset'));
 

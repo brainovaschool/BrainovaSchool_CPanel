@@ -29,38 +29,7 @@ class AvatarItemController extends Controller
         $data['title']    = ___('settings.avatar_gallery');
         $data['shopTabs'] = AvatarItem::shopTabs();
 
-        $data['students'] = \App\Models\StudentInfo\Student::active()
-            ->with(['session_class_student.class', 'session_class_student.section'])
-            ->orderBy('first_name')
-            ->get();
-        $data['islandVisibleToAll'] = (string) setting('island_visible_to_all') === '1';
-
-        // Before this has ever been saved once, nobody is a tester yet —
-        // default the checkboxes to whichever students the most recently
-        // assigned teacher actually teaches, so opening this screen for
-        // the first time doesn't require hunting through the full list to
-        // find the test accounts. Saving is still required once for it to
-        // take effect; this only pre-fills what gets checked.
-        if (setting('island_tester_student_ids') === null) {
-            $recentAssign = \App\Models\Academic\SubjectAssignChildren::with('subjectAssign')->latest('id')->first();
-            $data['islandTesterIds'] = $recentAssign && $recentAssign->subjectAssign
-                ? \App\Models\StudentInfo\SessionClassStudent::where('classes_id', $recentAssign->subjectAssign->classes_id)
-                    ->where('section_id', $recentAssign->subjectAssign->section_id)
-                    ->pluck('student_id')->all()
-                : [];
-        } else {
-            $data['islandTesterIds'] = AvatarItem::islandTesterIds();
-        }
-
         return view('website-setup.avatar-item.index', compact('data'));
-    }
-
-    public function updateIslandVisibility(Request $request)
-    {
-        $result = $this->repo->updateIslandVisibility($request);
-
-        return redirect()->route('avatar-item.index')
-            ->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
     public function create(Request $request)

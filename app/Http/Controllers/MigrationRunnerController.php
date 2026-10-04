@@ -72,6 +72,7 @@ class MigrationRunnerController extends Controller
         'watch_learn_video'    => ['read' => 'watch_learn_video_read', 'create' => 'watch_learn_video_create', 'update' => 'watch_learn_video_update', 'delete' => 'watch_learn_video_delete'],
         'knowledge_hub_page'   => ['read' => 'knowledge_hub_page_read', 'create' => 'knowledge_hub_page_create', 'update' => 'knowledge_hub_page_update', 'delete' => 'knowledge_hub_page_delete'],
         'knowledge_hub_topic'  => ['read' => 'knowledge_hub_topic_read', 'create' => 'knowledge_hub_topic_create', 'update' => 'knowledge_hub_topic_update', 'delete' => 'knowledge_hub_topic_delete'],
+        'student_feature_access' => ['read' => 'student_feature_access_read', 'update' => 'student_feature_access_update'],
     ];
 
     public function run(string $key)
@@ -3104,6 +3105,66 @@ class MigrationRunnerController extends Controller
             . "upload_max_filesize and post_max_size (make post_max_size a bit bigger\n"
             . "than upload_max_filesize) -> Apply. No code change needed, takes effect\n"
             . "immediately."
+            . '</pre>'
+        );
+    }
+
+    /** One-off: splits the old island-only visibility setting into the
+     *  new per-feature FeatureAccess system (Avatar / Learning Island /
+     *  AI Helper), with no change in who can currently see what:
+     *   - 'island' gets exactly the old island_visible_to_all + tester list.
+     *   - 'avatar' gets the SAME starting list, since avatar customisation
+     *     was only ever reachable through the same island-gated page —
+     *     splitting them apart here would otherwise silently lock every
+     *     existing tester out of their own avatar.
+     *   - 'ai_helper' defaults to visible to everyone, since it never had
+     *     a per-student gate before this — narrowing it is now possible
+     *     from the new admin screen, but doing it automatically here
+     *     would hide something students could already use.
+     *  Safe to re-run — skips any feature_key that already has a row. */
+    public function seedFeatureAccess(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $report = [];
+
+        $islandVisibleToAll = (string) setting('island_visible_to_all') === '1';
+        $islandTesterIds    = json_decode((string) setting('island_tester_student_ids'), true) ?: [];
+        $islandTesterIds    = array_map('intval', $islandTesterIds);
+
+        $seed = function (string $featureKey, bool $visibleToAll, array $testerIds) use (&$report) {
+            if (\App\Models\LearningEngine\FeatureAccess::where('feature_key', $featureKey)->exists()) {
+                $report[] = "{$featureKey}: already set up, left untouched.";
+                return;
+            }
+
+            \App\Models\LearningEngine\FeatureAccess::create([
+                'feature_key'    => $featureKey,
+                'visible_to_all' => $visibleToAll,
+            ]);
+            foreach (array_unique($testerIds) as $studentId) {
+                \App\Models\LearningEngine\FeatureAccessStudent::firstOrCreate([
+                    'feature_key' => $featureKey,
+                    'student_id'  => $studentId,
+                ]);
+            }
+            $report[] = "{$featureKey}: visible_to_all=" . ($visibleToAll ? 'yes' : 'no') . ', testers=' . (count($testerIds) ?: 'none') . '.';
+        };
+
+        $seed('island', $islandVisibleToAll, $islandTesterIds);
+        $seed('avatar', $islandVisibleToAll, $islandTesterIds);
+        $seed('ai_helper', true, []);
+
+        return response(
+            '<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">'
+            . implode("\n", $report)
+            . "\n\nManage all three from Website Setup -> Student Feature Access."
             . '</pre>'
         );
     }

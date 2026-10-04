@@ -971,7 +971,7 @@
                         hasPermission('event_read')) &&
                         hasFeature('website_setup'))
                     <li
-                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'program-category*', 'program-focus*', 'program/*', 'testimonial*', 'trial-slot*', 'ai-helper*', 'skill*', 'dashboard-features*', 'avatar-item*']) }}">
+                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'program-category*', 'program-focus*', 'program/*', 'testimonial*', 'trial-slot*', 'ai-helper*', 'skill*', 'dashboard-features*', 'avatar-item*', 'student-feature-access*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-wrench"></i>
                             <span class="on-half-expanded">{{ ___('settings.Website_setup') }}</span>
@@ -1076,6 +1076,12 @@
                             @if (hasPermission('avatar_item_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['avatar-item*']) }}">
                                     <a href="{{ route('avatar-item.index') }}">{{ ___('settings.avatar_gallery') }}</a>
+                                </li>
+                            @endif
+
+                            @if (hasPermission('student_feature_access_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['student-feature-access*']) }}">
+                                    <a href="{{ route('student-feature-access.index') }}">Student Feature Access</a>
                                 </li>
                             @endif
 

@@ -172,28 +172,18 @@ class AvatarItem extends BaseModel
         return $tabs;
     }
 
-    /** My Learning Island (Shop + My Island — one page, one nav item) is
-     *  still being built, so by default it's hidden from every student
-     *  except the ones Website Setup explicitly marks as testers — fails
-     *  closed: an unset setting means hidden, not visible, so a fresh
-     *  install never accidentally exposes an unfinished feature. Flip
-     *  "island_visible_to_all" on once it's ready for everyone; the
-     *  tester list stops mattering at that point but is left alone rather
-     *  than cleared, so switching back to testing-only later needs no
-     *  re-entry. */
+    /** Thin wrappers kept so every existing caller (AvatarController,
+     *  the student sidebar) stays unchanged — the real data now lives in
+     *  the generalised FeatureAccess system (Website Setup -> Student
+     *  Feature Access), which also covers Avatar and AI Helper the same
+     *  way. Fails closed: an unset feature means hidden, not visible. */
     public static function islandVisibleFor(int $studentId): bool
     {
-        if ((string) setting('island_visible_to_all') === '1') {
-            return true;
-        }
-
-        return in_array($studentId, self::islandTesterIds(), true);
+        return FeatureAccess::isVisibleFor('island', $studentId);
     }
 
     public static function islandTesterIds(): array
     {
-        $ids = json_decode((string) setting('island_tester_student_ids'), true) ?: [];
-
-        return array_map('intval', $ids);
+        return FeatureAccess::testerIds('island');
     }
 }

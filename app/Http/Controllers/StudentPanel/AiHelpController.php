@@ -5,6 +5,7 @@ namespace App\Http\Controllers\StudentPanel;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Models\LearningEngine\FeatureAccess;
 use App\Models\LearningEngine\Skill;
 use App\Repositories\WebsiteSetup\AiHelperRepository;
 use App\Repositories\LearningEngine\LearningEventRepository;
@@ -20,8 +21,22 @@ class AiHelpController extends Controller
         $this->learningEvents = $learningEvents;
     }
 
+    /** Per-student access from Website Setup -> Student Feature Access —
+     *  separate from dashboard_feature_enabled()'s global per-sub-feature
+     *  switches (ask/teach Kea/fact-checker) below, which still apply on
+     *  top of this for whoever has access. */
+    private function ensureAccess(): void
+    {
+        $student = Auth::user()->student;
+        if (!$student || !FeatureAccess::isVisibleFor('ai_helper', $student->id)) {
+            abort(404);
+        }
+    }
+
     public function index()
     {
+        $this->ensureAccess();
+
         $data['title']         = setting('ai_help_student_page_title') ?: 'AI Study Helper';
         $data['button_text']   = setting('ai_help_student_button_text') ?: 'Ask';
         $data['question_label'] = setting('ai_help_student_question_label') ?: 'What are you stuck on?';
@@ -37,6 +52,7 @@ class AiHelpController extends Controller
 
     public function ask(Request $request)
     {
+        $this->ensureAccess();
         if (!dashboard_feature_enabled('student', 'ai_ask_helper')) {
             return response()->json(['ok' => false, 'message' => ___('alert.feature_disabled')], 403);
         }
@@ -59,6 +75,7 @@ class AiHelpController extends Controller
 
     public function teachKea(Request $request)
     {
+        $this->ensureAccess();
         if (!dashboard_feature_enabled('student', 'teach_kea')) {
             return response()->json(['ok' => false, 'message' => ___('alert.feature_disabled')], 403);
         }
@@ -97,6 +114,7 @@ class AiHelpController extends Controller
 
     public function factCheck(Request $request)
     {
+        $this->ensureAccess();
         if (!dashboard_feature_enabled('student', 'ai_fact_checker')) {
             return response()->json(['ok' => false, 'message' => ___('alert.feature_disabled')], 403);
         }
