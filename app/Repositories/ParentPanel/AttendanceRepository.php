@@ -35,12 +35,11 @@ class AttendanceRepository implements AttendanceInterface
             $data['student']  = Student::where('id', Session::get('student_id'))->first();
 
             $student        = Student::where('id', Session::get('student_id'))->first();
-            $classSection   = SessionClassStudent::where('session_id', setting('session'))->where('student_id', $student->id)->latest()->first();
 
+            // student_id alone is enough — covers attendance from every
+            // class the child is enrolled in, not just one.
             $result = Attendance::query();
             $result = $result->where('session_id', setting('session'))
-            ->where('classes_id', $classSection->classes_id)
-            ->where('section_id', $classSection->section_id)
             ->where('student_id', $student->id);
             if($request->month != "") {
                 $result = $result->where('date', 'LIKE', $request->month.'%');

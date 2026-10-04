@@ -28,20 +28,21 @@ class OnlineExaminationRepository implements OnlineExaminationInterface
 
     public function index(){
         $student        = Student::where('user_id', Auth::user()->id)->first();
-        $classSection   = SessionClassStudent::where('session_id', setting('session'))->where('student_id', $student->id)->latest()->first();
-        
+        $pairs          = $student->enrolledClassSectionPairs();
+
         $now = Carbon::now(); // Get the current date and time using Carbon
 
         $data['exams'] = OnlineExamChildrenStudents::where('student_id', $student->id)
-            ->whereHas('onlineExam', function ($query) use ($classSection, $now) {
-                $query->where('session_id', setting('session'))
-                    ->where('classes_id', $classSection->classes_id)
-                    ->where('section_id', $classSection->section_id)
-                    ->where('published', '<=', $now);
+            ->whereHas('onlineExam', function ($query) use ($pairs, $now) {
+                matchAnyClassSectionPair(
+                    $query->where('session_id', setting('session'))
+                        ->where('published', '<=', $now),
+                    $pairs
+                );
                     // ->where('end', '>=', $now);
             })
             ->get();
-        $data['student'] = Student::where('user_id', Auth::user()->id)->first()->id;
+        $data['student'] = $student->id;
         return $data;
 
     }

@@ -86,6 +86,18 @@ class Student extends BaseModel
         return $this->hasMany(SessionClassStudent::class, 'student_id', 'id');
     }
 
+    /** Every (classes_id, section_id) pair this student is enrolled in
+     *  THIS session — primary class plus any short courses. Pair with
+     *  matchAnyClassSectionPair() wherever homework/exam/attendance
+     *  visibility needs to cover all of a student's classes, not just
+     *  their main one. */
+    public function enrolledClassSectionPairs()
+    {
+        return $this->session_class_students()
+            ->where('session_id', setting('session'))
+            ->get(['classes_id', 'section_id']);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id', 'id');

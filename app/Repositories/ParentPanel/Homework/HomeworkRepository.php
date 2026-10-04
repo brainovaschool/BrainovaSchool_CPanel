@@ -118,22 +118,19 @@ class HomeworkRepository implements HomeworkInterface
      *  homework row. */
     private function loadHomeworkFor(Student $student)
     {
-        $classSection = SessionClassStudent::where('session_id', setting('session'))
-            ->where('student_id', $student->id)
-            ->latest()
-            ->first();
+        $pairs = $student->enrolledClassSectionPairs();
 
-        if (!$classSection) {
+        if ($pairs->isEmpty()) {
             return collect();
         }
 
-        $homeworks = $this->model::with(['subject', 'class', 'section', 'upload'])
-            ->active()
-            ->where('session_id', setting('session'))
-            ->where('classes_id', $classSection->classes_id)
-            ->where('section_id', $classSection->section_id)
-            ->orderByDesc('id')
-            ->get();
+        $homeworks = matchAnyClassSectionPair(
+            $this->model::with(['subject', 'class', 'section', 'upload'])
+                ->active()
+                ->where('session_id', setting('session'))
+                ->orderByDesc('id'),
+            $pairs
+        )->get();
 
         $submissions = HomeworkStudent::where('student_id', $student->id)
             ->whereIn('homework_id', $homeworks->pluck('id'))

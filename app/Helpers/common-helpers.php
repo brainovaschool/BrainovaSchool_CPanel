@@ -938,6 +938,32 @@ if (!function_exists('youtube_embed_src')) {
     }
 }
 
+if (!function_exists('matchAnyClassSectionPair')) {
+    /** Constrains a query to rows whose $classCol/$sectionCol match ANY
+     *  one of the given (classes_id, section_id) pairs — used wherever
+     *  homework/exam/attendance visibility must cover every class a
+     *  student is enrolled in (their main class plus any short courses),
+     *  not just one. An empty $pairs list matches nothing, never
+     *  everything — a student with no resolvable enrollment should see
+     *  no homework/exams, not all of them. */
+    function matchAnyClassSectionPair($query, $pairs, string $classCol = 'classes_id', string $sectionCol = 'section_id')
+    {
+        $pairs = collect($pairs);
+
+        if ($pairs->isEmpty()) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where(function ($q) use ($pairs, $classCol, $sectionCol) {
+            foreach ($pairs as $pair) {
+                $q->orWhere(function ($qq) use ($pair, $classCol, $sectionCol) {
+                    $qq->where($classCol, $pair->classes_id)->where($sectionCol, $pair->section_id);
+                });
+            }
+        });
+    }
+}
+
 if (!function_exists('admission_fields')) {
     function admission_fields()
     {

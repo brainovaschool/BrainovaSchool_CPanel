@@ -24,19 +24,22 @@ class HomeworkRepository implements HomeworkInterface
     }
 
     /**
-     * Returns all homework for the student's current class/section.
+     * Returns all homework for every class the student is enrolled in
+     * this session (their main class plus any short courses).
      * Uses get() (not paginate) so the portal can group by subject and
      * build charts (completion by subject, overall score trend) on the full set.
      */
     public function index()
     {
-        return $this->model::with(['subject', 'upload'])
+        $student = Auth::user()->student;
+        $pairs   = $student ? $student->enrolledClassSectionPairs() : collect();
+
+        $query = $this->model::with(['subject', 'upload'])
             ->active()
-            ->where('classes_id', Auth::user()->student?->session_class_student?->classes_id)
-            ->where('section_id', Auth::user()->student?->session_class_student?->section_id)
             ->where('session_id', setting('session'))
-            ->orderByDesc('id')
-            ->get();
+            ->orderByDesc('id');
+
+        return matchAnyClassSectionPair($query, $pairs)->get();
     }
 
     public function show($id)
@@ -59,19 +62,19 @@ class HomeworkRepository implements HomeworkInterface
         DB::beginTransaction();
         try {
             $student = Auth::user()->student;
-            $scs     = $student?->session_class_student;
+            $pairs   = $student ? $student->enrolledClassSectionPairs() : collect();
 
-            if (!$student || !$scs) {
+            if (!$student || $pairs->isEmpty()) {
                 DB::rollBack();
                 throw new \RuntimeException('Homework is not available.');
             }
 
-            $homework = $this->model::active()
-                ->where('id', $request->homework_id)
-                ->where('session_id', setting('session'))
-                ->where('classes_id', $scs->classes_id)
-                ->where('section_id', $scs->section_id)
-                ->first();
+            $homework = matchAnyClassSectionPair(
+                $this->model::active()
+                    ->where('id', $request->homework_id)
+                    ->where('session_id', setting('session')),
+                $pairs
+            )->first();
 
             if (!$homework) {
                 DB::rollBack();
