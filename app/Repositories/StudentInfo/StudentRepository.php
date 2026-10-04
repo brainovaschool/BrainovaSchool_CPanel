@@ -76,6 +76,60 @@ class StudentRepository implements StudentInterface
         return SessionClassStudent::where('id', $id)->first();
     }
 
+    /** All of a student's current enrollments this session, primary
+     *  first — used by the "Enroll in another class" screen to show
+     *  what they're already in. */
+    public function getEnrollments(int $studentId)
+    {
+        return SessionClassStudent::where('session_id', setting('session'))
+            ->where('student_id', $studentId)
+            ->with(['class', 'section'])
+            ->orderByRaw("enrollment_type = 'primary' desc")
+            ->get();
+    }
+
+    /** Adds a SECONDARY (short-course) enrollment alongside whatever the
+     *  student already has — never touches their primary enrollment. A
+     *  student can hold any number of these at once. */
+    public function addSecondaryEnrollment($request, int $studentId): array
+    {
+        try {
+            $row                 = new SessionClassStudent();
+            $row->session_id     = setting('session');
+            $row->student_id     = $studentId;
+            $row->classes_id     = $request->class;
+            $row->section_id     = $request->section ?: null;
+            $row->shift_id       = $request->shift ?: null;
+            $row->roll           = $request->roll_no;
+            $row->enrollment_type = SessionClassStudent::SECONDARY;
+            $row->save();
+
+            return $this->responseWithSuccess(___('alert.created_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
+    /** Removes one short-course enrollment only — the row must already
+     *  be marked 'secondary', so this can never be used to delete a
+     *  student's primary/main enrollment (use the full student delete
+     *  for that). Past homework/attendance/exam records for that class
+     *  are left as-is — this only stops it showing up going forward. */
+    public function removeSecondaryEnrollment(int $sessionClassStudentId): array
+    {
+        try {
+            $row = SessionClassStudent::where('id', $sessionClassStudentId)->secondary()->first();
+            if (!$row) {
+                return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+            }
+            $row->delete();
+
+            return $this->responseWithSuccess(___('alert.deleted_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
 
     public function searchStudents($request, ?int $teacherStaffId = null)
     {

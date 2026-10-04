@@ -337,6 +337,69 @@ class StudentController extends Controller
         endif;
     }
 
+    /** Short-course / elective enrollment — additive alongside the
+     *  student's primary class, never touches it. See
+     *  StudentRepository::addSecondaryEnrollment(). */
+    public function createEnrollment($studentId)
+    {
+        $staffId = $this->teacherStaffId();
+        if ($staffId !== null && !$this->repo->studentVisibleToTeacher((int) $studentId, $staffId)) {
+            abort(403);
+        }
+
+        $data['student'] = $this->repo->show($studentId);
+        if (!$data['student']) {
+            abort(404);
+        }
+        $data['enrollments']  = $this->repo->getEnrollments((int) $studentId);
+        $data['title']        = 'Enroll in Another Class';
+        $data['classes']      = $staffId !== null
+            ? $this->classSetupRepo->assignedClassSetupsForTeacher($staffId)
+            : $this->classRepo->assignedAll();
+        $data['sections']     = [];
+        $data['shifts']       = $this->shiftRepo->all();
+
+        return view('backend.student-info.student.add-enrollment', compact('data'));
+    }
+
+    public function storeEnrollment(Request $request, $studentId)
+    {
+        $staffId = $this->teacherStaffId();
+        if ($staffId !== null && !$this->repo->studentVisibleToTeacher((int) $studentId, $staffId)) {
+            abort(403);
+        }
+
+        $request->validate([
+            'class'   => 'required|exists:classes,id',
+            'section' => 'nullable|exists:sections,id',
+            'shift'   => 'nullable|exists:shifts,id',
+            'roll_no' => 'nullable|string|max:50',
+        ]);
+
+        $result = $this->repo->addSecondaryEnrollment($request, (int) $studentId);
+        if ($result['status']) {
+            return redirect()->route('student.index')->with('success', $result['message']);
+        }
+        return back()->withInput()->with('danger', $result['message']);
+    }
+
+    public function deleteEnrollment($sessionClassStudentId)
+    {
+        $staffId = $this->teacherStaffId();
+        if ($staffId !== null) {
+            $row = $this->repo->getSessionStudent($sessionClassStudentId);
+            if (!$row || !$this->repo->studentVisibleToTeacher((int) $row->student_id, $staffId)) {
+                abort(403);
+            }
+        }
+
+        $result = $this->repo->removeSecondaryEnrollment((int) $sessionClassStudentId);
+        if ($result['status']) {
+            return response()->json([$result['message'], 'success', ___('alert.deleted'), ___('alert.OK')]);
+        }
+        return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
+    }
+
     /** Selected students a teacher isn't allowed to touch are silently skipped, never bypassed. */
     private function visibleIds(array $ids): array
     {

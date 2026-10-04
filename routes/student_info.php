@@ -32,6 +32,10 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/bulk-status',     'bulkStatus')->name('student.bulk-status')->middleware('PermissionCheck:student_update', 'DemoCheck');
                     Route::get('/get-children/{parentId}', 'getChildren')->name('student.getChildren')->middleware('PermissionCheck:student_read');
 
+                    Route::get('/enroll/{studentId}',        'createEnrollment')->name('student.enroll.create')->middleware('PermissionCheck:student_update');
+                    Route::post('/enroll/{studentId}',        'storeEnrollment')->name('student.enroll.store')->middleware('PermissionCheck:student_update', 'DemoCheck');
+                    Route::delete('/enrollment/{sessionClassStudentId}', 'deleteEnrollment')->name('student.enrollment.delete')->middleware('PermissionCheck:student_update', 'DemoCheck');
+
 
                     Route::get('/add-new-document',          'addNewDocument')->middleware('PermissionCheck:student_create');
                     Route::get('/get-students',              'getStudents')->middleware('PermissionCheck:student_read');

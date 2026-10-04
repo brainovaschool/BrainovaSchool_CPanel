@@ -123,9 +123,14 @@
                                 <tbody class="tbody">
                                     {{-- @dd($data['students']) --}}
                                     @forelse ($data['students'] as $key => $row)
-                                        <tr id="row_{{ @$row->student->id }}">
-                                            @if (hasPermission('student_delete') || hasPermission('student_update'))
+                                        {{-- row id keyed on this enrollment, not the student — a student with
+                                             a short-course enrollment appears as two rows here, and each needs
+                                             its own id so deleting one doesn't visually affect the other. --}}
+                                        <tr id="row_{{ @$row->id }}">
+                                            @if ((hasPermission('student_delete') || hasPermission('student_update')) && @$row->enrollment_type !== 'secondary')
                                                 <td><input type="checkbox" class="bulk-row-checkbox" value="{{ @$row->student_id }}"></td>
+                                            @elseif (hasPermission('student_delete') || hasPermission('student_update'))
+                                                <td></td>
                                             @endif
                                             <td class="serial">{{ ++$key }}</td>
                                             <td class="serial">{{ @$row->student->admission_no }}</td>
@@ -147,7 +152,12 @@
                                                     </a>
                                                 </div>
                                             </td>
-                                            <td>{{ @$row->class->name }} ({{ @$row->section->name }})</td>
+                                            <td>
+                                                {{ @$row->class->name }} ({{ @$row->section->name }})
+                                                @if (@$row->enrollment_type === 'secondary')
+                                                    <br><span class="badge-basic-success-text">Short course</span>
+                                                @endif
+                                            </td>
                                             <td>{{ @$row->student->parent->guardian_name }}</td>
 
                                             <td>{{ @$row->student->gender->name }}</td>
@@ -161,24 +171,46 @@
                                                             <i class="fa-solid fa-ellipsis"></i>
                                                         </button>
                                                         <ul class="dropdown-menu dropdown-menu-end ">
-                                                            @if (hasPermission('student_update'))
-                                                                <li>
-                                                                    <a class="dropdown-item"
-                                                                        href="{{ route('student.edit', @$row->id) }}"><span
-                                                                            class="icon mr-8"><i
-                                                                                class="fa-solid fa-pen-to-square"></i></span>
-                                                                        {{ ___('common.edit') }}</a>
-                                                                </li>
-                                                            @endif
-                                                            @if (hasPermission('student_delete'))
-                                                                <li>
-                                                                    <a class="dropdown-item" href="javascript:void(0);"
-                                                                        onclick="delete_row('student/delete', {{ @$row->student_id }})">
-                                                                        <span class="icon mr-8"><i
-                                                                                class="fa-solid fa-trash-can"></i></span>
-                                                                        <span>{{ ___('common.delete') }}</span>
-                                                                    </a>
-                                                                </li>
+                                                            @if (@$row->enrollment_type === 'secondary')
+                                                                {{-- A short-course row: only ever remove THIS
+                                                                     enrollment — editing/deleting the student
+                                                                     belongs on their main-class row only. --}}
+                                                                @if (hasPermission('student_update'))
+                                                                    <li>
+                                                                        <a class="dropdown-item" href="javascript:void(0);"
+                                                                            onclick="delete_row('student/enrollment', {{ @$row->id }}, true)">
+                                                                            <span class="icon mr-8"><i class="fa-solid fa-xmark"></i></span>
+                                                                            <span>Remove this enrollment</span>
+                                                                        </a>
+                                                                    </li>
+                                                                @endif
+                                                            @else
+                                                                @if (hasPermission('student_update'))
+                                                                    <li>
+                                                                        <a class="dropdown-item"
+                                                                            href="{{ route('student.edit', @$row->id) }}"><span
+                                                                                class="icon mr-8"><i
+                                                                                    class="fa-solid fa-pen-to-square"></i></span>
+                                                                            {{ ___('common.edit') }}</a>
+                                                                    </li>
+                                                                    <li>
+                                                                        <a class="dropdown-item"
+                                                                            href="{{ route('student.enroll.create', @$row->student_id) }}"><span
+                                                                                class="icon mr-8"><i
+                                                                                    class="fa-solid fa-plus"></i></span>
+                                                                            Enroll in another class</a>
+                                                                    </li>
+                                                                @endif
+                                                                @if (hasPermission('student_delete'))
+                                                                    <li>
+                                                                        <a class="dropdown-item" href="javascript:void(0);"
+                                                                            onclick="delete_row('student/delete', {{ @$row->student_id }}, true)">
+                                                                            <span class="icon mr-8"><i
+                                                                                    class="fa-solid fa-trash-can"></i></span>
+                                                                            <span>{{ ___('common.delete') }}</span>
+                                                                        </a>
+                                                                    </li>
+                                                                @endif
                                                             @endif
                                                         </ul>
                                                     </div>
