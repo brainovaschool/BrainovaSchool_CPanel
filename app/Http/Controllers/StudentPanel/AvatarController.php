@@ -22,6 +22,8 @@ class AvatarController extends Controller
         $this->missions = $missions;
     }
 
+    private const NOT_ENABLED_MESSAGE = "Your school hasn't turned this on for your account yet. If you think this should be available to you, ask your school.";
+
     /** Avatar (character/outfit/hat/accessories) and Learning Island
      *  (the room/building/mission world) are separate, independently
      *  gated features from Website Setup -> Student Feature Access —
@@ -29,26 +31,28 @@ class AvatarController extends Controller
      *  the page at all only needs ONE of the two. The view itself still
      *  shows island elements to an avatar-only student (not yet split
      *  into two pages); those elements just won't respond, since every
-     *  island action below is gated on its own. A blocked request 404s
-     *  rather than showing an "access denied" page. */
+     *  island action below is gated on its own. A blocked request shows
+     *  the friendly "not turned on for your account" page (errors/403),
+     *  not a 404 — this is a deliberate, explained restriction, not a
+     *  broken link. */
     private function ensurePageAccess($student): void
     {
         if (!$student || (!FeatureAccess::isVisibleFor('avatar', $student->id) && !AvatarItem::islandVisibleFor($student->id))) {
-            abort(404);
+            abort(403, self::NOT_ENABLED_MESSAGE);
         }
     }
 
     private function ensureAvatarAccess($student): void
     {
         if (!$student || !FeatureAccess::isVisibleFor('avatar', $student->id)) {
-            abort(404);
+            abort(403, self::NOT_ENABLED_MESSAGE);
         }
     }
 
     private function ensureIslandAccess($student): void
     {
         if (!$student || !AvatarItem::islandVisibleFor($student->id)) {
-            abort(404);
+            abort(403, self::NOT_ENABLED_MESSAGE);
         }
     }
 

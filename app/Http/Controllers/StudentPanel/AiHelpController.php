@@ -29,7 +29,7 @@ class AiHelpController extends Controller
     {
         $student = Auth::user()->student;
         if (!$student || !FeatureAccess::isVisibleFor('ai_helper', $student->id)) {
-            abort(404);
+            abort(403, "Your school hasn't turned this on for your account yet. If you think this should be available to you, ask your school.");
         }
     }
 
