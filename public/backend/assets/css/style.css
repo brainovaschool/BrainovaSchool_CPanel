@@ -5448,9 +5448,7 @@ body.rtl .sidebar-expand .sidebar {
 }
 
 .sidebar .sidebar-menu .sidebar-menu-section .mm-active>a {
-  background: linear-gradient(130.57deg, #936DFF -0.48%, #3A5EE3 71.79%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--primary-color);
   border-left: 2px solid var(--primary-color);
   background-color: rgba(115, 218, 255, 0.3);
 }
@@ -13413,11 +13411,9 @@ body.rtl .auth-container .form-wrapper .auth-form .remember-me label {
 }
 
 .dark-theme .sidebar-menu .sidebar-menu-section .mm-active>a {
-  background: linear-gradient(130.57deg, #936DFF -0.48%, #3A5EE3 71.79%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--primary-color);
   border-left: 2px solid var(--primary-color);
-  background-color: var(--ot-bg-secondary-opacity);
+  background-color: rgba(147, 109, 255, 0.15);
 }
 
 .dark-theme .sidebar-menu .sidebar-menu-section .mm-active>a::before {
@@ -13654,11 +13650,7 @@ body.dark-theme {
 }
 
 .dark-theme .sidebar .sidebar-menu .sidebar-menu-section .mm-active>a {
-  background: transparent !important;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: #fff;
-  background-clip: text;
-  text-fill-color: #fff;
+  color: #fff;
 }
 
 .dark-theme .table-content.table-basic .table,
