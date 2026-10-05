@@ -73,6 +73,15 @@ class MigrationRunnerController extends Controller
         'knowledge_hub_page'   => ['read' => 'knowledge_hub_page_read', 'create' => 'knowledge_hub_page_create', 'update' => 'knowledge_hub_page_update', 'delete' => 'knowledge_hub_page_delete'],
         'knowledge_hub_topic'  => ['read' => 'knowledge_hub_topic_read', 'create' => 'knowledge_hub_topic_create', 'update' => 'knowledge_hub_topic_update', 'delete' => 'knowledge_hub_topic_delete'],
         'student_feature_access' => ['read' => 'student_feature_access_read', 'update' => 'student_feature_access_update'],
+        'class_content' => [
+            'read'   => 'class_content_read',
+            'create' => 'class_content_create',
+            'update' => 'class_content_update',
+            'delete' => 'class_content_delete',
+            'submit' => 'class_content_submit',
+            'coordinator_review' => 'class_content_coordinator_review',
+            'approve' => 'class_content_approve',
+        ],
     ];
 
     public function run(string $key)
@@ -3105,6 +3114,67 @@ class MigrationRunnerController extends Controller
             . "upload_max_filesize and post_max_size (make post_max_size a bit bigger\n"
             . "than upload_max_filesize) -> Apply. No code change needed, takes effect\n"
             . "immediately."
+            . '</pre>'
+        );
+    }
+
+    /** One-off: creates the "Coordinator" role (if it doesn't exist yet —
+     *  safe to re-run) and grants the Class Content permissions to it and
+     *  to Teacher. Admin already gets every class_content_* permission
+     *  automatically from syncPermissions() (role_id 1 gets everything in
+     *  PERMISSION_GROUPS) — this handles the two roles that don't.
+     *  Coordinator also gets read access to the existing student-progress
+     *  reports (attendance/marksheet/merit list/progress card) so "check
+     *  student progress" needs no new screens — fine-tune any of this
+     *  later from the normal Roles screen, Coordinator is just a role
+     *  like any other from here on. */
+    public function seedCoordinatorRole(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $report = [];
+
+        $coordinator = Role::where('name', 'Coordinator')->first();
+        if (!$coordinator) {
+            $coordinator = Role::create([
+                'name'        => 'Coordinator',
+                'slug'        => 'coordinator',
+                'permissions' => [
+                    'class_content_read',
+                    'class_content_coordinator_review',
+                    'student_read',
+                    'report_attendance_read',
+                    'report_marksheet_read',
+                    'report_merit_list_read',
+                    'report_progress_card_read',
+                ],
+            ]);
+            $report[] = "Created the Coordinator role (#{$coordinator->id}). It'll show up as a role option next time you add a Staff member.";
+        } else {
+            $report[] = "Coordinator role already exists (#{$coordinator->id}) — left its permissions as they are.";
+        }
+
+        $teacher = Role::where('name', 'Teacher')->first();
+        if ($teacher) {
+            $teacherKeywords = ['class_content_read', 'class_content_create', 'class_content_update', 'class_content_delete', 'class_content_submit'];
+            $teacherPerms    = is_array($teacher->permissions) ? $teacher->permissions : [];
+            $teacher->permissions = array_values(array_unique(array_merge($teacherPerms, $teacherKeywords)));
+            $teacher->save();
+            $report[] = 'Teacher role granted Class Content create/edit/submit permissions.';
+        } else {
+            $report[] = 'No "Teacher" role found — skipped (check the Roles screen manually if this looks wrong).';
+        }
+
+        return response(
+            '<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">'
+            . implode("\n", $report)
+            . "\n\nNext: add a Staff member and pick \"Coordinator\" as their role, same as creating a Teacher."
             . '</pre>'
         );
     }
