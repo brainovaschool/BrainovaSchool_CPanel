@@ -7,109 +7,53 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\LearningEngine\AvatarItem;
 use App\Models\LearningEngine\FeatureAccess;
-use App\Models\LearningEngine\Mission;
 use App\Repositories\LearningEngine\StudentAvatarRepository;
-use App\Repositories\LearningEngine\StudentMissionRepository;
 
+/** My Avatar — character, outfit, hat and accessory selection and
+ *  shopping. Deliberately separate from My Learning Island (see
+ *  IslandController) so the two can be switched on for different
+ *  students independently, and so a student without Island access never
+ *  sees so much as a glimpse of the still-being-built island world —
+ *  not even an inert one. */
 class AvatarController extends Controller
 {
     private $repo;
-    private $missions;
 
-    public function __construct(StudentAvatarRepository $repo, StudentMissionRepository $missions)
+    public function __construct(StudentAvatarRepository $repo)
     {
-        $this->repo     = $repo;
-        $this->missions = $missions;
+        $this->repo = $repo;
     }
 
-    private const NOT_ENABLED_MESSAGE = "Your school hasn't turned this on for your account yet. If you think this should be available to you, ask your school.";
-
-    /** Avatar (character/outfit/hat/accessories) and Learning Island
-     *  (the room/building/mission world) are separate, independently
-     *  gated features from Website Setup -> Student Feature Access —
-     *  but both still live on this one combined page today, so reaching
-     *  the page at all only needs ONE of the two. The view itself still
-     *  shows island elements to an avatar-only student (not yet split
-     *  into two pages); those elements just won't respond, since every
-     *  island action below is gated on its own. A blocked request shows
-     *  the friendly "not turned on for your account" page (errors/403),
-     *  not a 404 — this is a deliberate, explained restriction, not a
-     *  broken link. */
-    private function ensurePageAccess($student): void
-    {
-        if (!$student || (!FeatureAccess::isVisibleFor('avatar', $student->id) && !AvatarItem::islandVisibleFor($student->id))) {
-            abort(403, self::NOT_ENABLED_MESSAGE);
-        }
-    }
-
-    private function ensureAvatarAccess($student): void
+    private function ensureAccess($student): void
     {
         if (!$student || !FeatureAccess::isVisibleFor('avatar', $student->id)) {
-            abort(403, self::NOT_ENABLED_MESSAGE);
-        }
-    }
-
-    private function ensureIslandAccess($student): void
-    {
-        if (!$student || !AvatarItem::islandVisibleFor($student->id)) {
-            abort(403, self::NOT_ENABLED_MESSAGE);
+            abort(403, "Your school hasn't turned this on for your account yet. If you think this should be available to you, ask your school.");
         }
     }
 
     public function index()
     {
         $student = Auth::user()->student;
-        $this->ensurePageAccess($student);
-        $profile = $this->repo->getOrCreateProfile($student->id);
+        $this->ensureAccess($student);
 
-        // Checked on every visit rather than only when work is submitted,
-        // since an Examination approval (the other way a term can finish)
-        // happens on the school's own schedule, not the student's.
-        $justAdvanced = $this->missions->maybeAdvanceTerm($student->id, $profile);
-
-        $data                     = $this->repo->forStudent($student->id);
-        $data['title']            = 'My Learning Island';
-        $data['justAdvancedTerm'] = $justAdvanced;
-        $data['hasAvatarAccess']  = FeatureAccess::isVisibleFor('avatar', $student->id);
-        $data['hasIslandAccess']  = AvatarItem::islandVisibleFor($student->id);
+        $data          = $this->repo->forAvatarPage($student->id);
+        $data['title'] = 'My Avatar';
 
         return view('student-panel.avatar.index', compact('data'));
-    }
-
-    public function chooseTheme(Request $request)
-    {
-        $request->validate(['theme' => 'required|in:' . implode(',', array_keys(Mission::THEMES))]);
-        $student = Auth::user()->student;
-        $this->ensureIslandAccess($student);
-
-        $result = $this->repo->chooseTheme($student->id, $request->input('theme'));
-
-        return redirect()->route('student-panel-avatar.index')
-            ->with($result['status'] ? 'success' : 'danger', $result['message']);
-    }
-
-    /** Room content for one Building, loaded into a modal when a student
-     *  taps it on the island — an HTML fragment, not JSON, the same way
-     *  the homework quiz questions modal already works elsewhere. */
-    public function room($buildingId)
-    {
-        $student = Auth::user()->student;
-        $this->ensureIslandAccess($student);
-        $profile = $this->repo->getOrCreateProfile($student->id);
-
-        $data['building'] = \App\Models\LearningEngine\AvatarItem::active()->category('building')->find($buildingId);
-        $data['room']     = $data['building'] ? $this->missions->roomData($student->id, (int) $buildingId, $profile->theme) : null;
-
-        return view('student-panel.avatar._room-modal', compact('data'));
     }
 
     public function purchase(Request $request)
     {
         $request->validate(['item_id' => 'required|integer']);
         $student = Auth::user()->student;
-        $this->ensureIslandAccess($student);
+        $this->ensureAccess($student);
 
-        $result = $this->repo->purchase($student->id, (int) $request->input('item_id'));
+        $item = AvatarItem::find((int) $request->input('item_id'));
+        if (!$item || !in_array($item->category, AvatarItem::AVATAR_SHOP_CATEGORIES, true)) {
+            return redirect()->route('student-panel-avatar.index')->with('danger', 'That item could not be found.');
+        }
+
+        $result = $this->repo->purchase($student->id, $item->id);
 
         return redirect()->route('student-panel-avatar.index')
             ->with($result['status'] ? 'success' : 'danger', $result['message']);
@@ -119,7 +63,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'required|integer']);
         $student = Auth::user()->student;
-        $this->ensureAvatarAccess($student);
+        $this->ensureAccess($student);
 
         $result = $this->repo->selectAvatar($student->id, (int) $request->input('item_id'));
 
@@ -131,7 +75,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'nullable|integer']);
         $student = Auth::user()->student;
-        $this->ensureAvatarAccess($student);
+        $this->ensureAccess($student);
 
         $itemId = $request->filled('item_id') ? (int) $request->input('item_id') : null;
         $result = $this->repo->selectOutfit($student->id, $itemId);
@@ -144,7 +88,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'nullable|integer']);
         $student = Auth::user()->student;
-        $this->ensureAvatarAccess($student);
+        $this->ensureAccess($student);
 
         $itemId = $request->filled('item_id') ? (int) $request->input('item_id') : null;
         $result = $this->repo->selectHat($student->id, $itemId);
@@ -157,7 +101,7 @@ class AvatarController extends Controller
     {
         $request->validate(['item_id' => 'required|integer']);
         $student = Auth::user()->student;
-        $this->ensureAvatarAccess($student);
+        $this->ensureAccess($student);
 
         $result = $this->repo->toggleAccessory($student->id, (int) $request->input('item_id'));
 
@@ -172,40 +116,11 @@ class AvatarController extends Controller
             'voice_preset' => 'required|string',
         ]);
         $student = Auth::user()->student;
-        $this->ensureAvatarAccess($student);
+        $this->ensureAccess($student);
 
         $result = $this->repo->saveProfile($student->id, $request->input('avatar_name'), $request->input('voice_preset'));
 
         return redirect()->route('student-panel-avatar.index')
             ->with($result['status'] ? 'success' : 'danger', $result['message']);
-    }
-
-    public function placeItem(Request $request)
-    {
-        $request->validate([
-            'item_id' => 'required|integer',
-            'pos_x'   => 'required|numeric|between:0,100',
-            'pos_y'   => 'required|numeric|between:0,100',
-        ]);
-        $student = Auth::user()->student;
-        $this->ensureIslandAccess($student);
-
-        $result = $this->repo->placeItem($student->id, (int) $request->input('item_id'), (float) $request->input('pos_x'), (float) $request->input('pos_y'));
-
-        return response()->json(['ok' => $result['status'], 'message' => $result['message'], 'data' => $result['data'] ?? []]);
-    }
-
-    public function placeAvatar(Request $request)
-    {
-        $request->validate([
-            'pos_x' => 'required|numeric|between:0,100',
-            'pos_y' => 'required|numeric|between:0,100',
-        ]);
-        $student = Auth::user()->student;
-        $this->ensureIslandAccess($student);
-
-        $result = $this->repo->placeAvatar($student->id, (float) $request->input('pos_x'), (float) $request->input('pos_y'));
-
-        return response()->json(['ok' => $result['status'], 'message' => $result['message'], 'data' => $result['data'] ?? []]);
     }
 }

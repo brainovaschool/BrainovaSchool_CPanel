@@ -154,12 +154,22 @@ class AvatarItem extends BaseModel
      *  nothing has been customised in Website Setup. */
     public const SHOP_CATEGORIES = ['avatar', 'outfit', 'hat', 'accessory', 'base'];
 
-    public static function shopTabs(): array
+    /** The worn/character layers — shopped and worn on the separate My
+     *  Avatar page. */
+    public const AVATAR_SHOP_CATEGORIES = ['avatar', 'outfit', 'hat', 'accessory'];
+
+    /** Yard Decoration is the only category a student actually shops for
+     *  on My Learning Island — Base/Building are admin-placed, never
+     *  sold. */
+    public const ISLAND_SHOP_CATEGORIES = ['base'];
+
+    public static function shopTabs(?array $onlyKeys = null): array
     {
         $overrides = json_decode((string) setting('avatar_tab_labels'), true) ?: [];
+        $keys      = $onlyKeys ?? self::SHOP_CATEGORIES;
 
         $tabs = [];
-        foreach (self::SHOP_CATEGORIES as $i => $key) {
+        foreach ($keys as $i => $key) {
             $tabs[] = [
                 'key'   => $key,
                 'label' => $overrides[$key]['label'] ?? self::CATEGORIES[$key],

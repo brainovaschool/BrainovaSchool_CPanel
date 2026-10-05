@@ -194,8 +194,11 @@ class StudentAvatarRepository
         return $layers;
     }
 
-    /** Everything the Avatar World page needs in one call. */
-    public function forStudent(int $studentId): array
+    /** Everything the My Avatar page needs — character/outfit/hat/
+     *  accessory selection and shopping. Nothing island-related, so a
+     *  student with only Avatar access never has island data loaded at
+     *  all, let alone shown. */
+    public function forAvatarPage(int $studentId): array
     {
         $profile = $this->getOrCreateProfile($studentId);
         $owned   = $this->ownedItemIds($studentId);
@@ -210,6 +213,26 @@ class StudentAvatarRepository
             'outfits'             => AvatarItem::active()->category('outfit')->orderBy('sort_order')->get(),
             'hats'                => AvatarItem::active()->category('hat')->orderBy('sort_order')->get(),
             'accessories'         => AvatarItem::active()->category('accessory')->orderBy('sort_order')->get(),
+            'shopTabs'            => AvatarItem::shopTabs(AvatarItem::AVATAR_SHOP_CATEGORIES),
+            'voices'              => self::VOICE_PRESETS,
+        ];
+    }
+
+    /** Everything the My Learning Island page needs — the room/building/
+     *  mission world and the Yard Decoration shop. Still shows the
+     *  student's current look (read-only — 'layers') standing on the
+     *  island, but never any selection UI for it; that lives on the
+     *  separate My Avatar page. */
+    public function forIslandPage(int $studentId): array
+    {
+        $profile = $this->getOrCreateProfile($studentId);
+        $owned   = $this->ownedItemIds($studentId);
+
+        return [
+            'profile'             => $profile,
+            'coins'               => $this->availableCoins($studentId),
+            'owned'               => $owned,
+            'layers'              => $this->equippedLayers($studentId),
             'bases'               => AvatarItem::active()->category('base')->with('parent')->orderBy('sort_order')->get(),
             'hubs'                => AvatarItem::active()->category('hub')->with(['children' => function ($q) {
                 $q->active()->where('category', 'building')->orderBy('sort_order');
@@ -217,10 +240,9 @@ class StudentAvatarRepository
             'lockedHubIds'        => $this->lockedHubIds($studentId),
             'lockedBaseIds'       => $this->lockedBaseItemIds($studentId),
             'placements'          => StudentIslandPlacement::where('student_id', $studentId)->get()->keyBy('avatar_item_id'),
-            'shopTabs'            => AvatarItem::shopTabs(),
+            'shopTabs'            => AvatarItem::shopTabs(AvatarItem::ISLAND_SHOP_CATEGORIES),
             'petTree'             => $this->petTreeStatus($studentId),
             'approvedExamResults' => $this->missions->approvedExamResults($studentId),
-            'voices'              => self::VOICE_PRESETS,
         ];
     }
 

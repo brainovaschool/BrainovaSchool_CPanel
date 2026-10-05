@@ -21,9 +21,17 @@
                         <span class="on-half-expanded">{{ ___('settings.ai_help_student') }}</span>
                     </a>
                 </li>
-                @if (auth()->user()->student && (App\Models\LearningEngine\AvatarItem::islandVisibleFor(auth()->user()->student->id) || App\Models\LearningEngine\FeatureAccess::isVisibleFor('avatar', auth()->user()->student->id)))
+                @if (auth()->user()->student && App\Models\LearningEngine\FeatureAccess::isVisibleFor('avatar', auth()->user()->student->id))
                     <li class="sidebar-menu-item {{ set_menu(['student-panel-avatar*']) }}">
                         <a href="{{ route('student-panel-avatar.index') }}" class="parent-item-content">
+                            <i class="las la-user-astronaut"></i>
+                            <span class="on-half-expanded">My Avatar</span>
+                        </a>
+                    </li>
+                @endif
+                @if (auth()->user()->student && App\Models\LearningEngine\AvatarItem::islandVisibleFor(auth()->user()->student->id))
+                    <li class="sidebar-menu-item {{ set_menu(['student-panel-island*']) }}">
+                        <a href="{{ route('student-panel-island.index') }}" class="parent-item-content">
                             <i class="las la-umbrella-beach"></i>
                             <span class="on-half-expanded">{{ ___('settings.my_learning_island') }}</span>
                         </a>

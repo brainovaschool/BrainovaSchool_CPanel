@@ -16,11 +16,13 @@
         'kind'     => 'accessory',
         'coins'    => $data['coins'],
         'locked'   => $data['lockedBaseIds'] ?? [],    // optional — item ids that can't be bought yet
+        'purchaseRoute' => route('student-panel-avatar.purchase'), // optional — defaults to the Avatar page's own route; the Island page's Yard Decoration shop passes its own instead
     ])
 --}}
 @php
     $shopItems = $items->reject(fn ($i) => in_array($i->id, $owned, true))->values();
     $locked    = $locked ?? [];
+    $purchaseRoute = $purchaseRoute ?? route('student-panel-avatar.purchase');
 @endphp
 <div class="card ot-card mb-4">
     <div class="card-body">
@@ -45,7 +47,7 @@
                             </p>
                         @else
                             <div class="price">🪙 {{ $item->price_coins }}</div>
-                            <form action="{{ route('student-panel-avatar.purchase') }}" method="post">
+                            <form action="{{ $purchaseRoute }}" method="post">
                                 @csrf
                                 <input type="hidden" name="item_id" value="{{ $item->id }}">
                                 <button class="btn btn-outline-primary" {{ $coins < $item->price_coins ? 'disabled' : '' }}>Buy</button>

@@ -1,5 +1,5 @@
-{{-- Loaded as an AJAX fragment into #roomModal on the My Island tab —
-     see the fetch() call in student-panel/avatar/index.blade.php. --}}
+{{-- Loaded as an AJAX fragment into #roomModal on My Learning Island —
+     see the fetch() call in student-panel/island/index.blade.php. --}}
 <div class="modal-content">
     <div class="modal-header modal-header-image">
         <h5 class="modal-title">

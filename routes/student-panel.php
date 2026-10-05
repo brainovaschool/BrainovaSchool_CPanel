@@ -9,6 +9,7 @@ use App\Repositories\StudentPanel\AttendanceRepository;
 use App\Http\Controllers\StudentPanel\ProfileController;
 use App\Http\Controllers\StudentPanel\AiHelpController;
 use App\Http\Controllers\StudentPanel\AvatarController;
+use App\Http\Controllers\StudentPanel\IslandController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use App\Http\Controllers\StudentPanel\HomeworkController;
 use App\Http\Controllers\StudentPanel\DashboardController;
@@ -51,6 +52,11 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::post('/select-hat',       'selectHat')->name('select-hat');
                         Route::post('/toggle-accessory', 'toggleAccessory')->name('toggle-accessory');
                         Route::post('/save-profile',     'saveProfile')->name('save-profile');
+                    });
+
+                    Route::controller(IslandController::class)->prefix('student-panel-island')->name('student-panel-island.')->group(function () {
+                        Route::get('/',                  'index')->name('index');
+                        Route::post('/purchase',         'purchase')->name('purchase');
                         Route::post('/place-item',       'placeItem')->name('place-item');
                         Route::post('/place-avatar',     'placeAvatar')->name('place-avatar');
                         Route::post('/choose-theme',     'chooseTheme')->name('choose-theme');
