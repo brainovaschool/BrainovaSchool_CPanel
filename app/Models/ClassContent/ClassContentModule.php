@@ -15,6 +15,11 @@ class ClassContentModule extends BaseModel
 {
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'coordinator_reviewed_at' => 'datetime',
+        'approved_at'             => 'datetime',
+    ];
+
     public const DRAFT               = 'draft';
     public const SUBMITTED           = 'submitted';
     public const CHANGES_REQUESTED   = 'changes_requested';

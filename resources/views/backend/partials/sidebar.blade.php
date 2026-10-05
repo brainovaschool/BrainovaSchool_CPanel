@@ -497,6 +497,32 @@
                     </li>
                 @endif
                 <!-- Online Examination end -->
+                @if (hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve'))
+                    <li class="sidebar-menu-item {{ set_menu(['class-content*']) }}">
+                        <a class="parent-item-content has-arrow">
+                            <i class="las la-book-reader"></i>
+                            <span class="on-half-expanded">Class Content</span>
+                        </a>
+                        <ul class="child-menu-list">
+                            @if (hasPermission('class_content_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['class-content', 'class-content/create', 'class-content/edit*']) }}">
+                                    <a href="{{ route('class-content-module.index') }}">Modules</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('class_content_coordinator_review'))
+                                <li class="sidebar-menu-item {{ set_menu(['class-content-coordinator*']) }}">
+                                    <a href="{{ route('class-content-coordinator.index') }}">Coordinator Review</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('class_content_approve'))
+                                <li class="sidebar-menu-item {{ set_menu(['class-content-admin*']) }}">
+                                    <a href="{{ route('class-content-admin.index') }}">Approval Queue</a>
+                                </li>
+                            @endif
+                        </ul>
+                    </li>
+                @endif
+                <!-- Class Content end -->
                 @if (hasPermission('homework_read'))
 
                     <li class="sidebar-menu-item {{ set_menu(['homework*']) }}">
