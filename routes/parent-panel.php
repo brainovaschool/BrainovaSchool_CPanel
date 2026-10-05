@@ -7,6 +7,7 @@ use App\Http\Controllers\ParentPanel\FeesController;
 use App\Http\Controllers\Library\IssueBookController;
 use App\Http\Controllers\ParentPanel\ProfileController;
 use App\Http\Controllers\ParentPanel\HomeworkController;
+use App\Http\Controllers\ParentPanel\ClassContentController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use App\Http\Controllers\ParentPanel\DashboardController;
 use App\Http\Controllers\ParentPanel\MarksheetController;
@@ -30,6 +31,12 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::post('/search', 'search')->name('parent-panel-student.search');
                         Route::post('search-parent-menu-data', 'searchParentMenuData')->name('search-parent-menu-data');
                         Route::get('/learning-guide', 'learningGuide')->name('parent-panel-dashboard.learning-guide');
+                    });
+
+                    Route::controller(ClassContentController::class)->prefix('parent-panel-class-content')->name('parent-panel-class-content.')->group(function () {
+                        Route::get('/', 'index')->name('index');
+                        Route::post('/search', 'search')->name('search');
+                        Route::get('/{id}', 'show')->name('show');
                     });
 
                     Route::controller(ProfileController::class)->prefix('parent-panel')->group(function () {

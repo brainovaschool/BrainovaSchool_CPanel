@@ -142,6 +142,12 @@
                         </a>
                     </li>
                 @endif
+                <li class="sidebar-menu-item {{ set_menu(['parent-panel-class-content*']) }}">
+                    <a href="{{ route('parent-panel-class-content.index') }}" class="parent-item-content">
+                        <i class="las la-book-reader"></i>
+                        <span class="on-half-expanded">Class Content</span>
+                    </a>
+                </li>
 
                 @if (hasModule('StudyMaterial'))
                     <li class="sidebar-menu-item {{ set_menu(['parent.study-material*']) }}">
