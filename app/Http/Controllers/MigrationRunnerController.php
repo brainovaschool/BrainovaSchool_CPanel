@@ -3283,6 +3283,50 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
     }
 
+    /** Read-only: every ClassContentModule row with its real review_status
+     *  (so "nothing in Coordinator's queue" can be told apart from "it's
+     *  still sitting in Draft because it was never actually submitted"),
+     *  plus every Teacher's effective class_content_submit access — same
+     *  stale-snapshot risk as class_content_coordinator_review, checked
+     *  directly instead of assumed fixed. */
+    public function inspectClassContentState(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $lines = ['Modules:'];
+        $modules = \App\Models\ClassContent\ClassContentModule::with('creator')->withCount('lessons')->orderByDesc('id')->get();
+        if ($modules->isEmpty()) {
+            $lines[] = '  (none exist in the database at all)';
+        }
+        foreach ($modules as $m) {
+            $creatorName = $m->creator ? trim($m->creator->first_name . ' ' . $m->creator->last_name) : '(no creator)';
+            $lines[] = "  #{$m->id} \"{$m->title}\" — status: {$m->review_status} — {$m->lessons_count} lesson(s) — by {$creatorName}";
+        }
+
+        $lines[] = "\nTeacher role + class_content_submit:";
+        $teacher = Role::where('name', 'Teacher')->first();
+        if (!$teacher) {
+            $lines[] = '  No Role named "Teacher" found.';
+        } else {
+            $rolePerms = is_array($teacher->permissions) ? $teacher->permissions : [];
+            $lines[] = "  Role #{$teacher->id} has class_content_submit: " . (in_array('class_content_submit', $rolePerms, true) ? 'YES' : 'NO');
+
+            foreach (\App\Models\User::where('role_id', $teacher->id)->get() as $u) {
+                $userPerms = is_array($u->permissions) ? $u->permissions : [];
+                $effective = ($userPerms === []) ? $rolePerms : array_values(array_intersect($rolePerms, $userPerms));
+                $lines[] = "  User #{$u->id} \"{$u->name}\" — effective class_content_submit: " . (in_array('class_content_submit', $effective, true) ? 'YES' : 'NO — they can\'t submit a module even with lessons added');
+            }
+        }
+
+        return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
+    }
+
     /** One-off: splits the old island-only visibility setting into the
      *  new per-feature FeatureAccess system (Avatar / Learning Island /
      *  AI Helper), with no change in who can currently see what:
