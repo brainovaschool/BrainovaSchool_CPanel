@@ -55,8 +55,9 @@
                 <div class="row g-3">
                     @foreach ($data['modules'] as $row)
                         <div class="col-md-6 col-lg-4">
-                            <div class="card ot-card h-100">
+                            <div class="card ot-card h-100 cc-module-card">
                                 <div class="card-body d-flex flex-column">
+                                    <div class="cc-module-icon"><i class="fa-solid fa-book-open"></i></div>
                                     <h5 class="mb-1">{{ $row->title }}</h5>
                                     <p class="text-secondary mb-2" style="font-size:.85rem;">
                                         {{ optional($row->class)->name }}{{ $row->section ? ' - ' . optional($row->section)->name : '' }} — {{ optional($row->subject)->name }}
@@ -77,3 +78,13 @@
         @endif
     </div>
 @endsection
+
+@push('css')
+<style>
+    .cc-module-card { border-top: 3px solid #2563eb; }
+    .cc-module-icon {
+        width: 36px; height: 36px; border-radius: 9px; background: #eff6ff; color: #2563eb;
+        display: flex; align-items: center; justify-content: center; font-size: 14px; margin-bottom: 8px;
+    }
+</style>
+@endpush

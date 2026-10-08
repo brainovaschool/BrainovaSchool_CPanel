@@ -50,10 +50,10 @@
     </div>
 </div>
 
-<div class="card mt-2 mb-3">
+<div class="card mt-2 mb-3 cc-form-section cc-form-section--materials">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Materials</h5>
+            <h5 class="mb-0"><i class="fa-solid fa-paperclip me-1"></i> Materials</h5>
             <button type="button" class="btn btn-sm ot-btn-primary" id="addMaterialRow"><i class="fa-solid fa-plus"></i> Add material</button>
         </div>
         <p class="text-secondary mb-2" style="font-size:.85rem;">Worksheets, slides, reference links — anything the student can open.</p>
@@ -88,10 +88,10 @@
     </div>
 </div>
 
-<div class="card mt-2 mb-3">
+<div class="card mt-2 mb-3 cc-form-section cc-form-section--activities">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Activities</h5>
+            <h5 class="mb-0"><i class="fa-solid fa-pen-ruler me-1"></i> Activities</h5>
             <button type="button" class="btn btn-sm ot-btn-primary" id="addActivityRow"><i class="fa-solid fa-plus"></i> Add activity</button>
         </div>
         <p class="text-secondary mb-2" style="font-size:.85rem;">What the student actually does — a task, a project step, a game link.</p>
@@ -138,10 +138,10 @@
     </div>
 </div>
 
-<div class="card mt-2 mb-3">
+<div class="card mt-2 mb-3 cc-form-section cc-form-section--outcomes">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center mb-2">
-            <h5 class="mb-0">Learning Outcomes</h5>
+            <h5 class="mb-0"><i class="fa-solid fa-bullseye me-1"></i> Learning Outcomes</h5>
             <button type="button" class="btn btn-sm ot-btn-primary" id="addOutcomeRow"><i class="fa-solid fa-plus"></i> Add outcome</button>
         </div>
         <p class="text-secondary mb-2" style="font-size:.85rem;">"By the end of this lesson, the student can..." — one line each.</p>
@@ -200,4 +200,13 @@
     wireRepeater('addOutcomeRow', 'outcomesWrap', 'outcomeRowTemplate');
 })();
 </script>
+@endpush
+
+@push('css')
+<style>
+    .cc-form-section { border-left: 3px solid transparent; }
+    .cc-form-section--materials { border-left-color: #2563eb33; }
+    .cc-form-section--activities { border-left-color: #7c3aed33; }
+    .cc-form-section--outcomes { border-left-color: #10b98133; }
+</style>
 @endpush
