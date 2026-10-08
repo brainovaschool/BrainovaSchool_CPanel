@@ -3160,14 +3160,27 @@ class MigrationRunnerController extends Controller
             ]);
             $report[] = "Created the Coordinator role (#{$coordinator->id}). It'll show up as a role option next time you add a Staff member.";
         } else {
+            // Re-asserts the correct state every run (add coordinator_review
+            // if missing, remove class_content_read if present) rather than
+            // only ever subtracting — the normal Roles screen's edit form
+            // resubmits the WHOLE permissions array from whatever's checked,
+            // so a routine edit there (e.g. just to rename the role, or
+            // change its status) silently drops anything not re-checked,
+            // including this one if it's missed in a long checkbox list.
             $coordinatorPerms = is_array($coordinator->permissions) ? $coordinator->permissions : [];
-            $cleaned          = array_values(array_diff($coordinatorPerms, ['class_content_read']));
-            if (count($cleaned) !== count($coordinatorPerms)) {
-                $coordinator->permissions = $cleaned;
+            $fixed = array_values(array_unique(array_merge(
+                array_diff($coordinatorPerms, ['class_content_read']),
+                ['class_content_coordinator_review']
+            )));
+            sort($fixed);
+            $before = $coordinatorPerms;
+            sort($before);
+            if ($fixed !== $before) {
+                $coordinator->permissions = $fixed;
                 $coordinator->save();
-                $report[] = "Coordinator role already existed (#{$coordinator->id}) — removed class_content_read (it was showing Coordinators the unfiltered module list instead of just their review queue).";
+                $report[] = "Coordinator role already existed (#{$coordinator->id}) — corrected its permissions (added class_content_coordinator_review and/or removed class_content_read).";
             } else {
-                $report[] = "Coordinator role already exists (#{$coordinator->id}) — left its permissions as they are.";
+                $report[] = "Coordinator role already exists (#{$coordinator->id}) — permissions already correct.";
             }
         }
 
