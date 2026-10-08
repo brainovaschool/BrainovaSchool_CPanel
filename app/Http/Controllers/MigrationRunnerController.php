@@ -3274,18 +3274,25 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
     }
 
-    /** These are all Website Setup / admin-only screens — nothing a
+    /** Most of these are Website Setup / admin-only screens — nothing a
      *  Teacher, Parent or Student role should ever see. Earlier versions
      *  of this method granted them to any role holding 'news_read' (meant
      *  to catch a front-desk/content role), but Teacher also legitimately
      *  has 'news_read' to view school announcements, so every one of
      *  these ended up leaking into the Teacher sidebar too. Fixed to
      *  admin-only (role_id 1), and the stale grants already saved on
-     *  other roles are stripped the same run. */
+     *  other roles are stripped the same run.
+     *
+     *  'class_content' is the one deliberate exception: Teacher and
+     *  Coordinator are both SUPPOSED to hold some of its keywords
+     *  (granted by seedCoordinatorRole()), so it's excluded from the
+     *  strip list below — otherwise every re-run of this migration would
+     *  immediately wipe those grants straight back out. */
     private function syncPermissions(): string
     {
         $added      = [];
         $allKeywords = [];
+        $strippableKeywords = [];
 
         foreach (self::PERMISSION_GROUPS as $attribute => $keywords) {
             if (!Permission::where('attribute', $attribute)->exists()) {
@@ -3293,6 +3300,9 @@ class MigrationRunnerController extends Controller
                 $added[] = $attribute;
             }
             $allKeywords = array_merge($allKeywords, array_values($keywords));
+            if ($attribute !== 'class_content') {
+                $strippableKeywords = array_merge($strippableKeywords, array_values($keywords));
+            }
         }
 
         $strippedFrom = [];
@@ -3305,7 +3315,7 @@ class MigrationRunnerController extends Controller
                 continue;
             }
 
-            $cleaned = array_values(array_diff($rolePerms, $allKeywords));
+            $cleaned = array_values(array_diff($rolePerms, $strippableKeywords));
             if (count($cleaned) !== count($rolePerms)) {
                 $role->permissions = $cleaned;
                 $role->save();
