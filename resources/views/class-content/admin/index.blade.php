@@ -40,6 +40,7 @@
                                     <th>Teacher</th>
                                     <th>Coordinator</th>
                                     <th>Status</th>
+                                    <th>Sent to admin</th>
                                     <th class="action">{{ ___('common.action') }}</th>
                                 </tr>
                             </thead>
@@ -52,6 +53,7 @@
                                         <td>{{ trim(optional($row->creator)->first_name . ' ' . optional($row->creator)->last_name) ?: '—' }}</td>
                                         <td>{{ trim(optional($row->coordinator)->first_name . ' ' . optional($row->coordinator)->last_name) ?: '—' }}</td>
                                         <td>@include('class-content._status-badge', ['status' => $row->review_status])</td>
+                                        <td class="text-secondary" style="font-size:.85rem;">{{ $row->coordinator_reviewed_at ? $row->coordinator_reviewed_at->diffForHumans() : '—' }}</td>
                                         <td class="action">
                                             <a href="{{ route('class-content-admin.show', $row->id) }}" class="btn btn-sm ot-btn-primary">Review</a>
                                         </td>

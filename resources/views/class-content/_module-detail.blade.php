@@ -7,6 +7,9 @@
                 <p class="text-secondary mb-1">
                     {{ optional($item->class)->name }}{{ $item->section ? ' - ' . optional($item->section)->name : '' }} — {{ optional($item->subject)->name }}
                     &middot; by {{ trim(optional($item->creator)->first_name . ' ' . optional($item->creator)->last_name) ?: '—' }}
+                    @if ($item->submitted_at)
+                        &middot; submitted {{ $item->submitted_at->diffForHumans() }}
+                    @endif
                 </p>
                 @if ($item->description)
                     <p class="mb-0">{{ $item->description }}</p>

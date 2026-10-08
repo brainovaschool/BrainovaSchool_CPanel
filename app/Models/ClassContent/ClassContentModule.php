@@ -16,6 +16,7 @@ class ClassContentModule extends BaseModel
     protected $guarded = ['id'];
 
     protected $casts = [
+        'submitted_at'            => 'datetime',
         'coordinator_reviewed_at' => 'datetime',
         'approved_at'             => 'datetime',
     ];

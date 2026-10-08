@@ -178,6 +178,7 @@ class ClassContentModuleRepository
         }
 
         $row->review_status = ClassContentModule::SUBMITTED;
+        $row->submitted_at  = now();
         $row->save();
 
         return $this->responseWithSuccess('Submitted for review.', []);

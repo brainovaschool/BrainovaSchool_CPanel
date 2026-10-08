@@ -43,6 +43,7 @@
                                     <th>Subject</th>
                                     <th>Teacher</th>
                                     <th>Status</th>
+                                    <th>Submitted</th>
                                     <th class="action">{{ ___('common.action') }}</th>
                                 </tr>
                             </thead>
@@ -54,6 +55,7 @@
                                         <td>{{ optional($row->subject)->name }}</td>
                                         <td>{{ trim(optional($row->creator)->first_name . ' ' . optional($row->creator)->last_name) ?: '—' }}</td>
                                         <td>@include('class-content._status-badge', ['status' => $row->review_status])</td>
+                                        <td class="text-secondary" style="font-size:.85rem;">{{ $row->submitted_at ? $row->submitted_at->diffForHumans() : '—' }}</td>
                                         <td class="action">
                                             <a href="{{ route('class-content-coordinator.show', $row->id) }}" class="btn btn-sm ot-btn-primary">Review</a>
                                         </td>
