@@ -89,7 +89,7 @@ class ClassContentLessonController extends Controller
     public function edit($moduleId, $id)
     {
         $data['module'] = $this->moduleRepo->show($moduleId);
-        $data['item']   = $this->repo->show($id);
+        $data['item']   = $this->repo->show($id, (int) $moduleId);
         if (!$data['module'] || !$data['item']) {
             return redirect()->route('class-content-module.index')->with('danger', ___('alert.not_found'));
         }
@@ -108,7 +108,7 @@ class ClassContentLessonController extends Controller
 
         $this->validateRequest($request);
 
-        $result = $this->repo->update($request, $id);
+        $result = $this->repo->update($request, $id, (int) $moduleId);
         if ($result['status']) {
             return redirect()->route('class-content-module.lessons', $moduleId)->with('success', $result['message']);
         }
@@ -123,7 +123,7 @@ class ClassContentLessonController extends Controller
         }
         $this->authorizeModule($module, true);
 
-        $result = $this->repo->destroy($id);
+        $result = $this->repo->destroy($id, (int) $moduleId);
         if ($result['status']) {
             return response()->json([$result['message'], 'success', ___('alert.deleted'), ___('alert.OK')]);
         }

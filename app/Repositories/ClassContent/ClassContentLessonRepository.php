@@ -20,9 +20,15 @@ class ClassContentLessonRepository
             ->get();
     }
 
-    public function show(int $id): ?ClassContentLesson
+    /** Scoped to $moduleId so a lesson id can't be swapped in across module
+     *  boundaries — the controller only ever authorizes the module in the
+     *  URL, so without this filter any lesson id would be readable/editable
+     *  through a module its author doesn't actually own. */
+    public function show(int $id, int $moduleId): ?ClassContentLesson
     {
-        return ClassContentLesson::with(['materials', 'activities', 'outcomes'])->find($id);
+        return ClassContentLesson::with(['materials', 'activities', 'outcomes'])
+            ->where('module_id', $moduleId)
+            ->find($id);
     }
 
     public function store($request, int $moduleId): array
@@ -45,10 +51,10 @@ class ClassContentLessonRepository
         }
     }
 
-    public function update($request, int $id): array
+    public function update($request, int $id, int $moduleId): array
     {
         try {
-            $row              = ClassContentLesson::findOrFail($id);
+            $row              = ClassContentLesson::where('module_id', $moduleId)->findOrFail($id);
             $row->title       = $request->title;
             $row->description = $request->description;
             $row->video_url   = trim((string) $request->video_url) ?: null;
@@ -64,10 +70,10 @@ class ClassContentLessonRepository
         }
     }
 
-    public function destroy(int $id): array
+    public function destroy(int $id, int $moduleId): array
     {
         try {
-            ClassContentLesson::findOrFail($id)->delete();
+            ClassContentLesson::where('module_id', $moduleId)->findOrFail($id)->delete();
             return $this->responseWithSuccess(___('alert.deleted_successfully'), []);
         } catch (\Throwable $th) {
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);

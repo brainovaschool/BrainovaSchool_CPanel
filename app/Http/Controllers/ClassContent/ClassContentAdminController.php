@@ -45,7 +45,7 @@ class ClassContentAdminController extends Controller
         ]);
 
         $adminStaffId = Auth::user()->staff?->id;
-        $result = $this->repo->adminDecision($request, (int) $id, (int) $adminStaffId);
+        $result = $this->repo->adminDecision($request, (int) $id, $adminStaffId !== null ? (int) $adminStaffId : null);
 
         $messages = [
             'approve'             => 'Approved and published to students.',

@@ -47,7 +47,7 @@ class ClassContentModuleRepository
 
     public function forTeacher(int $staffId)
     {
-        return ClassContentModule::with(['class', 'section', 'subject'])
+        return ClassContentModule::with(['class', 'section', 'subject', 'creator'])
             ->where('created_by', $staffId)
             ->orderByDesc('id')
             ->paginate(Settings::PAGINATE);
@@ -82,7 +82,11 @@ class ClassContentModuleRepository
             ->find($id);
     }
 
-    public function store($request, int $staffId): array
+    /** $staffId is nullable because a Super Admin account typically has no
+     *  linked Staff row at all (the seeded Super Admin never gets one) —
+     *  created_by is a nullable FK, so that must stay NULL rather than be
+     *  coerced to 0, which would violate the FK constraint outright. */
+    public function store($request, ?int $staffId): array
     {
         try {
             $row                = new ClassContentModule();
@@ -151,8 +155,10 @@ class ClassContentModuleRepository
     }
 
     /** Coordinator's decision — either send it on to the admin, or kick
-     *  it back to the teacher with feedback. */
-    public function coordinatorDecision($request, int $id, int $coordinatorStaffId): array
+     *  it back to the teacher with feedback. $coordinatorStaffId is
+     *  nullable for the same reason as store()'s $staffId — avoids
+     *  writing 0 into the nullable coordinator_id FK. */
+    public function coordinatorDecision($request, int $id, ?int $coordinatorStaffId): array
     {
         $row = ClassContentModule::find($id);
         if (!$row) {
@@ -172,8 +178,10 @@ class ClassContentModuleRepository
 
     /** Admin's decision — approve and publish, send back to the
      *  coordinator for another look, or kick it straight back to the
-     *  teacher. */
-    public function adminDecision($request, int $id, int $adminStaffId): array
+     *  teacher. $adminStaffId is nullable for the same reason as store()'s
+     *  $staffId — the seeded Super Admin has no Staff row, so approved_by
+     *  must be able to stay NULL rather than be coerced to 0. */
+    public function adminDecision($request, int $id, ?int $adminStaffId): array
     {
         $row = ClassContentModule::find($id);
         if (!$row) {

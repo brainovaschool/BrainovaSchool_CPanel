@@ -46,7 +46,7 @@ class ClassContentCoordinatorController extends Controller
         ]);
 
         $coordinatorStaffId = Auth::user()->staff?->id;
-        $result = $this->repo->coordinatorDecision($request, (int) $id, (int) $coordinatorStaffId);
+        $result = $this->repo->coordinatorDecision($request, (int) $id, $coordinatorStaffId !== null ? (int) $coordinatorStaffId : null);
 
         $message = $request->decision === 'request_changes'
             ? 'Sent back to the teacher with your feedback.'

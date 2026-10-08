@@ -3145,8 +3145,11 @@ class MigrationRunnerController extends Controller
             $coordinator = Role::create([
                 'name'        => 'Coordinator',
                 'slug'        => 'coordinator',
+                // Deliberately NOT class_content_read — that permission
+                // unlocks the generic (unfiltered, drafts-and-all) module
+                // list meant for Teacher/Admin. Coordinator's own queue at
+                // /class-content-coordinator only needs coordinator_review.
                 'permissions' => [
-                    'class_content_read',
                     'class_content_coordinator_review',
                     'student_read',
                     'report_attendance_read',
@@ -3157,7 +3160,15 @@ class MigrationRunnerController extends Controller
             ]);
             $report[] = "Created the Coordinator role (#{$coordinator->id}). It'll show up as a role option next time you add a Staff member.";
         } else {
-            $report[] = "Coordinator role already exists (#{$coordinator->id}) — left its permissions as they are.";
+            $coordinatorPerms = is_array($coordinator->permissions) ? $coordinator->permissions : [];
+            $cleaned          = array_values(array_diff($coordinatorPerms, ['class_content_read']));
+            if (count($cleaned) !== count($coordinatorPerms)) {
+                $coordinator->permissions = $cleaned;
+                $coordinator->save();
+                $report[] = "Coordinator role already existed (#{$coordinator->id}) — removed class_content_read (it was showing Coordinators the unfiltered module list instead of just their review queue).";
+            } else {
+                $report[] = "Coordinator role already exists (#{$coordinator->id}) — left its permissions as they are.";
+            }
         }
 
         $teacher = Role::where('name', 'Teacher')->first();

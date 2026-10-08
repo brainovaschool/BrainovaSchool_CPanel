@@ -129,7 +129,7 @@ class ClassContentModuleController extends Controller
         }
 
         $staffId = $staffId ?? Auth::user()->staff?->id;
-        $result  = $this->repo->store($request, (int) $staffId);
+        $result  = $this->repo->store($request, $staffId !== null ? (int) $staffId : null);
 
         if ($result['status']) {
             return redirect()->route('class-content-module.lessons', $result['data']['id'])->with('success', 'Module created — now add its lessons below.');
@@ -158,6 +158,15 @@ class ClassContentModuleController extends Controller
         $this->authorizeModule($module, true);
 
         $this->validateRequest($request);
+
+        $staffId = $this->teacherStaffId();
+        if ($staffId !== null && !$this->comboOptions($staffId)->contains(
+            fn ($o) => $o['classes_id'] == $request->classes_id
+                && (string) ($o['section_id'] ?? '') === (string) ($request->section_id ?? '')
+                && $o['subject_id'] == $request->subject_id
+        )) {
+            return back()->withInput()->with('danger', "You can only add content for a class, section and subject you're assigned to teach.");
+        }
 
         $result = $this->repo->update($request, $id);
         if ($result['status']) {
