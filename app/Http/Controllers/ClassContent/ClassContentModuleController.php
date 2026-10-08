@@ -103,7 +103,7 @@ class ClassContentModuleController extends Controller
         $staffId = $this->teacherStaffId();
         $data['modules'] = $staffId !== null
             ? $this->repo->forTeacher($staffId)
-            : ClassContentModule::with(['class', 'section', 'subject', 'creator'])->orderByDesc('id')->paginate(\App\Enums\Settings::PAGINATE);
+            : ClassContentModule::with(['class', 'section', 'subject', 'creator'])->withCount('lessons')->orderByDesc('id')->paginate(\App\Enums\Settings::PAGINATE);
         $data['title']   = 'Class Content';
         return view('class-content.module.index', compact('data'));
     }

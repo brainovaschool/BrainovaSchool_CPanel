@@ -48,6 +48,7 @@ class ClassContentModuleRepository
     public function forTeacher(int $staffId)
     {
         return ClassContentModule::with(['class', 'section', 'subject', 'creator'])
+            ->withCount('lessons')
             ->where('created_by', $staffId)
             ->orderByDesc('id')
             ->paginate(Settings::PAGINATE);
@@ -146,6 +147,14 @@ class ClassContentModuleRepository
         $row = ClassContentModule::find($id);
         if (!$row || !in_array($row->review_status, [ClassContentModule::DRAFT, ClassContentModule::CHANGES_REQUESTED], true)) {
             return $this->responseWithError('This can only be submitted from Draft or Changes Requested.', []);
+        }
+
+        // Server-side mirror of the lessons.index "disabled until a lesson
+        // exists" button — the module list's own submit action had no such
+        // check, so an empty module could reach the Coordinator's queue by
+        // that path alone.
+        if (!$row->lessons()->exists()) {
+            return $this->responseWithError('Add at least one lesson before submitting this module for review.', []);
         }
 
         $row->review_status = ClassContentModule::SUBMITTED;

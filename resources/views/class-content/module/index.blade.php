@@ -64,7 +64,7 @@
                                                 <ul class="dropdown-menu dropdown-menu-end">
                                                     <li>
                                                         <a class="dropdown-item" href="{{ route('class-content-module.lessons', $row->id) }}">
-                                                            <span class="icon mr-8"><i class="fa-solid fa-list"></i></span>Lessons
+                                                            <span class="icon mr-8"><i class="fa-solid fa-list"></i></span>Lessons ({{ $row->lessons_count }})
                                                         </a>
                                                     </li>
                                                     @if (hasPermission('class_content_update') && !$rowLocked)
@@ -75,14 +75,22 @@
                                                         </li>
                                                     @endif
                                                     @if (hasPermission('class_content_submit') && !$rowLocked && in_array($row->review_status, [\App\Models\ClassContent\ClassContentModule::DRAFT, \App\Models\ClassContent\ClassContentModule::CHANGES_REQUESTED]))
-                                                        <li>
-                                                            <a class="dropdown-item" href="javascript:void(0);" onclick="document.getElementById('submit-form-{{ $row->id }}').submit();">
-                                                                <span class="icon mr-8"><i class="fa-solid fa-paper-plane"></i></span>Submit for review
-                                                            </a>
-                                                            <form id="submit-form-{{ $row->id }}" action="{{ route('class-content-module.submit', $row->id) }}" method="post" class="d-none">
-                                                                @csrf
-                                                            </form>
-                                                        </li>
+                                                        @if ($row->lessons_count > 0)
+                                                            <li>
+                                                                <a class="dropdown-item" href="javascript:void(0);" onclick="document.getElementById('submit-form-{{ $row->id }}').submit();">
+                                                                    <span class="icon mr-8"><i class="fa-solid fa-paper-plane"></i></span>Submit for review
+                                                                </a>
+                                                                <form id="submit-form-{{ $row->id }}" action="{{ route('class-content-module.submit', $row->id) }}" method="post" class="d-none">
+                                                                    @csrf
+                                                                </form>
+                                                            </li>
+                                                        @else
+                                                            <li>
+                                                                <span class="dropdown-item text-secondary" style="cursor:not-allowed;" title="Add at least one lesson first">
+                                                                    <span class="icon mr-8"><i class="fa-solid fa-paper-plane"></i></span>Submit for review
+                                                                </span>
+                                                            </li>
+                                                        @endif
                                                     @endif
                                                     @if (hasPermission('class_content_delete') && !$rowLocked)
                                                         <li>
