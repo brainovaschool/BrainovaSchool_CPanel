@@ -3222,6 +3222,54 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /** Read-only: dumps every "Coordinator"-named Role row (in case more
+     *  than one exists) and every User whose role_id matches one of them —
+     *  their raw role permissions, their raw personal permissions snapshot,
+     *  and the actual computed intersection authEffectivePermissions()
+     *  would return — so a "still doesn't see it" report can be diagnosed
+     *  without guessing. */
+    public function inspectCoordinatorPermissions(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $lines = [];
+        $roles = Role::where('name', 'Coordinator')->get();
+
+        if ($roles->isEmpty()) {
+            $lines[] = 'No Role named "Coordinator" exists at all — run /db/seed-coordinator-role/' . $key . ' first.';
+        } elseif ($roles->count() > 1) {
+            $lines[] = 'WARNING: ' . $roles->count() . ' separate Role rows are all named "Coordinator" (ids: ' . $roles->pluck('id')->implode(', ') . ') — a staff member may be attached to a different one than the one seed-coordinator-role keeps updating.';
+        }
+
+        foreach ($roles as $role) {
+            $rolePerms = is_array($role->permissions) ? $role->permissions : [];
+            $lines[] = "\nRole #{$role->id} \"{$role->name}\" (slug: {$role->slug}) permissions:\n  " . (empty($rolePerms) ? '(none)' : implode(', ', $rolePerms));
+            $lines[] = '  has class_content_coordinator_review: ' . (in_array('class_content_coordinator_review', $rolePerms, true) ? 'YES' : 'NO');
+
+            $users = \App\Models\User::where('role_id', $role->id)->get();
+            if ($users->isEmpty()) {
+                $lines[] = '  No User rows have role_id = ' . $role->id . '.';
+                continue;
+            }
+
+            foreach ($users as $u) {
+                $userPerms = is_array($u->permissions) ? $u->permissions : [];
+                $effective = ($userPerms === []) ? $rolePerms : array_values(array_intersect($rolePerms, $userPerms));
+                $lines[] = "\n  User #{$u->id} \"{$u->name}\" <{$u->email}> role_id={$u->role_id}";
+                $lines[] = '    personal permissions snapshot: ' . (empty($userPerms) ? '(none saved — inherits role directly)' : implode(', ', $userPerms));
+                $lines[] = '    EFFECTIVE access to class_content_coordinator_review: ' . (in_array('class_content_coordinator_review', $effective, true) ? 'YES' : 'NO — this is why they can\'t see Coordinator Review');
+            }
+        }
+
+        return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
+    }
+
     /** One-off: splits the old island-only visibility setting into the
      *  new per-feature FeatureAccess system (Avatar / Learning Island /
      *  AI Helper), with no change in who can currently see what:

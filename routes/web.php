@@ -163,6 +163,7 @@ Route::middleware(saasMiddleware())->group(function () {
             Route::get('/db/inspect-teachers/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectTeachers']);
             Route::get('/db/seed-feature-access/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedFeatureAccess']);
             Route::get('/db/seed-coordinator-role/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedCoordinatorRole']);
+            Route::get('/db/inspect-coordinator-permissions/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectCoordinatorPermissions']);
 
             // View the tail of the Laravel error log from the browser (admin-only + key) — for hosts without SSH/file-manager log access.
             Route::get('/db/logs/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'viewLogs']);
