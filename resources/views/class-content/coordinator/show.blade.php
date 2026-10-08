@@ -22,9 +22,10 @@
         @include('class-content._module-detail', ['item' => $item])
 
         @if (in_array($item->review_status, [\App\Models\ClassContent\ClassContentModule::SUBMITTED, \App\Models\ClassContent\ClassContentModule::CHANGES_REQUESTED]))
-            <div class="card ot-card">
+            <div class="card ot-card cc-decision-card">
                 <div class="card-body">
-                    <h5 class="mb-3">Your decision</h5>
+                    <h5 class="mb-1"><i class="fa-solid fa-circle-check text-primary me-1"></i> Your decision</h5>
+                    <p class="text-secondary mb-3" style="font-size:.85rem;">Checked everything? Send it on to admin, or kick it back to the teacher with a note on what to fix.</p>
                     <form action="{{ route('class-content-coordinator.decide', $item->id) }}" method="post">
                         @csrf
                         <div class="mb-3">
@@ -48,3 +49,9 @@
         @endif
     </div>
 @endsection
+
+@push('css')
+<style>
+    .cc-decision-card { border: 1px solid #bfdbfe; background: linear-gradient(180deg, #f8fbff 0%, #fff 60px); }
+</style>
+@endpush

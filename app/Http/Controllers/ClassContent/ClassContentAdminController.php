@@ -23,6 +23,7 @@ class ClassContentAdminController extends Controller
     {
         $data['modules'] = $this->repo->forAdmin($request->get('status'));
         $data['status']  = $request->get('status');
+        $data['counts']  = $this->repo->statusCounts();
         $data['title']   = 'Approve Class Content';
         return view('class-content.admin.index', compact('data'));
     }

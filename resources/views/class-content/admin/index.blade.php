@@ -25,8 +25,8 @@
                         <p class="text-secondary mb-0" style="font-size:.85rem;">Everything here has already been checked by a coordinator. Approving makes it visible to students and parents.</p>
                     </div>
                     <div class="btn-group">
-                        <a href="{{ route('class-content-admin.index') }}" class="btn btn-sm {{ !$data['status'] ? 'ot-btn-primary' : 'btn-outline-secondary' }}">Awaiting approval</a>
-                        <a href="{{ route('class-content-admin.index', ['status' => \App\Models\ClassContent\ClassContentModule::APPROVED]) }}" class="btn btn-sm {{ $data['status'] === \App\Models\ClassContent\ClassContentModule::APPROVED ? 'ot-btn-primary' : 'btn-outline-secondary' }}">Approved</a>
+                        <a href="{{ route('class-content-admin.index') }}" class="btn btn-sm {{ !$data['status'] ? 'ot-btn-primary' : 'btn-outline-secondary' }}">Awaiting approval ({{ $data['counts'][\App\Models\ClassContent\ClassContentModule::COORDINATOR_REVIEWED] }})</a>
+                        <a href="{{ route('class-content-admin.index', ['status' => \App\Models\ClassContent\ClassContentModule::APPROVED]) }}" class="btn btn-sm {{ $data['status'] === \App\Models\ClassContent\ClassContentModule::APPROVED ? 'ot-btn-primary' : 'btn-outline-secondary' }}">Approved ({{ $data['counts'][\App\Models\ClassContent\ClassContentModule::APPROVED] }})</a>
                     </div>
                 </div>
                 <div class="card-body">

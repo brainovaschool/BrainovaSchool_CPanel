@@ -24,10 +24,13 @@
                         <h4 class="mb-0">Coordinator Review</h4>
                         <p class="text-secondary mb-0" style="font-size:.85rem;">Check a teacher's class content in detail, leave feedback, and send it on to admin once it's ready.</p>
                     </div>
+                    @php
+                        $needsAttention = $data['counts'][\App\Models\ClassContent\ClassContentModule::SUBMITTED] + $data['counts'][\App\Models\ClassContent\ClassContentModule::CHANGES_REQUESTED];
+                    @endphp
                     <div class="btn-group">
-                        <a href="{{ route('class-content-coordinator.index') }}" class="btn btn-sm {{ !$data['status'] ? 'ot-btn-primary' : 'btn-outline-secondary' }}">Needs attention</a>
-                        <a href="{{ route('class-content-coordinator.index', ['status' => \App\Models\ClassContent\ClassContentModule::COORDINATOR_REVIEWED]) }}" class="btn btn-sm {{ $data['status'] === \App\Models\ClassContent\ClassContentModule::COORDINATOR_REVIEWED ? 'ot-btn-primary' : 'btn-outline-secondary' }}">Sent to admin</a>
-                        <a href="{{ route('class-content-coordinator.index', ['status' => \App\Models\ClassContent\ClassContentModule::APPROVED]) }}" class="btn btn-sm {{ $data['status'] === \App\Models\ClassContent\ClassContentModule::APPROVED ? 'ot-btn-primary' : 'btn-outline-secondary' }}">Approved</a>
+                        <a href="{{ route('class-content-coordinator.index') }}" class="btn btn-sm {{ !$data['status'] ? 'ot-btn-primary' : 'btn-outline-secondary' }}">Needs attention ({{ $needsAttention }})</a>
+                        <a href="{{ route('class-content-coordinator.index', ['status' => \App\Models\ClassContent\ClassContentModule::COORDINATOR_REVIEWED]) }}" class="btn btn-sm {{ $data['status'] === \App\Models\ClassContent\ClassContentModule::COORDINATOR_REVIEWED ? 'ot-btn-primary' : 'btn-outline-secondary' }}">Sent to admin ({{ $data['counts'][\App\Models\ClassContent\ClassContentModule::COORDINATOR_REVIEWED] }})</a>
+                        <a href="{{ route('class-content-coordinator.index', ['status' => \App\Models\ClassContent\ClassContentModule::APPROVED]) }}" class="btn btn-sm {{ $data['status'] === \App\Models\ClassContent\ClassContentModule::APPROVED ? 'ot-btn-primary' : 'btn-outline-secondary' }}">Approved ({{ $data['counts'][\App\Models\ClassContent\ClassContentModule::APPROVED] }})</a>
                     </div>
                 </div>
                 <div class="card-body">

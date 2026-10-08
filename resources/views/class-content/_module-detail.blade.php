@@ -1,7 +1,7 @@
 {{-- Read-only module detail for Coordinator/Admin review screens. Expects $item (ClassContentModule with lessons.materials/activities/outcomes eager loaded). --}}
 <div class="card ot-card mb-3">
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
             <div>
                 <h4 class="mb-1">{{ $item->title }}</h4>
                 <p class="text-secondary mb-1">
@@ -14,14 +14,10 @@
             </div>
             <div>@include('class-content._status-badge', ['status' => $item->review_status])</div>
         </div>
-        @if ($item->coordinator_feedback)
-            <div class="alert alert-warning mt-3 mb-0">
-                <strong>Coordinator feedback:</strong> {{ $item->coordinator_feedback }}
-                @if ($item->coordinator)
-                    <span class="text-secondary">— {{ trim($item->coordinator->first_name . ' ' . $item->coordinator->last_name) }}@if($item->coordinator_reviewed_at), {{ $item->coordinator_reviewed_at->format('d M Y') }}@endif</span>
-                @endif
-            </div>
-        @endif
+
+        @include('class-content._status-stepper', ['status' => $item->review_status])
+
+        @include('class-content._feedback-panel', ['item' => $item])
     </div>
 </div>
 

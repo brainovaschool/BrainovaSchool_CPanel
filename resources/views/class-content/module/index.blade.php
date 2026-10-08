@@ -17,7 +17,17 @@
             </div>
         </div>
 
-        <div class="table-content table-basic mt-20">
+        @include('class-content._status-summary', [
+            'counts' => $data['counts'],
+            'tiles'  => [
+                [[\App\Models\ClassContent\ClassContentModule::DRAFT], 'Draft', 'fa-pencil'],
+                [[\App\Models\ClassContent\ClassContentModule::SUBMITTED, \App\Models\ClassContent\ClassContentModule::COORDINATOR_REVIEWED], 'In review', 'fa-paper-plane'],
+                [[\App\Models\ClassContent\ClassContentModule::CHANGES_REQUESTED], 'Changes requested', 'fa-rotate-left'],
+                [[\App\Models\ClassContent\ClassContentModule::APPROVED], 'Approved', 'fa-circle-check'],
+            ],
+        ])
+
+        <div class="table-content table-basic">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <div>

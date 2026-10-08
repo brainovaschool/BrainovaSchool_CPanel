@@ -24,6 +24,7 @@ class ClassContentCoordinatorController extends Controller
     {
         $data['modules'] = $this->repo->forCoordinator($request->get('status'));
         $data['status']  = $request->get('status');
+        $data['counts']  = $this->repo->statusCounts();
         $data['title']   = 'Coordinator Review';
         return view('class-content.coordinator.index', compact('data'));
     }

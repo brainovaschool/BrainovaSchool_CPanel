@@ -22,9 +22,10 @@
         @include('class-content._module-detail', ['item' => $item])
 
         @if ($item->review_status !== \App\Models\ClassContent\ClassContentModule::APPROVED)
-            <div class="card ot-card">
+            <div class="card ot-card cc-decision-card">
                 <div class="card-body">
-                    <h5 class="mb-3">Your decision</h5>
+                    <h5 class="mb-1"><i class="fa-solid fa-stamp text-primary me-1"></i> Your decision</h5>
+                    <p class="text-secondary mb-3" style="font-size:.85rem;">The coordinator has already reviewed this. Approving makes it visible to students and parents right away.</p>
                     <form action="{{ route('class-content-admin.decide', $item->id) }}" method="post">
                         @csrf
                         <div class="mb-3">
@@ -50,7 +51,13 @@
                 </div>
             </div>
         @else
-            <div class="alert alert-success">This module is approved and live for students.</div>
+            <div class="alert alert-success"><i class="fa-solid fa-circle-check me-1"></i> This module is approved and live for students.</div>
         @endif
     </div>
 @endsection
+
+@push('css')
+<style>
+    .cc-decision-card { border: 1px solid #bfdbfe; background: linear-gradient(180deg, #f8fbff 0%, #fff 60px); }
+</style>
+@endpush

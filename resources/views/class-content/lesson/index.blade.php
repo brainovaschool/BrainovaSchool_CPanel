@@ -24,26 +24,27 @@
         </div>
 
         <div class="card ot-card mb-3">
-            <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
-                <div>
-                    <div class="mb-1">@include('class-content._status-badge', ['status' => $module->review_status])</div>
-                    <p class="mb-0 text-secondary" style="font-size:.85rem;">
-                        {{ optional($module->class)->name }}{{ $module->section ? ' - ' . optional($module->section)->name : '' }} — {{ optional($module->subject)->name }}
-                    </p>
-                    @if ($module->review_status === \App\Models\ClassContent\ClassContentModule::CHANGES_REQUESTED && $module->coordinator_feedback)
-                        <div class="alert alert-warning mt-2 mb-0" style="font-size:.85rem;">
-                            <strong>Feedback from the coordinator:</strong> {{ $module->coordinator_feedback }}
-                        </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                    <div>
+                        <div class="mb-1">@include('class-content._status-badge', ['status' => $module->review_status])</div>
+                        <p class="mb-0 text-secondary" style="font-size:.85rem;">
+                            {{ optional($module->class)->name }}{{ $module->section ? ' - ' . optional($module->section)->name : '' }} — {{ optional($module->subject)->name }}
+                        </p>
+                    </div>
+                    @if (hasPermission('class_content_submit') && !$isLocked && in_array($module->review_status, [\App\Models\ClassContent\ClassContentModule::DRAFT, \App\Models\ClassContent\ClassContentModule::CHANGES_REQUESTED]))
+                        <form action="{{ route('class-content-module.submit', $module->id) }}" method="post" onsubmit="return confirm('Submit this module for coordinator review?');">
+                            @csrf
+                            <button class="btn btn-lg ot-btn-primary" @if ($data['lessons']->isEmpty()) disabled title="Add at least one lesson first" @endif>
+                                <span><i class="fa-solid fa-paper-plane"></i> </span> Submit for review
+                            </button>
+                        </form>
                     @endif
                 </div>
-                @if (hasPermission('class_content_submit') && !$isLocked && in_array($module->review_status, [\App\Models\ClassContent\ClassContentModule::DRAFT, \App\Models\ClassContent\ClassContentModule::CHANGES_REQUESTED]))
-                    <form action="{{ route('class-content-module.submit', $module->id) }}" method="post" onsubmit="return confirm('Submit this module for coordinator review?');">
-                        @csrf
-                        <button class="btn btn-lg ot-btn-primary" @if ($data['lessons']->isEmpty()) disabled title="Add at least one lesson first" @endif>
-                            <span><i class="fa-solid fa-paper-plane"></i> </span> Submit for review
-                        </button>
-                    </form>
-                @endif
+
+                @include('class-content._status-stepper', ['status' => $module->review_status])
+
+                @include('class-content._feedback-panel', ['item' => $module])
             </div>
         </div>
 

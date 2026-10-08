@@ -77,6 +77,26 @@ class ClassContentModuleRepository
             ->paginate(Settings::PAGINATE);
     }
 
+    /** Counts for the queue tabs — avoids a full row fetch just to show
+     *  "how many" next to each status filter. $createdBy scopes it to one
+     *  teacher's own modules (used by their "Class Content" list); null
+     *  gives the site-wide counts Coordinator/Admin see. */
+    public function statusCounts(?int $createdBy = null): array
+    {
+        $rows = ClassContentModule::selectRaw('review_status, count(*) as total')
+            ->when($createdBy, fn ($q) => $q->where('created_by', $createdBy))
+            ->groupBy('review_status')
+            ->pluck('total', 'review_status');
+
+        return [
+            ClassContentModule::DRAFT               => (int) ($rows[ClassContentModule::DRAFT] ?? 0),
+            ClassContentModule::SUBMITTED            => (int) ($rows[ClassContentModule::SUBMITTED] ?? 0),
+            ClassContentModule::CHANGES_REQUESTED    => (int) ($rows[ClassContentModule::CHANGES_REQUESTED] ?? 0),
+            ClassContentModule::COORDINATOR_REVIEWED => (int) ($rows[ClassContentModule::COORDINATOR_REVIEWED] ?? 0),
+            ClassContentModule::APPROVED             => (int) ($rows[ClassContentModule::APPROVED] ?? 0),
+        ];
+    }
+
     public function show(int $id): ?ClassContentModule
     {
         return ClassContentModule::with(['class', 'section', 'subject', 'creator', 'coordinator', 'approver', 'lessons.materials', 'lessons.activities', 'lessons.outcomes'])
@@ -199,6 +219,14 @@ class ClassContentModuleRepository
 
         $decision = $request->input('decision');
 
+        // Admin's own note lives in its own column — it used to overwrite
+        // coordinator_feedback, which both silently lost the Coordinator's
+        // original note and mislabeled Admin's note as the Coordinator's
+        // wherever it was displayed.
+        if ($request->filled('feedback')) {
+            $row->admin_feedback = $request->input('feedback');
+        }
+
         if ($decision === 'approve') {
             $row->review_status = ClassContentModule::APPROVED;
             $row->approved_by   = $adminStaffId;
@@ -206,14 +234,8 @@ class ClassContentModuleRepository
         } elseif ($decision === 'back_to_coordinator') {
             $row->review_status           = ClassContentModule::SUBMITTED;
             $row->coordinator_reviewed_at = null;
-            if ($request->filled('feedback')) {
-                $row->coordinator_feedback = $request->input('feedback');
-            }
         } else {
             $row->review_status = ClassContentModule::CHANGES_REQUESTED;
-            if ($request->filled('feedback')) {
-                $row->coordinator_feedback = $request->input('feedback');
-            }
         }
 
         $row->save();
