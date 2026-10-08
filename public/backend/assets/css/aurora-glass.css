@@ -1,0 +1,277 @@
+/* =========================================================================
+   AURORA GLASS — backend admin panel reskin
+   Loaded after style.css / style2.css / custom.css (see backend/master.blade.php)
+   so it wins the cascade without needing !important everywhere. Restyles the
+   shared chrome (sidebar, header, cards, buttons, badges, inputs) that every
+   backend page is built from — the goal is one consistent look across the
+   whole panel without having to touch each page's own markup.
+   Same palette as the public site's Aurora Glass system: turquoise primary,
+   light periwinkle-purple accent (chosen so it reads on both a white and a
+   black surface, not just one).
+   ========================================================================= */
+
+:root {
+  --bn-turquoise: #0097b2;
+  --bn-turquoise-light: #5ce1e6;
+  --bn-turquoise-text: #007585;
+  --bn-purple: #8b7bf0;
+  --bn-purple-light: #a996ff;
+  --bn-purple-rgb: 139, 123, 240;
+  --bn-ink: #101a2b;
+  --bn-ink-soft: #45547a;
+  --bn-muted: #6b7a99;
+  --bn-faint: #8a93ad;
+  --bn-page-bg: #f1f3fb;
+  --bn-glass: rgba(255, 255, 255, .6);
+  --bn-glass-strong: rgba(255, 255, 255, .75);
+  --bn-glass-border: rgba(255, 255, 255, .7);
+  --bn-glass-hi: rgba(255, 255, 255, .9);
+  --bn-shadow: rgba(31, 34, 74, .16);
+  --bn-track: rgba(16, 26, 43, .07);
+}
+
+.dark-theme {
+  --bn-ink: #f1f3fb;
+  --bn-ink-soft: #aab3d1;
+  --bn-muted: #8c97bd;
+  --bn-faint: #7b86ab;
+  --bn-page-bg: #0b0d14;
+  --bn-glass: rgba(255, 255, 255, .055);
+  --bn-glass-strong: rgba(255, 255, 255, .07);
+  --bn-glass-border: rgba(255, 255, 255, .12);
+  --bn-glass-hi: rgba(255, 255, 255, .07);
+  --bn-shadow: rgba(0, 0, 0, .55);
+  --bn-track: rgba(255, 255, 255, .08);
+}
+
+/* ---------- Ambient page background ---------- */
+body {
+  background-color: var(--bn-page-bg) !important;
+  background-image:
+    radial-gradient(640px circle at -5% -8%, rgba(0, 151, 178, .18), transparent 60%),
+    radial-gradient(720px circle at 100% 6%, rgba(var(--bn-purple-rgb), .16), transparent 60%),
+    radial-gradient(780px circle at 42% 112%, rgba(92, 225, 230, .14), transparent 60%);
+  background-attachment: fixed, fixed, fixed;
+  transition: background-color .25s ease;
+}
+
+.dark-theme body {
+  background-image:
+    radial-gradient(640px circle at -5% -8%, rgba(0, 151, 178, .26), transparent 60%),
+    radial-gradient(720px circle at 100% 6%, rgba(var(--bn-purple-rgb), .24), transparent 60%),
+    radial-gradient(780px circle at 42% 112%, rgba(92, 225, 230, .18), transparent 60%);
+}
+
+/* ---------- Sidebar ---------- */
+.sidebar {
+  background: var(--bn-glass) !important;
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  border-right: 1px solid var(--bn-glass-border) !important;
+  box-shadow: 8px 0 40px -28px var(--bn-shadow);
+}
+
+.sidebar .sidebar-menu-item a {
+  border-radius: 14px !important;
+  margin: 1px 10px;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.sidebar .sidebar-menu-item:not(.mm-active) > a:hover {
+  background: rgba(var(--bn-purple-rgb), .10) !important;
+}
+
+.sidebar .sidebar-menu .sidebar-menu-section .mm-active > a {
+  background: linear-gradient(135deg, var(--bn-purple), var(--bn-purple-light)) !important;
+  color: #fff !important;
+  border-left: none !important;
+  box-shadow: 0 10px 22px -10px rgba(var(--bn-purple-rgb), .6);
+}
+
+.sidebar .sidebar-menu .sidebar-menu-section .mm-active > a svg,
+.sidebar .sidebar-menu .sidebar-menu-section .mm-active > a i {
+  color: #fff !important;
+}
+
+.sidebar .sidebar-menu-section-heading,
+.sidebar .sidebar-dropdown-menu > li > a .on-half-expanded {
+  color: var(--bn-ink-soft);
+}
+
+/* ---------- Header ---------- */
+.header {
+  background: var(--bn-glass) !important;
+  backdrop-filter: blur(22px) saturate(170%);
+  -webkit-backdrop-filter: blur(22px) saturate(170%);
+  border-bottom: 1px solid var(--bn-glass-border) !important;
+  box-shadow: 0 16px 40px -28px var(--bn-shadow);
+}
+
+.header .home-icon {
+  background: var(--bn-glass-strong) !important;
+  border-radius: 12px !important;
+}
+
+.header .header-search {
+  background: var(--bn-glass-strong);
+  border: 1px solid var(--bn-glass-border);
+  border-radius: 999px;
+  padding: 2px 6px;
+}
+
+.header .header-search .search-field {
+  background: transparent !important;
+  border: none !important;
+}
+
+.header-controls button,
+.header-control-item .language-currency-btn,
+.notification_wrapper > a,
+.profile-navigate {
+  border-radius: 999px !important;
+}
+
+.theme_dropdown button,
+.notification_wrapper > .search-home {
+  background: var(--bn-glass-strong) !important;
+  border: 1px solid var(--bn-glass-border);
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-navigate .profile-photo {
+  box-shadow: 0 0 0 2px var(--bn-glass-border);
+}
+
+/* ---------- Cards ---------- */
+.ot-card,
+.table-content.table-basic .card,
+.card {
+  background: var(--bn-glass) !important;
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  border: 1px solid var(--bn-glass-border) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 18px 40px -26px var(--bn-shadow), inset 0 1px 0 var(--bn-glass-hi);
+  filter: none !important;
+}
+
+.table-content.table-basic .card-header {
+  border-bottom: 1px solid var(--bn-glass-border);
+}
+
+.dropdown-menu,
+.top-navbar-dropdown-menu {
+  background: var(--bn-glass-strong) !important;
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  border: 1px solid var(--bn-glass-border) !important;
+  border-radius: 16px !important;
+}
+
+/* ---------- Buttons ---------- */
+.ot-btn-common,
+.ot-dropdown-btn,
+.ot-btn-primary {
+  background: linear-gradient(135deg, var(--bn-purple), var(--bn-purple-light)) !important;
+  border-radius: 999px !important;
+  box-shadow: 0 10px 22px -10px rgba(var(--bn-purple-rgb), .55);
+  border: none;
+}
+
+.ot-btn-primary:hover {
+  background: linear-gradient(135deg, var(--bn-purple-light), var(--bn-purple)) !important;
+  box-shadow: 0 14px 28px -10px rgba(var(--bn-purple-rgb), .65);
+}
+
+.ot-btn-success {
+  background: linear-gradient(135deg, #10b981, #34d399) !important;
+  border-radius: 999px !important;
+}
+
+.ot-btn-danger {
+  background: linear-gradient(135deg, #ef4444, #f87171) !important;
+  border-radius: 999px !important;
+}
+
+.ot-btn-warning {
+  background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
+  border-radius: 999px !important;
+}
+
+.ot-btn-info {
+  background: linear-gradient(135deg, var(--bn-turquoise), var(--bn-turquoise-light)) !important;
+  border-radius: 999px !important;
+}
+
+.btn-outline-secondary,
+.btn-outline-danger {
+  border-radius: 999px !important;
+}
+
+.btn-dropdown {
+  border-radius: 999px !important;
+}
+
+/* ---------- Badges / status pills ---------- */
+.badge-basic-success-text,
+.badge-basic-danger-text,
+.badge-basic-warning-text,
+.badge-basic-info-text,
+.badge-basic-secondary-text,
+.badge-basic-primary-text {
+  border: 1px solid transparent;
+}
+
+.dark-theme .badge-basic-success-text { background: rgba(16, 185, 129, .18) !important; color: #34d399 !important; }
+.dark-theme .badge-basic-danger-text  { background: rgba(239, 68, 68, .18) !important; color: #f87171 !important; }
+.dark-theme .badge-basic-warning-text { background: rgba(245, 158, 11, .20) !important; color: #fbbf24 !important; }
+.dark-theme .badge-basic-info-text    { background: rgba(0, 151, 178, .22) !important; color: var(--bn-turquoise-light) !important; }
+.dark-theme .badge-basic-secondary-text,
+.dark-theme .badge-basic-primary-text { background: rgba(255, 255, 255, .10) !important; color: #c3c9e6 !important; }
+
+/* ---------- Inputs ---------- */
+.ot-input,
+.ot-textarea,
+.nice-select.niceSelect,
+.form-control,
+.form-select {
+  border-radius: 14px !important;
+  background: var(--bn-glass-strong) !important;
+  border: 1px solid var(--bn-glass-border) !important;
+  color: var(--bn-ink) !important;
+}
+
+.ot-input:focus,
+.ot-textarea:focus,
+.form-control:focus {
+  border-color: rgba(var(--bn-purple-rgb), .5) !important;
+  box-shadow: 0 0 0 3px rgba(var(--bn-purple-rgb), .15) !important;
+}
+
+/* Keep Bootstrap's validation-error border visible — the blanket glass
+   border above would otherwise silently hide it. */
+.is-invalid.ot-input,
+.is-invalid.ot-textarea,
+.form-control.is-invalid,
+.form-select.is-invalid {
+  border-color: #dc3545 !important;
+}
+
+/* ---------- Tables ---------- */
+.table-content.table-basic .table thead,
+.table-content.table-basic .table .thead {
+  background: rgba(var(--bn-purple-rgb), .08);
+}
+
+.table-content.table-basic .table tbody tr:hover {
+  background: rgba(var(--bn-purple-rgb), .05);
+}
+
+/* ---------- Pagination ---------- */
+.ot-pagination .page-link {
+  border-radius: 10px !important;
+}
