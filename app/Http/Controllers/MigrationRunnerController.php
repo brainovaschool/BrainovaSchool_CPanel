@@ -3171,15 +3171,47 @@ class MigrationRunnerController extends Controller
             }
         }
 
+        $teacherKeywords = ['class_content_read', 'class_content_create', 'class_content_update', 'class_content_delete', 'class_content_submit'];
         $teacher = Role::where('name', 'Teacher')->first();
         if ($teacher) {
-            $teacherKeywords = ['class_content_read', 'class_content_create', 'class_content_update', 'class_content_delete', 'class_content_submit'];
             $teacherPerms    = is_array($teacher->permissions) ? $teacher->permissions : [];
             $teacher->permissions = array_values(array_unique(array_merge($teacherPerms, $teacherKeywords)));
             $teacher->save();
             $report[] = 'Teacher role granted Class Content create/edit/submit permissions.';
         } else {
             $report[] = 'No "Teacher" role found — skipped (check the Roles screen manually if this looks wrong).';
+        }
+
+        // A Staff member's own "Change Permission" screen saves a personal
+        // snapshot on the User row, and authEffectivePermissions() takes
+        // the INTERSECTION of that snapshot with the role's permissions —
+        // so any Teacher/Coordinator created (or last edited there) before
+        // today keeps a stale snapshot that silently hides class_content_*
+        // even though their role now has it. Patch every such snapshot too.
+        $patched = [];
+        $roleKeywordMap = [];
+        if ($teacher) {
+            $roleKeywordMap[$teacher->id] = $teacherKeywords;
+        }
+        if ($coordinator) {
+            $roleKeywordMap[$coordinator->id] = ['class_content_coordinator_review'];
+        }
+        foreach ($roleKeywordMap as $roleId => $keywords) {
+            foreach (\App\Models\User::where('role_id', $roleId)->get() as $u) {
+                $userPerms = is_array($u->permissions) ? $u->permissions : [];
+                if ($userPerms === []) {
+                    continue; // no personal override saved — already inherits the role's permissions directly
+                }
+                $merged = array_values(array_unique(array_merge($userPerms, $keywords)));
+                if ($merged !== $userPerms) {
+                    $u->permissions = $merged;
+                    $u->save();
+                    $patched[] = $u->name;
+                }
+            }
+        }
+        if ($patched) {
+            $report[] = 'Patched stale personal permission snapshots for: ' . implode(', ', $patched) . ' — they now see Class Content too.';
         }
 
         return response(
