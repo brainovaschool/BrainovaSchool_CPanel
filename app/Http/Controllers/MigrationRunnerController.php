@@ -85,6 +85,10 @@ class MigrationRunnerController extends Controller
         'fees_payment_proof' => [
             'review' => 'fees_payment_proof_review',
         ],
+        'portal' => [
+            'access' => 'portal_access',
+            'manage' => 'portal_manage',
+        ],
     ];
 
     public function run(string $key)
@@ -3238,6 +3242,77 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /** One-off: creates an "HR" role (if it doesn't exist yet — safe to
+     *  re-run) with the Team Portal permissions, purely as a convenient
+     *  starting point requested alongside the portal — the admin is free
+     *  to rename it, grant portal_access/portal_manage to any other role
+     *  instead (Admin, Accounting, a brand-new "Content Creator" role,
+     *  whatever she creates), or hand both portal permissions to one
+     *  person wearing two hats. Nothing here is hardcoded to "HR" beyond
+     *  this one default role; every other role's portal access is just a
+     *  normal Roles-screen checkbox from here on. Self-healing like
+     *  seedCoordinatorRole(): re-asserts every run, and patches any
+     *  already-saved personal permission snapshot on an HR user too. */
+    public function seedHrRole(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $report = [];
+
+        $hr = Role::where('name', 'HR')->first();
+        if (!$hr) {
+            $hr = Role::create([
+                'name'        => 'HR',
+                'slug'        => 'hr',
+                'permissions' => ['portal_access', 'portal_manage'],
+            ]);
+            $report[] = "Created the HR role (#{$hr->id}) with Team Portal access. It'll show up as a role option next time you add a Staff member — rename or repurpose it from the Roles screen any time.";
+        } else {
+            $hrPerms = is_array($hr->permissions) ? $hr->permissions : [];
+            $fixed   = array_values(array_unique(array_merge($hrPerms, ['portal_access', 'portal_manage'])));
+            sort($fixed);
+            $before = $hrPerms;
+            sort($before);
+            if ($fixed !== $before) {
+                $hr->permissions = $fixed;
+                $hr->save();
+                $report[] = "HR role already existed (#{$hr->id}) — re-added the Team Portal permissions.";
+            } else {
+                $report[] = "HR role already exists (#{$hr->id}) — permissions already correct.";
+            }
+        }
+
+        $patched = [];
+        foreach (\App\Models\User::where('role_id', $hr->id)->get() as $u) {
+            $userPerms = is_array($u->permissions) ? $u->permissions : [];
+            if ($userPerms === []) {
+                continue;
+            }
+            $merged = array_values(array_unique(array_merge($userPerms, ['portal_access', 'portal_manage'])));
+            if ($merged !== $userPerms) {
+                $u->permissions = $merged;
+                $u->save();
+                $patched[] = $u->name;
+            }
+        }
+        if ($patched) {
+            $report[] = 'Patched stale personal permission snapshots for: ' . implode(', ', $patched) . ' — they now see the Team Portal too.';
+        }
+
+        return response(
+            '<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">'
+            . implode("\n", $report)
+            . "\n\nTo give Team Portal access to a different role instead (Admin, Accounting, or a new role you create), go to Settings -> Roles, edit that role, and tick the two \"portal\" permissions."
+            . '</pre>'
+        );
+    }
+
     /** Read-only: dumps every "Coordinator"-named Role row (in case more
      *  than one exists) and every User whose role_id matches one of them —
      *  their raw role permissions, their raw personal permissions snapshot,
@@ -3434,18 +3509,23 @@ class MigrationRunnerController extends Controller
      *  admin-only (role_id 1), and the stale grants already saved on
      *  other roles are stripped the same run.
      *
-     *  'class_content' and 'fees_payment_proof' are the deliberate
-     *  exceptions: Teacher/Coordinator (class_content) and Accounting
-     *  (fees_payment_proof) are all SUPPOSED to hold some of these
-     *  keywords, granted below, so both groups are excluded from the
-     *  strip list — otherwise every re-run of this migration would
-     *  immediately wipe those grants straight back out. */
+     *  'class_content', 'fees_payment_proof' and 'portal' are the
+     *  deliberate exceptions: Teacher/Coordinator (class_content),
+     *  Accounting (fees_payment_proof) and HR (portal — see
+     *  seedHrRole()) are all SUPPOSED to hold some of these keywords,
+     *  granted below, so all three groups are excluded from the strip
+     *  list — otherwise every re-run of this migration would
+     *  immediately wipe those grants straight back out. Any OTHER role
+     *  the admin grants portal_access/portal_manage to from the normal
+     *  Roles screen is untouched either way, since that grant lives on
+     *  the role itself and this loop only ever strips the leaked
+     *  website-setup keywords, never portal's. */
     private function syncPermissions(): string
     {
         $added      = [];
         $allKeywords = [];
         $strippableKeywords = [];
-        $nonStrippableGroups = ['class_content', 'fees_payment_proof'];
+        $nonStrippableGroups = ['class_content', 'fees_payment_proof', 'portal'];
 
         foreach (self::PERMISSION_GROUPS as $attribute => $keywords) {
             if (!Permission::where('attribute', $attribute)->exists()) {

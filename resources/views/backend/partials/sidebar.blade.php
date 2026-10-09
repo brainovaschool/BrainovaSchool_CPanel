@@ -529,6 +529,20 @@
                     </li>
                 @endif
                 <!-- Class Content end -->
+                @if (hasPermission('portal_access'))
+                    <li class="sidebar-menu-item {{ set_menu(['portal*']) }}">
+                        <a class="parent-item-content has-arrow">
+                            <i class="las la-users-cog"></i>
+                            <span class="on-half-expanded">Team Portal</span>
+                        </a>
+                        <ul class="child-menu-list">
+                            <li class="sidebar-menu-item {{ set_menu(['portal/employees*']) }}">
+                                <a href="{{ route('portal-employees.index') }}">Employees</a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
+                <!-- Team Portal end -->
                 @if (hasPermission('homework_read'))
 
                     <li class="sidebar-menu-item {{ set_menu(['homework*']) }}">
