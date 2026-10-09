@@ -147,10 +147,15 @@
                                                 </td>
                                                 <td>
                                                     @if (!$item->fees_collect_count)
-                                                        <a href="#" class="btn btn-sm ot-btn-primary px-3"
+                                                        <a href="#" class="btn btn-sm ot-btn-primary px-3 mb-1"
                                                             data-bs-toggle="modal" data-bs-target="#modalCustomizeWidth"
                                                             onclick="feePayByParentModal(`{{ $item->id }}`)">
                                                             <span class="">{{ ___('fees.Pay') }}</span>
+                                                        </a>
+                                                        <a href="#" class="btn btn-sm btn-outline-secondary px-3"
+                                                            data-bs-toggle="modal" data-bs-target="#modalCustomizeWidth"
+                                                            onclick="feeProofByParentModal(`{{ $item->id }}`)">
+                                                            <span>I already paid</span>
                                                         </a>
                                                     @endif
                                                 </td>
@@ -187,7 +192,47 @@
         @endif
         <!--  table content end -->
 
-
+        @if (request()->filled('student_id') && $data['payment_proofs']->isNotEmpty())
+            <div class="table-content table-basic mt-20">
+                <div class="card">
+                    <div class="card-header"><h4 class="mb-0">Submitted Proofs</h4></div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered class-table">
+                                <thead class="thead">
+                                    <tr>
+                                        <th>Fee</th>
+                                        <th>Method</th>
+                                        <th>Amount claimed</th>
+                                        <th>Submitted</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="tbody">
+                                    @foreach ($data['payment_proofs'] as $proof)
+                                        <tr>
+                                            <td>{{ optional(optional($proof->feesAssignChildren)->feesMaster)->type->name ?? '—' }}</td>
+                                            <td>{{ \App\Models\Fees\FeesPaymentProof::METHODS[$proof->payment_method] ?? $proof->payment_method }}</td>
+                                            <td>{{ Setting('currency_symbol') }} {{ number_format($proof->amount_claimed, 2) }}</td>
+                                            <td>{{ $proof->created_at->diffForHumans() }}</td>
+                                            <td>
+                                                @if ($proof->status === 'pending')
+                                                    <span class="badge-basic-warning-text">Pending review</span>
+                                                @elseif ($proof->status === 'approved')
+                                                    <span class="badge-basic-success-text">Approved</span>
+                                                @else
+                                                    <span class="badge-basic-danger-text" title="{{ $proof->rejection_reason }}">Rejected — {{ $proof->rejection_reason }}</span>
+                                                @endif
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <div id="view-modal">
             <div class="modal fade" id="modalCustomizeWidth" tabindex="-1" aria-labelledby="modalWidth" aria-hidden="true">

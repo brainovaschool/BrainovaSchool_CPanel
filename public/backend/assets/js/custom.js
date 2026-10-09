@@ -2958,6 +2958,21 @@ function feePayByParentModal(fees_assigned_children_id) {
 }
 // end feePayByParentModal function
 
+
+// start feeProofByStudentModal function
+function feeProofByStudentModal(fees_assigned_children_id) {
+    getFeeData(fees_assigned_children_id, '/student-panel-fees/proof-modal');
+}
+// end feeProofByStudentModal function
+
+
+
+// start feeProofByParentModal function
+function feeProofByParentModal(fees_assigned_children_id) {
+    getFeeData(fees_assigned_children_id, '/parent-panel-fees/proof-modal');
+}
+// end feeProofByParentModal function
+
 // start sections
 
 function addLink() {

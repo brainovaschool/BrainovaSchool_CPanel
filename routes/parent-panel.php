@@ -87,6 +87,8 @@ Route::middleware(saasMiddleware())->group(function () {
                             Route::get('pay-with-paypal', 'payWithPaypal')->name('parent-panel-fees.pay-with-paypal');
                             Route::get('payment-success', 'paymentSuccess')->name('parent-panel-fees.payment.success');
                             Route::get('payment-cancel', 'paymentCancel')->name('parent-panel-fees.payment.cancel');
+                            Route::get('proof-modal', 'proofModal');
+                            Route::post('submit-payment-proof', 'submitPaymentProof')->name('parent-panel-fees.submit-payment-proof');
                         });
                     });
 

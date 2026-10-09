@@ -336,7 +336,8 @@
                         hasPermission('fees_master_read') ||
                         hasPermission('fees_assign_read') ||
                         hasPermission('discount_setup') ||
-                        hasPermission('fees_collect_read')) &&
+                        hasPermission('fees_collect_read') ||
+                        hasPermission('fees_payment_proof_review')) &&
                         hasFeature('fees'))
                     <li class="sidebar-menu-item {{ set_menu(['fees*']) }}">
                         <a class="parent-item-content has-arrow">
@@ -367,6 +368,11 @@
                             @if (hasPermission('fees_collect_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['fees-collect*']) }}">
                                     <a href="{{ route('fees-collect.index') }}">{{ ___('settings.collect') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('fees_payment_proof_review'))
+                                <li class="sidebar-menu-item {{ set_menu(['fees-payment-proof*']) }}">
+                                    <a href="{{ route('fees-payment-proof.index') }}">Payment Proof Review</a>
                                 </li>
                             @endif
                                   @if(config('app.app_ver') > 2.0)

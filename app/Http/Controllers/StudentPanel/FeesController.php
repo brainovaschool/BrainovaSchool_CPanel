@@ -15,6 +15,7 @@ use App\Models\StudentInfo\Student;
 use Illuminate\Support\Facades\Session;
 use Srmklive\PayPal\Services\ExpressCheckout;
 use App\Repositories\Fees\FeesCollectRepository;
+use App\Repositories\Fees\FeesPaymentProofRepository;
 use App\Repositories\StudentPanel\FeesRepository;
 use App\Services\StudentFeesService;
 
@@ -22,12 +23,14 @@ class FeesController extends Controller
 {
     private $repo;
     private $feesCollectRepository;
+    private $feesPaymentProofRepository;
     private $studentFeesService;
 
-    function __construct(FeesRepository $repo, FeesCollectRepository $feesCollectRepository, StudentFeesService $studentFeesService)
+    function __construct(FeesRepository $repo, FeesCollectRepository $feesCollectRepository, FeesPaymentProofRepository $feesPaymentProofRepository, StudentFeesService $studentFeesService)
     {
         $this->repo = $repo;
         $this->feesCollectRepository = $feesCollectRepository;
+        $this->feesPaymentProofRepository = $feesPaymentProofRepository;
         $this->studentFeesService = $studentFeesService;
     }
 
@@ -37,7 +40,33 @@ class FeesController extends Controller
         $data = $this->repo->index();
         $student = Student::with('specialDiscount.discount', 'feesMasters.type')->find(@auth()->user()->student->id);
         $disc['discount'] = $student->specialDiscount?->discount;
+        $data['payment_proofs'] = $this->feesPaymentProofRepository->forStudent(auth()->user()->student->id);
         return view('student-panel.fees', compact('data', 'disc'));
+    }
+
+    public function proofModal(Request $request)
+    {
+        return view('common.fee-pay.fee-proof-modal', [
+            'feeAssignChildren' => FeesAssignChildren::with('feesMaster')->where('id', $request->fees_assigned_children_id)->first(),
+            'formRoute' => route('student-panel-fees.submit-payment-proof'),
+        ]);
+    }
+
+    public function submitPaymentProof(Request $request)
+    {
+        $request->validate([
+            'fees_assign_children_id' => 'required|integer',
+            'payment_method'          => 'required|in:jazzcash,easypaisa,bank_transfer,cash,other',
+            'amount_claimed'          => 'required|numeric|min:0',
+            'paid_date'               => 'required|date',
+            'transaction_reference'   => 'nullable|string|max:150',
+            'note'                    => 'nullable|string|max:1000',
+            'proof_file'              => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+        ]);
+
+        $result = $this->feesPaymentProofRepository->store($request, [auth()->user()->student->id], auth()->id());
+
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
 
@@ -66,9 +95,9 @@ class FeesController extends Controller
     public function payWithStripe(Request $request)
     {
         try {
-            $this->feesCollectRepository->payWithStripeStore($request);
+            $result = $this->feesCollectRepository->payWithStripeStore($request, [auth()->user()->student->id]);
 
-            return back()->with('success', ___('alert.Fee has been paid successfully'));
+            return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
 
         } catch (\Throwable $th) {
             return back()->with('danger', ___('alert.something_went_wrong_please_try_again'));
@@ -78,6 +107,10 @@ class FeesController extends Controller
 
     public function payWithPaypal(Request $request)
     {
+        if (!$this->feesCollectRepository->findOwnedFee((int) $request->fees_assign_children_id, [auth()->user()->student->id])) {
+            return back()->with('danger', "This fee doesn't belong to your account.");
+        }
+
         loadPayPalCredentials();
 
         Session::put('FeesAssignChildrenID', $request->fees_assign_children_id);
@@ -119,7 +152,11 @@ class FeesController extends Controller
     public function studentFeesPayWithStripeStore(Request $request)
     {
         try {
-            $this->feesCollectRepository->payWithStripeStore($request);
+            $result = $this->feesCollectRepository->payWithStripeStore($request, [auth()->user()->student->id]);
+
+            if (!$result['status']) {
+                return redirect()->route('student-fees.payment-error');
+            }
 
             return redirect()->route('student-fees.payment-success');
 
@@ -131,6 +168,10 @@ class FeesController extends Controller
 
     public function studentFeesPayWithPayPal($fee_assign_children_id)
     {
+        if (!$this->feesCollectRepository->findOwnedFee((int) $fee_assign_children_id, [auth()->user()->student->id])) {
+            return redirect()->route('student-fees.payment-error');
+        }
+
         loadPayPalCredentials();
 
         Session::put('FeesAssignChildrenID', $fee_assign_children_id);

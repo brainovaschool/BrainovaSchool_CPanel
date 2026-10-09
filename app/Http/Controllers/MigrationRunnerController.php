@@ -82,6 +82,9 @@ class MigrationRunnerController extends Controller
             'coordinator_review' => 'class_content_coordinator_review',
             'approve' => 'class_content_approve',
         ],
+        'fees_payment_proof' => [
+            'review' => 'fees_payment_proof_review',
+        ],
     ];
 
     public function run(string $key)
@@ -3431,16 +3434,18 @@ class MigrationRunnerController extends Controller
      *  admin-only (role_id 1), and the stale grants already saved on
      *  other roles are stripped the same run.
      *
-     *  'class_content' is the one deliberate exception: Teacher and
-     *  Coordinator are both SUPPOSED to hold some of its keywords
-     *  (granted by seedCoordinatorRole()), so it's excluded from the
-     *  strip list below — otherwise every re-run of this migration would
+     *  'class_content' and 'fees_payment_proof' are the deliberate
+     *  exceptions: Teacher/Coordinator (class_content) and Accounting
+     *  (fees_payment_proof) are all SUPPOSED to hold some of these
+     *  keywords, granted below, so both groups are excluded from the
+     *  strip list — otherwise every re-run of this migration would
      *  immediately wipe those grants straight back out. */
     private function syncPermissions(): string
     {
         $added      = [];
         $allKeywords = [];
         $strippableKeywords = [];
+        $nonStrippableGroups = ['class_content', 'fees_payment_proof'];
 
         foreach (self::PERMISSION_GROUPS as $attribute => $keywords) {
             if (!Permission::where('attribute', $attribute)->exists()) {
@@ -3448,7 +3453,7 @@ class MigrationRunnerController extends Controller
                 $added[] = $attribute;
             }
             $allKeywords = array_merge($allKeywords, array_values($keywords));
-            if ($attribute !== 'class_content') {
+            if (!in_array($attribute, $nonStrippableGroups, true)) {
                 $strippableKeywords = array_merge($strippableKeywords, array_values($keywords));
             }
         }
@@ -3468,6 +3473,21 @@ class MigrationRunnerController extends Controller
                 $role->permissions = $cleaned;
                 $role->save();
                 $strippedFrom[] = $role->name ?? ('role #' . $role->id);
+            }
+        }
+
+        // Accounting reviews "already paid another way" submissions — kept
+        // in sync on every run (not just granted once) for the same reason
+        // the Coordinator role's permissions are: a routine edit on the
+        // normal Roles screen resubmits the WHOLE permissions list from
+        // whatever's checked, so a missed checkbox silently drops this.
+        $accounting = Role::where('name', 'Accounting')->first();
+        if ($accounting) {
+            $accountingPerms = is_array($accounting->permissions) ? $accounting->permissions : [];
+            $merged = array_values(array_unique(array_merge($accountingPerms, ['fees_payment_proof_review'])));
+            if ($merged !== $accountingPerms) {
+                $accounting->permissions = $merged;
+                $accounting->save();
             }
         }
 

@@ -9,6 +9,7 @@ use App\Http\Controllers\Fees\FeesAssignController;
 use App\Http\Controllers\Fees\FeesMasterController;
 use App\Http\Controllers\SpecialDiscountController;
 use App\Http\Controllers\Fees\FeesCollectController;
+use App\Http\Controllers\Fees\FeesPaymentProofController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -75,6 +76,13 @@ Route::middleware(saasMiddleware())->group(function () {
 
                     Route::any('/search', 'getFeesCollectStudents')->name('fees-collect-search');
                     Route::get('/fees-show', 'feesShow');
+                });
+
+                Route::controller(FeesPaymentProofController::class)->prefix('fees-payment-proof')->name('fees-payment-proof.')->group(function () {
+                    Route::get('/',              'index')->name('index')->middleware('PermissionCheck:fees_payment_proof_review');
+                    Route::get('/show/{id}',     'show')->name('show')->middleware('PermissionCheck:fees_payment_proof_review');
+                    Route::post('/approve/{id}', 'approve')->name('approve')->middleware('PermissionCheck:fees_payment_proof_review', 'DemoCheck');
+                    Route::post('/reject/{id}',  'reject')->name('reject')->middleware('PermissionCheck:fees_payment_proof_review', 'DemoCheck');
                 });
 
                 Route::controller(FeesDiscountController::class)->prefix('fees-discount')->group(function () {

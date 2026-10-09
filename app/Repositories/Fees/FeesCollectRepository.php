@@ -195,48 +195,106 @@ class FeesCollectRepository implements FeesCollectInterface
         return $data;
     }
 
-    public function payWithStripeStore($request)
+    /** Looks a fee assignment up ONLY if it actually belongs to one of
+     *  $ownedStudentIds — every online-payment entry point (Stripe, PayPal,
+     *  for both the Student and Parent panels) must call this before
+     *  touching a fees_assign_children_id that came from the client,
+     *  otherwise a signed-in user could pay (or probe) a fee that isn't
+     *  theirs just by changing the id in the request/session. */
+    public function findOwnedFee(int $feesAssignChildrenId, array $ownedStudentIds): ?FeesAssignChildren
     {
-        DB::transaction(function () use ($request) {
-            Stripe::setApiKey(Setting('stripe_secret'));
-            $feesAssignChildren = optional(FeesAssignChildren::with('feesMaster')->where('id', $request->fees_assign_children_id)->first());
-            $description = 'Pay ' . ($request->amount + $request->fine_amount) . ' for ' . $feesAssignChildren->feesMaster?->type?->name . ' of ' . env('APP_NAME');
+        $row = FeesAssignChildren::with(['feesMaster.type', 'feesDiscount', 'feesCollect'])
+            ->find($feesAssignChildrenId);
 
-            $amount = ($request->amount + $request->fine_amount) * 100;
-            $amount += calculateTax($amount);
-            $now = date('Y-m-d');
-            $discount = EarlyPaymentDiscount::whereDate('start_date', '<=', $now)
-                ->whereDate('end_date', '>=', $now)
-                ->first();
+        if (!$row || !in_array((int) $row->student_id, $ownedStudentIds, true)) {
+            return null;
+        }
 
-            if ($discount) {
-                $amount -= calculateDiscount($amount, $discount->discount_percentage);
+        return $row;
+    }
+
+    /** The one authoritative total for a fee assignment, computed entirely
+     *  from server-side data (fee master amount, tax, the assignment's own
+     *  discount, the student's special discount, and whether it's overdue
+     *  and still unpaid) — never from anything the client sends. Shared by
+     *  Stripe and PayPal so both gateways charge the exact same amount for
+     *  the same fee; previously Stripe took its charge amount straight from
+     *  the POSTed form (meaning the browser could submit any number) and
+     *  separately didn't apply the student's special discount the way
+     *  PayPal already did. */
+    private function calculateFeeTotal(FeesAssignChildren $feesAssignChildren): array
+    {
+        $total = (float) ($feesAssignChildren->feesMaster?->amount ?? 0);
+        $total += calculateTax($total);
+
+        $student = Student::with('specialDiscount.discount')->find($feesAssignChildren->student_id);
+        $specialDiscount = $student?->specialDiscount?->discount;
+        $specialDiscountValue = $specialDiscount
+            ? ($specialDiscount->type == 'F' ? (float) $specialDiscount->discount : round(($specialDiscount->discount / 100) * $total, 2))
+            : 0;
+
+        if ($feesAssignChildren->feesDiscount) {
+            $total -= calculateDiscount($total, $feesAssignChildren->feesDiscount->discount_percentage);
+        }
+
+        $fineAmount = 0;
+        $alreadyPaid = $feesAssignChildren->relationLoaded('feesCollect')
+            ? $feesAssignChildren->feesCollect
+            : $feesAssignChildren->feesCollect()->first();
+        if (!$alreadyPaid && $feesAssignChildren->feesMaster?->due_date && date('Y-m-d') > $feesAssignChildren->feesMaster->due_date) {
+            $fineAmount = (float) $feesAssignChildren->feesMaster?->fine_amount;
+            $total += $fineAmount;
+        }
+
+        $total -= $specialDiscountValue;
+
+        return ['total' => round($total, 2), 'fine_amount' => $fineAmount];
+    }
+
+    /** $ownedStudentIds: the fee being paid must belong to one of these —
+     *  the logged-in student's own id, or (from the Parent panel) every
+     *  child linked to that parent's account. */
+    public function payWithStripeStore($request, array $ownedStudentIds): array
+    {
+        return DB::transaction(function () use ($request, $ownedStudentIds) {
+            $feesAssignChildren = $this->findOwnedFee((int) $request->fees_assign_children_id, $ownedStudentIds);
+            if (!$feesAssignChildren) {
+                return $this->responseWithError("This fee doesn't belong to your account.", []);
             }
-            $amount = (int)round($amount);
+            if ($feesAssignChildren->feesCollect) {
+                return $this->responseWithError('This fee has already been paid.', []);
+            }
+
+            ['total' => $total, 'fine_amount' => $fineAmount] = $this->calculateFeeTotal($feesAssignChildren);
+
+            Stripe::setApiKey(Setting('stripe_secret'));
+            $description = 'Pay ' . $total . ' for ' . $feesAssignChildren->feesMaster?->type?->name . ' of ' . env('APP_NAME');
 
             $charge = Charge::create([
-                "amount" => $amount,
+                "amount" => (int) round($total * 100),
                 "currency" => "usd",
                 "source" => $request->stripeToken,
                 "description" => $description
             ]);
 
-            $this->feeCollectStoreByStripe($request, @$charge->balance_transaction);
+            $this->feeCollectStoreByStripe($feesAssignChildren, $total, $fineAmount, $request->date, @$charge->balance_transaction);
+
+            return $this->responseWithSuccess(___('alert.Fee has been paid successfully'), []);
         });
     }
 
-    protected function feeCollectStoreByStripe($request, $transaction_id)
+    protected function feeCollectStoreByStripe(FeesAssignChildren $feesAssignChildren, float $amount, float $fineAmount, $date, $transaction_id)
     {
         $feesCollect = FeesCollect::create([
-            'date'                      => $request->date,
+            'date'                      => $date,
             'payment_method'            => 2,
             'payment_gateway'           => 'Stripe',
             'transaction_id'            => $transaction_id,
-            'fees_assign_children_id'   => $request->fees_assign_children_id,
-            'amount'                    => $request->amount + $request->fine_amount ?? 0,
-            'fine_amount'               => $request->fine_amount,
+            'fees_assign_children_id'   => $feesAssignChildren->id,
+            'amount'                    => $amount,
+            'fine_amount'               => $fineAmount,
             'fees_collect_by'           => 1, // Because student/parent can not be collect so that's why we use first admin user id.
-            'student_id'                => $request->student_id,
+            'student_id'                => $feesAssignChildren->student_id,
             'session_id'                => setting('session')
         ]);
 
@@ -245,10 +303,10 @@ class FeesCollectRepository implements FeesCollectInterface
             if($ac_head){
                 $incomeStore                   = new Income();
                 $incomeStore->fees_collect_id  = $feesCollect->id;
-                $incomeStore->name             = env('APP_NAME').'_'.$request->fees_assign_children_id;
+                $incomeStore->name             = env('APP_NAME').'_'.$feesAssignChildren->id;
                 $incomeStore->session_id       = setting('session');
                 $incomeStore->income_head      = $ac_head->id; // Because, Fees id 1.
-                $incomeStore->date             = $request->date;
+                $incomeStore->date             = $date;
                 $incomeStore->amount           = $feesCollect->amount;
                 $incomeStore->save();
             }
@@ -259,30 +317,10 @@ class FeesCollectRepository implements FeesCollectInterface
 
     public function paypalOrderData($invoice_no, $success_route, $cancel_route)
     {
-        $feesAssignChildren = optional(FeesAssignChildren::with('feesMaster','feesDiscount')->where('id', session()->get('FeesAssignChildrenID'))->first());
+        $feesAssignChildren = FeesAssignChildren::with(['feesMaster.type', 'feesDiscount', 'feesCollect'])
+            ->find(session()->get('FeesAssignChildrenID'));
 
-        $total = $feesAssignChildren->feesMaster?->amount;
-        $now = date('Y-m-d');
-        $discount = EarlyPaymentDiscount::whereDate('start_date', '<=', $now)
-            ->whereDate('end_date', '>=', $now)
-            ->first();
-
-        $total += calculateTax($total);
-
-        $student = Student::with('specialDiscount.discount', 'feesMasters.type')->find($feesAssignChildren->student_id);
-        $specialDiscount = $student->specialDiscount?->discount;
-        $specialDiscountValue =
-            $specialDiscount->type == 'F'
-                ? $specialDiscount->discount
-                : round(($specialDiscount->discount / 100) * $total, 2);
-
-        if ($feesAssignChildren->feesDiscount) {
-            $total -= calculateDiscount($total, $feesAssignChildren->feesDiscount->discount_percentage);
-        }
-
-        if (date('Y-m-d') > $feesAssignChildren->feesMaster?->due_date && $feesAssignChildren->fees_collect_count == 0) {
-            $total += $feesAssignChildren->feesMaster?->fine_amount;
-        }
+        ['total' => $total] = $this->calculateFeeTotal($feesAssignChildren);
 
         $description = 'Pay ' . $total . ' for ' . $feesAssignChildren->feesMaster?->type?->name;
 
@@ -292,11 +330,10 @@ class FeesCollectRepository implements FeesCollectInterface
         $data['invoice_description']    = $description;
         $data['return_url']             = $success_route;
         $data['cancel_url']             = $cancel_route;
-        $data['total']                  = $total - $specialDiscountValue;
+        $data['total']                  = $total;
 
         return $data;
     }
-
 
 
 
@@ -305,13 +342,7 @@ class FeesCollectRepository implements FeesCollectInterface
     {
         DB::transaction(function () use ($response, $feesAssignChildren) {
 
-            $amount = $feesAssignChildren->feesMaster?->amount;
-            $fine_amount = 0;
-
-            if (date('Y-m-d') > $feesAssignChildren->feesMaster?->due_date && $feesAssignChildren->fees_collect_count == 0) {
-                $fine_amount = $feesAssignChildren->feesMaster?->fine_amount;
-                $amount += $fine_amount;
-            }
+            ['total' => $amount, 'fine_amount' => $fine_amount] = $this->calculateFeeTotal($feesAssignChildren);
 
             $date = date('Y-m-d', strtotime($response['PAYMENTINFO_0_ORDERTIME']));
 
