@@ -547,6 +547,9 @@
                             <li class="sidebar-menu-item {{ set_menu(['portal/my-tasks']) }}">
                                 <a href="{{ route('portal-my-tasks.index') }}">My Tasks</a>
                             </li>
+                            <li class="sidebar-menu-item {{ set_menu(['portal/paid-tasks']) }}">
+                                <a href="{{ route('portal-paid-tasks.index') }}">Paid Tasks</a>
+                            </li>
                             <li class="sidebar-menu-item {{ set_menu(['portal/work-log']) }}">
                                 <a href="{{ route('portal-work-log.index') }}">My Work Log</a>
                             </li>

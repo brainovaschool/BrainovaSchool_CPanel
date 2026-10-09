@@ -30,13 +30,26 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Assign to</label>
-                            <select name="assigned_to" class="nice-select niceSelect bordered_style wide" required>
-                                <option value="">Select employee</option>
+                            <select name="assigned_to" id="assigned_to" class="nice-select niceSelect bordered_style wide">
+                                <option value="">— Select employee —</option>
                                 @foreach ($data['employeesList'] as $emp)
                                     <option value="{{ $emp->id }}" {{ (string) old('assigned_to') === (string) $emp->id ? 'selected' : '' }}>{{ trim($emp->first_name . ' ' . $emp->last_name) }} — {{ optional($emp->role)->name }}</option>
                                 @endforeach
                             </select>
+                            <p class="text-secondary mb-0" style="font-size:.8rem" id="assignHint">Required, unless this is a paid task left open to claim.</p>
                             @error('assigned_to') <div class="text-danger">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="form-check mt-4">
+                                <input type="checkbox" class="form-check-input" id="paid" name="paid" value="1" {{ old('paid') ? 'checked' : '' }} onchange="document.getElementById('amountWrap').style.display = this.checked ? '' : 'none';">
+                                <label class="form-check-label" for="paid">This is a paid task</label>
+                            </div>
+                        </div>
+                        <div class="col-md-3" id="amountWrap" style="{{ old('paid') ? '' : 'display:none' }}">
+                            <label class="form-label">Amount ({{ Setting('currency_symbol') }})</label>
+                            <input type="number" step="0.01" min="0" name="amount" class="ot-input" value="{{ old('amount') }}">
+                            @error('amount') <div class="text-danger">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="col-md-4">

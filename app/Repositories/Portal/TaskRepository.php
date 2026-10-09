@@ -3,10 +3,14 @@
 namespace App\Repositories\Portal;
 
 use App\Enums\Settings;
+use App\Models\Accounts\AccountHead;
+use App\Models\Accounts\Expense;
+use App\Models\Portal\PortalPayout;
 use App\Models\Portal\PortalSetting;
 use App\Models\Portal\PortalTask;
 use App\Models\Portal\PortalTaskComment;
 use App\Models\Portal\PortalTaskSubmission;
+use App\Models\Staff\Staff;
 use App\Services\Portal\PortalNotifier;
 use App\Traits\CommonHelperTrait;
 use App\Traits\ReturnFormatTrait;
@@ -57,13 +61,19 @@ class TaskRepository
                 $refUploadId = $this->UploadImageCreate($request->file('ref_file'), 'uploads/portal-tasks');
             }
 
+            $isPaid = (bool) $request->boolean('paid');
+            // A paid task left with no one picked in "Assign to" stays Open
+            // for anyone to claim — a non-paid task always needs an assignee
+            // (enforced in the controller's validation).
+            $isOpen = $isPaid && !$request->filled('assigned_to');
+
             $task = PortalTask::create([
                 'title'          => $request->title,
                 'description'    => $request->description,
                 'category'       => $request->category,
                 'priority'       => $request->priority ?: 'Medium',
                 'urgent'         => (bool) $request->boolean('urgent'),
-                'assigned_to'    => $request->assigned_to,
+                'assigned_to'    => $isOpen ? null : $request->assigned_to,
                 'assigned_by'    => $assignedByUserId,
                 'assigned_date'  => now()->format('Y-m-d'),
                 'due_date'       => $request->due_date,
@@ -74,10 +84,18 @@ class TaskRepository
                 'ref_upload_id'  => $refUploadId,
                 'drive_link'     => $request->drive_link,
                 'notes'          => $request->notes,
-                'status'         => PortalTask::ASSIGNED,
+                'paid'           => $isPaid,
+                'amount'         => $isPaid ? $request->amount : null,
+                'pay_status'     => $isPaid ? 'unpaid' : null,
+                'status'         => $isOpen ? PortalTask::OPEN : PortalTask::ASSIGNED,
             ]);
 
-            if ($task->assignee && $task->assignee->user_id) {
+            if ($isOpen) {
+                // "Paid task available -> All active employees"
+                Staff::active()->whereNotNull('user_id')->get()->each(function (Staff $staff) use ($task) {
+                    PortalNotifier::send($staff->user_id, 'Paid task available', $task->title, route('portal-tasks.show', $task->id));
+                });
+            } elseif ($task->assignee && $task->assignee->user_id) {
                 PortalNotifier::send(
                     $task->assignee->user_id,
                     $task->urgent ? 'Urgent task assigned' : 'New task assigned',
@@ -86,10 +104,111 @@ class TaskRepository
                 );
             }
 
-            return $this->responseWithSuccess('Task created and assigned.', ['id' => $task->id]);
+            return $this->responseWithSuccess($isOpen ? 'Open paid task created.' : 'Task created and assigned.', ['id' => $task->id]);
         } catch (\Throwable $th) {
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
+    }
+
+    /** The tasks (per business rule 1) that would block this employee from
+     *  claiming a paid task right now — none overdue, none in revision.
+     *  Returned (not just a bool) so the UI can name them. */
+    public function claimBlockers(int $staffId)
+    {
+        return PortalTask::where('assigned_to', $staffId)
+            ->where(function ($q) {
+                $q->where('status', PortalTask::REVISION)
+                    ->orWhere(function ($q2) {
+                        $q2->whereIn('status', PortalTask::OVERDUE_STATUSES)->where('due_date', '<', now()->format('Y-m-d'));
+                    });
+            })
+            ->get();
+    }
+
+    /** "Open (paid) -> Claim -> Employee -> In progress" — claiming skips
+     *  the separate accept step entirely, per the workflow table. */
+    public function claim(int $id, int $staffId): array
+    {
+        $task = PortalTask::find($id);
+        if (!$task) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+        if ($task->status !== PortalTask::OPEN || !$task->paid) {
+            return $this->responseWithError('This task is no longer available to claim.', []);
+        }
+
+        $blockers = $this->claimBlockers($staffId);
+        if ($blockers->isNotEmpty()) {
+            return $this->responseWithError('You can\'t claim a paid task while you have an overdue task or one in revision: ' . $blockers->pluck('title')->implode(', '), []);
+        }
+
+        $task->assigned_to = $staffId;
+        $task->status      = PortalTask::IN_PROGRESS;
+        $task->claimed_at  = now();
+        $task->save();
+
+        if ($task->assigned_by) {
+            PortalNotifier::send($task->assigned_by, 'Paid task claimed', $task->title, route('portal-tasks.show', $task->id));
+        }
+
+        return $this->responseWithSuccess('Claimed — it\'s now in progress.', []);
+    }
+
+    /** Creates the real Expense row (never a student fee entry) and the
+     *  portal's own audit record in one transaction. The unique index on
+     *  portal_payouts.task_id, plus this status/pay_status guard, is what
+     *  makes marking paid twice impossible. */
+    public function markPaid(int $id, int $actingUserId): array
+    {
+        $task = PortalTask::with('assignee')->find($id);
+        if (!$task) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+        if (!$task->paid || $task->status !== PortalTask::COMPLETED || $task->pay_status !== 'due') {
+            return $this->responseWithError('This task isn\'t waiting on a payment.', []);
+        }
+        if (PortalPayout::where('task_id', $task->id)->exists()) {
+            return $this->responseWithError('This has already been marked paid.', []);
+        }
+        if (!$task->assignee) {
+            return $this->responseWithError('This task has no assignee to pay.', []);
+        }
+
+        $head = AccountHead::where('name', 'Staff Task Payouts')->where('type', 2)->first();
+        if (!$head) {
+            return $this->responseWithError('The "Staff Task Payouts" expense category hasn\'t been set up yet — visit the one-off seed link first.', []);
+        }
+
+        DB::transaction(function () use ($task, $actingUserId, $head) {
+            $employeeName = trim($task->assignee->first_name . ' ' . $task->assignee->last_name);
+
+            $expense = new Expense();
+            $expense->session_id   = setting('session');
+            $expense->name         = 'Team Portal payout — ' . $task->title;
+            $expense->expense_head = $head->id;
+            $expense->date         = now()->format('Y-m-d');
+            $expense->amount       = $task->amount;
+            $expense->description  = "Paid task #{$task->id} \"{$task->title}\" — {$employeeName}";
+            $expense->save();
+
+            PortalPayout::create([
+                'task_id'         => $task->id,
+                'staff_id'        => $task->assigned_to,
+                'amount'          => $task->amount,
+                'marked_paid_by'  => $actingUserId,
+                'marked_paid_at'  => now(),
+                'expense_id'      => $expense->id,
+            ]);
+
+            $task->pay_status = 'paid';
+            $task->save();
+        });
+
+        if ($task->assignee->user_id) {
+            PortalNotifier::send($task->assignee->user_id, 'Payment marked as paid', $task->title, route('portal-tasks.show', $task->id));
+        }
+
+        return $this->responseWithSuccess('Marked paid — recorded as an expense.', []);
     }
 
     public function reassign(int $id, int $newStaffId): array
@@ -259,11 +378,17 @@ class TaskRepository
             $task->final_score    = $revisionScore + $qualityScore;
             $task->status         = PortalTask::COMPLETED;
             $task->completed_at   = now();
+            if ($task->paid) {
+                $task->pay_status = 'due';
+            }
             $task->save();
         });
 
         if ($task->assignee && $task->assignee->user_id) {
             PortalNotifier::send($task->assignee->user_id, 'Submission approved', $task->title, route('portal-tasks.show', $task->id));
+        }
+        if ($task->paid && $task->assigned_by) {
+            PortalNotifier::send($task->assigned_by, 'Paid task completed — payment due', $task->title, route('portal-tasks.show', $task->id));
         }
 
         return $this->responseWithSuccess('Approved and completed.', []);

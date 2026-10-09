@@ -56,6 +56,11 @@ class PortalTask extends Model
         return $this->hasMany(PortalTaskComment::class, 'task_id')->orderBy('created_at');
     }
 
+    public function payout()
+    {
+        return $this->hasOne(PortalPayout::class, 'task_id');
+    }
+
     /** Submitted work waiting on review is never "overdue" even past its
      *  due date — only work still sitting with the employee is. */
     public function getIsOverdueAttribute(): bool

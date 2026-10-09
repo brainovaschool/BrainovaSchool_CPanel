@@ -34,9 +34,12 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/{id}/request-revision', 'requestRevision')->name('request-revision')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::post('/{id}/approve',         'approve')->name('approve')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::post('/{id}/comment',         'comment')->name('comment')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                    Route::post('/{id}/claim',            'claim')->name('claim')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                    Route::post('/{id}/mark-paid',        'markPaid')->name('mark-paid')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
 
                 Route::get('/portal/my-tasks', [TaskController::class, 'myTasks'])->name('portal-my-tasks.index')->middleware('PermissionCheck:portal_access');
+                Route::get('/portal/paid-tasks', [TaskController::class, 'paidTasks'])->name('portal-paid-tasks.index')->middleware('PermissionCheck:portal_access');
 
                 Route::controller(SettingsController::class)->prefix('portal/settings')->name('portal-settings.')->group(function () {
                     Route::get('/',       'edit')->name('edit')->middleware('PermissionCheck:portal_manage');

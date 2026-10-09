@@ -50,6 +50,13 @@
                             <p class="mt-3"><strong>Final score:</strong> {{ $task->final_score }}/10
                                 <span class="text-secondary">(revision {{ $task->revision_score }}/5 + quality {{ $task->quality_score }}/5)</span></p>
                         @endif
+                        @if ($task->paid)
+                            <p class="mt-3"><strong>Paid task:</strong> {{ Setting('currency_symbol') }} {{ number_format($task->amount, 2) }}
+                                @if ($task->pay_status === 'paid')<span class="badge-basic-success-text">Paid</span>
+                                @elseif ($task->pay_status === 'due')<span class="badge-basic-warning-text">Payment due</span>
+                                @else <span class="badge-basic-info-text">Unpaid — not yet completed</span>@endif
+                            </p>
+                        @endif
                     </div>
                 </div>
 
@@ -97,6 +104,27 @@
             </div>
 
             <div class="col-lg-4">
+                @if ($data['canClaim'])
+                    <div class="card ot-card">
+                        <div class="card-header"><h4 class="mb-0">Claim this paid task</h4></div>
+                        <div class="card-body">
+                            @if ($data['claimBlockers']->isNotEmpty())
+                                <p class="text-danger mb-2">You can't claim this right now — you have an overdue task or one in revision:</p>
+                                <ul class="mb-0">
+                                    @foreach ($data['claimBlockers'] as $b)
+                                        <li><a href="{{ route('portal-tasks.show', $b->id) }}">{{ $b->title }}</a></li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <form action="{{ route('portal-tasks.claim', $task->id) }}" method="post">
+                                    @csrf
+                                    <button type="submit" class="btn ot-btn-success w-100">Claim — {{ Setting('currency_symbol') }} {{ number_format($task->amount, 2) }}</button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
                 @if ($data['isAssignee'])
                     <div class="card ot-card">
                         <div class="card-header"><h4 class="mb-0">Your actions</h4></div>
@@ -120,6 +148,19 @@
                             @else
                                 <p class="text-secondary mb-0">No action needed from you right now.</p>
                             @endif
+                        </div>
+                    </div>
+                @endif
+
+                @if ($data['canMarkPaid'])
+                    <div class="card ot-card mt-4">
+                        <div class="card-header"><h4 class="mb-0">Payment</h4></div>
+                        <div class="card-body">
+                            <p>Due: {{ Setting('currency_symbol') }} {{ number_format($task->amount, 2) }} to {{ optional($task->assignee)->first_name }} {{ optional($task->assignee)->last_name }}</p>
+                            <form action="{{ route('portal-tasks.mark-paid', $task->id) }}" method="post" onsubmit="return confirm('Mark this paid? This records a real expense and can\'t be undone.');">
+                                @csrf
+                                <button type="submit" class="btn ot-btn-success w-100">Mark Paid</button>
+                            </form>
                         </div>
                     </div>
                 @endif

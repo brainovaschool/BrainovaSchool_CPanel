@@ -3367,6 +3367,37 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . implode("\n", $report) . '</pre>');
     }
 
+    /** One-off: creates the "Staff Task Payouts" expense category (type 2
+     *  = expense, matching every other expense head in AccountHeadSeeder)
+     *  that Team Portal phase 7 records paid-task payouts against. Safe
+     *  to re-run — never touches it if it already exists, and never
+     *  touches any other account head. Approved design: see the phase 7
+     *  write-up — payouts are expenses, never student fee entries. */
+    public function seedPayoutExpenseHead(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $head = \App\Models\Accounts\AccountHead::where('name', 'Staff Task Payouts')->first();
+        if ($head) {
+            $message = "Already exists (#{$head->id}) — left as is.";
+        } else {
+            $head = new \App\Models\Accounts\AccountHead();
+            $head->name   = 'Staff Task Payouts';
+            $head->type   = 2; // expense
+            $head->status = 1;
+            $head->save();
+            $message = "Created expense category \"Staff Task Payouts\" (#{$head->id}).";
+        }
+
+        return response('<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . $message . "\n\nTeam Portal paid-task payouts will now show up in Accounts -> Expenses under this category." . '</pre>');
+    }
+
     /** Read-only: dumps every "Coordinator"-named Role row (in case more
      *  than one exists) and every User whose role_id matches one of them —
      *  their raw role permissions, their raw personal permissions snapshot,

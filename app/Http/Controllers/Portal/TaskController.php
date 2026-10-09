@@ -60,9 +60,14 @@ class TaskController extends Controller
 
     public function store(Request $request)
     {
+        // A normal task always needs an assignee; a paid task may be left
+        // unassigned on purpose, to sit Open for anyone to claim.
+        $assignedToRule = $request->boolean('paid') ? 'nullable' : 'required';
+
         $request->validate([
             'title'       => 'required|string|max:150',
-            'assigned_to' => 'required|exists:staff,id',
+            'assigned_to' => $assignedToRule . '|exists:staff,id',
+            'amount'      => 'required_if:paid,1|nullable|numeric|min:0',
             'due_date'    => 'required|date',
             'priority'    => 'nullable|in:Low,Medium,High',
         ]);
@@ -91,8 +96,51 @@ class TaskController extends Controller
         $data['task']      = $task;
         $data['isManager']  = $isManager;
         $data['isAssignee'] = $staffId !== null && (int) $task->assigned_to === $staffId;
+        $data['canClaim']   = $task->paid && $task->status === \App\Models\Portal\PortalTask::OPEN && $staffId !== null;
+        $data['claimBlockers'] = $data['canClaim'] ? $this->repo->claimBlockers($staffId) : collect();
+        $data['canMarkPaid'] = $isManager && $task->paid && $task->status === \App\Models\Portal\PortalTask::COMPLETED && $task->pay_status === 'due';
         $data['title']      = $task->title;
         return view('portal.tasks.show', compact('data'));
+    }
+
+    public function claim($id)
+    {
+        $staffId = $this->actingStaffId();
+        if ($staffId === null) {
+            return back()->with('danger', 'No staff record is linked to your account.');
+        }
+
+        $result = $this->repo->claim((int) $id, $staffId);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function markPaid($id)
+    {
+        $result = $this->repo->markPaid((int) $id, Auth::id());
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function paidTasks()
+    {
+        $isManager = hasPermission('portal_manage');
+        $staffId   = $this->actingStaffId();
+
+        $data['isManager'] = $isManager;
+        $data['openTasks'] = \App\Models\Portal\PortalTask::where('paid', true)->where('status', \App\Models\Portal\PortalTask::OPEN)->get();
+
+        if ($isManager) {
+            $data['claimedTasks']   = \App\Models\Portal\PortalTask::where('paid', true)
+                ->whereNotIn('status', [\App\Models\Portal\PortalTask::OPEN, \App\Models\Portal\PortalTask::COMPLETED])
+                ->with('assignee')->get();
+            $data['completedTasks'] = \App\Models\Portal\PortalTask::where('paid', true)->where('status', \App\Models\Portal\PortalTask::COMPLETED)
+                ->with(['assignee', 'payout'])->get();
+        } else {
+            $data['claimBlockers'] = $staffId ? $this->repo->claimBlockers($staffId) : collect();
+            $data['myPaidTasks']   = $staffId ? \App\Models\Portal\PortalTask::where('paid', true)->where('assigned_to', $staffId)->get() : collect();
+        }
+
+        $data['title'] = 'Paid Tasks';
+        return view('portal.tasks.paid', compact('data'));
     }
 
     public function reassign(Request $request, $id)
