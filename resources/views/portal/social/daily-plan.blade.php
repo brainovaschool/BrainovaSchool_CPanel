@@ -76,6 +76,7 @@
             <div class="card">
                 <div class="card-header"><h4 class="mb-0">Weekly Goals</h4></div>
                 <div class="card-body">
+                    <div class="table-responsive">
                     <table class="table table-bordered class-table">
                         <thead class="thead"><tr><th>Person</th><th>Goal</th><th>Target metric</th><th>Achieved</th></tr></thead>
                         <tbody class="tbody">
@@ -103,6 +104,7 @@
                             @endforeach
                         </tbody>
                     </table>
+                    </div>
 
                     @if ($data['isOnTeam'])
                         <div class="border-top pt-3 mt-3">

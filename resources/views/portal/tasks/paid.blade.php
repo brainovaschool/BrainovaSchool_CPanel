@@ -41,6 +41,7 @@
             <div class="card">
                 <div class="card-header"><h4 class="mb-0">Open — available to claim</h4></div>
                 <div class="card-body">
+                    <div class="table-responsive">
                     <table class="table table-bordered class-table">
                         <thead class="thead"><tr><th>Title</th><th>Category</th><th>Due</th><th>Amount</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                         <tbody class="tbody">
@@ -57,6 +58,7 @@
                             @endforelse
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -66,6 +68,7 @@
                 <div class="card">
                     <div class="card-header"><h4 class="mb-0">Claimed / in progress</h4></div>
                     <div class="card-body">
+                        <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead"><tr><th>Title</th><th>Employee</th><th>Status</th><th>Amount</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                             <tbody class="tbody">
@@ -82,6 +85,7 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -90,6 +94,7 @@
                 <div class="card">
                     <div class="card-header"><h4 class="mb-0">Completed</h4></div>
                     <div class="card-body">
+                        <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead"><tr><th>Title</th><th>Employee</th><th>Amount</th><th>Payment</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                             <tbody class="tbody">
@@ -112,6 +117,7 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -120,6 +126,7 @@
                 <div class="card">
                     <div class="card-header"><h4 class="mb-0">My Paid Tasks</h4></div>
                     <div class="card-body">
+                        <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead"><tr><th>Title</th><th>Status</th><th>Amount</th><th>Payment</th></tr></thead>
                             <tbody class="tbody">
@@ -143,6 +150,7 @@
                                 @endforelse
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 </div>
             </div>

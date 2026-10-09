@@ -89,7 +89,11 @@ class TaskController extends Controller
 
         $isManager = hasPermission('portal_manage');
         $staffId   = $this->actingStaffId();
-        if (!$isManager && (int) $task->assigned_to !== $staffId) {
+        // An Open paid task has no assignee yet — anyone needs to be able
+        // to view it in order to claim it, so that case alone bypasses
+        // the "is this your task" check below.
+        $isOpenForClaim = $task->paid && $task->status === \App\Models\Portal\PortalTask::OPEN;
+        if (!$isManager && !$isOpenForClaim && (int) $task->assigned_to !== $staffId) {
             abort(403, "This isn't your task.");
         }
 

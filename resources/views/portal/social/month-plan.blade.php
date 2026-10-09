@@ -22,6 +22,7 @@
                 <div class="card-header"><h4 class="mb-0">{{ now()->format('F Y') }} — targets vs actual</h4></div>
                 <div class="card-body">
                     <p class="text-secondary">Counts any reel/carousel accepted or further along the pipeline, planned for this month.</p>
+                    <div class="table-responsive">
                     <table class="table table-bordered class-table">
                         <thead class="thead"><tr><th>Category</th><th>Reels</th><th>Carousels</th></tr></thead>
                         <tbody class="tbody">
@@ -36,6 +37,7 @@
                             @endforelse
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -46,6 +48,7 @@
                 <div class="card-body">
                     <form action="{{ route('portal-social-month-plan.targets') }}" method="post">
                         @csrf
+                        <div class="table-responsive">
                         <table class="table table-bordered class-table mb-3" id="targetsTable">
                             <thead class="thead"><tr><th>Category</th><th>Reel target / month</th><th>Carousel target / month</th></tr></thead>
                             <tbody>
@@ -64,6 +67,7 @@
                                 </tr>
                             </tbody>
                         </table>
+                        </div>
                         <button type="submit" class="btn ot-btn-primary">Save Targets</button>
                     </form>
                 </div>

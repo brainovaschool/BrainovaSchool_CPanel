@@ -59,6 +59,7 @@
             <div class="card">
                 <div class="card-header"><h4 class="mb-0">{{ \Carbon\Carbon::parse($data['month'] . '-01')->format('F Y') }}</h4></div>
                 <div class="card-body">
+                    <div class="table-responsive">
                     <table class="table table-bordered class-table">
                         <thead class="thead"><tr><th>Date</th><th>Platform</th><th>Numbers</th></tr></thead>
                         <tbody class="tbody">
@@ -77,6 +78,7 @@
                             @endforelse
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>

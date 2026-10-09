@@ -31,6 +31,7 @@
         <div class="table-content table-basic">
             <div class="card">
                 <div class="card-body">
+                    <div class="table-responsive">
                     <table class="table table-bordered class-table">
                         <thead class="thead">
                             <tr><th>Employee</th><th>Base</th><th>Bonus</th><th>Total</th><th>Note</th><th>Status</th><th class="action">{{ ___('common.action') }}</th></tr>
@@ -61,6 +62,7 @@
                             @endforeach
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -69,6 +71,7 @@
             <div class="card">
                 <div class="card-header"><h4 class="mb-0">This month's totals</h4></div>
                 <div class="card-body">
+                    <div class="table-responsive">
                     <table class="table table-bordered class-table">
                         <thead class="thead"><tr><th>Employee</th><th>Total</th><th>Status</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                         <tbody class="tbody">
@@ -97,6 +100,7 @@
                             @endforeach
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>

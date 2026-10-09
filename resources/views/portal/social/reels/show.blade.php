@@ -42,7 +42,7 @@
                         @if ($reel->prompt_text)<p><strong>Prompt:</strong><br>{{ $reel->prompt_text }}</p>@endif
                         @if ($reel->prompt_link)<p><strong>Prompt link:</strong> <a href="{{ $reel->prompt_link }}" target="_blank">{{ $reel->prompt_link }}</a></p>@endif
                         @if ($reel->promptUpload)<p><strong>Prompt file:</strong> <a href="{{ globalAsset($reel->promptUpload->path) }}" target="_blank">Download</a></p>@endif
-                        @if ($reel->thumbUpload)<p><strong>Thumbnail:</strong><br><img src="{{ globalAsset($reel->thumbUpload->path) }}" style="max-width:200px;border-radius:8px"></p>@endif
+                        @if ($reel->thumbUpload)<p><strong>Thumbnail:</strong><br><img src="{{ globalAsset($reel->thumbUpload->path) }}" alt="Thumbnail for {{ $reel->title }}" style="max-width:200px;border-radius:8px"></p>@endif
                         @if ($reel->note)<p class="mt-3"><strong>Note:</strong> {{ $reel->note }}</p>@endif
                         @if ($reel->reviewedBy)
                             <p class="text-secondary mb-0">Last reviewed by {{ $reel->reviewedBy->name }}, {{ $reel->reviewed_at?->format('d M Y, h:i A') }}</p>

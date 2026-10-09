@@ -51,6 +51,7 @@
         <div class="table-content table-basic">
             <div class="card">
                 <div class="card-body">
+                    <div class="table-responsive">
                     <table class="table table-bordered class-table">
                         <thead class="thead"><tr><th>Title</th><th>Format</th><th>Category</th><th>Planned date</th><th>Status</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                         <tbody class="tbody">
@@ -68,6 +69,7 @@
                             @endforelse
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>

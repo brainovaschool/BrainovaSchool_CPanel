@@ -38,6 +38,7 @@
         <div class="card ot-card">
             <div class="card-header"><h4 class="mb-0">{{ \Carbon\Carbon::parse($data['date'])->format('l, d M Y') }}</h4></div>
             <div class="card-body">
+                <div class="table-responsive">
                 <table class="table table-bordered class-table">
                     <thead class="thead">
                         <tr><th style="width:140px">Time</th><th>Activity</th><th>Notes</th><th class="action">{{ ___('common.action') }}</th></tr>
@@ -115,6 +116,7 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div>
 
                 @unless ($data['isLocked'])
                     <div class="border-top pt-3 mt-2">
@@ -161,6 +163,7 @@
         <div class="card ot-card mt-4">
             <div class="card-header"><h4 class="mb-0">Last 14 days</h4></div>
             <div class="card-body">
+                <div class="table-responsive">
                 <table class="table table-bordered class-table">
                     <thead class="thead"><tr><th>Date</th><th>Hours logged</th><th>{{ ___('common.status') }}</th></tr></thead>
                     <tbody class="tbody">
@@ -179,6 +182,7 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     </div>
