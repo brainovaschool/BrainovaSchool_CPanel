@@ -5,6 +5,7 @@ use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\Portal\EmployeeController;
 use App\Http\Controllers\Portal\TaskController;
 use App\Http\Controllers\Portal\SettingsController;
+use App\Http\Controllers\Portal\AttendanceController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -38,6 +39,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/',       'edit')->name('edit')->middleware('PermissionCheck:portal_manage');
                     Route::post('/',      'update')->name('update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
+
+                Route::get('/portal/attendance', [AttendanceController::class, 'index'])->name('portal-attendance.index')->middleware('PermissionCheck:portal_manage');
 
             });
         });

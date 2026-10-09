@@ -7,6 +7,7 @@ use App\Models\Portal\PortalSetting;
 use App\Models\Portal\PortalTask;
 use App\Models\Portal\PortalTaskComment;
 use App\Models\Portal\PortalTaskSubmission;
+use App\Services\Portal\PortalNotifier;
 use App\Traits\CommonHelperTrait;
 use App\Traits\ReturnFormatTrait;
 use Illuminate\Support\Facades\DB;
@@ -75,6 +76,15 @@ class TaskRepository
                 'notes'          => $request->notes,
                 'status'         => PortalTask::ASSIGNED,
             ]);
+
+            if ($task->assignee && $task->assignee->user_id) {
+                PortalNotifier::send(
+                    $task->assignee->user_id,
+                    $task->urgent ? 'Urgent task assigned' : 'New task assigned',
+                    $task->title,
+                    route('portal-tasks.show', $task->id)
+                );
+            }
 
             return $this->responseWithSuccess('Task created and assigned.', ['id' => $task->id]);
         } catch (\Throwable $th) {
@@ -155,6 +165,8 @@ class TaskRepository
                 $task->save();
             });
 
+            PortalNotifier::send($task->assigned_by, 'Work submitted', $task->title, route('portal-tasks.show', $task->id));
+
             return $this->responseWithSuccess('Work submitted for review.', []);
         } catch (\Throwable $th) {
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
@@ -205,6 +217,10 @@ class TaskRepository
             $task->save();
         });
 
+        if ($task->assignee && $task->assignee->user_id) {
+            PortalNotifier::send($task->assignee->user_id, 'Revision requested', $task->title, route('portal-tasks.show', $task->id));
+        }
+
         return $this->responseWithSuccess('Sent back for revision.', []);
     }
 
@@ -246,6 +262,10 @@ class TaskRepository
             $task->save();
         });
 
+        if ($task->assignee && $task->assignee->user_id) {
+            PortalNotifier::send($task->assignee->user_id, 'Submission approved', $task->title, route('portal-tasks.show', $task->id));
+        }
+
         return $this->responseWithSuccess('Approved and completed.', []);
     }
 
@@ -263,6 +283,15 @@ class TaskRepository
             'user_id' => $userId,
             'body'    => $body,
         ]);
+
+        // "The other party" — whichever side of the conversation didn't
+        // just post this comment. Simplest faithful reading when more than
+        // one manager can exist (the spec's own model has exactly one).
+        $assigneeUserId = $task->assignee->user_id ?? null;
+        $otherPartyId = $userId === (int) $task->assigned_by ? $assigneeUserId : (int) $task->assigned_by;
+        if ($otherPartyId && $otherPartyId !== $userId) {
+            PortalNotifier::send($otherPartyId, 'New comment on a task', $task->title, route('portal-tasks.show', $task->id));
+        }
 
         return $this->responseWithSuccess('Comment added.', []);
     }
