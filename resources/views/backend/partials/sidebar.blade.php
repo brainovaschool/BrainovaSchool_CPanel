@@ -539,6 +539,19 @@
                             <li class="sidebar-menu-item {{ set_menu(['portal/employees*']) }}">
                                 <a href="{{ route('portal-employees.index') }}">Employees</a>
                             </li>
+                            @if (hasPermission('portal_manage'))
+                                <li class="sidebar-menu-item {{ set_menu(['portal/tasks', 'portal/tasks/create', 'portal/tasks/show*']) }}">
+                                    <a href="{{ route('portal-tasks.index') }}">Tasks</a>
+                                </li>
+                            @endif
+                            <li class="sidebar-menu-item {{ set_menu(['portal/my-tasks']) }}">
+                                <a href="{{ route('portal-my-tasks.index') }}">My Tasks</a>
+                            </li>
+                            @if (hasPermission('portal_manage'))
+                                <li class="sidebar-menu-item {{ set_menu(['portal/settings']) }}">
+                                    <a href="{{ route('portal-settings.edit') }}">Settings</a>
+                                </li>
+                            @endif
                         </ul>
                     </li>
                 @endif

@@ -3252,7 +3252,13 @@ class MigrationRunnerController extends Controller
      *  this one default role; every other role's portal access is just a
      *  normal Roles-screen checkbox from here on. Self-healing like
      *  seedCoordinatorRole(): re-asserts every run, and patches any
-     *  already-saved personal permission snapshot on an HR user too. */
+     *  already-saved personal permission snapshot on an HR user too.
+     *
+     *  Also grants the Team Portal to "Admin" — but deliberately as a
+     *  ONE-TIME default, not self-healing: Super Admin asked to keep real
+     *  control over what Admin can see, so once this has run, unchecking
+     *  either portal permission on Admin from the Roles screen sticks —
+     *  it is never silently re-added on a later /db/migrate visit. */
     public function seedHrRole(string $key)
     {
         if (!hash_equals(self::KEY, $key)) {
@@ -3264,6 +3270,19 @@ class MigrationRunnerController extends Controller
         }
 
         $report = [];
+
+        $admin = Role::where('name', 'Admin')->first();
+        if ($admin) {
+            $adminPerms = is_array($admin->permissions) ? $admin->permissions : [];
+            $merged = array_values(array_unique(array_merge($adminPerms, ['portal_access', 'portal_manage'])));
+            if ($merged !== $adminPerms) {
+                $admin->permissions = $merged;
+                $admin->save();
+                $report[] = 'Admin role granted Team Portal access (one-time default — safe to narrow later from the Roles screen, it will not come back).';
+            } else {
+                $report[] = 'Admin role already has Team Portal access.';
+            }
+        }
 
         $hr = Role::where('name', 'HR')->first();
         if (!$hr) {
@@ -3570,6 +3589,7 @@ class MigrationRunnerController extends Controller
                 $accounting->save();
             }
         }
+
 
         $summary = $added ? ('added ' . implode(', ', $added)) : 'all present';
         if ($strippedFrom) {
