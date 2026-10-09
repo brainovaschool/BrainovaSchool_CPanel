@@ -8,6 +8,7 @@ use App\Http\Controllers\Portal\SettingsController;
 use App\Http\Controllers\Portal\AttendanceController;
 use App\Http\Controllers\Portal\WorkLogController;
 use App\Http\Controllers\Portal\ResponsibilityController;
+use App\Http\Controllers\Portal\AnalyticsController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -65,6 +66,9 @@ Route::middleware(saasMiddleware())->group(function () {
 
                 Route::get('/portal/my-responsibilities', [ResponsibilityController::class, 'myDuties'])->name('portal-my-responsibilities.index')->middleware('PermissionCheck:portal_access');
                 Route::post('/portal/responsibilities/{id}/tick', [ResponsibilityController::class, 'tick'])->name('portal-responsibilities.tick')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+
+                Route::get('/portal/analytics', [AnalyticsController::class, 'index'])->name('portal-analytics.index')->middleware('PermissionCheck:portal_manage');
+                Route::get('/portal/my-performance', [AnalyticsController::class, 'myPerformance'])->name('portal-my-performance.index')->middleware('PermissionCheck:portal_access');
 
             });
         });
