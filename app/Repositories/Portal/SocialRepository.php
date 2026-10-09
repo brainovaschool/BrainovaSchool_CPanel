@@ -4,9 +4,13 @@ namespace App\Repositories\Portal;
 
 use App\Models\Portal\PortalAudienceMetric;
 use App\Models\Portal\PortalCategoryTarget;
+use App\Models\Portal\PortalDailyPlan;
 use App\Models\Portal\PortalPageFix;
 use App\Models\Portal\PortalReel;
+use App\Models\Portal\PortalResponsibility;
 use App\Models\Portal\PortalSetting;
+use App\Models\Portal\PortalWeeklyGoal;
+use App\Models\Staff\Staff;
 use App\Traits\CommonHelperTrait;
 use App\Traits\ReturnFormatTrait;
 use Carbon\Carbon;
@@ -263,5 +267,60 @@ class SocialRepository
         $settings->save();
 
         return $this->responseWithSuccess('Saved.', []);
+    }
+
+    // ---- Daily plan / weekly goals --------------------------------------
+
+    /** Whoever currently holds the Content responsibility — any number
+     *  of people, per the admin's own clarification ("1 person, two or
+     *  more"). This, not a hardcoded name list, is "the content team". */
+    public function contentTeam()
+    {
+        $ids = PortalResponsibility::ownerStaffIdsForKey(PortalResponsibility::KEY_CONTENT);
+        return Staff::whereIn('id', $ids)->orderBy('first_name')->get();
+    }
+
+    public function dailyPlansForWeek(string $weekStart)
+    {
+        $dates = collect(range(0, 6))->map(fn ($i) => Carbon::parse($weekStart)->addDays($i)->format('Y-m-d'));
+
+        return PortalDailyPlan::with('staff')
+            ->whereIn('date', $dates)
+            ->get()
+            ->groupBy('staff_id');
+    }
+
+    public function saveDailyPlan($request, int $staffId): array
+    {
+        PortalDailyPlan::updateOrCreate(
+            ['staff_id' => $staffId, 'date' => $request->date],
+            ['plan_text' => $request->plan_text]
+        );
+        return $this->responseWithSuccess('Saved.', []);
+    }
+
+    public function weeklyGoalsForWeek(string $weekStart)
+    {
+        return PortalWeeklyGoal::with('staff')->where('week_start', $weekStart)->get();
+    }
+
+    public function saveWeeklyGoal($request, int $staffId): array
+    {
+        PortalWeeklyGoal::updateOrCreate(
+            ['staff_id' => $staffId, 'week_start' => $request->week_start],
+            ['goal_text' => $request->goal_text, 'target_metric' => $request->target_metric]
+        );
+        return $this->responseWithSuccess('Saved.', []);
+    }
+
+    public function toggleGoalAchieved(int $id, int $staffId): array
+    {
+        $goal = PortalWeeklyGoal::where('id', $id)->where('staff_id', $staffId)->first();
+        if (!$goal) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+        $goal->achieved = !$goal->achieved;
+        $goal->save();
+        return $this->responseWithSuccess('Updated.', []);
     }
 }

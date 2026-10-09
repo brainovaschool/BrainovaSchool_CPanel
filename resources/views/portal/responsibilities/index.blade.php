@@ -27,17 +27,18 @@
                                 <tr>
                                     <th>Title</th>
                                     <th>Frequency</th>
-                                    <th>Owner</th>
+                                    <th>Owners</th>
                                     <th>This period</th>
                                     <th style="min-width:420px" class="action">{{ ___('common.action') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="tbody">
+                                @php($ownerIdsOf = fn ($duty) => $duty->owners->pluck('id')->all())
                                 @foreach ($data['duties'] as $duty)
                                     <tr>
                                         <td>{{ $duty->title }} @if ($duty->key)<span class="badge-basic-info-text">Built-in</span>@endif</td>
                                         <td>{{ ucfirst($duty->freq) }}</td>
-                                        <td>{{ $duty->owner ? trim($duty->owner->first_name . ' ' . $duty->owner->last_name) : '— unassigned (admin) —' }}</td>
+                                        <td>{{ $duty->owners->isNotEmpty() ? $duty->owners->map(fn ($o) => trim($o->first_name . ' ' . $o->last_name))->implode(', ') : '— unassigned (admin) —' }}</td>
                                         <td>{{ $duty->isDoneForCurrentPeriod() ? '✓ Done' : '— not yet —' }}</td>
                                         <td class="action">
                                             <form action="{{ route('portal-responsibilities.update', $duty->id) }}" method="post" class="d-flex gap-2 flex-wrap align-items-center">
@@ -47,10 +48,9 @@
                                                     <option value="daily" {{ $duty->freq === 'daily' ? 'selected' : '' }}>Daily</option>
                                                     <option value="weekly" {{ $duty->freq === 'weekly' ? 'selected' : '' }}>Weekly</option>
                                                 </select>
-                                                <select name="owner_staff_id" class="nice-select niceSelect bordered_style" style="min-width:160px">
-                                                    <option value="">— admin —</option>
+                                                <select name="owner_staff_ids[]" multiple class="form-select" style="min-width:180px" size="3" title="Ctrl/Cmd-click to select more than one">
                                                     @foreach ($data['staffList'] as $s)
-                                                        <option value="{{ $s->id }}" {{ (int) $duty->owner_staff_id === $s->id ? 'selected' : '' }}>{{ trim($s->first_name . ' ' . $s->last_name) }}</option>
+                                                        <option value="{{ $s->id }}" {{ in_array($s->id, $ownerIdsOf($duty)) ? 'selected' : '' }}>{{ trim($s->first_name . ' ' . $s->last_name) }}</option>
                                                     @endforeach
                                                 </select>
                                                 <button type="submit" class="btn btn-sm ot-btn-primary">Save</button>
@@ -88,9 +88,8 @@
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Owner</label>
-                        <select name="owner_staff_id" class="nice-select niceSelect bordered_style" style="min-width:160px">
-                            <option value="">— admin —</option>
+                        <label class="form-label">Owner(s)</label>
+                        <select name="owner_staff_ids[]" multiple class="form-select" style="min-width:180px" size="3" title="Ctrl/Cmd-click to select more than one">
                             @foreach ($data['staffList'] as $s)
                                 <option value="{{ $s->id }}">{{ trim($s->first_name . ' ' . $s->last_name) }}</option>
                             @endforeach

@@ -3398,6 +3398,35 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . $message . "\n\nTeam Portal paid-task payouts will now show up in Accounts -> Expenses under this category." . '</pre>');
     }
 
+    /** One-off: creates the "Staff Growth Pay" expense category, same
+     *  pattern as seedPayoutExpenseHead() above — a separate category so
+     *  paid-task payouts and monthly growth pay stay distinguishable in
+     *  the Expense report. */
+    public function seedGrowthPayExpenseHead(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $head = \App\Models\Accounts\AccountHead::where('name', 'Staff Growth Pay')->first();
+        if ($head) {
+            $message = "Already exists (#{$head->id}) — left as is.";
+        } else {
+            $head = new \App\Models\Accounts\AccountHead();
+            $head->name   = 'Staff Growth Pay';
+            $head->type   = 2; // expense
+            $head->status = 1;
+            $head->save();
+            $message = "Created expense category \"Staff Growth Pay\" (#{$head->id}).";
+        }
+
+        return response('<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . $message . "\n\nTeam Portal growth pay will now show up in Accounts -> Expenses under this category." . '</pre>');
+    }
+
     /** Read-only: dumps every "Coordinator"-named Role row (in case more
      *  than one exists) and every User whose role_id matches one of them —
      *  their raw role permissions, their raw personal permissions snapshot,

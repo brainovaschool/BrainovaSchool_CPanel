@@ -13,9 +13,19 @@ class PortalResponsibility extends Model
     public const KEY_CONTENT  = 'content';
     public const KEY_AUDIENCE = 'audience';
 
+    /** Legacy single-owner column — left in the schema but no longer
+     *  read anywhere; see owners() below. */
     public function owner()
     {
         return $this->belongsTo(Staff::class, 'owner_staff_id');
+    }
+
+    /** The real, current source of truth — a responsibility can have
+     *  any number of owners at once ("1 person, two or more" — admin's
+     *  own words). */
+    public function owners()
+    {
+        return $this->belongsToMany(Staff::class, 'portal_responsibility_owners', 'responsibility_id', 'staff_id')->withTimestamps();
     }
 
     public function ticks()
@@ -39,19 +49,18 @@ class PortalResponsibility extends Model
     }
 
     /** For phase 8 (Social board) to check "who currently holds this
-     *  permission-carrying duty" without caring whether it's an employee
-     *  or still sitting with the admin. Returns a users.id. */
-    public static function ownerUserIdForKey(string $key): ?int
-    {
-        $duty = static::where('key', $key)->with('owner')->first();
-        return $duty && $duty->owner ? $duty->owner->user_id : null;
-    }
-
-    /** Same, but the owner's staff.id — what phase 8's own permission
-     *  checks actually compare against (Auth::user()->staff->id). */
-    public static function ownerStaffIdForKey(string $key): ?int
+     *  permission-carrying duty" — any number of staff ids, empty if
+     *  unowned or the duty doesn't exist. */
+    public static function ownerStaffIdsForKey(string $key): array
     {
         $duty = static::where('key', $key)->first();
-        return $duty ? $duty->owner_staff_id : null;
+        return $duty ? $duty->owners()->pluck('staff.id')->all() : [];
+    }
+
+    /** Same, as users.id — for notifications. */
+    public static function ownerUserIdsForKey(string $key): array
+    {
+        $duty = static::where('key', $key)->with('owners')->first();
+        return $duty ? $duty->owners->pluck('user_id')->filter()->values()->all() : [];
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\Portal\WorkLogController;
 use App\Http\Controllers\Portal\ResponsibilityController;
 use App\Http\Controllers\Portal\AnalyticsController;
 use App\Http\Controllers\Portal\SocialController;
+use App\Http\Controllers\Portal\GrowthPayController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -97,6 +98,17 @@ Route::middleware(saasMiddleware())->group(function () {
 
                 Route::get('/portal/social/settings', [SocialController::class, 'settings'])->name('portal-social-settings.edit')->middleware('PermissionCheck:portal_manage');
                 Route::post('/portal/social/settings', [SocialController::class, 'updateSettings'])->name('portal-social-settings.update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+
+                Route::get('/portal/social/daily-plan', [SocialController::class, 'dailyPlan'])->name('portal-social-daily-plan.index')->middleware('PermissionCheck:portal_access');
+                Route::post('/portal/social/daily-plan', [SocialController::class, 'storeDailyPlan'])->name('portal-social-daily-plan.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                Route::post('/portal/social/weekly-goal', [SocialController::class, 'storeWeeklyGoal'])->name('portal-social-weekly-goal.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                Route::post('/portal/social/weekly-goal/{id}/toggle', [SocialController::class, 'toggleGoal'])->name('portal-social-weekly-goal.toggle')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+
+                Route::controller(GrowthPayController::class)->prefix('portal/growth-pay')->name('portal-growth-pay.')->group(function () {
+                    Route::get('/',             'index')->name('index')->middleware('PermissionCheck:portal_manage');
+                    Route::post('/save',        'save')->name('save')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::post('/{id}/mark-paid', 'markPaid')->name('mark-paid')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                });
 
             });
         });

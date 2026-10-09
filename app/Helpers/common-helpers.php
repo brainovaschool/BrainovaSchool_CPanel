@@ -1249,6 +1249,6 @@ if (!function_exists('portalOwnsResponsibility')) {
         if (!$staff) {
             return false;
         }
-        return $staff->id === \App\Models\Portal\PortalResponsibility::ownerStaffIdForKey($key);
+        return in_array($staff->id, \App\Models\Portal\PortalResponsibility::ownerStaffIdsForKey($key), true);
     }
 }

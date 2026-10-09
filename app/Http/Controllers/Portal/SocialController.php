@@ -35,7 +35,7 @@ class SocialController extends Controller
             return true;
         }
         $staffId = $this->actingStaffId();
-        return $staffId !== null && $staffId === PortalResponsibility::ownerStaffIdForKey(PortalResponsibility::KEY_CONTENT);
+        return $staffId !== null && in_array($staffId, PortalResponsibility::ownerStaffIdsForKey(PortalResponsibility::KEY_CONTENT), true);
     }
 
     private function canManageAudience(): bool
@@ -44,7 +44,7 @@ class SocialController extends Controller
             return true;
         }
         $staffId = $this->actingStaffId();
-        return $staffId !== null && $staffId === PortalResponsibility::ownerStaffIdForKey(PortalResponsibility::KEY_AUDIENCE);
+        return $staffId !== null && in_array($staffId, PortalResponsibility::ownerStaffIdsForKey(PortalResponsibility::KEY_AUDIENCE), true);
     }
 
     private function requireContentAccess(): void
@@ -253,6 +253,61 @@ class SocialController extends Controller
             abort(403);
         }
         $result = $this->repo->updateSocialSettings($request);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    // ---- Daily plan / weekly goals -------------------------------------
+
+    public function dailyPlan(Request $request)
+    {
+        if (!$this->canManageContent()) {
+            abort(403, 'Only admin or whoever holds the Content responsibility can see this.');
+        }
+
+        $weekStart = $request->filled('week') ? $request->week : now()->startOfWeek(\Carbon\Carbon::MONDAY)->format('Y-m-d');
+        $staffId   = $this->actingStaffId();
+
+        $data['weekStart']   = $weekStart;
+        $data['contentTeam'] = $this->repo->contentTeam();
+        $data['plansByStaff'] = $this->repo->dailyPlansForWeek($weekStart);
+        $data['goals']       = $this->repo->weeklyGoalsForWeek($weekStart)->keyBy('staff_id');
+        $data['myStaffId']   = $staffId;
+        $data['isOnTeam']    = $staffId !== null && $data['contentTeam']->contains('id', $staffId);
+        $data['title']       = 'Social Board — Daily Plan & Weekly Goals';
+        return view('portal.social.daily-plan', compact('data'));
+    }
+
+    public function storeDailyPlan(Request $request)
+    {
+        $staffId = $this->actingStaffId();
+        if ($staffId === null || !in_array($staffId, PortalResponsibility::ownerStaffIdsForKey(PortalResponsibility::KEY_CONTENT), true)) {
+            abort(403, "You're not on the content team.");
+        }
+        $request->validate(['date' => 'required|date']);
+
+        $result = $this->repo->saveDailyPlan($request, $staffId);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function storeWeeklyGoal(Request $request)
+    {
+        $staffId = $this->actingStaffId();
+        if ($staffId === null || !in_array($staffId, PortalResponsibility::ownerStaffIdsForKey(PortalResponsibility::KEY_CONTENT), true)) {
+            abort(403, "You're not on the content team.");
+        }
+        $request->validate(['week_start' => 'required|date']);
+
+        $result = $this->repo->saveWeeklyGoal($request, $staffId);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function toggleGoal($id)
+    {
+        $staffId = $this->actingStaffId();
+        if ($staffId === null) {
+            abort(403);
+        }
+        $result = $this->repo->toggleGoalAchieved((int) $id, $staffId);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 }

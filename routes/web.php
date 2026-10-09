@@ -168,6 +168,7 @@ Route::middleware(saasMiddleware())->group(function () {
             Route::get('/db/seed-hr-role/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedHrRole']);
             Route::get('/db/seed-portal-duties/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedPortalDuties']);
             Route::get('/db/seed-payout-expense-head/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedPayoutExpenseHead']);
+            Route::get('/db/seed-growth-pay-expense-head/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedGrowthPayExpenseHead']);
 
             // View the tail of the Laravel error log from the browser (admin-only + key) — for hosts without SSH/file-manager log access.
             Route::get('/db/logs/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'viewLogs']);

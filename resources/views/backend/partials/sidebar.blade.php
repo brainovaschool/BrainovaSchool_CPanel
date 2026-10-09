@@ -596,10 +596,18 @@
                                     <a href="{{ route('portal-social-audience.index') }}">Audience Numbers</a>
                                 </li>
                             @endif
+                            @if (portalOwnsResponsibility('content'))
+                                <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">
+                                    <a href="{{ route('portal-social-daily-plan.index') }}">Daily Plan &amp; Goals</a>
+                                </li>
+                            @endif
                             <li class="sidebar-menu-item {{ set_menu(['portal/social/page-fixes']) }}">
                                 <a href="{{ route('portal-social-page-fixes.index') }}">Page Fixes</a>
                             </li>
                             @if (hasPermission('portal_manage'))
+                                <li class="sidebar-menu-item {{ set_menu(['portal/growth-pay']) }}">
+                                    <a href="{{ route('portal-growth-pay.index') }}">Growth Pay</a>
+                                </li>
                                 <li class="sidebar-menu-item {{ set_menu(['portal/social/settings']) }}">
                                     <a href="{{ route('portal-social-settings.edit') }}">Social Settings</a>
                                 </li>

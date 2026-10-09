@@ -17,59 +17,73 @@ class ResponsibilityRepository
 
     public function all()
     {
-        return PortalResponsibility::with('owner')->orderByRaw('`key` IS NULL')->orderBy('title')->get();
+        return PortalResponsibility::with('owners')->orderByRaw('`key` IS NULL')->orderBy('title')->get();
     }
 
     public function forStaff(int $staffId)
     {
-        return PortalResponsibility::with('owner')->where('owner_staff_id', $staffId)->orderBy('title')->get();
+        return PortalResponsibility::with('owners')->whereHas('owners', fn ($q) => $q->where('staff.id', $staffId))->orderBy('title')->get();
     }
 
     public function store($request): array
     {
-        PortalResponsibility::create([
-            'title'          => $request->title,
-            'description'    => $request->description,
-            'freq'           => $request->freq === 'weekly' ? 'weekly' : 'daily',
-            'owner_staff_id' => $request->owner_staff_id ?: null,
+        $duty = PortalResponsibility::create([
+            'title'       => $request->title,
+            'description' => $request->description,
+            'freq'        => $request->freq === 'weekly' ? 'weekly' : 'daily',
             // key stays null — only the one-off seeder creates the two
             // built-in (content, audience) duties.
         ]);
+
+        $ownerIds = array_values(array_filter((array) $request->owner_staff_ids));
+        if ($ownerIds) {
+            $duty->owners()->sync($ownerIds);
+            foreach ($duty->owners()->get() as $owner) {
+                if ($owner->user_id) {
+                    PortalNotifier::send($owner->user_id, 'New responsibility', "You're now responsible for \"{$duty->title}\".");
+                }
+            }
+        }
 
         return $this->responseWithSuccess('Responsibility added.', []);
     }
 
     /** Also the transfer action — spec: "Admin can transfer any
      *  responsibility; the new and previous person are notified;
-     *  permissions move with it." Moving IS just changing owner_staff_id,
-     *  since any permission the duty carries is checked live against
-     *  whoever currently owns it (PortalResponsibility::ownerUserIdForKey()). */
+     *  permissions move with it." The admin can now pick any number of
+     *  owners at once ("1 person, two or more"); whoever is added or
+     *  dropped compared to before gets notified. */
     public function update(int $id, $request): array
     {
-        $duty = PortalResponsibility::with('owner')->find($id);
+        $duty = PortalResponsibility::with('owners')->find($id);
         if (!$duty) {
             return $this->responseWithError(___('alert.not_found'), []);
         }
 
-        $previousOwnerId = $duty->owner_staff_id;
-        $previousOwnerUserId = $duty->owner->user_id ?? null;
+        $previousOwnerIds = $duty->owners->pluck('id')->all();
 
         $duty->title       = $request->title;
         $duty->description = $request->description;
         $duty->freq        = $request->freq === 'weekly' ? 'weekly' : 'daily';
-        $duty->owner_staff_id = $request->owner_staff_id ?: null;
         $duty->save();
 
-        if ((int) $previousOwnerId !== (int) $duty->owner_staff_id) {
-            $duty->load('owner');
-            $newOwnerUserId = $duty->owner->user_id ?? null;
+        $newOwnerIds = array_values(array_filter((array) $request->owner_staff_ids));
+        $duty->owners()->sync($newOwnerIds);
 
-            if ($previousOwnerUserId) {
-                PortalNotifier::send($previousOwnerUserId, 'Responsibility moved', "\"{$duty->title}\" has been moved to someone else.");
-            }
-            if ($newOwnerUserId) {
-                PortalNotifier::send($newOwnerUserId, 'New responsibility', "You're now responsible for \"{$duty->title}\".");
-            }
+        $added   = array_diff($newOwnerIds, $previousOwnerIds);
+        $removed = array_diff($previousOwnerIds, $newOwnerIds);
+
+        if ($added || $removed) {
+            \App\Models\Staff\Staff::whereIn('id', array_merge($added, $removed))->get()->each(function ($staff) use ($added, $duty) {
+                if (!$staff->user_id) {
+                    return;
+                }
+                if (in_array($staff->id, $added)) {
+                    PortalNotifier::send($staff->user_id, 'New responsibility', "You're now responsible for \"{$duty->title}\".");
+                } else {
+                    PortalNotifier::send($staff->user_id, 'Responsibility moved', "You're no longer responsible for \"{$duty->title}\".");
+                }
+            });
         }
 
         return $this->responseWithSuccess('Saved.', []);
@@ -94,11 +108,11 @@ class ResponsibilityRepository
      *  duty; an employee only their own — enforced by the caller). */
     public function tick(int $id, ?int $staffId, int $actingUserId): array
     {
-        $duty = PortalResponsibility::find($id);
+        $duty = PortalResponsibility::with('owners')->find($id);
         if (!$duty) {
             return $this->responseWithError(___('alert.not_found'), []);
         }
-        if ($staffId !== null && (int) $duty->owner_staff_id !== $staffId) {
+        if ($staffId !== null && !$duty->owners->contains('id', $staffId)) {
             return $this->responseWithError("This isn't your responsibility.", []);
         }
 
