@@ -13,7 +13,7 @@ your-lms/
 ```
 
 Why this format:
-- The HTML is the visual and behavioural spec. It runs in any browser, and its **Developer Handoff** page and top comment explain the rules.
+- The HTML is the visual and behavioural spec. **It holds two things in one file: the Team Portal (phases 0 to 9) and the admin-only Course Planner (phase 10, built later; sidebar item "Course Planner").** It runs in any browser, and its **Developer Handoff** page and top comment explain the rules.
 - This Markdown file tells Claude **how to integrate** without breaking your LMS.
 - `CLAUDE.md` is read automatically by Claude Code at the start of every session, so the safety rules are never forgotten between phases.
 
@@ -53,6 +53,9 @@ Read docs/team-portal/BRAINOVA_PORTAL_HANDOFF.md before any work on it.
 8. Time zone is Asia/Karachi. Store timestamps in UTC, show them in Asia/Karachi.
 9. Keep a CHANGELOG entry and update docs for every phase. Add tests for every business rule.
 10. Never commit secrets. Use the LMS's existing config and environment pattern.
+11. The Course Planner (phase 10) only PLANS and TRIGGERS. It must reuse the LMS's existing Course, Class or Section,
+    Teacher, Timetable and Fee entities and services. Never create a second course, teacher or fee model.
+    Build phases 0 to 9 first. Do not start phase 10 until I say so.
 ```
 
 ---
@@ -72,6 +75,7 @@ Open the HTML and read the **Developer Handoff** page (admin, left menu). Summar
 | Attendance | First login of the day. |
 | Notifications | Assigned, urgent, deadline, overdue, revision, approved, feedback, paid task events, payment, responsibility changes. |
 | Analytics | Per employee and organisation. |
+| Course Planner | Admin only. Plan courses 3 months to 5 years ahead, see setup and delivery progress, check teacher load, then press Create course to build the real course in the LMS. See Part B. |
 | Social board | Daily plans, weekly goals, reel pipeline with admin and coordinator review, month plan with category targets, audience numbers, page fixes, growth pay. |
 
 Everything the screens read goes through the `Api` object. **Each method is one backend endpoint.** The suggested endpoint list is on the Handoff page, section 8, and in the exported JSON (Settings, "Export for your AI agent").
@@ -117,6 +121,7 @@ Open questions Claude must answer from the code, then ask you:
 | 7 | **Paid tasks and the fee link.** Claim rule, payment status, ledger or payout integration, idempotency, audit. | **Yes, carefully** |
 | 8 | **Social media module.** Reel pipeline, month plan, review, audience numbers, daily plans, weekly goals, growth pay. Reuses file storage for thumbnails and Word prompts. | Storage only |
 | 9 | **Hardening.** Permission tests, backups, performance, accessibility, phone layout, optional installable app. | No |
+| 10 | **Course Planner** (build last). See Part B. | **Yes**, reuses Course, Class, Teacher, Timetable and Fee |
 
 Each phase is shippable on its own. Employees can start using the portal after phase 2 or 4.
 
@@ -153,6 +158,56 @@ Do not change existing tables or routes. When finished, list the files changed a
 ```
 Before coding, show me the exact design for recording a paid task payout in the fee module (which table or service, the fields,
 how duplicates are prevented, who can see it). Wait for my approval. Never write to student fee records.
+```
+
+---
+
+## 6b. Part B: Course Planner (phase 10)
+
+Open the HTML, sign in as the admin (`admin@brainova.demo`, password `demo1234`) and click **Course Planner** in the sidebar. Its own "For developers" tab and `portalSpec().coursePlanner` (Settings, Export for your AI agent) repeat the rules below.
+
+What it does: the admin plans courses for the next 3, 6, 12 months, 2 years or 5 years. Each planned course has a title, category, class, teacher, start date, length in weeks, teaching days, time slot, hours per session, seats, fee per student, fee plan and five setup steps. The window shows what needs attention, setup and delivery progress, a timeline, a course table and teacher load against each teacher's weekly limit.
+
+Stages: stored as idea, planned or created. Derived: **ready** (planned, all five setup steps done, teacher and class chosen), **running** and **completed**.
+
+The create trigger (`POST /course-plans/:id/create`):
+- Idempotent. A second call returns the course already created.
+- One database transaction that creates, through the LMS's own services: the course, the class group, every timetable session, the teacher link, the fee plan with instalment dates, and the enrolment opening date.
+- Sessions: every selected weekday from the start date for weeks x 7 days.
+- Rejected when: a setup step is open, teacher or class is missing, the start date is in the past, or the teacher is already booked in the same time slot on a shared weekday in overlapping dates.
+- After creation the plan record is locked and keeps the new course id (and the course keeps the plan id).
+- Fee plan: full fee, 2 or 3 instalments, or monthly. First payment is due 7 days before the start. Use the existing fee module. Never write fee records by hand.
+
+Avoid conflicts:
+- The LMS already has courses, classes, teachers, timetable and fees. Claude must map each planner field to the existing entity and say so in INTEGRATION_PLAN.md before coding.
+- Plan data goes in new `courseplan_` tables only. Admin-only access, checked on the server.
+- If the LMS has no concept for something (for example enrolment opening date), ask me before adding it.
+
+Phase 10 prompts:
+
+**10a (design, no code)**
+```
+Read CLAUDE.md, docs/team-portal/BRAINOVA_PORTAL_HANDOFF.md (Part B) and the Course Planner in
+docs/team-portal/brainova-team-board.html (sidebar item Course Planner; search the file for "COURSE PLANNER").
+Do not write code. Inspect how this LMS creates a course today: the models, services, timetable, class groups,
+teacher assignment and fee structure. Write docs/team-portal/COURSE_PLANNER_PLAN.md with: a table mapping each planner
+field to an existing LMS entity or field, anything missing, the exact steps the create trigger will run in one
+transaction using existing services, the courseplan_ tables needed, how duplicate creation is prevented, and questions for me.
+Stop after writing it.
+```
+
+**10b (build the planning screens)**
+```
+Implement the planning screens of the Course Planner (overview, timeline, courses, teachers) following
+COURSE_PLANNER_PLAN.md and the prototype. Use this LMS's components and styles. Store plans in courseplan_ tables.
+Do NOT implement the create trigger yet; show the Create course button disabled with a tooltip. Add tests and a CHANGELOG entry.
+```
+
+**10c (build the trigger)**
+```
+Implement POST /course-plans/:id/create exactly as described in Part B and COURSE_PLANNER_PLAN.md, calling the LMS's existing
+services for course, class group, sessions, teacher link and fee plan inside one transaction. It must be idempotent and
+reject the cases listed. Add tests for every rejection and for running it twice. Show me the diff before enabling the button.
 ```
 
 ---

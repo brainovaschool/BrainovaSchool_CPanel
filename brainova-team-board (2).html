@@ -11,6 +11,9 @@ Code map (search these comment banners in the script):
   PORTAL PART 1  constants, seedPortal() demo data, Api mock endpoints (replace with server calls)
   PORTAL PART 2  shell, views, task modal, event handlers (views only read P and call Api)
   Social board   daily plans, weekly goals, content pipeline, audience analytics, page fixes, setup
+Course Planner (admin only, sidebar "Course Planner"): second script block at the end of the file. It plans courses up to
+5 years ahead and triggers creation of the real course. It must reuse the LMS Course, Class, Teacher, Timetable and Fee
+entities (see "Course planner" on the Developer Handoff page).
 Key behaviours added in v4: (1) work log days are pre-laid-out (daySlots()) as one-hour rows with a lunch hour, filled by
 dropdown only; (2) reel creation and review are limited to the admin and the Content Coordinator; (3) the coordinator and
 the "note down views and followers" duty are transferable responsibilities (P.duties, Api.transferDuty) managed by the admin
@@ -1271,6 +1274,7 @@ function portalSpec(){
     roles:["admin","employee"],
     permissions:{admin:"everything",contentCoordinator:"Any employee who owns the responsibility with key content. May create, plan, import, edit and review reels. Not a separate account type; the admin can move it to anyone at any time.",audienceLogger:"Any employee who owns the responsibility with key audience. May note down views and followers.",employee:"Own tasks, own work log, own performance, paid-task claiming. No reel creation or review unless they own the content responsibility.",enforcement:"Check every one of these on the server for every request."},
     responsibilities:P.duties,
+    coursePlanner:(window.__CP?JSON.parse(window.__CP.spec(true)):null),
     workLogDay:{start:P.settings.dayStart,workHours:P.settings.workdayHours,lunchAfterHours:P.settings.lunchAfter,lunchLengthMinutes:60,slotMinutes:60,standardActivities:P.settings.activities,rule:"Show the day pre-filled as one-hour rows including the lunch hour. The employee picks a task from their assigned tasks or a standard activity per row. Extra entries can be added with any start and end time in 15 minute steps. The day locks on submit."},
     taskStatuses:["open","assigned","in_progress","submitted","under_review","revision","completed"],
     workflow:"Assigned > In progress > Submitted > Under review > Revision required (back to In progress) OR Approved > Completed. Paid tasks start Open and become In progress when claimed.",
@@ -1981,7 +1985,7 @@ function empLogs(id){return P.logs.filter(function(l){return l.emp===id;});}
 function flashNote(){return "";}
 
 /* ============================ SHELL ============================ */
-var NAV_ADMIN=[["dashboard","Dashboard"],["employees","Employees"],["tasks","Tasks"],["create","Create Task"],["paid","Paid Tasks"],["worklogs","Work Logs"],["duties","Responsibilities"],["perf","Analytics"],["_","Social media team"],["overview","Overview"],["content","Content"],["analytics","Audience"],["daily","Daily Plans"],["weekly","Weekly Goals"],["fixes","Page Fixes"],["pay","Growth Pay"],["_","Account"],["notifications","Notifications"],["setup","Settings"],["handoff","Developer Handoff"]];
+var NAV_ADMIN=[["dashboard","Dashboard"],["employees","Employees"],["tasks","Tasks"],["create","Create Task"],["paid","Paid Tasks"],["worklogs","Work Logs"],["duties","Responsibilities"],["perf","Analytics"],["_","Academics"],["courseplan","Course Planner"],["_","Social media team"],["overview","Overview"],["content","Content"],["analytics","Audience"],["daily","Daily Plans"],["weekly","Weekly Goals"],["fixes","Page Fixes"],["pay","Growth Pay"],["_","Account"],["notifications","Notifications"],["setup","Settings"],["handoff","Developer Handoff"]];
 function navFor(){
   if(isAdmin())return NAV_ADMIN;
   var e=empById(V.user.id),n=[["dashboard","Dashboard"],["mytasks","My Tasks"],["worklog","My Work Log"],["paid","Paid Tasks"],["duties","Responsibilities"],["perf","Performance"],["history","Task History"]],soc=[];
@@ -2025,6 +2029,7 @@ function render(){
   if(!V.user){$app.innerHTML=loginView();return;}
   var fl=V.flash;V.flash="";
   $app.innerHTML='<div class="shell'+(isAdmin()?"":" emp-role")+'">'+sidebar()+'<div class="main">'+topbar()+(fl?'<div class="notice" role="status">'+esc(fl)+'</div>':"")+'<main id="panel">'+panel()+'</main><p class="foot" id="foot">'+esc(footFull())+'</p></div></div>'+(V.modal?taskModal():"");
+  if(V.tab==="courseplan"&&isAdmin()&&window.__CP)window.__CP.mount(document.getElementById("cp-host"));
   if(fid){var el=$app.querySelector('[data-fid="'+fid.replace(/"/g,'\\"')+'"]');if(el)el.focus({preventScroll:true});}
 }
 
@@ -2502,11 +2507,12 @@ function handoffView(){
   return '<div class="handoff"><div class="listhead"><h2>Developer handoff</h2></div><p class="muted" style="margin-bottom:6px;max-width:75ch">This page describes the product this file prototypes, so a developer or AI coding agent can rebuild it in a real application. The prototype is one HTML file. Data is simulated in the browser. Match the screens, workflow, rules and data model below, and replace the mock layer with a backend.</p>'+
   '<h3>1. Product in one paragraph</h3><p style="max-width:75ch">An internal portal where the owner (Admin) manages employees, assigns tasks, tracks daily working hours, reviews submissions with a revision history, scores work out of 10, offers paid tasks and analyses performance. Each employee has a personal dashboard with their tasks, work log, performance, feedback and history. The social media team also has a content board: daily plans with time slots, weekly goals, a topic and reel pipeline with monthly targets, audience numbers, and page fixes from an audit.</p>'+
   '<h3>2. How this file is organised</h3>'+t(["Part","Where","What it contains"],[["Styles","<code>&lt;style&gt;</code> at the top","Colour tokens for light and dark, layout, components"],["Social board","Script, first half","Daily plans, weekly goals, content pipeline, audience analytics, page fixes, setup, JSON export"],["Portal part 1","Comment block \"PORTAL PART 1\"","Constants, helpers, <code>seedPortal()</code> demo data, <code>Api</code> mock endpoints, <code>claimBlockers()</code>"],["Portal part 2","Comment block \"PORTAL PART 2\"","Shell, navigation, every view, task modal, delegated event handlers"]],640)+
-  '<h3>3. Roles and access</h3>'+t(["Area","Admin (owner)","Employee","Content coordinator"],[["Sign in","Yes","Yes. Deactivated employees are refused.","Same as employee"],["Employees: add, edit, deactivate","Yes","Own profile only: phone and image","Same as employee"],["View any employee profile, history, attendance, hours, paid history","Yes","Own history and performance only","Same as employee"],["Create, assign, reassign tasks","Yes","No","No"],["Accept, work on, submit own tasks","No","Yes","Yes"],["Review, request revision, approve, score","Yes","No","No"],["Comment on a task","Yes","Yes, on own tasks","Same as employee"],["Claim a paid task","No","Yes, if allowed by the claim rule","Same as employee"],["Mark payment as paid","Yes","No","No"],["Work log: pre-filled day, pick activity, extra entries, submit day","View all","Own, until the day is submitted","Same as employee"],["Organisation analytics and filters","Yes","Own performance only","Same as employee"],["Settings: scoring table, categories, working day, standard activities","Yes","No","No"],["Create, plan, import and edit reels and topics","Yes","No","Yes"],["Review reels: accept, reject, change status, add a note","Yes","No","Yes"],["Note down views and followers (Audience numbers)","Yes","Only the owner of the Views and followers responsibility","Only if they own that responsibility"],["Move any responsibility to anyone (transfer, add, remove)","Yes","No","No"],["Daily plan and weekly goals of the social board","Yes","Employees with a plan key (Maira and the intern)","Same as employee"]],700)+
+  '<h3>3. Roles and access</h3>'+t(["Area","Admin (owner)","Employee","Content coordinator"],[["Sign in","Yes","Yes. Deactivated employees are refused.","Same as employee"],["Employees: add, edit, deactivate","Yes","Own profile only: phone and image","Same as employee"],["View any employee profile, history, attendance, hours, paid history","Yes","Own history and performance only","Same as employee"],["Create, assign, reassign tasks","Yes","No","No"],["Accept, work on, submit own tasks","No","Yes","Yes"],["Review, request revision, approve, score","Yes","No","No"],["Comment on a task","Yes","Yes, on own tasks","Same as employee"],["Claim a paid task","No","Yes, if allowed by the claim rule","Same as employee"],["Mark payment as paid","Yes","No","No"],["Work log: pre-filled day, pick activity, extra entries, submit day","View all","Own, until the day is submitted","Same as employee"],["Organisation analytics and filters","Yes","Own performance only","Same as employee"],["Settings: scoring table, categories, working day, standard activities","Yes","No","No"],["Create, plan, import and edit reels and topics","Yes","No","Yes"],["Review reels: accept, reject, change status, add a note","Yes","No","Yes"],["Note down views and followers (Audience numbers)","Yes","Only the owner of the Views and followers responsibility","Only if they own that responsibility"],["Move any responsibility to anyone (transfer, add, remove)","Yes","No","No"],["Course planner: plan courses, trigger course creation","Yes","No","No"],["Daily plan and weekly goals of the social board","Yes","Employees with a plan key (Maira and the intern)","Same as employee"]],700)+
   '<p class="tdesc" style="max-width:75ch;margin-top:8px">Content coordinator is not a separate account type. It is a <b>responsibility</b> (key <code>content</code>) that the admin can give to any employee and move to someone else at any time; whoever owns it gets the reel rights above. The same mechanism covers the <code>audience</code> responsibility (noting down views and followers) and any other recurring duty the admin adds. The server must check these rights on every request; hiding buttons is not enough.</p><h3>4. Screens</h3>'+t(["Navigation item","Role","Purpose and main parts"],[["Dashboard","Both","Admin: tiles for employees, tasks, paid tasks, scores and revisions; needs-attention list; status split; performance and revision bars; deadlines; login status; recent activity. Employee: today, overdue, urgent, upcoming, paid availability, score, hours, feedback"],["Employees","Admin","List with search of status and score; add and edit form with image; profile with performance, task history, attendance, work hours and paid tasks"],["Tasks / My Tasks","Both","Admin: filter chips, employee, category and search, table. Employee: grouped lists with overdue first"],["Create Task","Admin","Full assignment form including paid tasks and open paid tasks"],["Paid Tasks","Both","Admin: available, claimed, completed, payment status. Employee: available tasks with claim rule banner, own paid tasks and earnings"],["Work Logs / My Work Log","Both","Employee: hour-by-hour entries, daily target bar, submit day, 14-day history. Admin: hours by employee and day for today, week or month, with drill-down"],["Analytics / Performance","Both","Admin: filters (employee, date range, category, status, priority, paid), rankings, comparison table, trends. Employee: personal metrics and charts"],["Task History","Employee","Every task with dates, revisions, scores and feedback"],["Notifications","Both","List with unread state; bell in the top bar with count"],["Settings","Admin","Scoring table, categories, daily hours, social board setup, demo reset, JSON export"],["Task modal","Both","Workflow stepper, instructions, scores, submission and revision history, review form, comments"]],760)+
   '<h3>5. Task workflow</h3><p style="max-width:75ch;margin-bottom:8px">Assigned, then Accepted or In progress, then Submitted, then Under review, then either Revision required (back to In progress for a new submission) or Approved, then Completed. Approval and completion happen in one step. Paid tasks start as Open with no assignee and become In progress when claimed.</p>'+
   t(["From","Action","Actor","To","Side effects"],[["Open (paid)","Claim","Employee","In progress","Admin notified. Blocked by the claim rule"],["Assigned","Accept and start","Employee","In progress","Activity logged"],["In progress or Revision required","Submit work","Employee","Submitted","New submission row. Admin notified"],["Submitted","Start review","Admin","Under review","None"],["Submitted or Under review","Request revision","Admin","Revision required","Comment required. Submission marked as revision. Employee notified"],["Submitted or Under review","Approve and complete","Admin","Completed","Quality score required. Scores computed. Employee notified. Paid task: payment becomes due and admin is notified"],["Completed (paid)","Mark payment as paid","Admin","Completed","Employee notified"]],760)+
   '<h3>6. Business rules</h3><ol class="rules"><li><b>Claim rule.</b> An employee can claim a paid task only if none of their tasks is overdue or in Revision required. Enforce on the server as well as in the interface. Show the blocking tasks.</li><li><b>Overdue.</b> A task is overdue when its status is Assigned, In progress or Revision required and the due date is before today. Submitted work waiting for review is not overdue.</li><li><b>Pending.</b> Open (not completed) and not overdue.</li><li><b>Revision history is permanent.</b> Every submission is stored with its comment, owner comment, result and time. Never delete or overwrite earlier submissions.</li><li><b>Scoring.</b> Final score out of 10 = revision score (0 to 5, from the number of revisions) + quality score (0 to 5, entered by the owner on approval). Keep both parts. Current table: '+rs+'. The table is editable in Settings and applies to all completed tasks.</li><li><b>Attendance.</b> The first sign-in of the day records the login time.</li><li><b>Work log.</b> Entries need a start before the end and cannot overlap. After the employee submits the day, entries are locked.</li><li><b>Notifications.</b> Created on the events listed in section 9. Overdue and deadline notices come from a scheduled job.</li><li><b>Deactivation.</b> Deactivated employees cannot sign in. Their history stays.</li><li><b>Content plan.</b> A reel counts toward a month when it is accepted (or later) and has a planned date in that month.</li></ol>'+
+  '<h3>Course planner (admin only)</h3><p style="max-width:78ch">Sidebar item Course Planner. The admin plans courses for the next 3, 6, 12 months, 2 years or 5 years, watches setup and delivery progress, checks teacher load and triggers creation of the real course. It is a self-contained module (second script block, "COURSE PLANNER") drawn inside a shadow root only so its styles cannot clash with the portal; a real build should use the LMS components instead. Its own <b>For developers</b> tab and the JSON in <code>portalSpec().coursePlanner</code> hold the full rules.</p><ul style="max-width:78ch"><li>Stages stored: idea, planned, created. Derived: ready (planned, five setup steps done, teacher and class chosen), running, completed.</li><li>Create trigger: <code>POST /course-plans/:id/create</code>. Idempotent, one transaction. Creates the course, class group, every session, the teacher link and the fee plan through the existing LMS services and fee module. Rejected when a step is open, teacher or class is missing, the start date is past, or the teacher is already booked in the same slot on a shared weekday in overlapping dates.</li><li>Reuse the existing Course, Class, Teacher, Timetable and Fee entities. Store plan data in new <code>courseplan_</code> tables. Do not alter existing tables.</li></ul>'+
   '<h3>7. Data model</h3>'+t(["Entity","Fields"],[["Employee","id, name, designation, email, phone, joined (date), status (active or inactive), photo, planKey (maira, intern or none)"],["Task","id, title, desc, assignee (employee id or null), category, priority (Low, Medium, High), urgent, assigned (date), due (date), estHours, output, format, refs, refFiles, driveLink, notes, paid, amount, payStatus (unpaid, due, paid), status (open, assigned, in_progress, submitted, under_review, revision, completed), quality, revScore, finalScore, completedAt, claimedAt"],["Submission (child of Task)","n, at (timestamp), link, file, comment, adminComment, result (null, revision, approved), reviewedAt"],["Comment (child of Task)","at, by (admin or employee id), text"],["WorkLogEntry","id, emp, date, start, end, activity, taskId, notes. The day template (see Settings) is computed on the client and an entry exists only once the employee picks something for that slot. Entries that do not match a template slot are shown as Extra entries"],["DaySubmission","emp, date, submittedAt"],["Attendance","emp, date, firstLoginTime"],["Notification","id, to (admin or employee id), type, text, taskId, at, read, key (prevents duplicates)"],["Activity","at, text, taskId"],["Settings","revisionScores (list), categories (list), workdayHours, dayStart (time), lunchAfter (hours of work before the 1-hour lunch), activities (list of standard activity names shown in work log dropdowns)"],["Responsibility (duty)","id, key (content, audience or empty), title, desc, freq (Daily or Weekly), owner (employee id or admin)"],["DutyTick","duty id and period (date for Daily, Monday date for Weekly) to timestamp; the audience duty counts as done when a metric exists for today"],["Reel or topic","id, title, format (Reel, Carousel, Post), category, hook, status (suggested, accepted, production, ready, published, rejected), suggestedBy, creator, createdDate, plannedDate, driveLink, promptText, promptFile, promptLink, thumb, note"],["AudienceMetric","date, platform, values (metric id to number)"],["Board settings","categories with monthly reel and carousel targets, platforms, tracked numbers, page fixes status and owner, hidden items, day start time"]],760)+
   '<h3>8. Suggested API</h3>'+t(["Endpoint","Mock method","Notes"],[["POST /auth/login","Api.login","Record first login of the day"],["POST /employees, PUT /employees/:id","Api.saveEmployee","Unique email"],["PATCH /employees/:id/status","Api.setEmployeeStatus",""],["POST /tasks","Api.createTask","Notify assignee, or all active employees for an open paid task"],["POST /tasks/:id/reassign","Api.reassignTask",""],["POST /tasks/:id/accept","Api.acceptTask",""],["POST /tasks/:id/submissions","Api.submitTask","Upload the file, store its URL"],["POST /tasks/:id/review/start","Api.startReview",""],["POST /tasks/:id/review/revision","Api.requestRevision","Comment required"],["POST /tasks/:id/review/approve","Api.approveTask","Quality 0 to 5, compute scores"],["POST /tasks/:id/comments","Api.addComment",""],["POST /tasks/:id/claim","Api.claimPaidTask","Enforce the claim rule"],["PATCH /tasks/:id/payment","Api.markPaid",""],["POST and PUT /worklogs, DELETE /worklogs/:id","Api.saveLog, Api.deleteLog","Reject overlaps and locked days"],["POST /worklogs/submit-day","Api.submitDay",""],["PATCH /notifications","Api.markRead, Api.markAllRead",""],["PUT /settings","Api.saveSettings","Re-score completed tasks"],["POST /duties/:id/transfer","Api.transferDuty","Admin only. Notify the new and the previous owner. Moves any permission the duty carries"],["POST /duties, DELETE /duties/:id","Api.saveDuty, Api.deleteDuty","Admin only. Built-in duties (with a key) cannot be deleted"],["PATCH /duties/:id/done","Api.tickDuty","Owner ticks a daily or weekly duty"]],700)+
   '<h3>9. Notification events</h3>'+t(["Event","Recipient"],[["New task assigned, urgent task assigned","Assigned employee"],["Deadline approaching (due today or tomorrow)","Assigned employee"],["Task overdue","Owner and assigned employee"],["Work submitted","Owner"],["Revision requested","Employee"],["Submission approved","Employee"],["New feedback or comment","The other party"],["Paid task available","All active employees"],["Paid task claimed","Owner"],["Paid task completed (payment due)","Owner"],["Payment marked as paid","Employee"]],520)+
@@ -2515,7 +2521,7 @@ function handoffView(){
 }
 
 /* ============================ EVENTS ============================ */
-VIEWS={dashboard:function(){return isAdmin()?dashAdmin():dashEmp();},employees:empsView,tasks:tasksAdmin,create:createTaskView,mytasks:myTasks,history:function(){return historyView(V.user.id);},paid:function(){return isAdmin()?paidAdmin():paidEmp();},worklog:worklogEmp,worklogs:worklogsAdmin,perf:function(){return isAdmin()?perfAdmin():empPerf(V.user.id);},notifications:notifView,profile:profileView,setup:settingsView,handoff:handoffView,overview:overview,content:contentView,analytics:analytics,numbers:numbersView,duties:function(){return isAdmin()?dutiesAdmin():dutiesEmp();},daily:function(){return personSwitch()+daily();},weekly:function(){return personSwitch()+weekly();},fixes:fixes,pay:pay};
+VIEWS={courseplan:function(){return isAdmin()?'<div id="cp-host"></div>':'<div class="notice warn">Only the admin can open the course planner.</div>';},dashboard:function(){return isAdmin()?dashAdmin():dashEmp();},employees:empsView,tasks:tasksAdmin,create:createTaskView,mytasks:myTasks,history:function(){return historyView(V.user.id);},paid:function(){return isAdmin()?paidAdmin():paidEmp();},worklog:worklogEmp,worklogs:worklogsAdmin,perf:function(){return isAdmin()?perfAdmin():empPerf(V.user.id);},notifications:notifView,profile:profileView,setup:settingsView,handoff:handoffView,overview:overview,content:contentView,analytics:analytics,numbers:numbersView,duties:function(){return isAdmin()?dutiesAdmin():dutiesEmp();},daily:function(){return personSwitch()+daily();},weekly:function(){return personSwitch()+weekly();},fixes:fixes,pay:pay};
 V.user=null;V.empId=null;V.empForm=null;V.ept="perf";V.modal=null;V.flash="";V.mErr="";V.ctErr="";V.ctDraft=null;V.wlDate=T0;V.wlEdit=null;V.wlErr="";V.wlSel=null;V.wlRange="week";V.wlEmp="all";V.confirmReset=false;V.loginErr="";V.loginEmail="";
 V.tf={st:"all",emp:"all",cat:"all",q:""};
 V.af={emp:"all",from:dayOff(-60),to:T0,cat:"all",st:"all",pri:"all",paid:"all",gran:"week"};
@@ -2692,4 +2698,506 @@ render();
   render();
 })();
 })();
+</script>
+<script>
+/* ===================================================================================
+   COURSE PLANNER (admin only). Self-contained module.
+   It draws itself inside a shadow root so its styles cannot clash with the portal.
+   A real build does NOT need the shadow root. Mock data is stored in localStorage key
+   brainova-courseplan-v1; every method of the Api object below is one backend endpoint.
+   =================================================================================== */
+var CSS="\n/* Layout: one working page. A header with the planning horizon, five tabs (Overview, Timeline, Courses, Teachers, For developers),\n   summary first, detail below. Same colour and type system as the Team Portal so both live in one LMS. */\n*{box-sizing:border-box}\n:host{display:block;color:var(--ink);font:400 15px/1.5 var(--body)}\n.wrap{max-width:1240px;margin:0 auto;display:flex;flex-direction:column;gap:18px;min-width:0}\nh1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}\nh1{font-size:clamp(24px,3.4vw,32px);font-weight:700;line-height:1.1}\nh2{font-size:20px;font-weight:650}\nh3{font-size:16px;font-weight:650}\np{margin:0}\nbutton,select,input,textarea{font:inherit;color:inherit}\n:focus-visible{outline:2px solid var(--accent);outline-offset:2px}\n.muted{color:var(--muted)} .tdesc{color:var(--muted);font-size:13px} .mono{font-family:var(--mono)}\n.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}\n.top{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:flex-end;justify-content:space-between}\n.top>div{min-width:0}\n.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:8px 14px;cursor:pointer;font-weight:500;line-height:1.2}\n.btn:hover{border-color:var(--accent)}\n.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}\n.btn.pri:hover{filter:brightness(1.06)}\n.btn.sm{padding:5px 10px;font-size:13px}\n.btn[disabled]{opacity:.5;cursor:not-allowed}\n.lnk{background:none;border:0;padding:0;cursor:pointer;color:var(--ink);text-align:left;font-weight:600}\n.lnk:hover{color:var(--accent);text-decoration:underline}\n.chips{display:flex;flex-wrap:wrap;gap:8px}\n.chip{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 14px;cursor:pointer;font-weight:500;font-size:14px}\n.chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}\n.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}\n.tab{background:none;border:0;border-bottom:3px solid transparent;padding:10px 14px;cursor:pointer;font-weight:500;color:var(--muted);white-space:nowrap}\n.tab.on{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}\n.bar-row{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}\n.inl{display:inline-flex;gap:8px;align-items:center;color:var(--muted);font-size:14px}\nselect,input[type=text],input[type=number],input[type=date],textarea{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 10px;min-width:0;max-width:100%}\ntextarea{width:100%;min-height:64px;resize:vertical}\n.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;min-width:0}\n.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}\n.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}\n.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}\n.tile span{font-size:13px;color:var(--muted)}\n.tile b{font:700 28px/1.1 var(--display);font-variant-numeric:tabular-nums}\n.tile small{font-size:12.5px;color:var(--muted)}\n.tile.act{border-color:var(--accent);background:var(--accent-soft)}\n.notice{border:1px solid var(--line);background:var(--accent-soft);border-radius:10px;padding:10px 14px}\n.notice.warn{background:transparent;border-color:var(--warn)}\n.listhead{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}\n.scroll{overflow-x:auto;max-width:100%}\ntable{border-collapse:collapse;width:100%;font-variant-numeric:tabular-nums}\nth{font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}\ntd{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}\ntr:last-child td{border-bottom:0}\n.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px;font-size:12.5px;font-weight:600;border:1px solid var(--line);white-space:nowrap}\n.pill i{width:8px;height:8px;border-radius:50%;background:var(--c,var(--muted));display:inline-block}\n.pill.idea i{background:transparent;border:1.5px dashed var(--muted)}\n.st-completed{--c:var(--muted)} .st-running{--c:var(--good)} .st-created{--c:var(--accent)} .st-ready{--c:var(--warm)} .st-planned{--c:var(--s7)} .st-idea{--c:var(--muted)}\n.pbar{height:6px;border-radius:4px;background:var(--track);overflow:hidden;min-width:70px}\n.pbar i{display:block;height:100%;background:var(--accent);border-radius:4px}\n.pbar.good i{background:var(--good)}\n.attn{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}\n.attn li{display:flex;gap:12px;align-items:flex-start;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--line)}\n.attn li:last-child{border-bottom:0}\n.attn .tone{width:8px;height:8px;border-radius:50%;margin-top:8px;flex:none;background:var(--warn)}\n.attn .tone.bad{background:var(--bad)} .attn .tone.go{background:var(--accent)}\n.attn li>span{display:flex;gap:10px;min-width:0}\n.segbar{display:flex;height:16px;border-radius:6px;overflow:hidden;gap:2px;background:var(--surface)}\n.segbar i{display:block;min-width:4px}\n.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted);margin-top:10px}\n.legend span{display:inline-flex;align-items:center;gap:6px}\n.legend i{width:11px;height:11px;border-radius:3px;display:inline-block;background:var(--c)}\n.legend i.tint{background:color-mix(in srgb,var(--c) 22%,var(--surface));border:2px solid var(--c)}\n.legend i.dash{background:transparent;border:2px dashed var(--c)}\n.prow{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(90px,1fr) auto;gap:12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--line)}\n.prow:last-child{border-bottom:0}\n.prow .t{min-width:0}\n.prow .t .lnk{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.prow .t .tdesc{display:block}\n/* timeline */\n.gantt{min-width:860px;position:relative}\n.g-head,.g-row{display:flex}\n.g-label{width:260px;flex:none;padding:6px 12px 6px 0;min-width:0}\n.g-axis{flex:1;position:relative;height:30px;border-bottom:1px solid var(--line)}\n.g-axis span{position:absolute;top:6px;font:500 11.5px var(--mono);color:var(--muted);white-space:nowrap;padding-left:5px}\n.g-track{flex:1;position:relative;min-height:46px}\n.g-body{position:relative}\n.g-grid{position:absolute;left:260px;right:0;top:0;bottom:0;pointer-events:none}\n.g-grid i{position:absolute;top:0;bottom:0;border-left:1px solid var(--line)}\n.g-grid i.today{border-left:2px solid var(--accent)}\n.g-group{font:600 13px var(--display);padding:12px 0 4px;color:var(--ink);display:flex;gap:10px;align-items:baseline}\n.g-group span{font:400 12.5px var(--body);color:var(--muted)}\n.g-row{border-bottom:1px solid var(--line)}\n.g-label .sub{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--muted);margin-top:2px}\n.g-label .lnk{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n.bar{position:absolute;top:12px;height:22px;border-radius:5px;border:2px solid var(--c);background:var(--c);cursor:pointer;padding:0;min-width:6px}\n.bar.tint{background:color-mix(in srgb,var(--c) 22%,var(--surface))}\n.bar.idea{background:transparent;border-style:dashed}\n.bar.done{opacity:.5}\n.bar.ready::after{content:\"\";position:absolute;right:3px;top:3px;width:12px;height:12px;border-radius:50%;background:var(--c)}\n/* heat map */\n.heat td,.heat th{padding:4px}\n.heat td.c{text-align:center;font:500 12px var(--mono);height:36px;min-width:48px;border-radius:6px;border:2px solid var(--surface)}\n.heat td.n{white-space:nowrap;padding-right:12px;font-weight:600}\n/* modal */\n.overlay{position:fixed;inset:0;background:rgba(10,12,28,.55);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) 16px 16px;overflow-y:auto;z-index:20}\n.modal{background:var(--surface);border:1px solid var(--line);border-radius:14px;width:min(760px,100%);padding:20px;display:flex;flex-direction:column;gap:14px;margin-block:auto}\n.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,210px),1fr));gap:12px}\n.fgrid label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);min-width:0}\n.fgrid label.full{grid-column:1/-1}\n.fgrid label>*:not(span){color:var(--ink)}\n.days{display:flex;flex-wrap:wrap;gap:6px}\n.days label{flex-direction:row;align-items:center;gap:6px;border:1px solid var(--line);border-radius:8px;padding:5px 10px;color:var(--ink);font-size:14px;cursor:pointer}\n.checks{display:flex;flex-direction:column;gap:6px}\n.checks label{flex-direction:row;align-items:center;gap:8px;color:var(--ink);font-size:14px}\n.sum{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--bg);font-size:14px;display:flex;flex-direction:column;gap:4px}\n.mrow{display:grid;grid-template-columns:130px minmax(0,1fr);gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px}\n.mrow:last-child{border-bottom:0}\n.mrow>b{font:500 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:2px}\n#tip{position:fixed;z-index:40;pointer-events:none;background:var(--ink);color:var(--bg);border-radius:8px;padding:6px 10px;font-size:12.5px;max-width:280px;line-height:1.35;display:none}\ncode{font-family:var(--mono);font-size:12.5px;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:1px 5px}\n.dev h3{margin:18px 0 6px} .dev p,.dev li{max-width:78ch} .dev ul{margin:6px 0;padding-left:20px}\n.chart svg text{fill:var(--muted);font-family:var(--body)}\n@media (max-width:560px){ .prow{grid-template-columns:minmax(0,1fr) auto;row-gap:6px} .prow .pbar{grid-column:1/-1;order:3} .g-label{width:200px} .g-grid{left:200px} .mrow{grid-template-columns:1fr;gap:2px} }\n@media (prefers-reduced-motion:reduce){*{transition:none!important}}\n";
+
+window.__CP=(function(){
+"use strict";
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],DOW=["Mon","Tue","Wed","Thu","Fri","Sat"];
+var CATS=["Academic support","Exam preparation","Skills and habits","Parent programs","Early years","Digital skills"];
+var CAT_COL=["var(--s1)","var(--s2)","var(--s3)","var(--s4)","var(--s5)","var(--s7)"];
+var CLASSES=["Playgroup to KG","Grade 1 to 3","Grade 4 to 5","Grade 6 to 8","Grade 9 to 10 (Matric)","O and A Level","MDCAT candidates","Parents"];
+var SLOTS=["Morning, 9 to 12","Afternoon, 2 to 5","Evening, 5 to 8"];
+var PLANS=[["full","Full fee before start"],["2","2 instalments"],["3","3 instalments"],["m","Monthly instalments"]];
+var CHECKS=["Curriculum outlined","Teacher confirmed","Room and time slot booked","Fee agreed","Materials ready"];
+var WEEKS=[4,6,8,10,12,16,20,24,36,48],HRS=[1,1.5,2,2.5,3],SEATS=[8,10,12,15,16,18,20,24,30,35,40,50];
+var HOR=[[3,"3 months"],[6,"6 months"],[12,"12 months"],[24,"2 years"],[60,"5 years"]];
+var SUBJ=["Mathematics","Science","English","Urdu","Early years","Computing","Study skills","Parent education"];
+var STL={completed:"Completed",running:"Running",created:"Created, not started",ready:"Ready to create",planned:"Being planned",idea:"Idea"};
+var STORDER=["running","created","ready","planned","idea","completed"];
+var LS="brainova-courseplan-v1";
+
+var ROOT=null,LISTEN=[];
+function $(i){return ROOT?ROOT.getElementById(i):null;}
+function listen(t,f){LISTEN.push([t,f]);}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+function p2(n){return String(n).padStart(2,"0");}
+var TODAY=(function(){var d=new Date();return new Date(d.getFullYear(),d.getMonth(),d.getDate());})();
+function dk(d){return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate());}
+function pd(s){var a=String(s).split("-");return new Date(+a[0],+a[1]-1,+a[2]);}
+function addD(d,n){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate());x.setDate(x.getDate()+n);return x;}
+function addM(d,n){return new Date(d.getFullYear(),d.getMonth()+n,d.getDate());}
+function fd(s,noYear){var d=typeof s==="string"?pd(s):s;return d.getDate()+" "+MON[d.getMonth()]+(noYear?"":" "+d.getFullYear());}
+function daysTo(s){return Math.round((pd(s)-TODAY)/864e5);}
+function money(n){return "PKR "+Math.round(n).toLocaleString("en-US");}
+function moneyS(n){return n>=1e6?(n/1e6).toFixed(n>=1e7?0:1)+"M":n>=1e3?Math.round(n/1e3)+"k":String(Math.round(n));}
+function plural(n,a,b){return n+" "+(n===1?a:(b||a+"s"));}
+
+/* ---------------- demo data (replace with the LMS database) ---------------- */
+function seed(){
+  var T=TODAY;function o(n){return dk(addD(T,n));}
+  var ts=[{id:"t1",name:"Noor Fatima",subject:"Study skills",cap:12},{id:"t2",name:"Ayesha Raza",subject:"English",cap:14},{id:"t3",name:"Imran Sheikh",subject:"Mathematics",cap:16},{id:"t4",name:"Mehwish Anwar",subject:"Early years",cap:10},{id:"t5",name:"Usman Qureshi",subject:"Computing",cap:8}];
+  var id=0;
+  function C(title,cat,cls,teacher,start,weeks,days,slot,hrs,seats,fee,plan,stage,checks,note){
+    return {id:"c"+(++id),title:title,cat:cat,cls:cls,teacher:teacher,start:o(start),weeks:weeks,days:days,slot:slot,hrs:hrs,seats:seats,fee:fee,plan:plan,stage:stage,checks:checks,note:note||"",createdAt:stage==="created"?o(Math.min(start-14,-1)):""};
+  }
+  var A=[1,1,1,1,1],cs=[
+    C("Phonics Starters","Early years","Playgroup to KG","t4",-120,12,[0,1,2,3],0,1,12,6000,"m","created",A),
+    C("O-Level Maths Foundation","Academic support","O and A Level","t3",-70,24,[1,3],1,2,16,24000,"3","created",A),
+    C("Brain Boost: Memory Techniques","Skills and habits","Grade 6 to 8","t1",-42,12,[0,2],2,1.5,24,9000,"2","created",A),
+    C("Matric Science Crash Course","Exam preparation","Grade 9 to 10 (Matric)","t2",21,8,[0,2,4],1,2,30,12000,"2","created",A),
+    C("Parent Workshop: Raising Focused Learners","Parent programs","Parents","t1",30,4,[5],0,2,40,2500,"full","planned",A),
+    C("Urdu Reading Fluency","Academic support","Grade 1 to 3","t4",35,10,[1,3],1,1,18,7000,"2","planned",A),
+    C("Winter Study Skills Camp","Skills and habits","Grade 4 to 5","t1",50,6,[0,2],0,2,20,8500,"2","planned",[1,1,1,0,0]),
+    C("English Speaking Club","Skills and habits","Grade 6 to 8","t2",60,12,[5],0,2,20,5000,"m","planned",[1,1,1,1,0]),
+    C("MDCAT Prep Batch 1","Exam preparation","MDCAT candidates","t5",75,20,[0,2,4],2,2,35,45000,"3","planned",[1,1,0,0,0]),
+    C("Intro to Coding for Kids","Digital skills","Grade 4 to 5","t5",90,12,[0,2],2,1.5,16,15000,"2","planned",[1,0,0,0,0]),
+    C("Exam Stress Management for Teens","Skills and habits","Grade 9 to 10 (Matric)","t1",120,4,[5],0,2,30,3000,"full","idea",[0,0,0,0,0]),
+    C("Spring Revision Bootcamp","Exam preparation","Grade 9 to 10 (Matric)","t3",150,6,[0,1,2,3,4],0,3,40,8000,"2","idea",[1,0,0,0,0]),
+    C("Phonics Starters, spring batch","Early years","Playgroup to KG","t4",180,12,[0,1,2,3],0,1,12,6500,"m","planned",[1,1,0,0,0]),
+    C("A-Level Physics","Academic support","O and A Level","t3",200,36,[1,3],1,2,14,32000,"3","idea",[0,0,0,0,0]),
+    C("Teen Leadership Lab","Skills and habits","Grade 9 to 10 (Matric)","t2",270,8,[5],0,2,25,6000,"2","idea",[0,0,0,0,0]),
+    C("MDCAT Prep Batch 2","Exam preparation","MDCAT candidates","t5",365,20,[0,2,4],2,2,40,48000,"3","idea",[0,0,0,0,0]),
+    C("Parent Workshop Series, year 2","Parent programs","Parents","t1",400,12,[5],0,2,40,2500,"full","idea",[0,0,0,0,0]),
+    C("Coding Level 2","Digital skills","Grade 6 to 8","t5",540,16,[1,3],1,1.5,16,18000,"3","idea",[0,0,0,0,0]),
+    C("Brain Boost 2.0","Skills and habits","Grade 6 to 8","t1",700,12,[0,2],2,1.5,24,11000,"2","idea",[0,0,0,0,0]),
+    C("Brainova Junior Academy","Early years","Playgroup to KG","t4",900,48,[0,1,2,3,4],0,3,20,60000,"m","idea",[0,0,0,0,0]),
+    C("O-Level Maths Foundation, 2028 batch","Academic support","O and A Level","t3",1100,24,[1,3],1,2,18,28000,"3","idea",[0,0,0,0,0]),
+    C("Matric Board Preparation 2029","Exam preparation","Grade 9 to 10 (Matric)","t2",1500,40,[0,2,4],1,2,40,22000,"3","idea",[0,0,0,0,0])
+  ];
+  cs.forEach(function(c){c.checks=c.checks.map(Boolean);});
+  return {v:1,teachers:ts,courses:cs};
+}
+var D,U={tab:"overview",m:6,gby:"cat",f:{st:"all",cat:"all",cls:"all",t:"all"},modal:null,flash:"",confirmReset:false};
+function save(){try{localStorage.setItem(LS,JSON.stringify({d:D,m:U.m,tab:U.tab}));}catch(e){}}
+function load(){
+  try{var r=JSON.parse(localStorage.getItem(LS)||"null");if(r&&r.d&&r.d.v===1&&r.d.courses){D=r.d;if(r.m)U.m=r.m;if(r.tab)U.tab=r.tab;return;}}catch(e){}
+  D=seed();
+}
+
+/* ---------------- derived values ---------------- */
+function byId(id){return D.courses.filter(function(c){return c.id===id;})[0]||null;}
+function tById(id){return D.teachers.filter(function(t){return t.id===id;})[0]||null;}
+function tn(id){var t=tById(id);return t?t.name:"No teacher yet";}
+function endOf(c){return dk(addD(pd(c.start),c.weeks*7-1));}
+function sessionsOf(c){var out=[],s=pd(c.start),i,d;for(i=0;i<c.weeks*7;i++){d=addD(s,i);if(c.days.indexOf((d.getDay()+6)%7)>=0)out.push(dk(d));}return out;}
+function weeklyH(c){return c.days.length*c.hrs;}
+function missing(c){var m=[];CHECKS.forEach(function(k,i){if(!c.checks[i])m.push(k);});if(!c.teacher)m.push("Choose a teacher");if(!c.cls)m.push("Choose a class");return m;}
+function isReady(c){return missing(c).length===0;}
+function dstatus(c){
+  var t=dk(TODAY);
+  if(c.stage==="created"){if(endOf(c)<t)return "completed";if(c.start<=t)return "running";return "created";}
+  if(c.stage==="idea")return "idea";
+  return isReady(c)?"ready":"planned";
+}
+function prog(c){
+  var s=dstatus(c),tot=c.weeks*7,el;
+  if(s==="completed")return {pct:1,text:"Finished "+fd(endOf(c),true)};
+  if(s==="running"){el=Math.round((TODAY-pd(c.start))/864e5)+1;return {pct:Math.min(1,el/tot),text:"Week "+Math.ceil(el/7)+" of "+c.weeks+", ends "+fd(endOf(c),true)};}
+  if(s==="created"){return {pct:1,text:"Set up. Starts in "+plural(daysTo(c.start),"day")};}
+  var n=c.checks.filter(Boolean).length;return {pct:n/CHECKS.length,text:n+" of "+CHECKS.length+" steps ready"};
+}
+function win(){return {from:TODAY,to:addM(TODAY,U.m)};}
+function inWin(c){var w=win();return pd(endOf(c))>=w.from&&pd(c.start)<=w.to;}
+function startsIn(c){var w=win(),s=pd(c.start);return s>=w.from&&s<=w.to;}
+function overlap(a,b){return a.start<=endOf(b)&&b.start<=endOf(a);}
+function sharedDays(a,b){return a.days.filter(function(d){return b.days.indexOf(d)>=0;});}
+function clashesFor(c){
+  if(!c.teacher)return [];
+  return D.courses.filter(function(x){return x.id!==c.id&&x.stage!=="idea"&&x.teacher===c.teacher&&x.slot===c.slot&&overlap(c,x)&&sharedDays(c,x).length;});
+}
+function allClashes(){
+  var out=[];D.courses.forEach(function(a,i){if(a.stage==="idea")return;D.courses.slice(i+1).forEach(function(b){if(b.stage==="idea")return;if(a.teacher&&a.teacher===b.teacher&&a.slot===b.slot&&overlap(a,b)&&sharedDays(a,b).length)out.push([a,b]);});});
+  return out;
+}
+function blockers(c){
+  var b=missing(c),t=dk(TODAY);
+  if(c.start<t)b.push("The start date is in the past");
+  clashesFor(c).forEach(function(x){b.push(tn(c.teacher)+" already teaches \""+x.title+"\" at the same time on "+sharedDays(c,x).map(function(d){return DOW[d];}).join(", "));});
+  return b;
+}
+/* Peak weekly teaching hours for a teacher between two dates. */
+function peakLoad(tid,from,to){
+  var peak=0,d=from,we,sum;
+  while(d<=to){
+    we=addD(d,6);sum=0;
+    D.courses.forEach(function(c){if(c.teacher===tid&&pd(c.start)<=we&&pd(endOf(c))>=d)sum+=weeklyH(c);});
+    if(sum>peak)peak=sum;d=addD(d,7);
+  }
+  return peak;
+}
+function buckets(){
+  var w=win(),step=U.m<=12?1:U.m<=24?3:6,out=[],d=new Date(w.from.getFullYear(),Math.floor(w.from.getMonth()/step)*step,1),n,s,e,L;
+  while(d<w.to){
+    n=addM(d,step);s=d<w.from?w.from:d;e=addD(n,-1);if(e>addD(w.to,-1))e=addD(w.to,-1);
+    L=step===1?MON[d.getMonth()]+(d.getMonth()===0||!out.length?" "+String(d.getFullYear()).slice(2):""):step===3?"Q"+(Math.floor(d.getMonth()/3)+1)+" "+String(d.getFullYear()).slice(2):"H"+(Math.floor(d.getMonth()/6)+1)+" "+String(d.getFullYear()).slice(2);
+    out.push({s:s,e:e,label:L,full:step===1?MON[d.getMonth()]+" "+d.getFullYear():L});d=n;
+  }
+  return out;
+}
+
+/* ---------------- mock API (each method is one backend endpoint in the LMS) ---------------- */
+var Api={
+  /* POST /course-plans, PUT /course-plans/:id */
+  saveCourse:function(c){
+    if(!c.title)return {ok:false,error:"Enter a course title."};
+    if(!c.start)return {ok:false,error:"Choose a start date."};
+    if(!c.days.length)return {ok:false,error:"Choose at least one teaching day."};
+    var ex=byId(c.id);if(ex){Object.keys(c).forEach(function(k){ex[k]=c[k];});}else{c.id="c"+Date.now().toString(36);D.courses.push(c);}
+    save();return {ok:true,id:c.id};
+  },
+  /* DELETE /course-plans/:id (only before the course is created) */
+  deleteCourse:function(id){var c=byId(id);if(!c||c.stage==="created")return {ok:false,error:"A created course cannot be deleted here."};D.courses=D.courses.filter(function(x){return x.id!==id;});save();return {ok:true};},
+  /* POST /course-plans/:id/create  (the trigger). Idempotent. Creates the real course, class group, sessions, teacher link and fee plan in the LMS. */
+  createCourse:function(id){
+    var c=byId(id);if(!c)return {ok:false,errors:["Course not found."]};
+    if(c.stage==="created")return {ok:true,already:true,summary:buildSummary(c)};
+    var b=blockers(c);if(b.length)return {ok:false,errors:b};
+    c.stage="created";c.createdAt=dk(TODAY);save();return {ok:true,summary:buildSummary(c)};
+  },
+  /* PROTOTYPE ONLY: lets you try the trigger again */
+  revertCreate:function(id){var c=byId(id);if(c){c.stage="planned";c.createdAt="";save();}return {ok:true};},
+  /* PUT /teachers/:id */
+  setCap:function(id,v){var t=tById(id);if(t){t.cap=Math.max(1,Math.min(60,Number(v)||t.cap));save();}return {ok:true};},
+  /* POST /teachers */
+  addTeacher:function(d){if(!d.name)return {ok:false,error:"Enter the teacher's name."};D.teachers.push({id:"t"+Date.now().toString(36),name:d.name,subject:d.subject,cap:Number(d.cap)||12});save();return {ok:true};},
+  reset:function(){D=seed();save();return {ok:true};}
+};
+function instalments(c){
+  var n=c.plan==="full"?1:c.plan==="2"?2:c.plan==="3"?3:Math.max(1,Math.ceil(c.weeks/4)),out=[],i,span=c.weeks*7,per=c.fee/n;
+  for(i=0;i<n;i++){out.push({date:i===0?dk(addD(pd(c.start),-7)):dk(addD(pd(c.start),c.plan==="m"?i*28:Math.round(span*i/n))),amount:per});}
+  return out;
+}
+function buildSummary(c){
+  var ss=sessionsOf(c);
+  return {title:c.title,cat:c.cat,cls:c.cls,teacher:tn(c.teacher),seats:c.seats,slot:SLOTS[c.slot],days:c.days.map(function(d){return DOW[d];}).join(", "),n:ss.length,first:ss[0],last:ss[ss.length-1],hours:ss.length*c.hrs,hrs:c.hrs,fee:c.fee,inst:instalments(c),opens:dk(addD(pd(c.start),-14))<dk(TODAY)?dk(TODAY):dk(addD(pd(c.start),-14))};
+}
+function summaryRows(s){
+  function r(k,v){return '<div class="mrow"><b>'+k+'</b><div>'+v+'</div></div>';}
+  return r("Course",esc(s.title)+' <span class="tdesc">'+esc(s.cat)+'</span>')+
+    r("Class group",esc(s.cls)+', '+s.seats+' seats')+
+    r("Teacher",esc(s.teacher))+
+    r("Timetable",plural(s.n,"session")+' ('+s.hours+' teaching hours), '+esc(s.days)+', '+esc(s.slot)+'<div class="tdesc">First session '+fd(s.first)+', last session '+fd(s.last)+'</div>')+
+    r("Fee plan",money(s.fee)+' per student<div class="tdesc">'+s.inst.map(function(i){return fd(i.date,true)+": "+money(i.amount);}).join(" · ")+'</div>')+
+    r("Enrolment","Opens "+fd(s.opens));
+}
+
+/* ---------------- small UI helpers ---------------- */
+function pill(c){var s=dstatus(c);return '<span class="pill st-'+s+(s==="idea"?" idea":"")+'"><i></i>'+STL[s]+'</span>';}
+function pbar(c){var p=prog(c);return '<div class="pbar'+(dstatus(c)==="running"||dstatus(c)==="completed"?" good":"")+'" role="progressbar" aria-valuenow="'+Math.round(p.pct*100)+'" aria-valuemin="0" aria-valuemax="100"><i style="width:'+Math.round(p.pct*100)+'%"></i></div>';}
+function tile(label,val,sub,cls){return '<div class="tile'+(cls?" "+cls:"")+'"><span>'+label+'</span><b>'+val+'</b><small>'+sub+'</small></div>';}
+function opts(list,sel,first){return (first!=null?'<option value="">'+esc(first)+'</option>':"")+list.map(function(o){var v=Array.isArray(o)?o[0]:o,l=Array.isArray(o)?o[1]:o;return '<option value="'+esc(v)+'"'+(String(v)===String(sel)?" selected":"")+'>'+esc(l)+'</option>';}).join("");}
+function catIdx(c){var i=CATS.indexOf(c.cat);return i<0?0:i;}
+function tipFor(c){var p=prog(c);return esc(c.title)+" · "+esc(STL[dstatus(c)])+" · "+fd(c.start,true)+" to "+fd(endOf(c))+" · "+esc(tn(c.teacher))+" · "+esc(p.text);}
+
+/* ---------------- charts ---------------- */
+function niceStep(x){if(x<=1)return 1;var p=Math.pow(10,Math.floor(Math.log(x)/Math.LN10)),f=x/p;return (f<=1?1:f<=2?2:f<=5?5:10)*p;}
+function colChart(bk,series,fmt,label){
+  var W=640,H=240,L=46,R=10,T=16,B=32,n=bk.length,tot=bk.map(function(_,i){return series.reduce(function(a,s){return a+s.vals[i];},0);}),max=Math.max.apply(null,tot.concat([1])),step=niceStep(max/4),top=Math.ceil(max/step)*step,
+    iw=W-L-R,ih=H-T-B,slot=iw/n,bw=Math.min(48,slot*0.62),i,k,out='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(label)+'" style="width:100%;min-width:520px;height:auto;display:block;font-size:12.5px">';
+  function y(v){return T+ih-(v/top)*ih;}
+  for(k=0;k<=top+1e-9;k+=step){out+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(k)+'" y2="'+y(k)+'" stroke="var(--line)" stroke-width="1"/><text x="'+(L-8)+'" y="'+(y(k)+4)+'" text-anchor="end">'+fmt(k)+'</text>';}
+  bk.forEach(function(b,i){
+    var cx=L+slot*i+slot/2,acc=0;
+    series.forEach(function(s){
+      var v=s.vals[i];if(!v)return;var y1=y(acc+v),y0=y(acc);acc+=v;
+      out+='<rect x="'+(cx-bw/2)+'" y="'+y1+'" width="'+bw+'" height="'+Math.max(1,y0-y1)+'" rx="3" fill="'+s.color+'" stroke="var(--surface)" stroke-width="2" data-tip="'+esc(b.full+" · "+s.name+": "+fmt(v))+'"/>';
+    });
+    if(tot[i])out+='<text x="'+cx+'" y="'+(y(tot[i])-6)+'" text-anchor="middle" style="fill:var(--ink);font-weight:600">'+fmt(tot[i])+'</text>';
+    out+='<text x="'+cx+'" y="'+(H-10)+'" text-anchor="middle">'+esc(b.label)+'</text>';
+  });
+  return out+'<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(0)+'" y2="'+y(0)+'" stroke="var(--muted)" stroke-width="1"/></svg>';
+}
+function catLegend(list){return '<div class="legend">'+list.map(function(c){return '<span style="--c:'+CAT_COL[CATS.indexOf(c)]+'"><i></i>'+esc(c)+'</span>';}).join("")+'</div>';}
+function startsChart(){
+  var bk=buckets(),used=[];
+  var series=CATS.map(function(cn,ci){
+    var vals=bk.map(function(b){return D.courses.filter(function(c){var s=pd(c.start);return c.cat===cn&&s>=b.s&&s<=b.e;}).length;});
+    if(vals.some(Boolean))used.push(cn);return {name:cn,color:CAT_COL[ci],vals:vals};
+  }).filter(function(s){return s.vals.some(Boolean);});
+  if(!series.length)return '<p class="tdesc">No course starts in this period.</p>';
+  return '<div class="scroll chart">'+colChart(bk,series,function(v){return String(Math.round(v));},"Courses starting per period")+'</div>'+catLegend(used);
+}
+function feesChart(){
+  var bk=buckets(),vals=bk.map(function(b){return D.courses.filter(function(c){var s=pd(c.start);return s>=b.s&&s<=b.e;}).reduce(function(a,c){return a+c.seats*c.fee;},0);});
+  if(!vals.some(Boolean))return '<p class="tdesc">No fees expected in this period.</p>';
+  return '<div class="scroll chart">'+colChart(bk,[{name:"Expected fees (PKR)",color:"var(--accent)",vals:vals}],moneyS,"Expected fees per period")+'</div><p class="tdesc" style="margin-top:6px">Seats multiplied by fee, counted in the period each course starts. A plan figure, not money received.</p>';
+}
+
+/* ---------------- views ---------------- */
+function attention(){
+  var items=[],w=win(),cs=D.courses.filter(inWin);
+  var rd=D.courses.filter(function(c){return c.stage!=="created"&&dstatus(c)==="ready"&&startsIn(c);});
+  if(rd.length)items.push({t:plural(rd.length,"course is","courses are")+" ready to create: "+rd.slice(0,2).map(function(c){return c.title;}).join(", ")+(rd.length>2?" and "+(rd.length-2)+" more":"")+".",tone:"go",b:"Review and create",act:"bulk"});
+  D.courses.filter(function(c){return c.stage!=="created"&&c.stage!=="idea"&&!isReady(c)&&daysTo(c.start)<=60&&daysTo(c.start)>=0;}).sort(function(a,b){return a.start<b.start?-1:1;}).forEach(function(c){
+    items.push({t:c.title+" starts in "+plural(daysTo(c.start),"day")+" and is not ready. Still to do: "+missing(c).join(", ").toLowerCase()+".",tone:daysTo(c.start)<=30?"bad":"",b:"Open",act:"open",id:c.id});
+  });
+  allClashes().forEach(function(p){items.push({t:tn(p[0].teacher)+" is booked twice at the same time ("+SLOTS[p[0].slot].split(",")[0].toLowerCase()+", "+sharedDays(p[0],p[1]).map(function(d){return DOW[d];}).join(" and ")+"): \""+p[0].title+"\" and \""+p[1].title+"\".",tone:"bad",b:"Fix",act:"open",id:p[0].id});});
+  D.teachers.forEach(function(t){var pk=peakLoad(t.id,w.from,addD(w.to,-1));if(pk>t.cap)items.push({t:t.name+" peaks at "+pk+" hours a week in this period, above the "+t.cap+" hour limit.",tone:"",b:"See load",act:"tab",id:"teachers"});});
+  D.courses.filter(function(c){return c.stage!=="idea"&&c.stage!=="created"&&!c.teacher&&inWin(c);}).forEach(function(c){items.push({t:c.title+" has no teacher yet.",tone:"",b:"Open",act:"open",id:c.id});});
+  if(U.m<=12){buckets().forEach(function(b){var n=D.courses.filter(function(c){var s=pd(c.start);return s>=b.s&&s<=b.e;}).length;if(!n&&b.s>=addD(TODAY,20))items.push({t:"No course starts in "+b.full+".",tone:"",b:"Add a course",act:"new"});});}
+  return items;
+}
+function overview(){
+  var w=win(),cs=D.courses.filter(inWin),running=cs.filter(function(c){return dstatus(c)==="running";}).length,
+    created=cs.filter(function(c){return c.stage==="created";}).length,ready=cs.filter(function(c){return dstatus(c)==="ready";}).length,
+    planning=cs.filter(function(c){var s=dstatus(c);return s==="planned"||s==="idea";}).length,ideas=cs.filter(function(c){return dstatus(c)==="idea";}).length,
+    st=cs.filter(startsIn),fees=st.reduce(function(a,c){return a+c.seats*c.fee;},0),seats=st.reduce(function(a,c){return a+c.seats;},0);
+  var items=attention();window.__att=items;
+  var attn=items.length?'<ul class="attn">'+items.slice(0,9).map(function(it,i){return '<li><span><i class="tone '+(it.tone||"")+'"></i><span>'+esc(it.t)+'</span></span><button class="btn sm" data-act="attn" data-i="'+i+'">'+it.b+'</button></li>';}).join("")+'</ul>'+(items.length>9?'<p class="tdesc" style="margin-top:8px">And '+(items.length-9)+' more.</p>':""):'<p class="tdesc">Nothing needs you right now.</p>';
+  var counts=STORDER.map(function(s){return {s:s,n:cs.filter(function(c){return dstatus(c)===s;}).length};}).filter(function(x){return x.n;});
+  var seg=counts.length?'<div class="segbar" role="img" aria-label="Courses by stage">'+counts.map(function(x){return '<i class="st-'+x.s+'" style="flex:'+x.n+';background:var(--c)" data-tip="'+STL[x.s]+": "+x.n+'"></i>';}).join("")+'</div><div class="legend">'+counts.map(function(x){return '<span class="st-'+x.s+'" style="--c:var(--c)"><i style="background:var(--c)"></i>'+STL[x.s]+' <b style="color:var(--ink)">'+x.n+'</b></span>';}).join("")+'</div>':'<p class="tdesc">No courses in this period.</p>';
+  var getting=cs.filter(function(c){var s=dstatus(c);return s==="planned"||s==="ready"||s==="idea";}).sort(function(a,b){return a.start<b.start?-1:1;}).slice(0,8);
+  var run=cs.filter(function(c){return dstatus(c)==="running"||dstatus(c)==="created";}).sort(function(a,b){return a.start<b.start?-1:1;});
+  function prow(c){return '<div class="prow"><div class="t"><button class="lnk" data-act="open" data-id="'+c.id+'">'+esc(c.title)+'</button><span class="tdesc">'+esc(prog(c).text)+'</span></div>'+pbar(c)+pill(c)+'</div>';}
+  return '<div class="kpis">'+tile("Courses in this period",cs.length,plural(st.length,"starts","start")+", "+running+" already running")+
+    tile("Created in the system",created,"Running now: "+running)+
+    tile("Ready to create",ready,ready?"All steps done":"Nothing waiting",ready?"act":"")+
+    tile("Still being planned",planning,plural(ideas,"idea"))+
+    tile("Expected fees",'<span style="font-size:24px">'+money(fees)+'</span>',seats+" seats in courses that start")+'</div>'+
+    '<div class="grid2"><div class="card"><div class="listhead" style="margin-bottom:6px"><h3>Needs your attention</h3>'+(ready?'<button class="btn pri sm" data-act="bulk">Create ready courses</button>':"")+'</div>'+attn+'</div>'+
+    '<div class="card" style="align-self:start"><h3 style="margin-bottom:10px">Where the courses are</h3>'+seg+'<p class="tdesc" style="margin-top:12px">Window: '+fd(w.from)+' to '+fd(addD(w.to,-1))+'. A course counts if any of its weeks fall inside it.</p></div></div>'+
+    '<div class="grid2"><div class="card"><h3 style="margin-bottom:8px">Courses starting</h3>'+startsChart()+'</div><div class="card"><h3 style="margin-bottom:8px">Expected fees</h3>'+feesChart()+'</div></div>'+
+    '<div class="grid2"><div class="card"><div class="listhead"><h3>Getting ready</h3><button class="lnk" data-act="tab" data-id="courses">All courses</button></div>'+(getting.length?getting.map(prow).join(""):'<p class="tdesc">Nothing is being planned in this period.</p>')+'</div>'+
+    '<div class="card"><h3>Running and created</h3>'+(run.length?run.map(prow).join(""):'<p class="tdesc">No course is running or waiting to start in this period.</p>')+'</div></div>';
+}
+function gkey(c){var g=U.gby;return g==="cat"?c.cat:g==="teacher"?tn(c.teacher):g==="cls"?(c.cls||"No class yet"):g==="st"?STL[dstatus(c)]:"";}
+function timeline(){
+  var w=win(),span=w.to-w.from,cs=D.courses.filter(inWin).sort(function(a,b){return a.start<b.start?-1:1;});
+  function pct(d){return Math.max(0,Math.min(100,(d-w.from)/span*100));}
+  var bk=buckets(),ticks="",labs="";
+  bk.forEach(function(b,i){var l=pct(b.s),wd=(addD(b.e,1)-b.s)/span*100;if(i>0)ticks+='<i style="left:'+l+'%"></i>';if(wd>=7)labs+='<span style="left:'+l+'%">'+esc(b.label)+'</span>';});
+  ticks+='<i class="today" style="left:0"></i>';
+  var groups={},keys;
+  cs.forEach(function(c){var k=U.gby==="none"?"":gkey(c);(groups[k]=groups[k]||[]).push(c);});
+  keys=Object.keys(groups);
+  if(U.gby==="st")keys.sort(function(a,b){return STORDER.map(function(s){return STL[s];}).indexOf(a)-STORDER.map(function(s){return STL[s];}).indexOf(b);});
+  else if(U.gby==="cat")keys.sort(function(a,b){return CATS.indexOf(a)-CATS.indexOf(b);});
+  else keys.sort();
+  var rows=keys.map(function(k){
+    return (k?'<div class="g-group">'+esc(k)+'<span>'+plural(groups[k].length,"course")+'</span></div>':"")+groups[k].map(function(c){
+      var s=dstatus(c),cls=(s==="planned"||s==="ready")?" tint":s==="idea"?" idea":s==="completed"?" done":"",l=pct(pd(c.start)),r=pct(addD(pd(endOf(c)),1));
+      return '<div class="g-row"><div class="g-label"><button class="lnk" data-act="open" data-id="'+c.id+'">'+esc(c.title)+'</button><div class="sub">'+pill(c)+'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(tn(c.teacher))+'</span></div></div>'+
+        '<div class="g-track"><button class="bar'+cls+(s==="ready"?" ready":"")+'" style="left:'+l+'%;width:'+Math.max(0.6,r-l)+'%;--c:'+CAT_COL[catIdx(c)]+'" data-act="open" data-id="'+c.id+'" data-tip="'+tipFor(c)+'" aria-label="'+esc(c.title)+', '+STL[s]+'"></button></div></div>';
+    }).join("");
+  }).join("");
+  return '<div class="bar-row"><label class="inl">Group by <select id="gby" data-act="gby">'+opts([["cat","Category"],["teacher","Teacher"],["cls","Class"],["st","Stage"],["none","Nothing"]],U.gby)+'</select></label><span class="tdesc">'+plural(cs.length,"course")+' between '+fd(w.from)+' and '+fd(addD(w.to,-1))+'. The blue line is today.</span></div>'+
+    '<div class="legend"><span style="--c:var(--ink)"><i></i>Created or running</span><span style="--c:var(--ink)"><i class="tint"></i>Being planned, or ready (dot)</span><span style="--c:var(--ink)"><i class="dash"></i>Idea</span></div>'+catLegend(CATS.filter(function(c){return cs.some(function(x){return x.cat===c;});}))+
+    '<div class="card" style="padding:12px 16px"><div class="scroll"><div class="gantt"><div class="g-head"><div class="g-label"></div><div class="g-axis">'+labs+'<span style="left:0;top:-14px;color:var(--accent);font-weight:600">today</span></div></div><div class="g-body"><div class="g-grid">'+ticks+'</div>'+(rows||'<p class="tdesc" style="padding:16px 0">No courses in this period. Add one or choose a longer horizon.</p>')+'</div></div></div></div>';
+}
+function filteredCourses(){
+  var f=U.f;
+  return D.courses.filter(function(c){return (f.st==="all"||dstatus(c)===f.st)&&(f.cat==="all"||c.cat===f.cat)&&(f.cls==="all"||c.cls===f.cls)&&(f.t==="all"||c.teacher===f.t);}).sort(function(a,b){return a.start<b.start?-1:1;});
+}
+function coursesView(){
+  var rows=filteredCourses().map(function(c){
+    var s=dstatus(c),act=s==="ready"?'<button class="btn pri sm" data-act="create" data-id="'+c.id+'">Create course</button>':'<button class="btn sm" data-act="open" data-id="'+c.id+'">Open</button>';
+    return '<tr><td><button class="lnk" data-act="open" data-id="'+c.id+'">'+esc(c.title)+'</button><div class="tdesc">'+esc(c.cat)+'</div></td><td>'+esc(c.cls||"—")+'</td><td>'+esc(tn(c.teacher))+'</td><td>'+fd(c.start)+'<div class="tdesc">to '+fd(endOf(c))+' · '+plural(c.weeks,"week")+'</div></td><td style="min-width:160px">'+pbar(c)+'<div class="tdesc" style="margin-top:4px">'+esc(prog(c).text)+'</div></td><td>'+pill(c)+'</td><td>'+act+'</td></tr>';
+  }).join("");
+  var f=U.f;
+  return '<div class="listhead"><h2>All courses</h2></div>'+
+    '<div class="bar-row"><label class="inl">Stage <select id="f-st" data-act="f" data-k="st">'+opts([["all","All"]].concat(STORDER.map(function(s){return [s,STL[s]];})),f.st)+'</select></label>'+
+    '<label class="inl">Category <select id="f-cat" data-act="f" data-k="cat">'+opts([["all","All"]].concat(CATS.map(function(c){return [c,c];})),f.cat)+'</select></label>'+
+    '<label class="inl">Class <select id="f-cls" data-act="f" data-k="cls">'+opts([["all","All"]].concat(CLASSES.map(function(c){return [c,c];})),f.cls)+'</select></label>'+
+    '<label class="inl">Teacher <select id="f-t" data-act="f" data-k="t">'+opts([["all","All"]].concat(D.teachers.map(function(t){return [t.id,t.name];})),f.t)+'</select></label></div>'+
+    '<div class="card scroll" style="padding:6px 8px">'+(rows?'<table style="min-width:860px"><thead><tr><th>Course</th><th>Class</th><th>Teacher</th><th>Dates</th><th>Progress</th><th>Stage</th><th></th></tr></thead><tbody>'+rows+'</tbody></table>':'<p class="tdesc" style="padding:14px">No courses match these filters.</p>')+'</div>';
+}
+function teachersView(){
+  var bk=buckets(),w=win();
+  var head='<tr><th>Teacher</th>'+bk.map(function(b){return '<th style="text-align:center">'+esc(b.label)+'</th>';}).join("")+'</tr>';
+  var body=D.teachers.map(function(t){
+    return '<tr><td class="n">'+esc(t.name)+'<div class="tdesc" style="font-weight:400">limit '+t.cap+' h a week</div></td>'+bk.map(function(b){
+      var pk=peakLoad(t.id,b.s,b.e),lv=Math.min(1,pk/t.cap),over=pk>t.cap;
+      var style=pk===0?'background:var(--track);color:var(--muted)':over?'background:var(--bad);color:var(--on-accent)':'background:color-mix(in srgb,var(--accent) '+Math.round(14+lv*76)+'%,var(--surface));color:'+(lv>0.5?'var(--on-accent)':'var(--ink)');
+      return '<td class="c" style="'+style+'" data-tip="'+esc(t.name+" · "+b.full+": peak "+pk+" h a week of "+t.cap+(over?" (over the limit)":""))+'">'+(pk?pk+"h"+(over?" !":""):"–")+'</td>';
+    }).join("")+'</tr>';
+  }).join("");
+  var tr=D.teachers.map(function(t){
+    var mine=D.courses.filter(function(c){return c.teacher===t.id;}),act=mine.filter(function(c){var s=dstatus(c);return s!=="completed"&&s!=="idea";});
+    return '<tr><td><b>'+esc(t.name)+'</b></td><td>'+esc(t.subject)+'</td><td>'+act.length+' active or planned, '+(mine.length-act.length)+' other</td><td><label class="inl">Limit <input type="number" id="cap-'+t.id+'" data-act="cap" data-id="'+t.id+'" min="1" max="60" value="'+t.cap+'" style="width:72px"> h a week</label></td></tr>';
+  }).join("");
+  return '<div class="listhead"><h2>Teacher load</h2></div><p class="muted" style="max-width:75ch">Peak teaching hours in a week, per period, against each teacher\'s weekly limit. Red with an exclamation mark means over the limit. Ideas count, so you can see what a long-term plan would ask of each person.</p>'+
+    '<div class="card scroll"><table class="heat" style="min-width:'+Math.max(480,160+bk.length*58)+'px"><thead>'+head+'</thead><tbody>'+body+'</tbody></table><div class="legend"><span>Lighter blue: lighter week</span><span>Darker blue: close to the limit</span><span style="color:var(--bad)">Red: over the limit</span></div></div>'+
+    '<div class="card scroll"><h3 style="margin-bottom:8px">Teachers</h3><table style="min-width:640px"><thead><tr><th>Name</th><th>Subject</th><th>Courses</th><th>Weekly limit</th></tr></thead><tbody>'+tr+'</tbody></table>'+
+    '<form data-form="teacher" class="bar-row" style="margin-top:14px"><label class="inl">Add a teacher <input type="text" id="nt-name" name="name" maxlength="60" placeholder="Full name" required></label><label class="inl">Subject <select id="nt-subj" name="subject">'+opts(SUBJ,"")+'</select></label><label class="inl">Limit <select id="nt-cap" name="cap">'+opts([6,8,10,12,14,16,18,20,24],12)+'</select> h</label><button class="btn pri sm" type="submit">Add</button></form></div>';
+}
+function specJson(noData){
+  return JSON.stringify({
+    purpose:"Admin plans courses up to five years ahead, tracks setup readiness and delivery progress, then triggers creation of the real course in the LMS.",
+    mapToExistingLmsEntities:{course:"existing Course",classGroup:"existing Class or Section",teacher:"existing Teacher or staff record (do not create a second one)",timetable:"existing Timetable or Session records",feePlan:"existing fee module: fee structure and instalment schedule per student"},
+    stages:{stored:["idea","planned","created"],derived:["ready (planned and all steps done)","running","completed"]},
+    readinessSteps:CHECKS,
+    createTrigger:{endpoint:"POST /course-plans/:id/create",rules:["Idempotent: a second call returns the already created course","Reject if any readiness step is open, teacher or class is missing, the start date is in the past, or the teacher is already booked in the same slot on a shared day in an overlapping period","Run in one database transaction: course, class group, sessions, teacher link, fee plan, enrolment opening date","Store the new course id on the plan record and the plan id on the course"],sessionRule:"One session on every selected weekday from the start date for weeks x 7 days",enrolmentOpens:"14 days before start, or today if that has passed"},
+    teacherLoad:{rule:"Peak hours per week = selected days x hours per session, summed over courses active that week. Compare with the teacher's weekly limit."},
+    sampleData:noData?"omitted":D
+  },null,2);
+}
+function devView(){
+  return '<div class="dev"><h2>For the developer</h2><p class="muted">This page is a prototype of the course planning window. Data is simulated in the browser. Rebuild it inside the existing LMS, reusing the LMS login, layout, components, teachers, classes, timetable and fee module.</p>'+
+    '<h3>What the window does</h3><ul><li>Plan courses for the next 3 months, 6 months, 12 months, 2 years or 5 years (horizon buttons at the top).</li><li>Overview: what needs attention, how many courses are ready, created or running, expected fees, setup progress.</li><li>Timeline: every course as a bar, grouped by category, teacher, class or stage.</li><li>Courses: a table with filters, and the editor with dropdowns for class, teacher, length, days, slot, seats and fee plan.</li><li>Teachers: weekly load against each teacher\'s limit.</li></ul>'+
+    '<h3>The create trigger</h3><p>A course becomes <b>Ready</b> when its five setup steps are ticked and it has a teacher and a class. The admin then presses <b>Create course</b>. The system creates the course, the class group, every session in the timetable, the teacher link and the fee plan, then locks the plan record.</p>'+
+    '<ul><li>One endpoint: <code>POST /course-plans/:id/create</code>. It must be idempotent and run in a single transaction.</li><li>Rejected when: a step is open, teacher or class is missing, the start date is past, or the teacher is already booked at the same time (same slot, shared weekday, overlapping dates).</li><li>Sessions: every selected weekday from the start date for weeks x 7 days. Enrolment opens 14 days before the start.</li><li>Fee plan: full, 2, 3 or monthly instalments, first due 7 days before the start. Use the existing fee module for this. Never write fee records by hand.</li></ul>'+
+    '<h3>Avoid conflicts with the existing system</h3><ul><li>Reuse existing Course, Class, Teacher, Timetable and Fee entities. This window only plans and triggers.</li><li>Store plan data in new tables with a <code>courseplan_</code> prefix. Do not alter existing tables.</li><li>The plan record keeps the id of the created course, so nothing is created twice.</li><li>Check admin rights on the server for every call.</li><li>Dates are in Asia/Karachi. Amounts are PKR.</li></ul>'+
+    '<h3>Mock API in this file</h3><p>Every method of the <code>Api</code> object is one endpoint: <code>saveCourse</code>, <code>deleteCourse</code>, <code>createCourse</code>, <code>setCap</code>, <code>addTeacher</code>. <code>revertCreate</code> exists only so you can try the trigger again.</p>'+
+    '<h3>Machine-readable spec</h3><div class="bar-row" style="margin-bottom:8px"><button class="btn pri sm" data-act="copyspec">Copy the spec as JSON</button><span class="tdesc" id="copymsg"></span></div><textarea class="mono" id="spec" readonly style="min-height:160px;font-size:12px">'+esc(specJson())+'</textarea>'+
+    '<h3>Demo data</h3>'+(U.confirmReset?'<span class="tdesc">Replace all courses with the sample plan?</span> <button class="btn sm" data-act="resetok">Yes, reset</button> <button class="btn sm" data-act="resetno">Keep</button>':'<button class="btn sm" data-act="reset">Reset the sample plan</button>')+'</div>';
+}
+
+/* ---------------- modals ---------------- */
+function editorModal(){
+  var isNew=U.modal.id==="new",c=isNew?{id:"",title:"",cat:CATS[0],cls:"",teacher:"",start:dk(addD(TODAY,30)),weeks:8,days:[0,2],slot:1,hrs:2,seats:20,fee:10000,plan:"2",stage:"planned",checks:[false,false,false,false,false],note:"",createdAt:""}:byId(U.modal.id);
+  if(!c){U.modal=null;return "";}
+  var locked=c.stage==="created",sel=function(id,name,list,v,first){return '<select id="'+id+'" name="'+name+'">'+opts(list,v,first)+'</select>';};
+  var quick='<select id="ed-quick" data-act="quick"><option value="">Pick a quick date</option>'+[[14,"In 2 weeks"],[30,"In 1 month"],[60,"In 2 months"],[90,"In 3 months"],[180,"In 6 months"],[365,"In 1 year"],[730,"In 2 years"]].map(function(x){return '<option value="'+x[0]+'">'+x[1]+'</option>';}).join("")+'</select>';
+  return '<div class="overlay" data-act="mclose" id="overlay"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title"><div class="listhead"><h2 id="m-title">'+(isNew?"Add a course":esc(c.title))+'</h2><button class="btn sm" id="m-close" data-act="mclose">Close</button></div>'+
+    (locked?'<div class="notice">This course was created in the system on '+fd(c.createdAt)+'. Dates, teacher and fees are now managed in the LMS, so the plan is locked.</div>':"")+
+    '<form id="edform" data-form="course"><fieldset style="border:0;padding:0;margin:0;min-width:0"'+(locked?" disabled":"")+'><div class="fgrid">'+
+    '<label class="full"><span>Course title</span><input type="text" id="ed-title" name="title" maxlength="120" required value="'+esc(c.title)+'"></label>'+
+    '<label><span>Category</span>'+sel("ed-cat","cat",CATS,c.cat)+'</label>'+
+    '<label><span>Class</span>'+sel("ed-cls","cls",CLASSES,c.cls,"Choose a class")+'</label>'+
+    '<label><span>Teacher</span>'+sel("ed-teacher","teacher",D.teachers.map(function(t){return [t.id,t.name+" ("+t.subject+")"];}),c.teacher,"Choose a teacher")+'</label>'+
+    '<label><span>Stage</span>'+sel("ed-stage","stage",[["idea","Idea"],["planned","Planned"]],c.stage==="created"?"planned":c.stage)+'</label>'+
+    '<label><span>Start date</span><input type="date" id="ed-start" name="start" value="'+esc(c.start)+'" required></label>'+
+    '<label><span>Or start</span>'+quick+'</label>'+
+    '<label><span>Length</span>'+sel("ed-weeks","weeks",WEEKS.map(function(w){return [w,w+" weeks"];}),c.weeks)+'</label>'+
+    '<label><span>Time slot</span>'+sel("ed-slot","slot",SLOTS.map(function(s,i){return [i,s];}),c.slot)+'</label>'+
+    '<label><span>Hours per session</span>'+sel("ed-hrs","hrs",HRS.map(function(h){return [h,h+" h"];}),c.hrs)+'</label>'+
+    '<label><span>Seats</span>'+sel("ed-seats","seats",SEATS,c.seats)+'</label>'+
+    '<label><span>Fee per student (PKR)</span><input type="number" id="ed-fee" name="fee" min="0" step="500" value="'+c.fee+'"></label>'+
+    '<label><span>Fee plan</span>'+sel("ed-plan","plan",PLANS,c.plan)+'</label>'+
+    '<div class="full"><span class="tdesc">Teaching days</span><div class="days" style="margin-top:4px">'+DOW.map(function(d,i){return '<label><input type="checkbox" name="day" value="'+i+'"'+(c.days.indexOf(i)>=0?" checked":"")+'> '+d+'</label>';}).join("")+'</div></div>'+
+    '<div class="full"><span class="tdesc">Setup steps. When all five are ticked, with a teacher and class, the course is ready to create.</span><div class="checks" style="margin-top:4px">'+CHECKS.map(function(k,i){return '<label><input type="checkbox" name="chk" value="'+i+'"'+(c.checks[i]?" checked":"")+'> '+k+'</label>';}).join("")+'</div></div>'+
+    '<label class="full"><span>Note</span><textarea id="ed-note" name="note" maxlength="500">'+esc(c.note)+'</textarea></label></div></fieldset>'+
+    '<div class="sum" id="ed-sum" style="margin-top:12px"></div><div id="ed-err" class="notice warn" role="alert" style="margin-top:10px" hidden></div>'+
+    '<div class="bar-row" style="margin-top:14px">'+(locked?'<button class="btn" type="button" data-act="revert" data-id="'+c.id+'">Undo creation (prototype only)</button>':'<button class="btn pri" type="submit">'+(isNew?"Save course":"Save changes")+'</button>')+
+    (!isNew&&!locked?(U.modal.confirmDel?'<button class="btn" type="button" data-act="delok" data-id="'+c.id+'" style="border-color:var(--bad);color:var(--bad)">Yes, delete</button><button class="btn" type="button" data-act="delno">Keep</button>':'<button class="btn" type="button" data-act="del">Delete</button>'):"")+
+    (!isNew&&!locked&&isReady(c)?'<button class="btn" type="button" data-act="create" data-id="'+c.id+'">Create this course now</button>':"")+'</div></form></div></div>';
+}
+function readForm(){
+  var f=$("edform"),fdt=new FormData(f),g=function(n){return String(fdt.get(n)||"").trim();},base=U.modal.id==="new"?{id:"",checks:[],createdAt:""}:byId(U.modal.id),chk=[false,false,false,false,false];
+  fdt.getAll("chk").forEach(function(v){chk[+v]=true;});
+  return {id:base.id,title:g("title"),cat:g("cat"),cls:g("cls"),teacher:g("teacher"),start:g("start"),weeks:+g("weeks")||8,days:fdt.getAll("day").map(Number),slot:+g("slot")||0,hrs:+g("hrs")||2,seats:+g("seats")||20,fee:Number(g("fee"))||0,plan:g("plan")||"2",stage:g("stage")||"planned",checks:chk,note:g("note"),createdAt:base.createdAt||""};
+}
+function updateSum(){
+  var el=$("ed-sum");if(!el||!$("edform")||U.modal.type!=="edit")return;
+  var c=readForm();if(!c.start){el.textContent="Choose a start date.";return;}
+  var ss=sessionsOf(c),cl=clashesFor(c),ms=missing(c),
+    html='<div><b>'+fd(c.start)+'</b> to <b>'+fd(endOf(c))+'</b> · '+plural(ss.length,"session")+' · '+(ss.length*c.hrs)+' teaching hours · '+plural(c.days.length*c.hrs,"hour")+' a week for the teacher</div><div>Expected fees if full: <b>'+money(c.seats*c.fee)+'</b> ('+c.seats+' seats)</div>';
+  if(c.teacher){
+    var t=tById(c.teacher),base=0,d=pd(c.start),last=pd(endOf(c)),we,sum;
+    while(d<=last){we=addD(d,6);sum=0;D.courses.forEach(function(x){if(x.id!==c.id&&x.teacher===c.teacher&&pd(x.start)<=we&&pd(endOf(x))>=d)sum+=weeklyH(x);});if(sum>base)base=sum;d=addD(d,7);}
+    var withThis=base+weeklyH(c);
+    html+='<div>'+esc(t.name)+' would peak at <b>'+withThis+' h</b> a week (limit '+t.cap+').'+(withThis>t.cap?' <span style="color:var(--bad);font-weight:600">Over the limit.</span>':"")+'</div>';
+  }
+  if(cl.length)html+='<div style="color:var(--bad);font-weight:600">Clash: '+cl.map(function(x){return esc(tn(c.teacher))+' also teaches "'+esc(x.title)+'" in this slot on '+sharedDays(c,x).map(function(d){return DOW[d];}).join(", ");}).join(". ")+'.</div>';
+  html+='<div class="tdesc">'+(isReady(c)&&c.stage!=="idea"?"All steps done. This course is ready to create.":"Still to do before it can be created: "+(ms.length?ms.join(", ").toLowerCase():"set the stage to Planned")+".")+'</div>';
+  el.innerHTML=html;
+}
+function createModal(){
+  var ids=U.modal.ids,cs=ids.map(byId).filter(Boolean);
+  if(U.modal.done){
+    return '<div class="overlay" data-act="mclose" id="overlay"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title"><div class="listhead"><h2 id="m-title">'+plural(U.modal.done.length,"course")+' created</h2><button class="btn sm" id="m-close" data-act="mclose">Close</button></div>'+
+      '<p class="muted">In the LMS this creates the course, class group, timetable sessions, teacher link and fee plan in one step. Here is what was created.</p>'+U.modal.done.map(function(s){return '<div class="card" style="padding:6px 14px">'+summaryRows(s)+'</div>';}).join("")+'</div></div>';
+  }
+  var ok=cs.filter(function(c){return blockers(c).length===0;});
+  return '<div class="overlay" data-act="mclose" id="overlay"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title"><div class="listhead"><h2 id="m-title">'+(cs.length>1?"Create ready courses":"Create this course")+'</h2><button class="btn sm" id="m-close" data-act="mclose">Close</button></div>'+
+    '<p class="muted">Pressing Create makes the real course in the LMS from the plan. Check what will be created.</p>'+
+    cs.map(function(c){var b=blockers(c);return '<div class="card" style="padding:6px 14px"><div class="listhead" style="padding:8px 0"><b>'+esc(c.title)+'</b>'+(b.length?'<span class="pill" style="border-color:var(--bad);color:var(--bad)">Cannot create yet</span>':'<span class="pill st-ready"><i></i>Ready</span>')+'</div>'+(b.length?'<div class="notice warn" style="margin-bottom:10px"><ul style="margin:0;padding-left:18px">'+b.map(function(x){return '<li>'+esc(x)+'</li>';}).join("")+'</ul></div>':summaryRows(buildSummary(c)))+'</div>';}).join("")+
+    '<div class="bar-row"><button class="btn pri" data-act="createok"'+(ok.length?"":" disabled")+'>'+(ok.length>1?"Create "+ok.length+" courses":"Create course")+'</button><button class="btn" data-act="mclose">Cancel</button></div></div></div>';
+}
+
+/* ---------------- shell ---------------- */
+function render(){
+  var w=win(),tabs=[["overview","Overview"],["timeline","Timeline"],["courses","Courses"],["teachers","Teachers"],["dev","For developers"]];
+  var body=U.tab==="timeline"?timeline():U.tab==="courses"?coursesView():U.tab==="teachers"?teachersView():U.tab==="dev"?devView():overview();
+  var m=U.modal?(U.modal.type==="edit"?editorModal():createModal()):"";
+  $("app").innerHTML=''+
+    '<div class="bar-row"><span class="eyebrow">Looking ahead</span><div class="chips" role="group" aria-label="Planning horizon">'+HOR.map(function(h){return '<button class="chip'+(U.m===h[0]?" on":"")+'" data-act="hor" data-v="'+h[0]+'" aria-pressed="'+(U.m===h[0])+'">'+h[1]+'</button>';}).join("")+'</div><span class="tdesc">'+fd(w.from)+' to '+fd(addD(w.to,-1))+'</span><button class="btn pri" data-act="new" style="margin-left:auto">Add a course</button></div>'+
+    '<nav class="tabs" role="tablist">'+tabs.map(function(t){return '<button class="tab'+(U.tab===t[0]?" on":"")+'" role="tab" aria-selected="'+(U.tab===t[0])+'" data-act="tab" data-id="'+t[0]+'">'+t[1]+'</button>';}).join("")+'</nav>'+
+    (U.flash?'<div class="notice" role="status">'+esc(U.flash)+'</div>':"")+'<main>'+body+'</main>'+m;
+  U.flash="";
+  if(U.modal){updateSum();var cl=$("m-close");if(cl&&!U.modal.noFocus)cl.focus({preventScroll:true});}
+}
+
+/* ---------------- events ---------------- */
+function openEditor(id){U.modal={type:"edit",id:id};render();}
+listen("click",function(e){
+  var b=e.target.closest("[data-act]");if(!b)return;
+  var a=b.dataset.act,id=b.dataset.id,r;
+  if(a==="mclose"){if(e.target.id==="overlay"||b.id==="m-close"||b.tagName==="BUTTON"){U.modal=null;render();}return;}
+  if(b.id==="overlay"&&e.target!==b)return;
+  if(a==="hor"){U.m=+b.dataset.v;save();render();}
+  else if(a==="tab"){U.tab=id;U.modal=null;save();render();window.scrollTo(0,0);}
+  else if(a==="new"){openEditor("new");}
+  else if(a==="open"){openEditor(id);}
+  else if(a==="attn"){var it=(window.__att||[])[+b.dataset.i];if(!it)return;if(it.act==="bulk"){openBulk();}else if(it.act==="open")openEditor(it.id);else if(it.act==="tab"){U.tab=it.id;render();}else if(it.act==="new")openEditor("new");}
+  else if(a==="bulk"){openBulk();}
+  else if(a==="create"){U.modal={type:"create",ids:[id]};render();}
+  else if(a==="createok"){
+    var done=[],fail=[];U.modal.ids.forEach(function(i){r=Api.createCourse(i);if(r.ok)done.push(r.summary);else fail.push(i);});
+    if(done.length){U.modal={type:"create",ids:U.modal.ids,done:done};}render();
+  }
+  else if(a==="revert"){Api.revertCreate(id);U.modal=null;U.flash="The course is back in planning. This button exists only in the prototype.";render();}
+  else if(a==="del"){U.modal.confirmDel=true;U.modal.noFocus=true;render();}
+  else if(a==="delno"){U.modal.confirmDel=false;U.modal.noFocus=true;render();}
+  else if(a==="delok"){r=Api.deleteCourse(id);U.modal=null;U.flash=r.ok?"Course deleted.":r.error;render();}
+  else if(a==="reset"){U.confirmReset=true;render();}
+  else if(a==="resetno"){U.confirmReset=false;render();}
+  else if(a==="resetok"){Api.reset();U.confirmReset=false;U.flash="Sample plan restored.";render();}
+  else if(a==="copyspec"){
+    var ta=$("spec"),msg=$("copymsg"),done2=function(t){if(msg)msg.textContent=t;};
+    try{navigator.clipboard.writeText(ta.value).then(function(){done2("Copied.");},function(){ta.select();done2("Press Ctrl+C to copy.");});}catch(x){ta.select();done2("Press Ctrl+C to copy.");}
+  }
+});
+function openBulk(){var ids=D.courses.filter(function(c){return c.stage!=="created"&&dstatus(c)==="ready"&&startsIn(c);}).map(function(c){return c.id;});if(!ids.length){U.flash="No course is ready to create in this period.";render();return;}U.modal={type:"create",ids:ids};render();}
+listen("change",function(e){
+  var t=e.target,a=t.dataset&&t.dataset.act;
+  if(U.modal&&U.modal.type==="edit"&&t.closest("#edform")){
+    if(a==="quick"){if(t.value){$("ed-start").value=dk(addD(TODAY,+t.value));}}
+    updateSum();return;
+  }
+  if(!a)return;
+  if(a==="gby"){U.gby=t.value;render();}
+  else if(a==="f"){U.f[t.dataset.k]=t.value;render();}
+  else if(a==="cap"){Api.setCap(t.dataset.id,t.value);render();}
+});
+listen("input",function(e){if(U.modal&&U.modal.type==="edit"&&e.target.closest&&e.target.closest("#edform"))updateSum();});
+listen("submit",function(e){
+  var f=e.target,k=f.dataset.form;if(!k)return;e.preventDefault();
+  if(k==="course"){
+    var c=readForm(),r=Api.saveCourse(c);
+    if(!r.ok){var er=$("ed-err");er.textContent=r.error;er.hidden=false;return;}
+    U.modal=null;U.flash="Course saved.";render();
+  }else if(k==="teacher"){
+    var fd2=new FormData(f),r2=Api.addTeacher({name:String(fd2.get("name")||"").trim(),subject:fd2.get("subject"),cap:fd2.get("cap")});
+    U.flash=r2.ok?"Teacher added.":r2.error;render();
+  }
+});
+listen("keydown",function(e){if(e.key==="Escape"&&U.modal){U.modal=null;render();}});
+/* tooltip */
+var tip=null;
+function tipMove(e){var x=Math.min(window.innerWidth-tip.offsetWidth-8,e.clientX+14),y=e.clientY+16;if(y+tip.offsetHeight>window.innerHeight-8)y=e.clientY-tip.offsetHeight-12;tip.style.left=Math.max(8,x)+"px";tip.style.top=y+"px";}
+listen("mouseover",function(e){var t=e.target.closest&&e.target.closest("[data-tip]");if(!t){tip.style.display="none";return;}tip.textContent=t.getAttribute("data-tip");tip.style.display="block";tipMove(e);});
+listen("mousemove",function(e){if(tip.style.display==="block")tipMove(e);});
+listen("mouseleave",function(){tip.style.display="none";});
+
+load();
+function mount(host){
+  if(!host)return;
+  ROOT=host.shadowRoot||host.attachShadow({mode:"open"});
+  ROOT.innerHTML='<style>'+CSS+'</style><div class="wrap" id="app"></div><div id="tip" role="tooltip"></div>';
+  tip=ROOT.getElementById("tip");
+  if(!host.__wired){host.__wired=true;LISTEN.forEach(function(x){ROOT.addEventListener(x[0],x[1]);});}
+  render();
+}
+return {mount:mount,spec:function(noData){return specJson(noData);}};
+})();
+
 </script>
