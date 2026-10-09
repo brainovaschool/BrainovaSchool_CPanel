@@ -3332,6 +3332,41 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /** One-off: creates the two built-in Team Portal responsibilities
+     *  (content, audience) if they don't exist yet — safe to re-run,
+     *  never touches one that already exists (so an admin-assigned owner
+     *  is never reset). Phase 10's Social board module is what will
+     *  actually check PortalResponsibility::ownerUserIdForKey() against
+     *  these; this just makes sure the two rows exist to assign. */
+    public function seedPortalDuties(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $report = [];
+        $builtins = [
+            ['key' => \App\Models\Portal\PortalResponsibility::KEY_CONTENT, 'title' => 'Content', 'description' => 'Create, plan, import and review reels.', 'freq' => 'daily'],
+            ['key' => \App\Models\Portal\PortalResponsibility::KEY_AUDIENCE, 'title' => 'Audience numbers', 'description' => 'Note down views and followers.', 'freq' => 'daily'],
+        ];
+
+        foreach ($builtins as $def) {
+            $existing = \App\Models\Portal\PortalResponsibility::where('key', $def['key'])->first();
+            if ($existing) {
+                $report[] = "\"{$def['title']}\" already exists (#{$existing->id}) — left as is.";
+                continue;
+            }
+            $created = \App\Models\Portal\PortalResponsibility::create($def);
+            $report[] = "Created \"{$def['title']}\" (#{$created->id}) — unowned until you assign it from Team Portal -> Responsibilities.";
+        }
+
+        return response('<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . implode("\n", $report) . '</pre>');
+    }
+
     /** Read-only: dumps every "Coordinator"-named Role row (in case more
      *  than one exists) and every User whose role_id matches one of them —
      *  their raw role permissions, their raw personal permissions snapshot,

@@ -7,6 +7,7 @@ use App\Http\Controllers\Portal\TaskController;
 use App\Http\Controllers\Portal\SettingsController;
 use App\Http\Controllers\Portal\AttendanceController;
 use App\Http\Controllers\Portal\WorkLogController;
+use App\Http\Controllers\Portal\ResponsibilityController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -54,6 +55,16 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/',                'managerIndex')->name('index')->middleware('PermissionCheck:portal_manage');
                     Route::get('/show/{staffId}',  'managerShow')->name('show')->middleware('PermissionCheck:portal_manage');
                 });
+
+                Route::controller(ResponsibilityController::class)->prefix('portal/responsibilities')->name('portal-responsibilities.')->group(function () {
+                    Route::get('/',           'index')->name('index')->middleware('PermissionCheck:portal_manage');
+                    Route::post('/store',     'store')->name('store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::post('/{id}/update', 'update')->name('update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::delete('/{id}',    'destroy')->name('destroy')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                });
+
+                Route::get('/portal/my-responsibilities', [ResponsibilityController::class, 'myDuties'])->name('portal-my-responsibilities.index')->middleware('PermissionCheck:portal_access');
+                Route::post('/portal/responsibilities/{id}/tick', [ResponsibilityController::class, 'tick'])->name('portal-responsibilities.tick')->middleware('PermissionCheck:portal_access', 'DemoCheck');
 
             });
         });

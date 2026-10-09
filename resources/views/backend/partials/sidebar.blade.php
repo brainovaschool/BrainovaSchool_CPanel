@@ -550,12 +550,18 @@
                             <li class="sidebar-menu-item {{ set_menu(['portal/work-log']) }}">
                                 <a href="{{ route('portal-work-log.index') }}">My Work Log</a>
                             </li>
+                            <li class="sidebar-menu-item {{ set_menu(['portal/my-responsibilities']) }}">
+                                <a href="{{ route('portal-my-responsibilities.index') }}">My Responsibilities</a>
+                            </li>
                             @if (hasPermission('portal_manage'))
                                 <li class="sidebar-menu-item {{ set_menu(['portal/attendance']) }}">
                                     <a href="{{ route('portal-attendance.index') }}">Attendance</a>
                                 </li>
                                 <li class="sidebar-menu-item {{ set_menu(['portal/work-logs*']) }}">
                                     <a href="{{ route('portal-work-logs.index') }}">Work Logs</a>
+                                </li>
+                                <li class="sidebar-menu-item {{ set_menu(['portal/responsibilities*']) }}">
+                                    <a href="{{ route('portal-responsibilities.index') }}">Responsibilities</a>
                                 </li>
                                 <li class="sidebar-menu-item {{ set_menu(['portal/settings']) }}">
                                     <a href="{{ route('portal-settings.edit') }}">Settings</a>
