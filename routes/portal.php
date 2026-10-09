@@ -6,6 +6,7 @@ use App\Http\Controllers\Portal\EmployeeController;
 use App\Http\Controllers\Portal\TaskController;
 use App\Http\Controllers\Portal\SettingsController;
 use App\Http\Controllers\Portal\AttendanceController;
+use App\Http\Controllers\Portal\WorkLogController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -41,6 +42,18 @@ Route::middleware(saasMiddleware())->group(function () {
                 });
 
                 Route::get('/portal/attendance', [AttendanceController::class, 'index'])->name('portal-attendance.index')->middleware('PermissionCheck:portal_manage');
+
+                Route::controller(WorkLogController::class)->prefix('portal/work-log')->name('portal-work-log.')->group(function () {
+                    Route::get('/',             'myLog')->name('index')->middleware('PermissionCheck:portal_access');
+                    Route::post('/entry',       'storeEntry')->name('entry.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                    Route::delete('/entry/{id}', 'deleteEntry')->name('entry.delete')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                    Route::post('/submit',      'submitDay')->name('submit')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                });
+
+                Route::controller(WorkLogController::class)->prefix('portal/work-logs')->name('portal-work-logs.')->group(function () {
+                    Route::get('/',                'managerIndex')->name('index')->middleware('PermissionCheck:portal_manage');
+                    Route::get('/show/{staffId}',  'managerShow')->name('show')->middleware('PermissionCheck:portal_manage');
+                });
 
             });
         });

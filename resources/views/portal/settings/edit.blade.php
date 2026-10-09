@@ -36,31 +36,60 @@
 
                     <h4>Task categories</h4>
                     <p class="text-secondary">One per line.</p>
-                    <textarea name="categories_text" class="ot-input mb-2" rows="5">{{ implode("\n", $settings->categories) }}</textarea>
+                    <textarea data-list-for="categories" class="ot-input mb-2" rows="5">{{ implode("\n", $settings->categories) }}</textarea>
                     <div id="categoryInputs">
                         @foreach ($settings->categories as $cat)
                             <input type="hidden" name="categories[]" value="{{ $cat }}">
                         @endforeach
                     </div>
 
-                    <button type="submit" class="btn btn-lg ot-btn-primary">Save Settings</button>
+                    <h4 class="mt-4">Work log — day template</h4>
+                    <p class="text-secondary">Used to pre-fill each employee's daily work log with one-hour rows.</p>
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Day starts at</label>
+                            <input type="time" name="day_start" class="ot-input" value="{{ $settings->day_start }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Work hours per day</label>
+                            <input type="number" step="0.5" min="1" name="work_day_hours" class="ot-input" value="{{ $settings->work_day_hours }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Lunch after (hours worked)</label>
+                            <input type="number" step="0.5" min="0" name="lunch_after_hours" class="ot-input" value="{{ $settings->lunch_after_hours }}">
+                        </div>
+                    </div>
+
+                    <h4>Standard activities</h4>
+                    <p class="text-secondary">One per line — shown in the work log dropdown alongside an employee's assigned tasks.</p>
+                    <textarea data-list-for="activities" class="ot-input mb-2" rows="5">{{ implode("\n", $settings->activities ?: \App\Models\Portal\PortalSetting::DEFAULT_ACTIVITIES) }}</textarea>
+                    <div id="activitiesInputs">
+                        @foreach ($settings->activities ?: \App\Models\Portal\PortalSetting::DEFAULT_ACTIVITIES as $activity)
+                            <input type="hidden" name="activities[]" value="{{ $activity }}">
+                        @endforeach
+                    </div>
+
+                    <button type="submit" class="btn btn-lg ot-btn-primary mt-3">Save Settings</button>
                 </form>
             </div>
         </div>
     </div>
 
     <script>
-        // Keep the hidden categories[] inputs in sync with the textarea so the
-        // backend always receives a clean array, one category per line.
-        document.querySelector('textarea[name="categories_text"]').addEventListener('input', function () {
-            var container = document.getElementById('categoryInputs');
-            container.innerHTML = '';
-            this.value.split("\n").map(function (v) { return v.trim(); }).filter(Boolean).forEach(function (v) {
-                var input = document.createElement('input');
-                input.type = 'hidden';
-                input.name = 'categories[]';
-                input.value = v;
-                container.appendChild(input);
+        // Keep each list's hidden [] inputs in sync with its textarea so the
+        // backend always receives a clean array, one item per line.
+        document.querySelectorAll('textarea[data-list-for]').forEach(function (textarea) {
+            var name = textarea.getAttribute('data-list-for');
+            var container = document.getElementById(name === 'categories' ? 'categoryInputs' : 'activitiesInputs');
+            textarea.addEventListener('input', function () {
+                container.innerHTML = '';
+                this.value.split("\n").map(function (v) { return v.trim(); }).filter(Boolean).forEach(function (v) {
+                    var input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = name + '[]';
+                    input.value = v;
+                    container.appendChild(input);
+                });
             });
         });
     </script>

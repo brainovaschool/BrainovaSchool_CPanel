@@ -305,9 +305,15 @@ class TaskRepository
             return $this->responseWithError('The revision score table can\'t be empty.', []);
         }
 
+        $activities = array_values(array_filter(array_map('trim', (array) $request->activities)));
+
         $settings = PortalSetting::current();
-        $settings->revision_scores = $scores;
-        $settings->categories      = $categories ?: PortalSetting::DEFAULT_CATEGORIES;
+        $settings->revision_scores   = $scores;
+        $settings->categories        = $categories ?: PortalSetting::DEFAULT_CATEGORIES;
+        $settings->activities        = $activities ?: PortalSetting::DEFAULT_ACTIVITIES;
+        $settings->work_day_hours    = $request->work_day_hours ?: 8;
+        $settings->day_start         = $request->day_start ?: '09:00';
+        $settings->lunch_after_hours = $request->lunch_after_hours ?: 4;
         $settings->save();
 
         $this->rescoreCompletedTasks($settings);
