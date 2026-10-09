@@ -578,6 +578,34 @@
                             @endif
                         </ul>
                     </li>
+
+                    <li class="sidebar-menu-item {{ set_menu(['portal/social*']) }}">
+                        <a class="parent-item-content has-arrow">
+                            <i class="las la-hashtag"></i>
+                            <span class="on-half-expanded">Social Board</span>
+                        </a>
+                        <ul class="child-menu-list">
+                            <li class="sidebar-menu-item {{ set_menu(['portal/social/reels*']) }}">
+                                <a href="{{ route('portal-social-reels.index') }}">Reels</a>
+                            </li>
+                            <li class="sidebar-menu-item {{ set_menu(['portal/social/month-plan']) }}">
+                                <a href="{{ route('portal-social-month-plan.index') }}">Month Plan</a>
+                            </li>
+                            @if (portalOwnsResponsibility('audience'))
+                                <li class="sidebar-menu-item {{ set_menu(['portal/social/audience']) }}">
+                                    <a href="{{ route('portal-social-audience.index') }}">Audience Numbers</a>
+                                </li>
+                            @endif
+                            <li class="sidebar-menu-item {{ set_menu(['portal/social/page-fixes']) }}">
+                                <a href="{{ route('portal-social-page-fixes.index') }}">Page Fixes</a>
+                            </li>
+                            @if (hasPermission('portal_manage'))
+                                <li class="sidebar-menu-item {{ set_menu(['portal/social/settings']) }}">
+                                    <a href="{{ route('portal-social-settings.edit') }}">Social Settings</a>
+                                </li>
+                            @endif
+                        </ul>
+                    </li>
                 @endif
                 <!-- Team Portal end -->
                 @if (hasPermission('homework_read'))

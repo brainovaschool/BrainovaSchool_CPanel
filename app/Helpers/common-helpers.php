@@ -1229,3 +1229,26 @@ if (!function_exists('createAvatarAndUpload')) {
         return $upload->id;
     }
 }
+
+if (!function_exists('portalOwnsResponsibility')) {
+    /** Team Portal (phase 8): true for portal_manage, or for the Staff
+     *  currently holding the given Responsibility key (content/audience)
+     *  — used in sidebar/view code where a full permission check isn't
+     *  worth a controller round-trip. The controllers re-check this same
+     *  thing server-side on every write, so this is purely for what to
+     *  show, never the actual access control. */
+    function portalOwnsResponsibility(string $key): bool
+    {
+        if (!Auth::check()) {
+            return false;
+        }
+        if ((int) Auth::user()->role_id === 1 || authHasPermission('portal_manage')) {
+            return true;
+        }
+        $staff = Auth::user()->staff;
+        if (!$staff) {
+            return false;
+        }
+        return $staff->id === \App\Models\Portal\PortalResponsibility::ownerStaffIdForKey($key);
+    }
+}

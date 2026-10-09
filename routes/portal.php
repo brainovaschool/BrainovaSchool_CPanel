@@ -9,6 +9,7 @@ use App\Http\Controllers\Portal\AttendanceController;
 use App\Http\Controllers\Portal\WorkLogController;
 use App\Http\Controllers\Portal\ResponsibilityController;
 use App\Http\Controllers\Portal\AnalyticsController;
+use App\Http\Controllers\Portal\SocialController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -72,6 +73,30 @@ Route::middleware(saasMiddleware())->group(function () {
 
                 Route::get('/portal/analytics', [AnalyticsController::class, 'index'])->name('portal-analytics.index')->middleware('PermissionCheck:portal_manage');
                 Route::get('/portal/my-performance', [AnalyticsController::class, 'myPerformance'])->name('portal-my-performance.index')->middleware('PermissionCheck:portal_access');
+
+                Route::controller(SocialController::class)->prefix('portal/social/reels')->name('portal-social-reels.')->group(function () {
+                    Route::get('/',              'reels')->name('index')->middleware('PermissionCheck:portal_access');
+                    Route::get('/create',        'createReel')->name('create')->middleware('PermissionCheck:portal_access');
+                    Route::post('/store',        'storeReel')->name('store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                    Route::get('/show/{id}',     'showReel')->name('show')->middleware('PermissionCheck:portal_access');
+                    Route::get('/edit/{id}',     'editReel')->name('edit')->middleware('PermissionCheck:portal_access');
+                    Route::put('/update/{id}',   'updateReel')->name('update')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                    Route::post('/{id}/review',  'reviewReel')->name('review')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                    Route::delete('/{id}',       'destroyReel')->name('destroy')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                });
+
+                Route::get('/portal/social/month-plan', [SocialController::class, 'monthPlan'])->name('portal-social-month-plan.index')->middleware('PermissionCheck:portal_access');
+                Route::post('/portal/social/month-plan/targets', [SocialController::class, 'updateCategoryTargets'])->name('portal-social-month-plan.targets')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+
+                Route::get('/portal/social/audience', [SocialController::class, 'audience'])->name('portal-social-audience.index')->middleware('PermissionCheck:portal_access');
+                Route::post('/portal/social/audience/store', [SocialController::class, 'storeMetric'])->name('portal-social-audience.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+
+                Route::get('/portal/social/page-fixes', [SocialController::class, 'pageFixes'])->name('portal-social-page-fixes.index')->middleware('PermissionCheck:portal_access');
+                Route::post('/portal/social/page-fixes/store', [SocialController::class, 'storePageFix'])->name('portal-social-page-fixes.store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                Route::post('/portal/social/page-fixes/{id}/status', [SocialController::class, 'updatePageFixStatus'])->name('portal-social-page-fixes.status')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+
+                Route::get('/portal/social/settings', [SocialController::class, 'settings'])->name('portal-social-settings.edit')->middleware('PermissionCheck:portal_manage');
+                Route::post('/portal/social/settings', [SocialController::class, 'updateSettings'])->name('portal-social-settings.update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
 
             });
         });

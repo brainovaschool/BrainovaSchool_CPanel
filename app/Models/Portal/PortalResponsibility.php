@@ -38,12 +38,20 @@ class PortalResponsibility extends Model
         return $this->ticks()->where('period', $this->currentPeriod())->exists();
     }
 
-    /** For a later phase (8, Social board) to check "who currently holds
-     *  this permission-carrying duty" without caring whether it's an
-     *  employee or still sitting with the admin. Returns a users.id. */
+    /** For phase 8 (Social board) to check "who currently holds this
+     *  permission-carrying duty" without caring whether it's an employee
+     *  or still sitting with the admin. Returns a users.id. */
     public static function ownerUserIdForKey(string $key): ?int
     {
         $duty = static::where('key', $key)->with('owner')->first();
         return $duty && $duty->owner ? $duty->owner->user_id : null;
+    }
+
+    /** Same, but the owner's staff.id — what phase 8's own permission
+     *  checks actually compare against (Auth::user()->staff->id). */
+    public static function ownerStaffIdForKey(string $key): ?int
+    {
+        $duty = static::where('key', $key)->first();
+        return $duty ? $duty->owner_staff_id : null;
     }
 }

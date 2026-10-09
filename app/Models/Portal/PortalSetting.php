@@ -10,14 +10,20 @@ class PortalSetting extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'revision_scores' => 'array',
-        'categories'      => 'array',
-        'activities'      => 'array',
+        'revision_scores'  => 'array',
+        'categories'       => 'array',
+        'activities'       => 'array',
+        'social_platforms' => 'array',
+        'social_metrics'   => 'array',
+        'reel_categories'  => 'array',
     ];
 
     public const DEFAULT_REVISION_SCORES = [5, 4, 3, 2, 1, 0];
     public const DEFAULT_CATEGORIES      = ['General', 'Content', 'Social Media', 'Design', 'Admin'];
     public const DEFAULT_ACTIVITIES      = ['Meeting', 'Email & Admin', 'Training', 'Research', 'Break'];
+    public const DEFAULT_PLATFORMS       = ['Instagram', 'Facebook', 'TikTok'];
+    public const DEFAULT_SOCIAL_METRICS  = ['Views', 'Followers', 'Likes'];
+    public const DEFAULT_REEL_CATEGORIES = ['Educational', 'Promo', 'Entertainment', 'Behind the scenes'];
 
     /** Always exactly one row — created with sensible defaults the first
      *  time anything asks for it. */
@@ -32,6 +38,9 @@ class PortalSetting extends Model
                 'day_start'          => '09:00',
                 'lunch_after_hours'  => 4,
                 'activities'         => self::DEFAULT_ACTIVITIES,
+                'social_platforms'   => self::DEFAULT_PLATFORMS,
+                'social_metrics'     => self::DEFAULT_SOCIAL_METRICS,
+                'reel_categories'    => self::DEFAULT_REEL_CATEGORIES,
             ]);
         }
         return $row;
