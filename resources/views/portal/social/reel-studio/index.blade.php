@@ -29,7 +29,7 @@
                                 <tr>
                                     <th>{{ ___('common.sr_no') }}</th>
                                     <th>Title</th>
-                                    <th>Topic</th>
+                                    <th>Format</th>
                                     <th>By</th>
                                     <th>Scenes</th>
                                     <th>{{ ___('common.action') }}</th>
@@ -40,7 +40,7 @@
                                     <tr>
                                         <td>{{ $key + 1 }}</td>
                                         <td>{{ $project->title }}</td>
-                                        <td>{{ $project->topic }}</td>
+                                        <td>{{ \App\Models\Portal\ReelProject::FORMATS[$project->format] ?? $project->format }}</td>
                                         <td>{{ $project->creator->name ?? '—' }}</td>
                                         <td>{{ $project->scenes()->count() }}</td>
                                         <td>

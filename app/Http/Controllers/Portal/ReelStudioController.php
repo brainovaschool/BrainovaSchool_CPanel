@@ -36,15 +36,29 @@ class ReelStudioController extends Controller
         return view('portal.social.reel-studio.index', compact('data'));
     }
 
+    private function projectRules(): array
+    {
+        return [
+            'title'                   => 'required|string|max:150',
+            'hook'                    => 'nullable|string|max:1000',
+            'description'             => 'nullable|string|max:2000',
+            'format'                  => 'required|in:vertical,horizontal',
+            'target_duration_seconds' => 'nullable|integer|min:5|max:600',
+            'character_ids'           => 'nullable|array',
+            'character_ids.*'         => 'integer|exists:reel_characters,id',
+        ];
+    }
+
     public function create()
     {
-        $data['title'] = 'New Reel';
+        $data['characters'] = ReelCharacter::active()->orderBy('sort_order')->orderBy('name')->get();
+        $data['title']      = 'New Reel';
         return view('portal.social.reel-studio.create', compact('data'));
     }
 
     public function store(Request $request)
     {
-        $request->validate(['title' => 'required|string|max:150', 'topic' => 'nullable|string|max:1000']);
+        $request->validate($this->projectRules());
 
         $result = $this->repo->storeProject($request, (int) Auth::id());
         if ($result['status']) {
@@ -110,7 +124,7 @@ class ReelStudioController extends Controller
             abort(404);
         }
 
-        $request->validate(['title' => 'required|string|max:150', 'topic' => 'nullable|string|max:1000']);
+        $request->validate($this->projectRules());
 
         $result = $this->repo->updateProject($request, (int) $id);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
@@ -135,6 +149,19 @@ class ReelStudioController extends Controller
         }
 
         $result = $this->repo->saveScenes($request, (int) $projectId);
+        return redirect()->route('portal-social-reel-studio.show', $projectId)->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function aiGenerateScenes($projectId)
+    {
+        $project = $this->repo->find((int) $projectId);
+        if (!$project || !$this->authorizeProject($project)) {
+            abort(404);
+        }
+
+        set_time_limit(120); // the AI gateway can fall back across accounts, which can take longer than the host's default cap
+
+        $result = $this->repo->aiGenerateScenes((int) $projectId);
         return redirect()->route('portal-social-reel-studio.show', $projectId)->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

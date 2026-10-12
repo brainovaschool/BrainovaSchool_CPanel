@@ -2,12 +2,15 @@
 
 namespace App\Repositories\Portal;
 
+use App\Models\Portal\ReelCharacter;
 use App\Models\Portal\ReelProject;
 use App\Models\Portal\ReelScene;
 use App\Models\Portal\ReelSceneCharacter;
+use App\Services\Ai\AiGateway;
 use App\Services\Reel\ReelPromptBuilder;
 use App\Traits\ReturnFormatTrait;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /** Teacher-facing reel projects/scenes. Entirely separate from the ops
  *  Social Board's own `portal_reels` pipeline — no link between them. */
@@ -16,6 +19,8 @@ class ReelStudioRepository
     use ReturnFormatTrait;
 
     private const MAX_CHARACTERS_PER_SCENE = 3;
+    private const MAX_SCENE_SECONDS        = 10; // Google Flow's hard per-scene limit
+    private const MAX_AI_SCENES            = 12;
 
     public function projects(int $userId, bool $isManager)
     {
@@ -30,14 +35,25 @@ class ReelStudioRepository
         return ReelProject::with(['scenes.sceneCharacters.character'])->find($id);
     }
 
+    /** Shared field extraction for store/update — keeps the two in sync. */
+    private function projectFields($request): array
+    {
+        $characterIds = array_values(array_filter(array_map('intval', (array) $request->input('character_ids', []))));
+
+        return [
+            'title'                    => $request->title,
+            'format'                   => in_array($request->format, ['vertical', 'horizontal'], true) ? $request->format : 'vertical',
+            'hook'                     => $request->hook,
+            'description'              => $request->description,
+            'target_duration_seconds'  => $request->target_duration_seconds ?: null,
+            'character_ids'            => $characterIds,
+        ];
+    }
+
     public function storeProject($request, int $userId): array
     {
         try {
-            $project = ReelProject::create([
-                'title'      => $request->title,
-                'topic'      => $request->topic,
-                'created_by' => $userId,
-            ]);
+            $project = ReelProject::create($this->projectFields($request) + ['created_by' => $userId]);
 
             return $this->responseWithSuccess('Reel project created.', ['id' => $project->id]);
         } catch (\Throwable $th) {
@@ -52,8 +68,7 @@ class ReelStudioRepository
             return $this->responseWithError(___('alert.not_found'), []);
         }
 
-        $project->title = $request->title;
-        $project->topic = $request->topic;
+        $project->fill($this->projectFields($request));
         $project->save();
 
         return $this->responseWithSuccess('Reel project updated.', []);
@@ -101,8 +116,10 @@ class ReelStudioRepository
                     }
 
                     $scene->sort_order        = $index + 1;
-                    $scene->duration_seconds  = max(1, (int) ($sceneData['duration_seconds'] ?? 8));
+                    $scene->duration_seconds  = max(1, min(self::MAX_SCENE_SECONDS, (int) ($sceneData['duration_seconds'] ?? 8)));
                     $scene->description       = (string) ($sceneData['description'] ?? '');
+                    $scene->is_first_scene    = !empty($sceneData['is_first_scene']);
+                    $scene->is_last_scene     = !empty($sceneData['is_last_scene']);
                     $scene->save();
 
                     $keptSceneIds[] = $scene->id;
@@ -145,6 +162,165 @@ class ReelStudioRepository
         } catch (\Throwable $th) {
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
+    }
+
+    /**
+     * AI-assisted scene generation. Builds a prompt from the project's own
+     * title/hook/description/format/target length + its involved character
+     * roster, asks the AI gateway for a full set of scenes, validates and
+     * sanitizes the result, then APPENDS the new scenes after whatever
+     * already exists (never replaces/deletes) — so a teacher's manually
+     * built scenes are never at risk, even on a successful AI run. Nothing
+     * is written at all if the AI call fails.
+     */
+    public function aiGenerateScenes(int $projectId): array
+    {
+        $project = ReelProject::find($projectId);
+        if (!$project) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+
+        $characters = $project->involvedCharacters();
+
+        $prompt = $this->buildAiScenePrompt($project, $characters);
+        $result = (new AiGateway())->generate($prompt, true);
+
+        if (!$result['ok']) {
+            return $this->responseWithError($result['message'], []);
+        }
+
+        $decoded = json_decode($result['text'], true);
+        $scenes  = is_array($decoded['scenes'] ?? null) ? $decoded['scenes'] : null;
+
+        if (!$scenes) {
+            return $this->responseWithError('The AI did not return any usable scenes. Please try again.', []);
+        }
+
+        $allowedIds = $characters->pluck('id')->all();
+        $clean      = $this->sanitizeAiScenes($scenes, $allowedIds);
+
+        if (empty($clean)) {
+            return $this->responseWithError('The AI response could not be read into valid scenes. Please try again.', []);
+        }
+
+        try {
+            DB::transaction(function () use ($clean, $projectId) {
+                $nextSortOrder = (int) ReelScene::where('reel_project_id', $projectId)->max('sort_order') + 1;
+
+                foreach ($clean as $i => $sceneData) {
+                    $scene = ReelScene::create([
+                        'reel_project_id'  => $projectId,
+                        'sort_order'       => $nextSortOrder + $i,
+                        'duration_seconds' => $sceneData['duration_seconds'],
+                        'description'      => $sceneData['description'],
+                        'is_first_scene'   => $sceneData['is_first_scene'],
+                        'is_last_scene'    => $sceneData['is_last_scene'],
+                    ]);
+
+                    foreach ($sceneData['characters'] as $cIndex => $charData) {
+                        ReelSceneCharacter::create([
+                            'reel_scene_id'      => $scene->id,
+                            'reel_character_id'  => $charData['character_id'],
+                            'sort_order'         => $cIndex + 1,
+                            'action_points'      => $charData['action_points'],
+                            'dialogue'           => $charData['dialogue'],
+                        ]);
+                    }
+                }
+            });
+
+            return $this->responseWithSuccess(count($clean) . ' scene(s) generated — review and edit them below before generating prompts.', []);
+        } catch (\Throwable $th) {
+            Log::warning('Reel Studio AI scene save failed: ' . $th->getMessage());
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
+    private function buildAiScenePrompt(ReelProject $project, $characters): string
+    {
+        $roster = $characters->map(function (ReelCharacter $c) {
+            return "- id={$c->id}, name=\"{$c->name}\": appearance: " . ($c->appearance_text ?: '(not set)')
+                . ' | voice: ' . ($c->voice_profile_text ?: '(not set)')
+                . ' | rules: ' . ($c->rules_text ?: '(not set)');
+        })->implode("\n");
+
+        $globalInstructions = trim((string) setting('reel_global_instructions'));
+        $targetSeconds       = $project->target_duration_seconds ?: 40;
+        $formatLabel         = ReelProject::FORMATS[$project->format] ?? ReelProject::FORMATS['vertical'];
+
+        return <<<PROMPT
+You are planning a short educational reel for a school, scene by scene, for use with Google Flow (an AI video generator). Google Flow can only generate a MAXIMUM of 10 seconds per scene, so every scene's duration_seconds must be between 3 and 10.
+
+Reel title: {$project->title}
+Hook (the opening line, will be spoken by the character named Kea at the very start — do not repeat it verbatim, build the first scene to lead naturally from it): {$project->hook}
+Description / what this reel should teach: {$project->description}
+Target total length: approximately {$targetSeconds} seconds
+Video format: {$formatLabel}
+
+{$globalInstructions}
+
+Available characters (use ONLY these — pick 0 to 3 per scene by their id):
+{$roster}
+
+Note: the system will automatically add the fixed closing line "Brainbot: Think Smart." / "Kea: Learn Smarter." to the very last scene — do not write that line yourself, just make the last scene's content lead naturally into a closing moment.
+
+Break the reel into consecutive scenes that fit the target length (each scene 3-10 seconds). For each scene write: a short visual scene description (setting, camera, visual events), and for every character you include in that scene, a short specific action point and (optionally) a short line of dialogue in their established voice — leave dialogue empty for a character who doesn't speak in that scene.
+
+Respond with ONLY valid JSON (no markdown, no commentary, no code fences) matching exactly this schema:
+{"scenes":[{"description":"...","duration_seconds":8,"characters":[{"character_id":1,"action_points":"...","dialogue":"..."}]}]}
+PROMPT;
+    }
+
+    /** Validates/repairs the AI's scene list: clamps duration to Google
+     *  Flow's 10s cap, drops any character id not in this project's own
+     *  roster, caps characters per scene at 3, and always marks the first
+     *  returned scene as the opening scene and the last as the closing
+     *  scene (deterministic, not left to the AI to get right). */
+    private function sanitizeAiScenes($scenes, array $allowedIds): array
+    {
+        $clean = [];
+
+        foreach ($scenes as $sceneData) {
+            if (!is_array($sceneData)) {
+                continue;
+            }
+
+            $characters = array_slice((array) ($sceneData['characters'] ?? []), 0, self::MAX_CHARACTERS_PER_SCENE);
+            $cleanChars = [];
+            foreach ($characters as $charData) {
+                if (!is_array($charData)) {
+                    continue;
+                }
+                $characterId = (int) ($charData['character_id'] ?? 0);
+                if (!in_array($characterId, $allowedIds, true)) {
+                    continue;
+                }
+                $cleanChars[] = [
+                    'character_id'  => $characterId,
+                    'action_points' => (string) ($charData['action_points'] ?? ''),
+                    'dialogue'      => (string) ($charData['dialogue'] ?? ''),
+                ];
+            }
+
+            $clean[] = [
+                'description'      => (string) ($sceneData['description'] ?? ''),
+                'duration_seconds' => max(3, min(self::MAX_SCENE_SECONDS, (int) ($sceneData['duration_seconds'] ?? 8))),
+                'is_first_scene'   => false,
+                'is_last_scene'    => false,
+                'characters'       => $cleanChars,
+            ];
+
+            if (count($clean) >= self::MAX_AI_SCENES) {
+                break;
+            }
+        }
+
+        if (!empty($clean)) {
+            $clean[0]['is_first_scene']            = true;
+            $clean[count($clean) - 1]['is_last_scene'] = true;
+        }
+
+        return $clean;
     }
 
     public function generatePrompt(int $sceneId): array

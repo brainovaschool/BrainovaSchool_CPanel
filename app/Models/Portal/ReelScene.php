@@ -11,6 +11,8 @@ class ReelScene extends Model
 
     protected $casts = [
         'generated_prompt_at' => 'datetime',
+        'is_first_scene'      => 'boolean',
+        'is_last_scene'       => 'boolean',
     ];
 
     public function project()

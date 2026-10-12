@@ -18,29 +18,74 @@
         </div>
 
         <div class="card ot-card mb-3">
+            <div class="card-header">
+                <h4 class="mb-0">Reel Setup</h4>
+            </div>
             <div class="card-body">
-                <form action="{{ route('portal-social-reel-studio.update', $data['project']->id) }}" method="post" class="row g-2 align-items-end">
+                <form action="{{ route('portal-social-reel-studio.update', $data['project']->id) }}" method="post">
                     @csrf
                     @method('PUT')
-                    <div class="col-12 col-md-5">
-                        <label class="form-label">Reel title</label>
-                        <input type="text" name="title" class="form-control ot-input" value="{{ $data['project']->title }}" required>
+                    <div class="row">
+                        <div class="col-12 col-md-8 mb-3">
+                            <label class="form-label">Reel title</label>
+                            <input type="text" name="title" class="form-control ot-input" value="{{ $data['project']->title }}" required>
+                        </div>
+                        <div class="col-12 col-md-4 mb-3">
+                            <label class="form-label">Format</label>
+                            <select name="format" class="form-control ot-input">
+                                @foreach (\App\Models\Portal\ReelProject::FORMATS as $value => $label)
+                                    <option value="{{ $value }}" {{ $data['project']->format == $value ? 'selected' : '' }}>{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Hook</label>
+                            <textarea name="hook" rows="2" class="form-control ot-textarea">{{ $data['project']->hook }}</textarea>
+                            <small class="text-secondary">Kea always opens the first scene with this line, word for word.</small>
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" rows="3" class="form-control ot-textarea">{{ $data['project']->description }}</textarea>
+                        </div>
+
+                        <div class="col-12 col-md-4 mb-3">
+                            <label class="form-label">Target total length (seconds)</label>
+                            <input type="number" name="target_duration_seconds" min="5" max="600" class="form-control ot-input" value="{{ $data['project']->target_duration_seconds }}">
+                        </div>
+
+                        <div class="col-12 mb-3">
+                            <label class="form-label">Characters involved in this reel</label>
+                            <div class="d-flex flex-wrap gap-3">
+                                @forelse ($data['characters'] as $character)
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" name="character_ids[]" value="{{ $character->id }}" id="projChar{{ $character->id }}"
+                                            {{ in_array($character->id, $data['project']->character_ids ?? []) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="projChar{{ $character->id }}">{{ $character->name }}</label>
+                                    </div>
+                                @empty
+                                    <p class="text-secondary mb-0">No characters set up yet.</p>
+                                @endforelse
+                            </div>
+                        </div>
                     </div>
-                    <div class="col-12 col-md-5">
-                        <label class="form-label">Topic</label>
-                        <input type="text" name="topic" class="form-control ot-input" value="{{ $data['project']->topic }}">
-                    </div>
-                    <div class="col-12 col-md-2">
-                        <button class="btn ot-btn-primary w-100">Save</button>
-                    </div>
+
+                    <button class="btn ot-btn-primary">Save Reel Setup</button>
                 </form>
             </div>
         </div>
 
         <div class="card ot-card mb-3">
-            <div class="card-header">
-                <h4 class="mb-0">Scenes</h4>
-                <p class="text-secondary mb-0">Add as many scenes as you need, pick up to 3 characters each, and write what happens, what each character does, and what they say.</p>
+            <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <div>
+                    <h4 class="mb-0">Scenes</h4>
+                    <p class="text-secondary mb-0">Add scenes manually, or let AI draft a full set from your hook/description/characters above — either way, everything stays editable before you generate prompts.</p>
+                </div>
+                <form action="{{ route('portal-social-reel-studio.ai.generate-scenes', $data['project']->id) }}" method="post" onsubmit="return confirm('AI will add new scenes after whatever is already here (it won\'t touch or remove existing scenes). Continue?');">
+                    @csrf
+                    <button class="btn ot-btn-primary">✨ AI: Generate Scenes</button>
+                </form>
             </div>
             <div class="card-body">
                 <form id="scenesForm" action="{{ route('portal-social-reel-studio.scenes.store', $data['project']->id) }}" method="post">
@@ -59,14 +104,22 @@
             <div class="card ot-card">
                 <div class="card-header">
                     <h4 class="mb-0">Scene Prompts</h4>
-                    <p class="text-secondary mb-0">Save your scenes above first, then generate each one's prompt here.</p>
+                    <p class="text-secondary mb-0">Save your scenes above first, then generate each one's prompt here — read it over before downloading.</p>
                 </div>
                 <div class="card-body">
                     @foreach ($data['project']->scenes as $scene)
                         <div class="card mb-3">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                    <h5 class="mb-0">Scene {{ $scene->sort_order }} ({{ $scene->duration_seconds }}s)</h5>
+                                    <h5 class="mb-0">
+                                        Scene {{ $scene->sort_order }} ({{ $scene->duration_seconds }}s)
+                                        @if ($scene->is_first_scene)
+                                            <span class="badge-basic-success-text">Opening</span>
+                                        @endif
+                                        @if ($scene->is_last_scene)
+                                            <span class="badge-basic-primary-text">Closing</span>
+                                        @endif
+                                    </h5>
                                     <form action="{{ route('portal-social-reel-studio.scenes.generate-prompt', [$data['project']->id, $scene->id]) }}" method="post">
                                         @csrf
                                         <button class="btn btn-sm ot-btn-primary">{{ $scene->generated_prompt ? 'Regenerate Prompt' : 'Generate Prompt' }}</button>
@@ -74,7 +127,7 @@
                                 </div>
 
                                 @if ($scene->generated_prompt)
-                                    <textarea readonly rows="12" class="form-control mt-3" id="promptText{{ $scene->id }}">{{ $scene->generated_prompt }}</textarea>
+                                    <textarea readonly rows="14" class="form-control mt-3" id="promptText{{ $scene->id }}" style="font-family:monospace;font-size:13px;">{{ $scene->generated_prompt }}</textarea>
                                     <div class="mt-2 d-flex flex-wrap gap-2">
                                         <button type="button" class="btn btn-sm btn-outline-secondary copy-prompt-btn" data-target="promptText{{ $scene->id }}">Copy</button>
                                         <a href="{{ route('portal-social-reel-studio.scenes.download-prompt', [$data['project']->id, $scene->id]) }}" class="btn btn-sm btn-outline-secondary">Download .txt</a>
@@ -100,6 +153,7 @@
             var initialScenes = {!! json_encode($data['initialScenesJson']) !!};
             var availableCharacters = {!! json_encode($data['availableCharsJson']) !!};
             var MAX_CHARACTERS = 3;
+            var MAX_SECONDS = 10;
 
             var container = document.getElementById('scenesContainer');
             var addSceneBtn = document.getElementById('addSceneBtn');
@@ -148,18 +202,28 @@
             }
 
             function addScene(sceneData) {
-                sceneData = sceneData || { id: null, duration_seconds: 8, description: '', characters: [] };
+                sceneData = sceneData || { id: null, duration_seconds: 8, description: '', is_first_scene: false, is_last_scene: false, characters: [] };
 
                 var card = document.createElement('div');
                 card.className = 'card p-3';
                 card.dataset.sceneId = sceneData.id || '';
                 card.innerHTML =
-                    '<div class="row g-2 mb-2">' +
+                    '<div class="row g-2 mb-2 align-items-end">' +
                         '<div class="col-12 col-md-3">' +
-                            '<label class="form-label">Duration (seconds)</label>' +
-                            '<input type="number" min="1" class="form-control form-control-sm scene-duration" value="' + (sceneData.duration_seconds || 8) + '">' +
+                            '<label class="form-label">Duration (seconds, max 10)</label>' +
+                            '<input type="number" min="1" max="' + MAX_SECONDS + '" class="form-control form-control-sm scene-duration" value="' + (sceneData.duration_seconds || 8) + '">' +
                         '</div>' +
-                        '<div class="col-12 col-md-9 text-end">' +
+                        '<div class="col-6 col-md-3">' +
+                            '<div class="form-check">' +
+                                '<input type="checkbox" class="form-check-input scene-is-first">' +
+                                '<label class="form-check-label">First scene (hook)</label>' +
+                            '</div>' +
+                            '<div class="form-check">' +
+                                '<input type="checkbox" class="form-check-input scene-is-last">' +
+                                '<label class="form-check-label">Last scene (closing)</label>' +
+                            '</div>' +
+                        '</div>' +
+                        '<div class="col-12 col-md-6 text-end">' +
                             '<button type="button" class="btn btn-sm btn-outline-danger scene-remove">Remove Scene</button>' +
                         '</div>' +
                     '</div>' +
@@ -172,6 +236,13 @@
                     '<button type="button" class="btn btn-sm ot-btn-primary mt-1 add-character-btn">+ Add Character</button>';
 
                 card.querySelector('.scene-description').value = sceneData.description || '';
+                card.querySelector('.scene-is-first').checked = !!sceneData.is_first_scene;
+                card.querySelector('.scene-is-last').checked = !!sceneData.is_last_scene;
+                card.querySelector('.scene-duration').addEventListener('change', function () {
+                    var v = parseInt(this.value, 10) || 1;
+                    if (v > MAX_SECONDS) this.value = MAX_SECONDS;
+                    if (v < 1) this.value = 1;
+                });
                 card.querySelector('.scene-remove').addEventListener('click', function () { card.remove(); });
 
                 var charsContainer = card.querySelector('.scene-characters');
@@ -206,10 +277,15 @@
                         });
                     });
 
+                    var duration = parseInt(card.querySelector('.scene-duration').value, 10) || 8;
+                    if (duration > MAX_SECONDS) duration = MAX_SECONDS;
+
                     scenes.push({
                         id: card.dataset.sceneId || null,
-                        duration_seconds: parseInt(card.querySelector('.scene-duration').value, 10) || 8,
+                        duration_seconds: duration,
                         description: card.querySelector('.scene-description').value,
+                        is_first_scene: card.querySelector('.scene-is-first').checked,
+                        is_last_scene: card.querySelector('.scene-is-last').checked,
                         characters: characters
                     });
                 });
