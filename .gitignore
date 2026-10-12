@@ -43,3 +43,4 @@ __MACOSX
 
 # Sensitive files
 firebase_credentials.json
+*firebase_credentials*
