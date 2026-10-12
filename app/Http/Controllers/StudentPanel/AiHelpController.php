@@ -53,6 +53,7 @@ class AiHelpController extends Controller
     public function ask(Request $request)
     {
         $this->ensureAccess();
+        set_time_limit(120);
         if (!dashboard_feature_enabled('student', 'ai_ask_helper')) {
             return response()->json(['ok' => false, 'message' => ___('alert.feature_disabled')], 403);
         }
@@ -67,7 +68,7 @@ class AiHelpController extends Controller
         $result = $this->repo->askStudentHelper($request->input('question'));
 
         if ($result['ok']) {
-            $this->repo->logUsage(Auth::id(), Auth::user()->name, 'student', 'student_question', $request->input('question'));
+            $this->repo->logUsage(Auth::id(), Auth::user()->name, 'student', 'student_question', $request->input('question'), $result['provider'] ?? null);
         }
 
         return response()->json($result);
@@ -76,6 +77,7 @@ class AiHelpController extends Controller
     public function teachKea(Request $request)
     {
         $this->ensureAccess();
+        set_time_limit(120);
         if (!dashboard_feature_enabled('student', 'teach_kea')) {
             return response()->json(['ok' => false, 'message' => ___('alert.feature_disabled')], 403);
         }
@@ -98,7 +100,7 @@ class AiHelpController extends Controller
         $result = $this->repo->teachKea($skill->title, $request->input('explanation'));
 
         if ($result['ok']) {
-            $this->repo->logUsage(Auth::id(), Auth::user()->name, 'student', 'teach_kea', $skill->title . ': ' . $request->input('explanation'));
+            $this->repo->logUsage(Auth::id(), Auth::user()->name, 'student', 'teach_kea', $skill->title . ': ' . $request->input('explanation'), $result['provider'] ?? null);
 
             $this->learningEvents->record(
                 Auth::user()->student->id,
@@ -115,6 +117,7 @@ class AiHelpController extends Controller
     public function factCheck(Request $request)
     {
         $this->ensureAccess();
+        set_time_limit(120);
         if (!dashboard_feature_enabled('student', 'ai_fact_checker')) {
             return response()->json(['ok' => false, 'message' => ___('alert.feature_disabled')], 403);
         }
@@ -129,7 +132,7 @@ class AiHelpController extends Controller
         $result = $this->repo->factCheck($request->input('claim'));
 
         if ($result['ok']) {
-            $this->repo->logUsage(Auth::id(), Auth::user()->name, 'student', 'fact_check', $request->input('claim'));
+            $this->repo->logUsage(Auth::id(), Auth::user()->name, 'student', 'fact_check', $request->input('claim'), $result['provider'] ?? null);
         }
 
         return response()->json($result);

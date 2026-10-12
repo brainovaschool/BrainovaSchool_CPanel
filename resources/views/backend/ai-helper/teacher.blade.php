@@ -87,7 +87,7 @@
                     </button>
 
                     <div id="aiHelperTeacherStatus" class="mt-3 p-2 rounded" style="display:none;"></div>
-                    <p class="text-secondary mt-2 mb-0" style="font-size:13px">This can take up to a minute per click.</p>
+                    <p class="text-secondary mt-2 mb-0" style="font-size:13px">If the first AI account is busy, we automatically try the next one, so this can occasionally take up to 2 minutes — please don't close this page.</p>
                 </form>
             </div>
         </div>
@@ -123,7 +123,11 @@
                 var token = form.querySelector('input[name="_token"]').value;
 
                 setButtonsDisabled(true);
-                setStatus('#eaf2ff', '#1e40af', 'Generating your lesson plan… this can take up to a minute, please wait.');
+                setStatus('#eaf2ff', '#1e40af', 'Generating your lesson plan… please wait patiently, this is working.');
+
+                var slowNoticeTimer = setTimeout(function () {
+                    setStatus('#eaf2ff', '#1e40af', 'This is taking a little longer than usual — we\'re automatically trying a backup AI account. Please keep waiting, it\'s still working.');
+                }, 15000);
 
                 fetch(url, {
                     method: 'POST',
@@ -131,6 +135,7 @@
                     body: new FormData(form)
                 })
                 .then(function (response) {
+                    clearTimeout(slowNoticeTimer);
                     var contentType = response.headers.get('Content-Type') || '';
 
                     if (!response.ok) {
@@ -166,6 +171,7 @@
                     setButtonsDisabled(false);
                 })
                 .catch(function (err) {
+                    clearTimeout(slowNoticeTimer);
                     setStatus('#fff1f2', '#b91c1c', err.message || 'Something went wrong. Please try again.');
                     setButtonsDisabled(false);
                 });

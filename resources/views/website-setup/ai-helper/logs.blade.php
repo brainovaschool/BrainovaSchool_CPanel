@@ -38,6 +38,7 @@
                                     <th>User</th>
                                     <th>Role</th>
                                     <th>Tool</th>
+                                    <th>AI Account Used</th>
                                     <th>What was asked</th>
                                 </tr>
                             </thead>
@@ -56,6 +57,7 @@
                                             @endif
                                         </td>
                                         <td>{{ str_replace('_', ' ', $row->tool) }}</td>
+                                        <td>{{ $row->provider ? ucfirst($row->provider) : '—' }}</td>
                                         <td>{{ $row->summary }}</td>
                                     </tr>
                                 @empty

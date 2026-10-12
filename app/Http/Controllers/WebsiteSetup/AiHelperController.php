@@ -19,7 +19,20 @@ class AiHelperController extends Controller
     public function index()
     {
         $data['title'] = ___('settings.ai_helper');
-        return view('website-setup.ai-helper.index', compact('data'));
+
+        $aiAccounts = json_decode((string) setting('ai_helper_accounts'), true);
+        if (!is_array($aiAccounts) || empty($aiAccounts)) {
+            $legacyKey = setting('ai_helper_api_key');
+            $aiAccounts = $legacyKey ? [[
+                'provider' => 'gemini',
+                'api_key'  => $legacyKey,
+                'model'    => setting('ai_helper_model') ?: 'gemini-3.6-flash',
+                'label'    => 'Primary Gemini',
+                'enabled'  => true,
+            ]] : [];
+        }
+
+        return view('website-setup.ai-helper.index', compact('data', 'aiAccounts'));
     }
 
     public function update(Request $request)

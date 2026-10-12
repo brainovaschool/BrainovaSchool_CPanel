@@ -425,6 +425,7 @@ class FrontendController extends Controller
 
     public function aiHelperGenerate(Request $request)
     {
+        set_time_limit(120); // AI account fallback can take longer than the host's default 30s cap
         $fields = $request->validate([
             'grade'        => 'required|string|max:100',
             'subject'      => 'required|string|max:100',
@@ -454,6 +455,7 @@ class FrontendController extends Controller
 
     public function aiHelperGenerateVisual(Request $request)
     {
+        set_time_limit(120); // AI account fallback can take longer than the host's default 30s cap
         $fields = $request->validate([
             'grade'        => 'required|string|max:100',
             'subject'      => 'required|string|max:100',
@@ -490,6 +492,7 @@ class FrontendController extends Controller
 
     public function aiHelperGenerateSlides(Request $request)
     {
+        set_time_limit(120); // AI account fallback can take longer than the host's default 30s cap
         $fields = $request->validate([
             'grade'        => 'required|string|max:100',
             'subject'      => 'required|string|max:100',

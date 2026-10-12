@@ -1,0 +1,166 @@
+<?php
+
+namespace App\Services\Ai;
+
+use Illuminate\Support\Facades\Log;
+use App\Services\Ai\Providers\GeminiProvider;
+use App\Services\Ai\Providers\OpenAiProvider;
+use App\Services\Ai\Providers\AnthropicProvider;
+
+/**
+ * Single entry point for every AI call in the app. Holds an ordered list of
+ * configured accounts (provider + API key + model) and walks through them
+ * in priority order: retries a single account a couple of times on
+ * transient failures (timeout/5xx), but moves on to the next account
+ * immediately on a rate limit or a permanent error (bad key/model) instead
+ * of wasting the retry budget on something that will keep failing the same
+ * way. Only reports failure once every configured account is exhausted.
+ *
+ * Bounded by a total wall-clock budget so a bad run of accounts can't push
+ * the whole synchronous web request past the host's PHP execution-time
+ * limit — callers should also raise set_time_limit() for the controller
+ * action, since this budget assumes some headroom is left for the rest of
+ * the request (e.g. building a PDF) after generate() returns.
+ */
+class AiGateway
+{
+    private const TIMEOUT_SECONDS_PER_ATTEMPT = 20;
+    private const MAX_ATTEMPTS_PER_ACCOUNT    = 3;
+    private const TOTAL_BUDGET_SECONDS        = 90;
+
+    /** @var array<string,object> */
+    private array $providers;
+
+    public function __construct()
+    {
+        $this->providers = [
+            'gemini'    => new GeminiProvider(),
+            'openai'    => new OpenAiProvider(),
+            'anthropic' => new AnthropicProvider(),
+        ];
+    }
+
+    /**
+     * Returns ['ok'=>true,'text'=>string,'provider'=>string,'label'=>string]
+     * or ['ok'=>false,'message'=>string].
+     */
+    public function generate(string $prompt, bool $forceJson = false): array
+    {
+        $accounts = $this->accounts();
+
+        if (empty($accounts)) {
+            return ['ok' => false, 'message' => 'This AI helper has not been set up yet — add at least one AI account in Website Setup → AI Helper.'];
+        }
+
+        $deadline    = microtime(true) + self::TOTAL_BUDGET_SECONDS;
+        $lastMessage = 'The AI helper could not generate an answer right now. Please try again shortly.';
+
+        foreach ($accounts as $account) {
+            $provider = $this->providers[$account['provider']] ?? null;
+            if (!$provider) {
+                continue;
+            }
+
+            for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS_PER_ACCOUNT; $attempt++) {
+                $remaining = $deadline - microtime(true);
+                if ($remaining <= 1) {
+                    return ['ok' => false, 'message' => $lastMessage];
+                }
+
+                $timeout = max(5, (int) min(self::TIMEOUT_SECONDS_PER_ATTEMPT, $remaining));
+                $result  = $provider->call($account['api_key'], $account['model'], $prompt, $forceJson, $timeout);
+
+                if ($result['ok']) {
+                    $text = $forceJson ? $this->stripJsonFences($result['text']) : $result['text'];
+
+                    return [
+                        'ok'       => true,
+                        'text'     => $text,
+                        'provider' => $account['provider'],
+                        'label'    => $account['label'] ?: ucfirst($account['provider']),
+                    ];
+                }
+
+                $lastMessage = $result['message'];
+                Log::warning("AI Helper [{$account['provider']}/{$account['label']}] attempt {$attempt} failed: " . $result['message']);
+
+                if ($result['kind'] !== 'transient') {
+                    break; // rate-limited or permanently broken — try the next account, not this one again
+                }
+
+                $remaining = $deadline - microtime(true);
+                if ($attempt < self::MAX_ATTEMPTS_PER_ACCOUNT && $remaining > 1) {
+                    $backoff = min(0.5 * (2 ** ($attempt - 1)), $remaining - 0.5);
+                    if ($backoff > 0) {
+                        usleep((int) ($backoff * 1_000_000));
+                    }
+                }
+            }
+        }
+
+        return ['ok' => false, 'message' => 'All configured AI accounts failed. ' . $lastMessage];
+    }
+
+    /**
+     * Ordered, enabled accounts from the ai_helper_accounts JSON setting, or
+     * a single legacy Gemini account built from the old ai_helper_api_key /
+     * ai_helper_model settings if that JSON list hasn't been set up yet —
+     * keeps a site working after this upgrade without re-entering its key.
+     * Disabled rows are intentionally dropped here (the settings screen's
+     * own decoding keeps disabled rows so they still show, unchecked, in
+     * the editor — this method is only for what actually gets tried).
+     */
+    private function accounts(): array
+    {
+        $accounts = [];
+        $raw      = setting('ai_helper_accounts');
+        $decoded  = $raw ? json_decode($raw, true) : null;
+
+        if (is_array($decoded)) {
+            foreach ($decoded as $row) {
+                if (!is_array($row) || empty($row['enabled'])) {
+                    continue;
+                }
+                $provider = $row['provider'] ?? null;
+                $apiKey   = trim((string) ($row['api_key'] ?? ''));
+                $model    = trim((string) ($row['model'] ?? ''));
+
+                if (!in_array($provider, ['gemini', 'openai', 'anthropic'], true) || !$apiKey || !$model) {
+                    continue;
+                }
+
+                $accounts[] = [
+                    'provider' => $provider,
+                    'api_key'  => $apiKey,
+                    'model'    => $model,
+                    'label'    => trim((string) ($row['label'] ?? '')),
+                ];
+            }
+        }
+
+        if (empty($accounts)) {
+            $legacyKey = setting('ai_helper_api_key');
+            if ($legacyKey) {
+                $accounts[] = [
+                    'provider' => 'gemini',
+                    'api_key'  => $legacyKey,
+                    'model'    => setting('ai_helper_model') ?: 'gemini-3.6-flash',
+                    'label'    => 'Primary Gemini',
+                ];
+            }
+        }
+
+        return $accounts;
+    }
+
+    private function stripJsonFences(string $text): string
+    {
+        $text = trim($text);
+        if (str_starts_with($text, '```')) {
+            $text = preg_replace('/^```[a-zA-Z]*\s*/', '', $text);
+            $text = preg_replace('/```\s*$/', '', $text);
+            $text = trim($text);
+        }
+        return $text;
+    }
+}

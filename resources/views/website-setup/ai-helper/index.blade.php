@@ -36,29 +36,38 @@
                     @csrf
                     <div class="row mb-3">
 
-                        <div class="col-12 col-md-6 mb-3">
-                            <label class="form-label">Gemini API Key <span class="fillable">*</span></label>
-                            <input type="text" name="ai_helper_api_key"
-                                class="form-control ot-input @error('ai_helper_api_key') is-invalid @enderror"
-                                value="{{ Setting('ai_helper_api_key') }}" placeholder="Paste your Gemini API key here">
-                            @error('ai_helper_api_key')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="col-12">
+                            <h5 class="mb-1">AI Accounts (tried in order, top to bottom)</h5>
+                            <p class="text-secondary" style="margin-top:-6px">
+                                Add one row per API key. If the first account is busy, over its quota, or fails,
+                                the system automatically retries and then moves on to the next account — so
+                                generation only ever fails if <em>every</em> row below has failed. For the
+                                strongest protection, add keys from more than one provider (Gemini, OpenAI,
+                                Anthropic), not just more than one key from the same one.
+                            </p>
                         </div>
 
-                        <div class="col-12 col-md-6 mb-3">
-                            <label class="form-label">Model</label>
-                            @php $currentModel = Setting('ai_helper_model') ?: 'gemini-3.6-flash'; @endphp
-                            <select name="ai_helper_model" class="form-control @error('ai_helper_model') is-invalid @enderror">
-                                @foreach (['gemini-3.6-flash', 'gemini-3.6-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'] as $modelOption)
-                                    <option value="{{ $modelOption }}" {{ $currentModel == $modelOption ? 'selected' : '' }}>{{ $modelOption }}</option>
-                                @endforeach
-                            </select>
-                            <small class="text-secondary">If one shows "high demand" errors often, try another —
-                                the lite/older ones are usually less crowded.</small>
-                            @error('ai_helper_model')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
+                        <div class="col-12 mb-4">
+                            <div id="aiAccountsRows" class="d-flex flex-column gap-2"></div>
+                            <button type="button" id="aiAccountsAddRow" class="btn btn-sm ot-btn-primary mt-2">
+                                <i class="fa-solid fa-plus"></i> Add Account
+                            </button>
+                            <input type="hidden" name="ai_helper_accounts" id="aiAccountsJson">
+
+                            <datalist id="aiModelsGemini">
+                                <option value="gemini-3.6-flash">
+                                <option value="gemini-3.6-flash-lite">
+                                <option value="gemini-2.5-flash">
+                                <option value="gemini-2.5-flash-lite">
+                                <option value="gemini-3.5-flash">
+                                <option value="gemini-3.5-flash-lite">
+                            </datalist>
+                            <datalist id="aiModelsAnthropic">
+                                <option value="claude-haiku-5-5">
+                                <option value="claude-sonnet-5-5">
+                                <option value="claude-opus-5-5">
+                            </datalist>
+                            <datalist id="aiModelsOpenai"></datalist>
                         </div>
 
                         <div class="col-12 col-md-6 mb-3">
@@ -285,4 +294,111 @@
             </div>
         </div>
     </div>
+
+    <script>
+        (function () {
+            var initialAccounts = @json($aiAccounts);
+
+            var rowsContainer = document.getElementById('aiAccountsRows');
+            var addButton     = document.getElementById('aiAccountsAddRow');
+            var jsonInput     = document.getElementById('aiAccountsJson');
+            var form          = jsonInput.closest('form');
+
+            function modelDatalistId(provider) {
+                if (provider === 'gemini') return 'aiModelsGemini';
+                if (provider === 'anthropic') return 'aiModelsAnthropic';
+                return 'aiModelsOpenai';
+            }
+
+            function addRow(account) {
+                account = account || { provider: 'gemini', api_key: '', model: '', label: '', enabled: true };
+
+                var row = document.createElement('div');
+                row.className = 'card p-2';
+                row.innerHTML =
+                    '<div class="row g-2 align-items-center">' +
+                        '<div class="col-6 col-md-2">' +
+                            '<select class="form-control form-control-sm ai-row-provider">' +
+                                '<option value="gemini">Gemini</option>' +
+                                '<option value="openai">OpenAI</option>' +
+                                '<option value="anthropic">Anthropic</option>' +
+                            '</select>' +
+                        '</div>' +
+                        '<div class="col-6 col-md-3">' +
+                            '<input type="text" class="form-control form-control-sm ai-row-key" placeholder="API key">' +
+                        '</div>' +
+                        '<div class="col-6 col-md-2">' +
+                            '<input type="text" class="form-control form-control-sm ai-row-model" placeholder="Model name" list="">' +
+                        '</div>' +
+                        '<div class="col-6 col-md-2">' +
+                            '<input type="text" class="form-control form-control-sm ai-row-label" placeholder="Label (optional)">' +
+                        '</div>' +
+                        '<div class="col-4 col-md-1 text-center">' +
+                            '<input type="checkbox" class="form-check-input ai-row-enabled" title="Enabled">' +
+                        '</div>' +
+                        '<div class="col-4 col-md-1">' +
+                            '<button type="button" class="btn btn-sm btn-outline-secondary ai-row-up" title="Move up">&uarr;</button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-secondary ai-row-down" title="Move down">&darr;</button>' +
+                        '</div>' +
+                        '<div class="col-4 col-md-1 text-end">' +
+                            '<button type="button" class="btn btn-sm btn-outline-danger ai-row-remove" title="Remove">&times;</button>' +
+                        '</div>' +
+                    '</div>';
+
+                var providerSelect = row.querySelector('.ai-row-provider');
+                var modelInput     = row.querySelector('.ai-row-model');
+
+                providerSelect.value = account.provider || 'gemini';
+                row.querySelector('.ai-row-key').value     = account.api_key || '';
+                modelInput.value                            = account.model || '';
+                row.querySelector('.ai-row-label').value    = account.label || '';
+                row.querySelector('.ai-row-enabled').checked = account.enabled !== false;
+                modelInput.setAttribute('list', modelDatalistId(providerSelect.value));
+
+                providerSelect.addEventListener('change', function () {
+                    modelInput.setAttribute('list', modelDatalistId(providerSelect.value));
+                });
+
+                row.querySelector('.ai-row-remove').addEventListener('click', function () {
+                    row.remove();
+                });
+                row.querySelector('.ai-row-up').addEventListener('click', function () {
+                    var prev = row.previousElementSibling;
+                    if (prev) rowsContainer.insertBefore(row, prev);
+                });
+                row.querySelector('.ai-row-down').addEventListener('click', function () {
+                    var next = row.nextElementSibling;
+                    if (next) rowsContainer.insertBefore(next, row);
+                });
+
+                rowsContainer.appendChild(row);
+            }
+
+            addButton.addEventListener('click', function () { addRow(); });
+
+            if (initialAccounts && initialAccounts.length) {
+                initialAccounts.forEach(addRow);
+            } else {
+                addRow();
+            }
+
+            form.addEventListener('submit', function () {
+                var accounts = [];
+                rowsContainer.querySelectorAll('.card').forEach(function (row) {
+                    var apiKey = row.querySelector('.ai-row-key').value.trim();
+                    var model  = row.querySelector('.ai-row-model').value.trim();
+                    if (!apiKey || !model) return; // skip genuinely empty rows, don't block saving the rest
+
+                    accounts.push({
+                        provider: row.querySelector('.ai-row-provider').value,
+                        api_key: apiKey,
+                        model: model,
+                        label: row.querySelector('.ai-row-label').value.trim(),
+                        enabled: row.querySelector('.ai-row-enabled').checked
+                    });
+                });
+                jsonInput.value = JSON.stringify(accounts);
+            });
+        })();
+    </script>
 @endsection

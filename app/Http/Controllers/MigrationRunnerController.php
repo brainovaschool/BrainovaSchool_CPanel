@@ -2028,7 +2028,8 @@ class MigrationRunnerController extends Controller
             ]);
         }
 
-        $apiKeyConfigured = (bool) setting('ai_helper_api_key');
+        $accounts         = json_decode((string) setting('ai_helper_accounts'), true);
+        $apiKeyConfigured = (is_array($accounts) && !empty($accounts)) || (bool) setting('ai_helper_api_key');
         $totalXp          = $events->totalXp($student->id);
 
         return response(

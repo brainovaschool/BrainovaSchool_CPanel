@@ -119,6 +119,10 @@
                 answer.style.color = '#1e40af';
                 answer.textContent = 'Thinking…';
 
+                var slowTimer = setTimeout(function () {
+                    answer.textContent = 'This is taking a little longer than usual — please wait patiently, it\'s still working.';
+                }, 15000);
+
                 fetch('{{ route('student-panel-ai-help.ask') }}', {
                     method: 'POST',
                     headers: {
@@ -130,6 +134,7 @@
                 })
                 .then(function (response) { return response.json(); })
                 .then(function (data) {
+                    clearTimeout(slowTimer);
                     if (data.ok) {
                         answer.style.background = '#e8f7ef';
                         answer.style.color = '#1e293b';
@@ -141,6 +146,7 @@
                     }
                 })
                 .catch(function () {
+                    clearTimeout(slowTimer);
                     answer.style.background = '#fff1f2';
                     answer.style.color = '#b91c1c';
                     answer.textContent = 'Something went wrong. Please try again.';
@@ -177,6 +183,10 @@
                 answer.style.color = '#1e40af';
                 answer.textContent = 'Kea is listening…';
 
+                var slowTimer = setTimeout(function () {
+                    answer.textContent = 'This is taking a little longer than usual — please wait patiently, it\'s still working.';
+                }, 15000);
+
                 fetch('{{ route('student-panel-ai-help.teach-kea') }}', {
                     method: 'POST',
                     headers: {
@@ -191,6 +201,7 @@
                 })
                 .then(function (response) { return response.json(); })
                 .then(function (data) {
+                    clearTimeout(slowTimer);
                     if (data.ok) {
                         if (data.understood) {
                             answer.style.background = '#e8f7ef';
@@ -208,6 +219,7 @@
                     }
                 })
                 .catch(function () {
+                    clearTimeout(slowTimer);
                     answer.style.background = '#fff1f2';
                     answer.style.color = '#b91c1c';
                     answer.textContent = 'Something went wrong. Please try again.';
@@ -254,6 +266,10 @@
                 answer.style.color = '#1e40af';
                 answer.textContent = 'Brainbot is checking…';
 
+                var slowTimer = setTimeout(function () {
+                    answer.textContent = 'This is taking a little longer than usual — please wait patiently, it\'s still working.';
+                }, 15000);
+
                 fetch('{{ route('student-panel-ai-help.fact-check') }}', {
                     method: 'POST',
                     headers: {
@@ -265,6 +281,7 @@
                 })
                 .then(function (response) { return response.json(); })
                 .then(function (data) {
+                    clearTimeout(slowTimer);
                     if (data.ok) {
                         var colors = verdictColors[data.verdict] || verdictColors.unclear;
                         var label  = verdictLabels[data.verdict] || verdictLabels.unclear;
@@ -278,6 +295,7 @@
                     }
                 })
                 .catch(function () {
+                    clearTimeout(slowTimer);
                     answer.style.background = '#fff1f2';
                     answer.style.color = '#b91c1c';
                     answer.textContent = 'Something went wrong. Please try again.';

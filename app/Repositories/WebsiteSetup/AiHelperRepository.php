@@ -5,9 +5,9 @@ namespace App\Repositories\WebsiteSetup;
 use App\Models\Setting;
 use Illuminate\Support\Str;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use App\Models\WebsiteSetup\AiHelperLog;
+use App\Services\Ai\AiGateway;
 
 class AiHelperRepository
 {
@@ -22,8 +22,6 @@ class AiHelperRepository
     {
         try {
             $fields = [
-                'ai_helper_api_key',
-                'ai_helper_model',
                 'ai_helper_page_title',
                 'ai_helper_button_text',
                 'ai_helper_system_prompt',
@@ -51,6 +49,10 @@ class AiHelperRepository
                 }
             }
 
+            if ($request->has('ai_helper_accounts')) {
+                $this->saveAccounts($request->input('ai_helper_accounts'));
+            }
+
             $this->uploadMascot($request, 'ai_helper_teacher_mascot');
             $this->uploadMascot($request, 'ai_helper_student_mascot');
 
@@ -58,6 +60,44 @@ class AiHelperRepository
         } catch (\Throwable $th) {
             return false;
         }
+    }
+
+    /**
+     * Validates and re-encodes the AI accounts list submitted as JSON from
+     * the settings form (one row per API key, built client-side) — drops
+     * any row missing a provider/key/model so a stray empty row can't
+     * silently sit in the fallback chain and always fail.
+     */
+    private function saveAccounts(?string $raw): void
+    {
+        $decoded = json_decode((string) $raw, true);
+        $clean   = [];
+
+        if (is_array($decoded)) {
+            foreach ($decoded as $row) {
+                if (!is_array($row)) {
+                    continue;
+                }
+
+                $provider = in_array($row['provider'] ?? null, ['gemini', 'openai', 'anthropic'], true) ? $row['provider'] : null;
+                $apiKey   = trim((string) ($row['api_key'] ?? ''));
+                $model    = trim((string) ($row['model'] ?? ''));
+
+                if (!$provider || !$apiKey || !$model) {
+                    continue;
+                }
+
+                $clean[] = [
+                    'provider' => $provider,
+                    'api_key'  => $apiKey,
+                    'model'    => $model,
+                    'label'    => trim((string) ($row['label'] ?? '')),
+                    'enabled'  => !empty($row['enabled']),
+                ];
+            }
+        }
+
+        $this->setSetting('ai_helper_accounts', json_encode($clean));
     }
 
     private function uploadMascot($request, string $field): void
@@ -106,74 +146,26 @@ class AiHelperRepository
     }
 
     /**
-     * Raw call to Gemini. Returns ['ok' => true, 'text' => string] or ['ok' => false, 'message' => string].
+     * Delegates to the multi-provider, multi-account AiGateway (retries,
+     * exponential backoff, and automatic fallback across every configured
+     * AI account are handled there). Returns
+     * ['ok'=>true,'text'=>string,'provider'=>string,'label'=>string] or
+     * ['ok'=>false,'message'=>string].
      */
-    private function callGemini(string $prompt, bool $forceJson = false): array
+    private function callAi(string $prompt, bool $forceJson = false): array
     {
-        $apiKey = setting('ai_helper_api_key');
-        $model  = setting('ai_helper_model') ?: 'gemini-3.6-flash';
-
-        if (!$apiKey) {
-            return ['ok' => false, 'message' => 'This AI helper has not been set up yet — add an API key in Website Setup → AI Helper.'];
-        }
-
-        $body = [
-            'contents' => [
-                ['parts' => [['text' => $prompt]]],
-            ],
-        ];
-        if ($forceJson) {
-            $body['generationConfig'] = ['responseMimeType' => 'application/json'];
-        }
-
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
-
-        // Gemini occasionally returns 503 "model is overloaded" under heavy public
-        // demand — that's transient on Google's side, so retry a couple of times
-        // with a short pause before giving up, instead of failing on the first hit.
-        $maxAttempts = 3;
-
-        for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-            try {
-                $response = Http::timeout(60)->post($url, $body);
-
-                if ($response->successful()) {
-                    $text = $response->json('candidates.0.content.parts.0.text');
-                    if (!$text) {
-                        return ['ok' => false, 'message' => 'The AI helper did not return an answer. Please try again.'];
-                    }
-                    return ['ok' => true, 'text' => trim($text)];
-                }
-
-                Log::warning('AI Helper (Gemini) error: ' . $response->status() . ' ' . $response->body());
-
-                if ($response->status() === 503 && $attempt < $maxAttempts) {
-                    sleep(2);
-                    continue;
-                }
-
-                if ($response->status() === 503) {
-                    return ['ok' => false, 'message' => 'The AI is currently handling a lot of requests. Please wait a minute and try again.'];
-                }
-
-                return ['ok' => false, 'message' => 'The AI helper could not generate an answer right now. Please try again shortly.'];
-            } catch (\Throwable $th) {
-                Log::warning('AI Helper (Gemini) exception: ' . $th->getMessage());
-                return ['ok' => false, 'message' => 'The AI helper is temporarily unavailable.'];
-            }
-        }
-
-        return ['ok' => false, 'message' => 'The AI is currently handling a lot of requests. Please wait a minute and try again.'];
+        return (new AiGateway())->generate($prompt, $forceJson);
     }
 
     /**
      * $fields keys: grade, subject, term, unit, module, lesson_title.
-     * Returns ['ok' => true, 'text' => $lessonPlanText] or ['ok' => false, 'message' => $error].
+     * Returns ['ok' => true, 'text' => $lessonPlanText, 'provider' => string, 'label' => string]
+     * or ['ok' => false, 'message' => $error].
      */
     public function generateLessonPlan(array $fields): array
     {
         $systemPrompt = setting('ai_helper_system_prompt') ?: 'You are a helpful assistant.';
-        return $this->callGemini($systemPrompt . $this->inputBlock($fields));
+        return $this->callAi($systemPrompt . $this->inputBlock($fields));
     }
 
     /**
@@ -209,7 +201,7 @@ class AiHelperRepository
             . '"misconceptions":"..."'
             . '}';
 
-        $result = $this->callGemini($systemPrompt . $this->inputBlock($fields) . $schemaInstruction, true);
+        $result = $this->callAi($systemPrompt . $this->inputBlock($fields) . $schemaInstruction, true);
         if (!$result['ok']) {
             return $result;
         }
@@ -255,19 +247,20 @@ class AiHelperRepository
             }
         }
 
-        return ['ok' => true, 'data' => $merged];
+        return ['ok' => true, 'data' => $merged, 'provider' => $result['provider'] ?? null, 'label' => $result['label'] ?? null];
     }
 
     /**
      * Student homework/study helper — a single free-text question, one plain
-     * answer back. Returns ['ok' => true, 'text' => string] or ['ok' => false, 'message' => string].
+     * answer back. Returns ['ok' => true, 'text' => string, 'provider' => string, 'label' => string]
+     * or ['ok' => false, 'message' => string].
      */
     public function askStudentHelper(string $question): array
     {
         $systemPrompt = setting('ai_help_student_system_prompt')
             ?: 'You are a friendly, patient study helper for a school student. Explain things simply, step by step, and never just give a final homework answer without helping the student understand it.';
 
-        return $this->callGemini($systemPrompt . "\n\nStudent's question: " . $question);
+        return $this->callAi($systemPrompt . "\n\nStudent's question: " . $question);
     }
 
     /**
@@ -293,7 +286,7 @@ Respond with ONLY valid JSON (no markdown, no code fences) matching exactly this
 {"understood": true or false, "feedback": "..."}
 PROMPT;
 
-        $result = $this->callGemini($prompt, true);
+        $result = $this->callAi($prompt, true);
         if (!$result['ok']) {
             return $result;
         }
@@ -307,6 +300,8 @@ PROMPT;
             'ok'        => true,
             'understood' => (bool) ($decoded['understood'] ?? false),
             'feedback'  => (string) $decoded['feedback'],
+            'provider'  => $result['provider'] ?? null,
+            'label'     => $result['label'] ?? null,
         ];
     }
 
@@ -339,7 +334,7 @@ Respond with ONLY valid JSON (no markdown, no code fences) matching exactly this
 {"verdict": "likely_true" or "likely_false" or "unclear", "explanation": "..."}
 PROMPT;
 
-        $result = $this->callGemini($prompt, true);
+        $result = $this->callAi($prompt, true);
         if (!$result['ok']) {
             return $result;
         }
@@ -356,6 +351,8 @@ PROMPT;
         return [
             'ok'          => true,
             'verdict'     => $verdict,
+            'provider'    => $result['provider'] ?? null,
+            'label'       => $result['label'] ?? null,
             'explanation' => (string) $decoded['explanation'],
         ];
     }
@@ -391,7 +388,7 @@ PROMPT;
         return ['allowed' => true];
     }
 
-    public function logUsage(?int $userId, ?string $userName, string $role, string $tool, string $summary): void
+    public function logUsage(?int $userId, ?string $userName, string $role, string $tool, string $summary, ?string $provider = null): void
     {
         try {
             AiHelperLog::create([
@@ -399,6 +396,7 @@ PROMPT;
                 'user_name' => $userName,
                 'user_role' => $role,
                 'tool'      => $tool,
+                'provider'  => $provider,
                 'summary'   => \Illuminate\Support\Str::limit($summary, 500),
             ]);
         } catch (\Throwable $th) {

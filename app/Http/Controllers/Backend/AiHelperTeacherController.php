@@ -82,10 +82,23 @@ class AiHelperTeacherController extends Controller
         return null;
     }
 
-    private function logUsage(string $tool, array $fields): void
+    private function logUsage(string $tool, array $fields, ?string $provider = null): void
     {
         $summary = "{$fields['grade']} / {$fields['subject']} / {$fields['term']} / {$fields['unit']} / {$fields['module']} / {$fields['lesson_title']}";
-        $this->repo->logUsage(Auth::id(), Auth::user()->name, 'teacher', $tool, $summary);
+        $this->repo->logUsage(Auth::id(), Auth::user()->name, 'teacher', $tool, $summary, $provider);
+    }
+
+    /**
+     * The AI gateway can fall back across several accounts/providers before
+     * giving up, which can take longer than this host's default 30s PHP
+     * execution-time cap — raise it for this one request so a slow-but-
+     * working fallback isn't killed mid-flight and reported as a failure.
+     * max_execution_time is PHP_INI_ALL, so this works even though the
+     * host's php.ini/.user.ini sets a lower default.
+     */
+    private function extendTimeLimit(): void
+    {
+        set_time_limit(120);
     }
 
     private function driveFolderPath(array $fields): array
@@ -107,6 +120,7 @@ class AiHelperTeacherController extends Controller
     public function generate(Request $request)
     {
         $this->guard();
+        $this->extendTimeLimit();
         if ($limited = $this->enforceLimit()) {
             return $limited;
         }
@@ -117,7 +131,7 @@ class AiHelperTeacherController extends Controller
             return response($result['message'], 422);
         }
 
-        $this->logUsage('lesson_plan_text', $fields);
+        $this->logUsage('lesson_plan_text', $fields, $result['provider'] ?? null);
 
         $html = e($result['text']);
         $html = preg_replace('/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $html);
@@ -133,6 +147,7 @@ class AiHelperTeacherController extends Controller
     public function generateVisual(Request $request)
     {
         $this->guard();
+        $this->extendTimeLimit();
         if ($limited = $this->enforceLimit()) {
             return $limited;
         }
@@ -143,7 +158,7 @@ class AiHelperTeacherController extends Controller
             return response($result['message'], 422);
         }
 
-        $this->logUsage('lesson_plan_visual', $fields);
+        $this->logUsage('lesson_plan_visual', $fields, $result['provider'] ?? null);
 
         $data['fields'] = $fields;
         $data['plan']   = $result['data'];
@@ -166,6 +181,7 @@ class AiHelperTeacherController extends Controller
     public function generateSlides(Request $request)
     {
         $this->guard();
+        $this->extendTimeLimit();
         if ($limited = $this->enforceLimit()) {
             return $limited;
         }
@@ -176,7 +192,7 @@ class AiHelperTeacherController extends Controller
             return response($result['message'], 422);
         }
 
-        $this->logUsage('lesson_plan_slides', $fields);
+        $this->logUsage('lesson_plan_slides', $fields, $result['provider'] ?? null);
 
         $data['fields'] = $fields;
         $data['plan']   = $result['data'];
