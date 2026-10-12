@@ -3,7 +3,7 @@
     {{ $data['title'] }}
 @endsection
 @section('content')
-    @php($character = $data['character'])
+    @php $character = $data['character']; @endphp
     <div class="page-content">
         <div class="page-header">
             <div class="row">

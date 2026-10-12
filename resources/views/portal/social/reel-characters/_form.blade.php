@@ -1,4 +1,4 @@
-@php($character = $character ?? null)
+@php $character = $character ?? null; @endphp
 
 <div class="row">
     <div class="col-12 col-md-6 mb-3">
@@ -8,11 +8,18 @@
 
     <div class="col-12 col-md-6 mb-3">
         <label class="form-label">Portrait image</label>
+        <div class="ot_fileUploader left-side mb-2 @error('portrait') is-invalid @enderror">
+            <input class="form-control" type="text" placeholder="Choose an image" readonly id="placeholder">
+            <button class="primary-btn-small-input" type="button">
+                <label class="btn btn-lg ot-btn-primary" for="fileBrouse">{{ ___('common.browse') }}</label>
+                <input type="file" class="d-none form-control" name="portrait" accept="image/*" id="fileBrouse">
+            </button>
+        </div>
+        @error('portrait')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+        <small class="text-secondary d-block mt-1">Portrait orientation, 9:16 (e.g. 1080×1920) — used as the visual reference for video generation.</small>
         @if ($character && $character->portrait)
-            <div class="mb-2"><img src="{{ globalAsset($character->portrait->path) }}" style="height:110px;"></div>
+            <div class="mt-2"><img src="{{ globalAsset($character->portrait->path) }}" style="height:110px;"></div>
         @endif
-        <input type="file" name="portrait" class="form-control ot-input" accept="image/*">
-        <small class="text-secondary">Portrait orientation, 9:16 (e.g. 1080×1920) — used as the visual reference for video generation.</small>
     </div>
 
     <div class="col-12 mb-3">

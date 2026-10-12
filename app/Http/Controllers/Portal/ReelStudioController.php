@@ -60,10 +60,47 @@ class ReelStudioController extends Controller
             abort(404);
         }
 
-        $data['project']    = $project;
-        $data['characters'] = ReelCharacter::active()->orderBy('sort_order')->orderBy('name')->get();
-        $data['title']      = $project->title;
+        $characters = ReelCharacter::active()->orderBy('sort_order')->orderBy('name')->get();
+
+        $data['project']              = $project;
+        $data['characters']           = $characters;
+        $data['initialScenesJson']    = $this->scenesForJs($project);
+        $data['availableCharsJson']   = $this->charactersForJs($characters);
+        $data['title']                = $project->title;
         return view('portal.social.reel-studio.show', compact('data'));
+    }
+
+    /** Plain-array shape of this project's scenes, ready to JSON-encode for
+     *  the Scene Builder's JS — kept out of the Blade file on purpose. */
+    private function scenesForJs($project): array
+    {
+        $scenes = [];
+        foreach ($project->scenes as $scene) {
+            $characters = [];
+            foreach ($scene->sceneCharacters as $sc) {
+                $characters[] = [
+                    'character_id'  => $sc->reel_character_id,
+                    'action_points' => $sc->action_points,
+                    'dialogue'      => $sc->dialogue,
+                ];
+            }
+            $scenes[] = [
+                'id'               => $scene->id,
+                'duration_seconds' => $scene->duration_seconds,
+                'description'      => $scene->description,
+                'characters'       => $characters,
+            ];
+        }
+        return $scenes;
+    }
+
+    private function charactersForJs($characters): array
+    {
+        $out = [];
+        foreach ($characters as $character) {
+            $out[] = ['id' => $character->id, 'name' => $character->name];
+        }
+        return $out;
     }
 
     public function update(Request $request, $id)

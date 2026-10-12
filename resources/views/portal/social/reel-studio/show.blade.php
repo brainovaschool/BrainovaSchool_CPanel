@@ -3,16 +3,15 @@
     {{ $data['title'] }}
 @endsection
 @section('content')
-    @php($project = $data['project'])
     <div class="page-content">
         <div class="page-header">
             <div class="row">
                 <div class="col-sm-8">
-                    <h4 class="bradecrumb-title mb-1">{{ $project->title }}</h4>
+                    <h4 class="bradecrumb-title mb-1">{{ $data['project']->title }}</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
                         <li class="breadcrumb-item"><a href="{{ route('portal-social-reel-studio.index') }}">Reel Studio</a></li>
-                        <li class="breadcrumb-item">{{ $project->title }}</li>
+                        <li class="breadcrumb-item">{{ $data['project']->title }}</li>
                     </ol>
                 </div>
             </div>
@@ -20,16 +19,16 @@
 
         <div class="card ot-card mb-3">
             <div class="card-body">
-                <form action="{{ route('portal-social-reel-studio.update', $project->id) }}" method="post" class="row g-2 align-items-end">
+                <form action="{{ route('portal-social-reel-studio.update', $data['project']->id) }}" method="post" class="row g-2 align-items-end">
                     @csrf
                     @method('PUT')
                     <div class="col-12 col-md-5">
                         <label class="form-label">Reel title</label>
-                        <input type="text" name="title" class="form-control ot-input" value="{{ $project->title }}" required>
+                        <input type="text" name="title" class="form-control ot-input" value="{{ $data['project']->title }}" required>
                     </div>
                     <div class="col-12 col-md-5">
                         <label class="form-label">Topic</label>
-                        <input type="text" name="topic" class="form-control ot-input" value="{{ $project->topic }}">
+                        <input type="text" name="topic" class="form-control ot-input" value="{{ $data['project']->topic }}">
                     </div>
                     <div class="col-12 col-md-2">
                         <button class="btn ot-btn-primary w-100">Save</button>
@@ -44,7 +43,7 @@
                 <p class="text-secondary mb-0">Add as many scenes as you need, pick up to 3 characters each, and write what happens, what each character does, and what they say.</p>
             </div>
             <div class="card-body">
-                <form id="scenesForm" action="{{ route('portal-social-reel-studio.scenes.store', $project->id) }}" method="post">
+                <form id="scenesForm" action="{{ route('portal-social-reel-studio.scenes.store', $data['project']->id) }}" method="post">
                     @csrf
                     <div id="scenesContainer" class="d-flex flex-column gap-3"></div>
                     <button type="button" id="addSceneBtn" class="btn ot-btn-primary mt-3">+ Add Scene</button>
@@ -56,19 +55,19 @@
             </div>
         </div>
 
-        @if ($project->scenes->isNotEmpty())
+        @if ($data['project']->scenes->isNotEmpty())
             <div class="card ot-card">
                 <div class="card-header">
                     <h4 class="mb-0">Scene Prompts</h4>
                     <p class="text-secondary mb-0">Save your scenes above first, then generate each one's prompt here.</p>
                 </div>
                 <div class="card-body">
-                    @foreach ($project->scenes as $scene)
+                    @foreach ($data['project']->scenes as $scene)
                         <div class="card mb-3">
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-                                    <h5 class="mb-0">Scene {{ $scene->sort_order }} — {{ $scene->duration_seconds }}s</h5>
-                                    <form action="{{ route('portal-social-reel-studio.scenes.generate-prompt', [$project->id, $scene->id]) }}" method="post">
+                                    <h5 class="mb-0">Scene {{ $scene->sort_order }} ({{ $scene->duration_seconds }}s)</h5>
+                                    <form action="{{ route('portal-social-reel-studio.scenes.generate-prompt', [$data['project']->id, $scene->id]) }}" method="post">
                                         @csrf
                                         <button class="btn btn-sm ot-btn-primary">{{ $scene->generated_prompt ? 'Regenerate Prompt' : 'Generate Prompt' }}</button>
                                     </form>
@@ -78,10 +77,10 @@
                                     <textarea readonly rows="12" class="form-control mt-3" id="promptText{{ $scene->id }}">{{ $scene->generated_prompt }}</textarea>
                                     <div class="mt-2 d-flex flex-wrap gap-2">
                                         <button type="button" class="btn btn-sm btn-outline-secondary copy-prompt-btn" data-target="promptText{{ $scene->id }}">Copy</button>
-                                        <a href="{{ route('portal-social-reel-studio.scenes.download-prompt', [$project->id, $scene->id]) }}" class="btn btn-sm btn-outline-secondary">Download .txt</a>
+                                        <a href="{{ route('portal-social-reel-studio.scenes.download-prompt', [$data['project']->id, $scene->id]) }}" class="btn btn-sm btn-outline-secondary">Download .txt</a>
                                         @foreach ($scene->sceneCharacters as $sc)
                                             @if ($sc->character && $sc->character->portrait_upload_id)
-                                                <a href="{{ route('portal-social-reel-studio.scenes.download-portrait', [$project->id, $scene->id, $sc->character->id]) }}" class="btn btn-sm btn-outline-secondary">Download {{ $sc->character->name }} portrait</a>
+                                                <a href="{{ route('portal-social-reel-studio.scenes.download-portrait', [$data['project']->id, $scene->id, $sc->character->id]) }}" class="btn btn-sm btn-outline-secondary">Download {{ $sc->character->name }} portrait</a>
                                             @endif
                                         @endforeach
                                     </div>
@@ -96,35 +95,10 @@
         @endif
     </div>
 
-    @php
-        $initialScenesForJs = [];
-        foreach ($project->scenes as $scene) {
-            $characters = [];
-            foreach ($scene->sceneCharacters as $sc) {
-                $characters[] = [
-                    'character_id'  => $sc->reel_character_id,
-                    'action_points' => $sc->action_points,
-                    'dialogue'      => $sc->dialogue,
-                ];
-            }
-            $initialScenesForJs[] = [
-                'id'               => $scene->id,
-                'duration_seconds' => $scene->duration_seconds,
-                'description'      => $scene->description,
-                'characters'       => $characters,
-            ];
-        }
-
-        $availableCharactersForJs = [];
-        foreach ($data['characters'] as $character) {
-            $availableCharactersForJs[] = ['id' => $character->id, 'name' => $character->name];
-        }
-    @endphp
-
     <script>
         (function () {
-            var initialScenes = @json($initialScenesForJs);
-            var availableCharacters = @json($availableCharactersForJs);
+            var initialScenes = {!! json_encode($data['initialScenesJson']) !!};
+            var availableCharacters = {!! json_encode($data['availableCharsJson']) !!};
             var MAX_CHARACTERS = 3;
 
             var container = document.getElementById('scenesContainer');
@@ -151,7 +125,7 @@
                     '<div class="row g-2">' +
                         '<div class="col-12 col-md-4">' +
                             '<select class="form-control form-control-sm char-select">' +
-                                '<option value="">— Choose character —</option>' +
+                                '<option value="">Choose character</option>' +
                                 characterOptions(charData.character_id) +
                             '</select>' +
                         '</div>' +
@@ -162,7 +136,7 @@
                             '<textarea class="form-control form-control-sm char-dialogue" rows="2" placeholder="What this character says (leave empty if silent)"></textarea>' +
                         '</div>' +
                         '<div class="col-12 col-md-1 text-end">' +
-                            '<button type="button" class="btn btn-sm btn-outline-danger char-remove">&times;</button>' +
+                            '<button type="button" class="btn btn-sm btn-outline-danger char-remove">Remove</button>' +
                         '</div>' +
                     '</div>';
 
