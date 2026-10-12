@@ -1871,3 +1871,17 @@ body::after {
 .teaching_grid .teaching_single:hover p {
     color: #fff !important;
 }
+
+/* --- "Latest Notices/News" sidebar thumbnails: when a notice/news item
+       has no image and the server's default placeholder is missing too,
+       the browser was rendering the full (long) alt text inside the 60px
+       thumbnail box, wrapping one word per line and blowing out the card's
+       height. Give the <img> itself a fixed box and hide anything that
+       doesn't fit, so a missing image degrades to a blank box instead of
+       breaking the layout. --- */
+.latest_news_list .single_latest_news_list .icon_thumb img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    overflow: hidden;
+}
