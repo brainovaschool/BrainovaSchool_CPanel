@@ -1,6 +1,6 @@
 @extends('frontend.master')
 @section('title')
-    {{ ___('frontend.News') }}
+    {{ ___('frontend.Notices') }}
 @endsection
 
 @section('main')

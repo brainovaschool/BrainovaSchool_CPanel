@@ -1087,10 +1087,11 @@
                         hasPermission('ai_helper_read') ||
                         hasPermission('dashboard_features_read') ||
                         hasPermission('avatar_item_read') ||
+                        hasPermission('notice_board_read') ||
                         hasPermission('event_read')) &&
                         hasFeature('website_setup'))
                     <li
-                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'program-category*', 'program-focus*', 'program/*', 'testimonial*', 'trial-slot*', 'ai-helper*', 'skill*', 'dashboard-features*', 'avatar-item*', 'student-feature-access*']) }}">
+                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'communication/notice*', 'program-category*', 'program-focus*', 'program/*', 'testimonial*', 'trial-slot*', 'ai-helper*', 'skill*', 'dashboard-features*', 'avatar-item*', 'student-feature-access*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-wrench"></i>
                             <span class="on-half-expanded">{{ ___('settings.Website_setup') }}</span>
@@ -1145,6 +1146,11 @@
                             @if (hasPermission('event_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['event*']) }}">
                                     <a href="{{ route('event.index') }}">{{ ___('settings.event') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('notice_board_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['communication/notice*']) }}">
+                                    <a href="{{ route('notice-board.index') }}">{{ ___('common.notice_board') }}</a>
                                 </li>
                             @endif
 

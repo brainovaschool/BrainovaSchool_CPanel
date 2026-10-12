@@ -169,11 +169,17 @@ class NoticeBoardRepository implements NoticeBoardInterface
             $row->attachment           = $this->UploadImageUpdate($request->attachment, 'backend/uploads/communication', $row->attachment);
             $row->save();
 
+            if ($row->defaultTranslate) {
+                $row->defaultTranslate->update([
+                    'title' => $request->title,
+                    'description' => $request->description,
+                ]);
+            }
+
             DB::commit();
             return $this->responseWithSuccess(___('alert.updated_successfully'), []);
         } catch (\Throwable $th) {
             DB::rollBack();
-            dd($th);
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
     }
@@ -213,6 +219,19 @@ class NoticeBoardRepository implements NoticeBoardInterface
                 $row->locale           = $key;
                 $row->title             = $title;
                 $row->description      = isset($request->description[$key]) ? $request->description[$key] : $notice_board->description;
+                $row->save();
+            }
+
+            // Guarantee the site's default-locale row always exists, even if it
+            // wasn't among the submitted languages, so the public notice page
+            // never ends up with a missing translation.
+            $defaultLocale = config('app.locale');
+            if (!isset($request->title[$defaultLocale])) {
+                $row                       = new $this->notice_board_trans;
+                $row->notice_board_id      = $id;
+                $row->locale               = $defaultLocale;
+                $row->title                = $notice_board->title;
+                $row->description          = $notice_board->description;
                 $row->save();
             }
 

@@ -1,6 +1,6 @@
 @extends('frontend.master')
 @section('title')
-    {{ ___('frontend.news_details') }}
+    {{ ___('frontend.Notice Details') }}
 @endsection
 
 @section('main')
@@ -30,7 +30,7 @@
             <div class="col-xl-8">
                 <div class="news_page_info mb_25">
                     <div class="news_page_info_banner">
-                        <img src="{{ @globalAsset(@$data['notice-board']->upload->path, '800X500.webp') }}" alt="{{ @$data['notice-board']->defaultTranslate->title ?: 'Brainova notice' }}" class="img-fluid">
+                        <img src="{{ @globalAsset(@$data['notice-board']->attachmentFile->path, '800X500.webp') }}" alt="{{ optional($data['notice-board']->defaultTranslate)->title ?: $data['notice-board']->title }}" class="img-fluid">
                     </div>
                     <div class="event_posted_header d-flex align-items-center gap_10 flex-wrap">
                         <div class="event_posted_header_left flex-fill d-flex align-items-center gap_20">
@@ -39,9 +39,9 @@
                             </div>
                         </div>
                     </div>
-                    <h3 class="event_d_title mb_15">{{ $data['notice-board']->defaultTranslate->title }}</h3>
+                    <h3 class="event_d_title mb_15">{{ optional($data['notice-board']->defaultTranslate)->title ?: $data['notice-board']->title }}</h3>
                     <p class="event_lists mb_40">
-                        {!! $data['notice-board']->defaultTranslate->description !!}
+                        {!! optional($data['notice-board']->defaultTranslate)->description ?: $data['notice-board']->description !!}
                     </p>
                 </div>
             </div>
@@ -53,12 +53,12 @@
                         @foreach ($data['allNotice'] as $item)
                             <!-- single_latest_single -->
                             <div class="single_latest_news_list">
-                                <a href="{{ route('frontend.news-detail',$item->id) }}" class="icon_thumb">
-                                    <img src="{{ @globalAsset(@$item->upload->path, '90X60.webp') }}" alt="{{ @$item->defaultTranslate->title ?: 'Brainova notice' }}" class="img-fluid">
+                                <a href="{{ route('frontend.notice-detail',$item->id) }}" class="icon_thumb">
+                                    <img src="{{ @globalAsset(@$item->attachmentFile->path, '90X60.webp') }}" alt="{{ optional($item->defaultTranslate)->title ?: $item->title }}" class="img-fluid">
                                 </a>
                                 <div class="content_text">
                                     <h4>
-                                        <a href="{{ route('frontend.news-detail',$item->id) }}">{{ Str::limit($item->defaultTranslate->title,50) }}</a>
+                                        <a href="{{ route('frontend.notice-detail',$item->id) }}">{{ Str::limit(optional($item->defaultTranslate)->title ?: $item->title, 50) }}</a>
                                     </h4>
                                     <p>{{ dateFormat($item->date) }}</p>
                                 </div>
