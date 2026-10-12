@@ -82,8 +82,12 @@
                     <h4 class="mb-0">Scenes</h4>
                     <p class="text-secondary mb-0">Add scenes manually, or let AI draft a full set from your hook/description/characters above — either way, everything stays editable before you generate prompts.</p>
                 </div>
-                <form action="{{ route('portal-social-reel-studio.ai.generate-scenes', $data['project']->id) }}" method="post" onsubmit="return confirm('AI will add new scenes after whatever is already here (it won\'t touch or remove existing scenes). Continue?');">
+                <form action="{{ route('portal-social-reel-studio.ai.generate-scenes', $data['project']->id) }}" method="post" class="d-flex align-items-end gap-2" onsubmit="return confirm('AI will add new scenes after whatever is already here (it won\'t touch or remove existing scenes). Continue?');">
                     @csrf
+                    <div>
+                        <label class="form-label mb-0" style="font-size:12px;">Number of scenes (optional)</label>
+                        <input type="number" name="scene_count" min="1" max="12" class="form-control form-control-sm" style="width:110px;" placeholder="auto">
+                    </div>
                     <button class="btn ot-btn-primary">✨ AI: Generate Scenes</button>
                 </form>
             </div>

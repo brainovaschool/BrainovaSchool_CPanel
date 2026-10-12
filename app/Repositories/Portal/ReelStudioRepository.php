@@ -173,7 +173,7 @@ class ReelStudioRepository
      * built scenes are never at risk, even on a successful AI run. Nothing
      * is written at all if the AI call fails.
      */
-    public function aiGenerateScenes(int $projectId): array
+    public function aiGenerateScenes(int $projectId, ?int $sceneCount = null): array
     {
         $project = ReelProject::find($projectId);
         if (!$project) {
@@ -182,7 +182,7 @@ class ReelStudioRepository
 
         $characters = $project->involvedCharacters();
 
-        $prompt = $this->buildAiScenePrompt($project, $characters);
+        $prompt = $this->buildAiScenePrompt($project, $characters, $sceneCount);
         $result = (new AiGateway())->generate($prompt, true);
 
         if (!$result['ok']) {
@@ -236,7 +236,17 @@ class ReelStudioRepository
         }
     }
 
-    private function buildAiScenePrompt(ReelProject $project, $characters): string
+    /**
+     * Builds the AI instruction prompt for a full scene-generation run. If
+     * the admin has written their own AI Scene Generation Prompt (Reel
+     * Settings), that text is used as the creative/stylistic base — with
+     * placeholders filled in — instead of the built-in default below.
+     * Either way, the system's own JSON-output contract is appended at the
+     * very end, non-negotiably, since the response has to parse cleanly
+     * back into the editable Scene Builder regardless of what the admin's
+     * prompt asks for stylistically.
+     */
+    private function buildAiScenePrompt(ReelProject $project, $characters, ?int $sceneCount = null): string
     {
         $roster = $characters->map(function (ReelCharacter $c) {
             return "- id={$c->id}, name=\"{$c->name}\": appearance: " . ($c->appearance_text ?: '(not set)')
@@ -248,13 +258,29 @@ class ReelStudioRepository
         $targetSeconds       = $project->target_duration_seconds ?: 40;
         $formatLabel         = ReelProject::FORMATS[$project->format] ?? ReelProject::FORMATS['vertical'];
 
-        return <<<PROMPT
-You are planning a short educational reel for a school, scene by scene, for use with Google Flow (an AI video generator). Google Flow can only generate a MAXIMUM of 10 seconds per scene, so every scene's duration_seconds must be between 3 and 10.
+        $sceneCountInstruction = $sceneCount
+            ? "Create exactly {$sceneCount} scenes."
+            : "Break this into enough consecutive scenes to fit a target total length of approximately {$targetSeconds} seconds, each scene between 3 and 10 seconds.";
+
+        $customTemplate = trim((string) setting('reel_ai_prompt_template'));
+
+        if ($customTemplate) {
+            $base = strtr($customTemplate, [
+                '{{title}}'                  => $project->title,
+                '{{hook}}'                   => (string) $project->hook,
+                '{{description}}'            => (string) $project->description,
+                '{{format}}'                 => $formatLabel,
+                '{{target_duration}}'        => (string) $targetSeconds,
+                '{{scene_count_instruction}}' => $sceneCountInstruction,
+                '{{characters}}'             => $roster,
+            ]);
+        } else {
+            $base = <<<PROMPT
+You are planning a short educational reel for a school, scene by scene, for use with Google Flow (an AI video generator). Google Flow can only generate a MAXIMUM of 10 seconds per scene, so every scene's duration must be between 3 and 10 seconds.
 
 Reel title: {$project->title}
 Hook (the opening line, will be spoken by the character named Kea at the very start — do not repeat it verbatim, build the first scene to lead naturally from it): {$project->hook}
 Description / what this reel should teach: {$project->description}
-Target total length: approximately {$targetSeconds} seconds
 Video format: {$formatLabel}
 
 {$globalInstructions}
@@ -262,13 +288,23 @@ Video format: {$formatLabel}
 Available characters (use ONLY these — pick 0 to 3 per scene by their id):
 {$roster}
 
-Note: the system will automatically add the fixed closing line "Brainbot: Think Smart." / "Kea: Learn Smarter." to the very last scene — do not write that line yourself, just make the last scene's content lead naturally into a closing moment.
+{$sceneCountInstruction}
 
-Break the reel into consecutive scenes that fit the target length (each scene 3-10 seconds). For each scene write: a short visual scene description (setting, camera, visual events), and for every character you include in that scene, a short specific action point and (optionally) a short line of dialogue in their established voice — leave dialogue empty for a character who doesn't speak in that scene.
+For each scene write: a short, visually rich scene description (setting, background, camera, lighting, visual effects, and how it transitions to the next scene), and for every character you include in that scene, a short specific action point and (optionally) a short line of dialogue in their established voice — leave dialogue empty for a character who doesn't speak in that scene. Make the dialogue feel like a real, engaging conversation, not a textbook explanation.
+PROMPT;
+        }
+
+        $jsonContract = <<<PROMPT
+
+
+---
+Note: the system automatically adds the opening hook line and the fixed closing line ("Brainbot: Think Smart." / "Kea: Learn Smarter.") to the first and last scene — do not write those yourself, just make those scenes lead naturally into them.
 
 Respond with ONLY valid JSON (no markdown, no commentary, no code fences) matching exactly this schema:
 {"scenes":[{"description":"...","duration_seconds":8,"characters":[{"character_id":1,"action_points":"...","dialogue":"..."}]}]}
 PROMPT;
+
+        return $base . $jsonContract;
     }
 
     /** Validates/repairs the AI's scene list: clamps duration to Google

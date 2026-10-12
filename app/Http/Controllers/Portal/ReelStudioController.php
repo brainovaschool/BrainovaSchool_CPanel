@@ -152,16 +152,18 @@ class ReelStudioController extends Controller
         return redirect()->route('portal-social-reel-studio.show', $projectId)->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
-    public function aiGenerateScenes($projectId)
+    public function aiGenerateScenes(Request $request, $projectId)
     {
         $project = $this->repo->find((int) $projectId);
         if (!$project || !$this->authorizeProject($project)) {
             abort(404);
         }
 
+        $request->validate(['scene_count' => 'nullable|integer|min:1|max:12']);
         set_time_limit(120); // the AI gateway can fall back across accounts, which can take longer than the host's default cap
 
-        $result = $this->repo->aiGenerateScenes((int) $projectId);
+        $sceneCount = $request->filled('scene_count') ? (int) $request->input('scene_count') : null;
+        $result     = $this->repo->aiGenerateScenes((int) $projectId, $sceneCount);
         return redirect()->route('portal-social-reel-studio.show', $projectId)->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

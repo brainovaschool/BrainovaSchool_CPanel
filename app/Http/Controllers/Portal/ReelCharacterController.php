@@ -82,13 +82,17 @@ class ReelCharacterController extends Controller
     public function settings()
     {
         $data['globalInstructions'] = setting('reel_global_instructions');
-        $data['title']              = 'Reel Global Instructions';
+        $data['aiPromptTemplate']   = setting('reel_ai_prompt_template');
+        $data['title']              = 'Reel Settings';
         return view('portal.social.reel-characters.settings', compact('data'));
     }
 
     public function updateSettings(Request $request)
     {
-        $request->validate(['reel_global_instructions' => 'nullable|string|max:5000']);
+        $request->validate([
+            'reel_global_instructions' => 'nullable|string|max:5000',
+            'reel_ai_prompt_template'  => 'nullable|string|max:20000',
+        ]);
 
         $result = $this->repo->updateGlobalInstructions($request);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);

@@ -94,17 +94,23 @@ class ReelCharacterRepository
     public function updateGlobalInstructions($request): array
     {
         try {
-            $setting = \App\Models\Setting::where('name', 'reel_global_instructions')->first();
-            if (!$setting) {
-                $setting = new \App\Models\Setting();
-                $setting->name = 'reel_global_instructions';
-            }
-            $setting->value = $request->input('reel_global_instructions');
-            $setting->save();
+            $this->setSetting('reel_global_instructions', $request->input('reel_global_instructions'));
+            $this->setSetting('reel_ai_prompt_template', $request->input('reel_ai_prompt_template'));
 
-            return $this->responseWithSuccess('Global instructions updated.', []);
+            return $this->responseWithSuccess('Settings updated.', []);
         } catch (\Throwable $th) {
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
+    }
+
+    private function setSetting(string $name, ?string $value): void
+    {
+        $setting = \App\Models\Setting::where('name', $name)->first();
+        if (!$setting) {
+            $setting = new \App\Models\Setting();
+            $setting->name = $name;
+        }
+        $setting->value = $value;
+        $setting->save();
     }
 }
