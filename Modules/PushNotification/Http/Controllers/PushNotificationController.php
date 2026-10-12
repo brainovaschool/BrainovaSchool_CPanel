@@ -2,7 +2,6 @@
 
 namespace Modules\PushNotification\Http\Controllers;
 
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -60,10 +59,16 @@ class PushNotificationController extends Controller
     // Send a test notification using user token
     public function sendTestNotification(Request $request)
     {
-        $token = User::find(2)->device_token;
+        $user = Auth::user();
+
+        if (!$user) {
+            return response()->json(['status' => 'error', 'message' => 'You must be logged in to send a test notification.'], 401);
+        }
+
+        $token = $user->device_token;
 
         if (!$token) {
-            return response()->json(['status' => 'error', 'message' => 'Token is required.'], 400);
+            return response()->json(['status' => 'error', 'message' => 'No device token found for your account yet. Visit the site and allow notifications first.'], 400);
         }
 
         try {
