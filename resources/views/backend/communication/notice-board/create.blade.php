@@ -172,6 +172,7 @@
                                                 name="attachment" id="fileBrouse">
                                         </button>
                                     </div>
+                                    <small class="text-muted">Recommended size: 1600×900px (landscape, 16:9). The full image is shown — no cropping.</small>
                                 </div>
 
                                 <div class="col-md-4 mb-3">
