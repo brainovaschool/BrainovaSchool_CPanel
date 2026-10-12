@@ -611,11 +611,28 @@
                                 <li class="sidebar-menu-item {{ set_menu(['portal/social/settings']) }}">
                                     <a href="{{ route('portal-social-settings.edit') }}">Social Settings</a>
                                 </li>
+                                <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-characters*']) }}">
+                                    <a href="{{ route('portal-social-reel-characters.index') }}">Reel Characters</a>
+                                </li>
+                                <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-settings']) }}">
+                                    <a href="{{ route('portal-social-reel-settings.edit') }}">Reel Settings</a>
+                                </li>
                             @endif
                         </ul>
                     </li>
                 @endif
                 <!-- Team Portal end -->
+                {{-- Reel Studio is deliberately OUTSIDE the portal_access-gated block above: that
+                     whole block (Team Portal + Social Board) is hidden from anyone without staff
+                     Portal access, which would hide Reel Studio from exactly the teachers it's for. --}}
+                @if (hasPermission('reel_studio_access') || hasPermission('portal_manage'))
+                    <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-studio*']) }}">
+                        <a href="{{ route('portal-social-reel-studio.index') }}">
+                            <i class="las la-hashtag"></i>
+                            <span class="on-half-expanded">Reel Studio</span>
+                        </a>
+                    </li>
+                @endif
                 @if (hasPermission('homework_read'))
 
                     <li class="sidebar-menu-item {{ set_menu(['homework*']) }}">

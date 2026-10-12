@@ -11,6 +11,8 @@ use App\Http\Controllers\Portal\ResponsibilityController;
 use App\Http\Controllers\Portal\AnalyticsController;
 use App\Http\Controllers\Portal\SocialController;
 use App\Http\Controllers\Portal\GrowthPayController;
+use App\Http\Controllers\Portal\ReelCharacterController;
+use App\Http\Controllers\Portal\ReelStudioController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -108,6 +110,33 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/',             'index')->name('index')->middleware('PermissionCheck:portal_manage');
                     Route::post('/save',        'save')->name('save')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::post('/{id}/mark-paid', 'markPaid')->name('mark-paid')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                });
+
+                // Reel Studio — admin character catalogue (portal_manage; Social Board admin).
+                Route::controller(ReelCharacterController::class)->prefix('portal/social/reel-characters')->name('portal-social-reel-characters.')->group(function () {
+                    Route::get('/',            'index')->name('index')->middleware('PermissionCheck:portal_manage');
+                    Route::get('/create',      'create')->name('create')->middleware('PermissionCheck:portal_manage');
+                    Route::post('/store',      'store')->name('store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::get('/edit/{id}',   'edit')->name('edit')->middleware('PermissionCheck:portal_manage');
+                    Route::put('/update/{id}', 'update')->name('update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::delete('/{id}',     'destroy')->name('destroy')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                });
+                Route::get('/portal/social/reel-settings',  [ReelCharacterController::class, 'settings'])->name('portal-social-reel-settings.edit')->middleware('PermissionCheck:portal_manage');
+                Route::post('/portal/social/reel-settings', [ReelCharacterController::class, 'updateSettings'])->name('portal-social-reel-settings.update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+
+                // Reel Studio — teacher-facing scene builder (reel_studio_access; portal_manage holders get it auto-granted).
+                Route::controller(ReelStudioController::class)->prefix('portal/social/reel-studio')->name('portal-social-reel-studio.')->group(function () {
+                    Route::get('/',            'index')->name('index')->middleware('PermissionCheck:reel_studio_access');
+                    Route::get('/create',      'create')->name('create')->middleware('PermissionCheck:reel_studio_access');
+                    Route::post('/store',      'store')->name('store')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
+                    Route::get('/show/{id}',   'show')->name('show')->middleware('PermissionCheck:reel_studio_access');
+                    Route::put('/update/{id}', 'update')->name('update')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
+                    Route::delete('/{id}',     'destroy')->name('destroy')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
+
+                    Route::post('/{projectId}/scenes', 'storeScenes')->name('scenes.store')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
+                    Route::post('/{projectId}/scenes/{sceneId}/generate-prompt', 'generatePrompt')->name('scenes.generate-prompt')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
+                    Route::get('/{projectId}/scenes/{sceneId}/download-prompt', 'downloadScenePrompt')->name('scenes.download-prompt')->middleware('PermissionCheck:reel_studio_access');
+                    Route::get('/{projectId}/scenes/{sceneId}/characters/{characterId}/download-portrait', 'downloadCharacterPortrait')->name('scenes.download-portrait')->middleware('PermissionCheck:reel_studio_access');
                 });
 
             });

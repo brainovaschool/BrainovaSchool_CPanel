@@ -89,6 +89,9 @@ class MigrationRunnerController extends Controller
             'access' => 'portal_access',
             'manage' => 'portal_manage',
         ],
+        'reel_studio' => [
+            'access' => 'reel_studio_access',
+        ],
     ];
 
     public function run(string $key)
@@ -3640,7 +3643,7 @@ class MigrationRunnerController extends Controller
         $added      = [];
         $allKeywords = [];
         $strippableKeywords = [];
-        $nonStrippableGroups = ['class_content', 'fees_payment_proof', 'portal'];
+        $nonStrippableGroups = ['class_content', 'fees_payment_proof', 'portal', 'reel_studio'];
 
         foreach (self::PERMISSION_GROUPS as $attribute => $keywords) {
             if (!Permission::where('attribute', $attribute)->exists()) {
@@ -3686,6 +3689,22 @@ class MigrationRunnerController extends Controller
             }
         }
 
+
+        // Reel Studio: PermissionCheck can only test one keyword at a time,
+        // so portal_manage holders need reel_studio_access explicitly on
+        // their role too (Super Admin already gets it via the role_id===1
+        // branch above) — otherwise a Social Board admin who never happened
+        // to tick that checkbox would be locked out of the teacher-facing
+        // Reel Studio pages they're meant to always be able to reach.
+        // Grant-only, re-checked every run, never strips a manual revoke of
+        // portal_manage itself (if that goes, this stops being re-granted).
+        foreach (Role::all() as $role) {
+            $rolePerms = is_array($role->permissions) ? $role->permissions : [];
+            if (in_array('portal_manage', $rolePerms, true) && !in_array('reel_studio_access', $rolePerms, true)) {
+                $role->permissions = array_values(array_merge($rolePerms, ['reel_studio_access']));
+                $role->save();
+            }
+        }
 
         $summary = $added ? ('added ' . implode(', ', $added)) : 'all present';
         if ($strippedFrom) {
