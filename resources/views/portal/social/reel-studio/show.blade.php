@@ -82,14 +82,20 @@
                     <h4 class="mb-0">Scenes</h4>
                     <p class="text-secondary mb-0">Add scenes manually, or let AI draft a full set from your hook/description/characters above — either way, everything stays editable before you generate prompts.</p>
                 </div>
-                <form action="{{ route('portal-social-reel-studio.ai.generate-scenes', $data['project']->id) }}" method="post" class="d-flex align-items-end gap-2" onsubmit="return confirm('AI will add new scenes after whatever is already here (it won\'t touch or remove existing scenes). Continue?');">
-                    @csrf
+                <form id="aiGenerateForm" class="d-flex align-items-end gap-2">
                     <div>
                         <label class="form-label mb-0" style="font-size:12px;">Number of scenes (optional)</label>
-                        <input type="number" name="scene_count" min="1" max="12" class="form-control form-control-sm" style="width:110px;" placeholder="auto">
+                        <input type="number" id="aiSceneCount" min="1" max="20" class="form-control form-control-sm" style="width:110px;" placeholder="auto">
                     </div>
-                    <button class="btn ot-btn-primary">✨ AI: Generate Scenes</button>
+                    <button type="submit" id="aiGenerateBtn" class="btn ot-btn-primary">✨ AI: Generate Scenes</button>
                 </form>
+            </div>
+            <div id="aiGenerateStatus" class="card-body border-top" style="display:none;">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span id="aiGenerateStatusText">AI is generating scenes… this can take up to 2 minutes.</span>
+                    <button type="button" id="aiGenerateCancelBtn" class="btn btn-sm btn-outline-danger ms-auto">Cancel — I'll add scenes manually</button>
+                </div>
             </div>
             <div class="card-body">
                 <form id="scenesForm" action="{{ route('portal-social-reel-studio.scenes.store', $data['project']->id) }}" method="post">
@@ -313,6 +319,81 @@
                         flash();
                     }
                 });
+            });
+        })();
+
+        (function () {
+            var form         = document.getElementById('aiGenerateForm');
+            var sceneCount   = document.getElementById('aiSceneCount');
+            var generateBtn  = document.getElementById('aiGenerateBtn');
+            var statusBox    = document.getElementById('aiGenerateStatus');
+            var statusText   = document.getElementById('aiGenerateStatusText');
+            var cancelBtn    = document.getElementById('aiGenerateCancelBtn');
+            var spinner      = statusBox.querySelector('.spinner-border');
+            var controller   = null;
+
+            function setStatus(text, isError) {
+                statusText.textContent = text;
+                statusText.style.color = isError ? '#b91c1c' : '';
+            }
+
+            function stopWaiting() {
+                generateBtn.disabled = false;
+                spinner.style.display = 'none';
+                cancelBtn.style.display = 'none';
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                if (!confirm("AI will add new scenes after whatever is already here (it won't touch or remove existing scenes). Continue?")) {
+                    return;
+                }
+
+                controller = new AbortController();
+                generateBtn.disabled = true;
+                statusBox.style.display = 'block';
+                spinner.style.display = '';
+                cancelBtn.style.display = '';
+                setStatus('AI is generating scenes… this can take up to 2 minutes. Feel free to cancel and add scenes manually if it\'s taking too long.', false);
+
+                var formData = new FormData();
+                if (sceneCount.value) {
+                    formData.append('scene_count', sceneCount.value);
+                }
+
+                fetch('{{ route('portal-social-reel-studio.ai.generate-scenes', $data['project']->id) }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                    body: formData,
+                    signal: controller.signal
+                })
+                .then(function (response) {
+                    return response.json().then(function (data) { return { ok: response.ok, data: data }; });
+                })
+                .then(function (result) {
+                    if (result.ok && result.data.status) {
+                        setStatus((result.data.message || 'Scenes generated.') + ' Reloading…', false);
+                        window.location.reload();
+                    } else {
+                        setStatus(result.data.message || 'Something went wrong. You can add scenes manually below.', true);
+                        stopWaiting();
+                    }
+                })
+                .catch(function (err) {
+                    if (err.name === 'AbortError') {
+                        setStatus("Cancelled — add scenes manually below whenever you're ready.", false);
+                    } else {
+                        setStatus('Could not reach the server. You can add scenes manually below.', true);
+                    }
+                    stopWaiting();
+                });
+            });
+
+            cancelBtn.addEventListener('click', function () {
+                if (controller) {
+                    controller.abort();
+                }
             });
         })();
     </script>

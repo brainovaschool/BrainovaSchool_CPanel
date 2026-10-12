@@ -20,7 +20,7 @@ class ReelStudioRepository
 
     private const MAX_CHARACTERS_PER_SCENE = 3;
     private const MAX_SCENE_SECONDS        = 10; // Google Flow's hard per-scene limit
-    private const MAX_AI_SCENES            = 12;
+    private const MAX_AI_SCENES            = 20; // generous safety cap, well above what a target_duration_seconds up to a few minutes needs at 10s/scene
 
     public function projects(int $userId, bool $isManager)
     {
@@ -240,11 +240,20 @@ class ReelStudioRepository
      * Builds the AI instruction prompt for a full scene-generation run. If
      * the admin has written their own AI Scene Generation Prompt (Reel
      * Settings), that text is used as the creative/stylistic base — with
-     * placeholders filled in — instead of the built-in default below.
-     * Either way, the system's own JSON-output contract is appended at the
-     * very end, non-negotiably, since the response has to parse cleanly
-     * back into the editable Scene Builder regardless of what the admin's
-     * prompt asks for stylistically.
+     * placeholders substituted in wherever it uses them. But correctness
+     * must NEVER depend on the admin's template using the exact right
+     * placeholder tokens: a bug caught in testing showed that when a
+     * pasted template didn't reference {{title}}/{{hook}}/etc at all (e.g.
+     * it used its own [TOPIC]/[NUMBER]-style placeholders instead), the
+     * real title/hook/description/scene-count silently never reached the
+     * AI at all, and it invented an unrelated topic. So those values are
+     * now ALWAYS appended again afterward in a clearly-labeled block,
+     * regardless of what the base template does or doesn't reference —
+     * mirroring the same "ACTUAL INPUT ... ignore example placeholders
+     * above" pattern already used by AiHelperRepository::inputBlock().
+     * The system's own JSON-output contract is appended last, always,
+     * since the response has to parse cleanly back into the editable
+     * Scene Builder regardless of what the admin's prompt asks for.
      */
     private function buildAiScenePrompt(ReelProject $project, $characters, ?int $sceneCount = null): string
     {
@@ -258,41 +267,54 @@ class ReelStudioRepository
         $targetSeconds       = $project->target_duration_seconds ?: 40;
         $formatLabel         = ReelProject::FORMATS[$project->format] ?? ReelProject::FORMATS['vertical'];
 
+        $suggestedSceneCount = max(1, (int) ceil($targetSeconds / self::MAX_SCENE_SECONDS));
         $sceneCountInstruction = $sceneCount
-            ? "Create exactly {$sceneCount} scenes."
-            : "Break this into enough consecutive scenes to fit a target total length of approximately {$targetSeconds} seconds, each scene between 3 and 10 seconds.";
+            ? "Create exactly {$sceneCount} scenes, each 3-10 seconds long."
+            : "The TOTAL reel must add up to approximately {$targetSeconds} seconds. Each individual scene can only be 3-10 seconds long (Google Flow's hard limit), so use around {$suggestedSceneCount} scenes of close to 10 seconds each (or more, shorter scenes, if that tells the story better) — do NOT stop after just 2-3 scenes, the durations must add up to roughly {$targetSeconds} seconds in total.";
 
         $customTemplate = trim((string) setting('reel_ai_prompt_template'));
 
-        if ($customTemplate) {
-            $base = strtr($customTemplate, [
-                '{{title}}'                  => $project->title,
-                '{{hook}}'                   => (string) $project->hook,
-                '{{description}}'            => (string) $project->description,
-                '{{format}}'                 => $formatLabel,
-                '{{target_duration}}'        => (string) $targetSeconds,
-                '{{scene_count_instruction}}' => $sceneCountInstruction,
-                '{{characters}}'             => $roster,
-            ]);
-        } else {
-            $base = <<<PROMPT
-You are planning a short educational reel for a school, scene by scene, for use with Google Flow (an AI video generator). Google Flow can only generate a MAXIMUM of 10 seconds per scene, so every scene's duration must be between 3 and 10 seconds.
+        // Common placeholder styles — both this app's own {{token}} form and
+        // the [TOKEN] bracket form (matching the reference prompt this
+        // feature was modeled on), so either style gets substituted inline
+        // wherever the admin's template actually places it.
+        $placeholders = [
+            '{{title}}'                   => $project->title,
+            '{{hook}}'                    => (string) $project->hook,
+            '{{description}}'             => (string) $project->description,
+            '{{format}}'                  => $formatLabel,
+            '{{target_duration}}'         => (string) $targetSeconds,
+            '{{scene_count_instruction}}' => $sceneCountInstruction,
+            '{{characters}}'              => $roster,
+            '[TOPIC]'                     => $project->title . ($project->description ? ' — ' . $project->description : ''),
+            '[NUMBER]'                    => $sceneCount ? (string) $sceneCount : 'as many as needed',
+            '[NUMBER OF SCENES]'          => $sceneCount ? (string) $sceneCount : 'as many as needed',
+            '[DURATION(S)]'               => $sceneCount ? '10' : 'up to 10',
+        ];
 
-Reel title: {$project->title}
-Hook (the opening line, will be spoken by the character named Kea at the very start — do not repeat it verbatim, build the first scene to lead naturally from it): {$project->hook}
-Description / what this reel should teach: {$project->description}
-Video format: {$formatLabel}
+        $base = $customTemplate ? strtr($customTemplate, $placeholders) : <<<PROMPT
+You are planning a short educational reel for a school, scene by scene, for use with Google Flow (an AI video generator). Google Flow can only generate a MAXIMUM of 10 seconds per scene, so every scene's duration must be between 3 and 10 seconds.
 
 {$globalInstructions}
 
-Available characters (use ONLY these — pick 0 to 3 per scene by their id):
-{$roster}
-
-{$sceneCountInstruction}
-
 For each scene write: a short, visually rich scene description (setting, background, camera, lighting, visual effects, and how it transitions to the next scene), and for every character you include in that scene, a short specific action point and (optionally) a short line of dialogue in their established voice — leave dialogue empty for a character who doesn't speak in that scene. Make the dialogue feel like a real, engaging conversation, not a textbook explanation.
 PROMPT;
-        }
+
+        // Always present, regardless of the base template above — this is
+        // what actually guarantees the AI sticks to the real topic/length.
+        $actualInput = <<<PROMPT
+
+
+---
+ACTUAL REEL INFORMATION FOR THIS GENERATION — this is the real data for THIS reel; ignore any example topic, placeholder text, or sample scene count in the instructions above that doesn't match this:
+Reel title: {$project->title}
+What this reel is actually about: {$project->description}
+Opening hook line (will be spoken by Kea in scene 1 automatically — do not write it yourself): {$project->hook}
+Video format: {$formatLabel}
+{$sceneCountInstruction}
+Characters available for this reel (use ONLY these, by id — do not invent others):
+{$roster}
+PROMPT;
 
         $jsonContract = <<<PROMPT
 
@@ -304,7 +326,7 @@ Respond with ONLY valid JSON (no markdown, no commentary, no code fences) matchi
 {"scenes":[{"description":"...","duration_seconds":8,"characters":[{"character_id":1,"action_points":"...","dialogue":"..."}]}]}
 PROMPT;
 
-        return $base . $jsonContract;
+        return $base . $actualInput . $jsonContract;
     }
 
     /** Validates/repairs the AI's scene list: clamps duration to Google

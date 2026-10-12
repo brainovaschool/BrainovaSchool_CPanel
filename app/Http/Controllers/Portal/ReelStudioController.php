@@ -152,19 +152,25 @@ class ReelStudioController extends Controller
         return redirect()->route('portal-social-reel-studio.show', $projectId)->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    /**
+     * AJAX endpoint (not a classic form submit) so the Scene Builder page
+     * can show a loading state with a real Cancel button — the client can
+     * abort waiting on the fetch() and let the teacher build scenes
+     * manually instead, without being stuck behind a full-page redirect.
+     */
     public function aiGenerateScenes(Request $request, $projectId)
     {
         $project = $this->repo->find((int) $projectId);
         if (!$project || !$this->authorizeProject($project)) {
-            abort(404);
+            return response()->json(['status' => false, 'message' => ___('alert.not_found')], 404);
         }
 
-        $request->validate(['scene_count' => 'nullable|integer|min:1|max:12']);
+        $request->validate(['scene_count' => 'nullable|integer|min:1|max:20']);
         set_time_limit(120); // the AI gateway can fall back across accounts, which can take longer than the host's default cap
 
         $sceneCount = $request->filled('scene_count') ? (int) $request->input('scene_count') : null;
         $result     = $this->repo->aiGenerateScenes((int) $projectId, $sceneCount);
-        return redirect()->route('portal-social-reel-studio.show', $projectId)->with($result['status'] ? 'success' : 'danger', $result['message']);
+        return response()->json($result, $result['status'] ? 200 : 422);
     }
 
     public function generatePrompt($projectId, $sceneId)
