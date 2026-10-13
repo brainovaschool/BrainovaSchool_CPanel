@@ -458,7 +458,10 @@ class RoleSeeder extends Seeder
             ],
             [
                 'name'        => 'Teacher',
-                'permissions' => []
+                'permissions' => [
+                    'ai_help_teacher_read',
+                    'skill_mastery_report_read',
+                ]
             ],
             [
                 'name'        => 'Student',

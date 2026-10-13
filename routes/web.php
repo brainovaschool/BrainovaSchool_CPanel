@@ -331,15 +331,15 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::put('/password/update/store', 'passwordUpdateStore')->name('passwordUpdateStore')->middleware('DemoCheck');
                     });
 
-                    Route::controller(AiHelperTeacherController::class)->prefix('ai-help-teacher')->name('ai-help-teacher.')->group(function () {
+                    Route::controller(AiHelperTeacherController::class)->prefix('ai-help-teacher')->name('ai-help-teacher.')->middleware('PermissionCheck:ai_help_teacher_read')->group(function () {
                         Route::get('/',                       'index')->name('index');
                         Route::post('/generate',              'generate')->name('generate');
                         Route::post('/generate-visual',       'generateVisual')->name('generate-visual');
                         Route::post('/generate-slides',       'generateSlides')->name('generate-slides');
                     });
 
-                    Route::get('/skill-mastery-report', [\App\Http\Controllers\Backend\SkillMasteryReportController::class, 'index'])->name('skill-mastery-report.index');
-                    Route::get('/skill-mastery-report/guide', [\App\Http\Controllers\Backend\SkillMasteryReportController::class, 'guide'])->name('skill-mastery-report.guide');
+                    Route::get('/skill-mastery-report', [\App\Http\Controllers\Backend\SkillMasteryReportController::class, 'index'])->name('skill-mastery-report.index')->middleware('PermissionCheck:skill_mastery_report_read');
+                    Route::get('/skill-mastery-report/guide', [\App\Http\Controllers\Backend\SkillMasteryReportController::class, 'guide'])->name('skill-mastery-report.guide')->middleware('PermissionCheck:skill_mastery_report_read');
 
                     Route::controller(LanguageController::class)->middleware(['FeatureCheck:language', 'DenyTeacherAndStudent'])->prefix('languages')->group(function () {
                         Route::get('/',                         'index')->name('languages.index')->middleware('PermissionCheck:language_read');

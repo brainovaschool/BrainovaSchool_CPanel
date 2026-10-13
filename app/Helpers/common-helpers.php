@@ -1312,6 +1312,8 @@ if (!function_exists('permission_category_map')) {
             'class_content' => 'Staff Workspace',
             'portal' => 'Staff Workspace',
             'reel_studio' => 'Staff Workspace',
+            'ai_help_teacher' => 'Teacher Tools',
+            'skill_mastery_report' => 'Teacher Tools',
             'homework' => 'Homework',
             'notice_board' => 'Communication',
             'sms_mail_template' => 'Communication',

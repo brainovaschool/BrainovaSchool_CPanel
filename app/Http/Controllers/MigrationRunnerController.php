@@ -99,6 +99,8 @@ class MigrationRunnerController extends Controller
         'leave_request' => ['read' => 'leave_request_read', 'create' => 'leave_request_create', 'update' => 'leave_request_update', 'delete' => 'leave_request_delete'],
         'report_class_routine' => ['read' => 'report_class_routine_read'],
         'report_exam_routine' => ['read' => 'report_exam_routine_read'],
+        'ai_help_teacher' => ['read' => 'ai_help_teacher_read'],
+        'skill_mastery_report' => ['read' => 'skill_mastery_report_read'],
     ];
 
     /**
@@ -3765,22 +3767,42 @@ class MigrationRunnerController extends Controller
         // every existing role is grandfathered in with full access so
         // nobody is locked out on deploy; an admin can deliberately narrow
         // a specific role's access afterwards via the normal Roles screen.
-        // Grant-only and re-checked every run, same pattern as Reel Studio
-        // above — it never re-adds a keyword an admin has deliberately
-        // unchecked, because it only tops up what's already missing from a
-        // role that still lacks the whole group.
-        $leaveKeywords = [
-            'leave_type_read', 'leave_type_create', 'leave_type_update', 'leave_type_delete',
-            'leave_request_read', 'leave_request_create', 'leave_request_update', 'leave_request_delete',
-        ];
-        foreach (Role::all() as $role) {
-            if ((int) $role->id === 1) {
-                continue;
-            }
-            $rolePerms = is_array($role->permissions) ? $role->permissions : [];
-            if (!in_array('leave_type_read', $rolePerms, true)) {
+        //
+        // This must only ever fire ONCE — the very first sync run after
+        // this deploy, which is the run where 'leave_type'/'leave_request'
+        // get created and land in $added above. On every later run those
+        // attributes already exist, so this is skipped entirely — otherwise
+        // an admin who deliberately unchecked Leave for a role would find
+        // it silently re-granted the next time anyone visits this URL.
+        if (in_array('leave_type', $added, true) || in_array('leave_request', $added, true)) {
+            $leaveKeywords = [
+                'leave_type_read', 'leave_type_create', 'leave_type_update', 'leave_type_delete',
+                'leave_request_read', 'leave_request_create', 'leave_request_update', 'leave_request_delete',
+            ];
+            foreach (Role::all() as $role) {
+                if ((int) $role->id === 1) {
+                    continue;
+                }
+                $rolePerms = is_array($role->permissions) ? $role->permissions : [];
                 $role->permissions = array_values(array_unique(array_merge($rolePerms, $leaveKeywords)));
                 $role->save();
+            }
+        }
+
+        // Ai Help Teacher / Skill Mastery Report used to be hardcoded to
+        // role_id 1 or 5 in the sidebar (role 5 = Teacher), bypassing the
+        // permission system entirely — an admin had no way to show/hide
+        // them for any role. Grandfathered into the Teacher role only, and
+        // only on the one run that creates these two attributes (same
+        // one-time guard as Leave above), so the tools don't disappear for
+        // teachers on deploy, but an admin's later choice to uncheck them
+        // for Teacher (or grant them to another role) always sticks.
+        if (in_array('ai_help_teacher', $added, true) || in_array('skill_mastery_report', $added, true)) {
+            $teacherRole = Role::where('name', 'Teacher')->first();
+            if ($teacherRole) {
+                $teacherPerms = is_array($teacherRole->permissions) ? $teacherRole->permissions : [];
+                $teacherRole->permissions = array_values(array_unique(array_merge($teacherPerms, ['ai_help_teacher_read', 'skill_mastery_report_read'])));
+                $teacherRole->save();
             }
         }
 

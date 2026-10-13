@@ -662,19 +662,23 @@
                     </li>
                 @endif
 
-                @if (auth()->check() && in_array((int) auth()->user()->role_id, [1, 5]))
+                @if (hasPermission('ai_help_teacher_read') || hasPermission('skill_mastery_report_read'))
                     <li class="sidebar-menu-item {{ set_menu(['ai-help-teacher*', 'skill-mastery-report*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-robot"></i>
                             <span class="on-half-expanded">Teacher Tools</span>
                         </a>
                         <ul class="child-menu-list">
-                            <li class="sidebar-menu-item {{ set_menu(['ai-help-teacher*']) }}">
-                                <a href="{{ route('ai-help-teacher.index') }}">{{ ___('settings.ai_help_teacher') }}</a>
-                            </li>
-                            <li class="sidebar-menu-item {{ set_menu(['skill-mastery-report*']) }}">
-                                <a href="{{ route('skill-mastery-report.index') }}">{{ ___('settings.skill_mastery_report') }}</a>
-                            </li>
+                            @if (hasPermission('ai_help_teacher_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['ai-help-teacher*']) }}">
+                                    <a href="{{ route('ai-help-teacher.index') }}">{{ ___('settings.ai_help_teacher') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('skill_mastery_report_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['skill-mastery-report*']) }}">
+                                    <a href="{{ route('skill-mastery-report.index') }}">{{ ___('settings.skill_mastery_report') }}</a>
+                                </li>
+                            @endif
                         </ul>
                     </li>
                 @endif

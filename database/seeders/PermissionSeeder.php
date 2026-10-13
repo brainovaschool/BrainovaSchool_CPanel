@@ -133,6 +133,9 @@ class PermissionSeeder extends Seeder
             'gmeet'                => ['read' => 'gmeet_read', 'create' => 'gmeet_create', 'update' => 'gmeet_update', 'delete' => 'gmeet_delete'],
             // notice board
             'notice_board'         => ['read' => 'notice_board_read', 'create' => 'notice_board_create', 'update' => 'notice_board_update', 'delete' => 'notice_board_delete'],
+            // Teacher tools
+            'ai_help_teacher'      => ['read' => 'ai_help_teacher_read'],
+            'skill_mastery_report' => ['read' => 'skill_mastery_report_read'],
             // sms_mail_template
             'sms_mail_template'    => ['read' => 'sms_mail_template_read', 'create' => 'sms_mail_template_create', 'update' => 'sms_mail_template_update', 'delete' => 'sms_mail_template_delete'],
             // sms/mail compose
