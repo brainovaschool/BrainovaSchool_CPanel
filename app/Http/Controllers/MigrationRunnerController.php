@@ -92,6 +92,34 @@ class MigrationRunnerController extends Controller
         'reel_studio' => [
             'access' => 'reel_studio_access',
         ],
+        'ai_helper' => ['read' => 'ai_helper_read', 'update' => 'ai_helper_update'],
+        'page' => ['read' => 'page_read', 'create' => 'page_create', 'update' => 'page_update', 'delete' => 'page_delete'],
+        'admission_setting' => ['update' => 'admission_setting_update'],
+        'leave_type' => ['read' => 'leave_type_read', 'create' => 'leave_type_create', 'update' => 'leave_type_update', 'delete' => 'leave_type_delete'],
+        'leave_request' => ['read' => 'leave_request_read', 'create' => 'leave_request_create', 'update' => 'leave_request_update', 'delete' => 'leave_request_delete'],
+        'report_class_routine' => ['read' => 'report_class_routine_read'],
+        'report_exam_routine' => ['read' => 'report_exam_routine_read'],
+    ];
+
+    /**
+     * Rows that already exist on older tenants but whose `keywords` either
+     * got corrupted by a duplicate-PHP-array-key bug in the original
+     * PermissionSeeder (dashboard, class_routine, exam_routine — an earlier
+     * key was silently overwritten, so most of that row's checkboxes could
+     * never be granted to any role) or were simply never completed
+     * (sms_mail/sms_mail_template had a typo'd keyword and were missing
+     * create/update/delete; users never got a change_permission keyword).
+     * Merged into the existing row rather than replacing it, so a correct
+     * keyword an admin already relies on is never dropped — only missing or
+     * wrong entries are added/corrected.
+     */
+    private const PERMISSION_COMPLETIONS = [
+        'dashboard' => ['fees_collection' => 'fees_collesction_read', 'revenue' => 'revenue_read', 'fees_collection_this_month' => 'fees_collection_this_month_read', 'income_expense' => 'income_expense_read', 'upcoming_events' => 'upcoming_events_read', 'attendance_chart' => 'attendance_chart_read', 'calendar' => 'calendar_read'],
+        'class_routine' => ['read' => 'class_routine_read', 'create' => 'class_routine_create', 'update' => 'class_routine_update', 'delete' => 'class_routine_delete'],
+        'exam_routine' => ['read' => 'exam_routine_read', 'create' => 'exam_routine_create', 'update' => 'exam_routine_update', 'delete' => 'exam_routine_delete'],
+        'sms_mail' => ['read' => 'sms_mail_read', 'send' => 'sms_mail_send', 'update' => 'sms_mail_update', 'delete' => 'sms_mail_delete'],
+        'sms_mail_template' => ['read' => 'sms_mail_template_read', 'create' => 'sms_mail_template_create', 'update' => 'sms_mail_template_update', 'delete' => 'sms_mail_template_delete'],
+        'users' => ['read' => 'user_read', 'create' => 'user_create', 'update' => 'user_update', 'delete' => 'user_delete', 'change_permission' => 'change_permission'],
     ];
 
     public function run(string $key)
@@ -3643,7 +3671,11 @@ class MigrationRunnerController extends Controller
         $added      = [];
         $allKeywords = [];
         $strippableKeywords = [];
-        $nonStrippableGroups = ['class_content', 'fees_payment_proof', 'portal', 'reel_studio'];
+        // Leave is also grandfathered in below (see the leave-access block)
+        // for the same reason reel_studio/portal are: existing roles already
+        // had real access to it (its routes carried no permission check at
+        // all until this sync), so its keywords must never be auto-stripped.
+        $nonStrippableGroups = ['class_content', 'fees_payment_proof', 'portal', 'reel_studio', 'leave_type', 'leave_request'];
 
         foreach (self::PERMISSION_GROUPS as $attribute => $keywords) {
             if (!Permission::where('attribute', $attribute)->exists()) {
@@ -3653,6 +3685,26 @@ class MigrationRunnerController extends Controller
             $allKeywords = array_merge($allKeywords, array_values($keywords));
             if (!in_array($attribute, $nonStrippableGroups, true)) {
                 $strippableKeywords = array_merge($strippableKeywords, array_values($keywords));
+            }
+        }
+
+        // Repair/complete rows an older tenant already has (see the doc
+        // comment on PERMISSION_COMPLETIONS) — merged so a keyword an admin
+        // already relies on is never dropped, only missing/wrong ones fixed.
+        $completed = [];
+        foreach (self::PERMISSION_COMPLETIONS as $attribute => $keywords) {
+            $permission = Permission::where('attribute', $attribute)->first();
+            if (!$permission) {
+                Permission::create(['attribute' => $attribute, 'keywords' => $keywords]);
+                $completed[] = $attribute . ' (new)';
+                continue;
+            }
+            $existing = is_array($permission->keywords) ? $permission->keywords : [];
+            $merged   = array_merge($existing, $keywords);
+            if ($merged !== $existing) {
+                $permission->keywords = $merged;
+                $permission->save();
+                $completed[] = $attribute;
             }
         }
 
@@ -3706,7 +3758,36 @@ class MigrationRunnerController extends Controller
             }
         }
 
+        // Leave Type / Leave Request routes carried no PermissionCheck at
+        // all before this sync — every staff role could already view,
+        // create, edit and delete both freely. Now that real permission
+        // checks exist (so the Roles screen can finally control this),
+        // every existing role is grandfathered in with full access so
+        // nobody is locked out on deploy; an admin can deliberately narrow
+        // a specific role's access afterwards via the normal Roles screen.
+        // Grant-only and re-checked every run, same pattern as Reel Studio
+        // above — it never re-adds a keyword an admin has deliberately
+        // unchecked, because it only tops up what's already missing from a
+        // role that still lacks the whole group.
+        $leaveKeywords = [
+            'leave_type_read', 'leave_type_create', 'leave_type_update', 'leave_type_delete',
+            'leave_request_read', 'leave_request_create', 'leave_request_update', 'leave_request_delete',
+        ];
+        foreach (Role::all() as $role) {
+            if ((int) $role->id === 1) {
+                continue;
+            }
+            $rolePerms = is_array($role->permissions) ? $role->permissions : [];
+            if (!in_array('leave_type_read', $rolePerms, true)) {
+                $role->permissions = array_values(array_unique(array_merge($rolePerms, $leaveKeywords)));
+                $role->save();
+            }
+        }
+
         $summary = $added ? ('added ' . implode(', ', $added)) : 'all present';
+        if ($completed) {
+            $summary .= ' — completed/repaired: ' . implode(', ', $completed);
+        }
         if ($strippedFrom) {
             $summary .= ' — removed leaked website-setup permissions from: ' . implode(', ', $strippedFrom);
         }

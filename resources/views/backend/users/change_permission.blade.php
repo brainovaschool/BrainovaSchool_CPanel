@@ -59,51 +59,7 @@
                             </div>
                         </div>
                         <div class="col-lg-9">
-                            <!-- table content start  -->
-                            <div class="table-container mt-20 role-permisssion-control">
-                                <!-- table container start  -->
-                                <div class="table-responsive">
-                                    <!-- table start  -->
-                                    <table class="ot-basic-table ot-table-bg">
-                                        <thead>
-                                        <th class="user_roles_border">{{ ___('users_roles.module_module_links') }}</th>
-                                        <th class="user_roles_permission">{{ ___('users_roles.Permissions') }}</th>
-                                        </thead>
-                                        <tbody>
-                                        @foreach ($data['permissions'] as $permission)
-                                            <tr>
-                                                <td>{{ ___('users_roles.' . $permission->attribute) }}</td>
-                                                <td>
-                                                    <div class="permission-list-td">
-                                                        @foreach ($permission->keywords as $key => $keyword)
-                                                            @if ($keyword != '')
-                                                                <div class="input-check-radio">
-                                                                    <div class="form-check d-flex align-items-center">
-                                                                        <input type="checkbox"
-                                                                               class="form-check-input mr-4 read common-key"
-                                                                               name="permissions[]"
-                                                                               value="{{ $keyword }}"
-                                                                               id="{{ $keyword }}"
-                                                                            {{ in_array($keyword, $data['user_permissions'] ?? []) ? 'checked' : '' }}>
-
-                                                                        <label class="custom-control-label" for="{{ $keyword }}">
-                                                                            {{ ___('users_roles.' . $key) }}
-                                                                        </label>
-                                                                    </div>
-                                                                </div>
-                                                            @endif
-                                                        @endforeach
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        @endforeach
-                                        </tbody>
-                                    </table>
-                                    <!-- table end  -->
-                                </div>
-                                <!-- table container end  -->
-                            </div>
-                            <!-- table content end -->
+                            @include('backend.roles._permission-picker', ['permissionGroups' => $data['permissionGroups'], 'selectedPermissions' => $data['user_permissions'] ?? []])
                         </div>
 
                         <div class="col-md-12 mt-24">

@@ -434,17 +434,17 @@ Route::middleware(saasMiddleware())->group(function () {
 
 
         Route::prefix('leave-type')->name('leave-type.')->group(function () {
-            Route::get('/', [LeaveTypeController::class, 'index'])->name('index');
-            Route::post('/store', [LeaveTypeController::class, 'store'])->name('store');
-            Route::get('/edit/{id}', [LeaveTypeController::class, 'edit'])->name('edit');
-            Route::delete('/delete/{id}', [LeaveTypeController::class, 'delete'])->name('delete');
+            Route::get('/', [LeaveTypeController::class, 'index'])->name('index')->middleware('PermissionCheck:leave_type_read');
+            Route::post('/store', [LeaveTypeController::class, 'store'])->name('store')->middleware('PermissionCheck:leave_type_create', 'DemoCheck');
+            Route::get('/edit/{id}', [LeaveTypeController::class, 'edit'])->name('edit')->middleware('PermissionCheck:leave_type_update');
+            Route::delete('/delete/{id}', [LeaveTypeController::class, 'delete'])->name('delete')->middleware('PermissionCheck:leave_type_delete', 'DemoCheck');
         });
 
         Route::prefix('leave-request')->name('leave-request.')->group(function () {
-            Route::get('/', [LeaveRequestController::class, 'index'])->name('index');
-            Route::post('/store', [LeaveRequestController::class, 'store'])->name('store');
-            Route::get('/edit/{id}', [LeaveRequestController::class, 'edit'])->name('edit');
-            Route::delete('/delete/{id}', [LeaveRequestController::class, 'delete'])->name('delete');
+            Route::get('/', [LeaveRequestController::class, 'index'])->name('index')->middleware('PermissionCheck:leave_request_read');
+            Route::post('/store', [LeaveRequestController::class, 'store'])->name('store')->middleware('PermissionCheck:leave_request_create', 'DemoCheck');
+            Route::get('/edit/{id}', [LeaveRequestController::class, 'edit'])->name('edit')->middleware('PermissionCheck:leave_request_update');
+            Route::delete('/delete/{id}', [LeaveRequestController::class, 'delete'])->name('delete')->middleware('PermissionCheck:leave_request_delete', 'DemoCheck');
         });
     });
 });

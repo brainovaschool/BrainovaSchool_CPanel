@@ -192,7 +192,7 @@ class UserController extends Controller
         $data['role'] = $staff->user->role;
         $data['title']       = ___('common.Change Permission');
         $data['user_permissions'] = $staff->user->permissions;
-        $data['permissions'] = $this->permission->all();
+        $data['permissionGroups'] = group_permissions_by_category($this->permission->all());
         $data['staff'] = $staff;
         return view('backend.users.change_permission', compact('data'));
     }

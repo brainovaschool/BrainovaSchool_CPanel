@@ -15,7 +15,7 @@ class PermissionSeeder extends Seeder
     public function run()
     {
         $attributes = [
-            'dashboard'         => ['read' => 'counter_read', 'read' => 'fees_collesction_read', 'read' => 'revenue_read', 'read' => 'fees_collection_this_month_read', 'read' => 'income_expense_read', 'read' => 'upcoming_events_read', 'read' => 'attendance_chart_read', 'read' => 'calendar_read'],
+            'dashboard'         => ['fees_collection' => 'fees_collesction_read', 'revenue' => 'revenue_read', 'fees_collection_this_month' => 'fees_collection_this_month_read', 'income_expense' => 'income_expense_read', 'upcoming_events' => 'upcoming_events_read', 'attendance_chart' => 'attendance_chart_read', 'calendar' => 'calendar_read'],
             //Student Info
             'student'           => ['read' => 'student_read', 'create' => 'student_create', 'update' => 'student_update', 'delete' => 'student_delete'],
             'student_category'  => ['read' => 'student_category_read', 'create' => 'student_category_create', 'update' => 'student_category_update', 'delete' => 'student_category_delete'],
@@ -23,6 +23,7 @@ class PermissionSeeder extends Seeder
             'disabled_students' => ['read' => 'disabled_students_read', 'create' => 'disabled_students_create'],
             'parent'            => ['read' => 'parent_read', 'create' => 'parent_create', 'update' => 'parent_update', 'delete' => 'parent_delete'],
             'admission'         => ['read' => 'admission_read', 'create' => 'admission_create', 'update' => 'admission_update', 'delete' => 'admission_delete'],
+            'admission_setting' => ['update' => 'admission_setting_update'],
             // Academic
             'classes'           => ['read' => 'classes_read', 'create' => 'classes_create', 'update' => 'classes_update', 'delete' => 'classes_delete'],
             'section'           => ['read' => 'section_read', 'create' => 'section_create', 'update' => 'section_update', 'delete' => 'section_delete'],
@@ -54,6 +55,8 @@ class PermissionSeeder extends Seeder
             'expense'           => ['read' => 'expense_read', 'create' => 'expense_create', 'update' => 'expense_update', 'delete' => 'expense_delete'],
             // Attendance
             'attendance'        => ['read' => 'attendance_read', 'create' => 'attendance_create'],
+            'leave_type'        => ['read' => 'leave_type_read', 'create' => 'leave_type_create', 'update' => 'leave_type_update', 'delete' => 'leave_type_delete'],
+            'leave_request'     => ['read' => 'leave_request_read', 'create' => 'leave_request_create', 'update' => 'leave_request_update', 'delete' => 'leave_request_delete'],
             'attendance_report' => ['read' => 'report_attendance_read'],
             // Report
             'marksheet'         => ['read' => 'report_marksheet_read'],
@@ -62,18 +65,19 @@ class PermissionSeeder extends Seeder
             'due_fees'          => ['read' => 'report_due_fees_read'],
             'fees_collection'   => ['read' => 'report_fees_collection_read'],
             'account'           => ['read' => 'report_account_read'],
-            'class_routine'     => ['read' => 'report_class_routine_read'],
-            'exam_routine'      => ['read' => 'report_exam_routine_read'],
-            'attendance_report' => ['read' => 'report_attendance_read'],
+            'report_class_routine' => ['read' => 'report_class_routine_read'],
+            'report_exam_routine'  => ['read' => 'report_exam_routine_read'],
             // Language
             'language'          => ['read' => 'language_read', 'create' => 'language_create', 'update' => 'language_update','update terms' => 'language_update_terms', 'delete' => 'language_delete'],
             // Staff
             'roles'             => ['read' => 'role_read', 'create' => 'role_create', 'update' => 'role_update', 'delete' => 'role_delete'],
-            'users'             => ['read' => 'user_read', 'create' => 'user_create', 'update' => 'user_update', 'delete' => 'user_delete'],
+            'users'             => ['read' => 'user_read', 'create' => 'user_create', 'update' => 'user_update', 'delete' => 'user_delete', 'change_permission' => 'change_permission'],
             'department'        => ['read' => 'department_read', 'create' => 'department_create', 'update' => 'department_update', 'delete' => 'department_delete'],
             'designation'       => ['read' => 'designation_read', 'create' => 'designation_create', 'update' => 'designation_update', 'delete' => 'designation_delete'],
             // Website setup
+            'page'              => ['read' => 'page_read', 'create' => 'page_create', 'update' => 'page_update', 'delete' => 'page_delete'],
             'sections'          => ['read' => 'page_sections_read', 'update' => 'page_sections_update'],
+            'ai_helper'         => ['read' => 'ai_helper_read', 'update' => 'ai_helper_update'],
             'slider'            => ['read' => 'slider_read', 'create' => 'slider_create', 'update' => 'slider_update', 'delete' => 'slider_delete'],
             'about'             => ['read' => 'about_read', 'create' => 'about_create', 'update' => 'about_update', 'delete' => 'about_delete'],
             'counter'           => ['read' => 'counter_read', 'create' => 'counter_create', 'update' => 'counter_update', 'delete' => 'counter_delete'],
@@ -130,9 +134,9 @@ class PermissionSeeder extends Seeder
             // notice board
             'notice_board'         => ['read' => 'notice_board_read', 'create' => 'notice_board_create', 'update' => 'notice_board_update', 'delete' => 'notice_board_delete'],
             // sms_mail_template
-            'sms_mail_template'    => ['read' => 'sms_mail_template_read', 'create' => 'sms_mail_template_create', 'update' => 'nsms_mail_templateupdate', 'delete' => 'sms_mail_template_delete'],
-            // sms_mail_template
-            'sms_mail'             => ['read' => 'sms_mail_read', 'create' => 'sms_mail_send'],
+            'sms_mail_template'    => ['read' => 'sms_mail_template_read', 'create' => 'sms_mail_template_create', 'update' => 'sms_mail_template_update', 'delete' => 'sms_mail_template_delete'],
+            // sms/mail compose
+            'sms_mail'             => ['read' => 'sms_mail_read', 'send' => 'sms_mail_send', 'update' => 'sms_mail_update', 'delete' => 'sms_mail_delete'],
             // Forums
             'forums'               => ['read' => 'forum_list', 'create' => 'forum_create', 'update' => 'forum_update', 'delete' => 'forum_delete', 'forum_feeds' => 'forum_feeds'],
             // Forum Comments

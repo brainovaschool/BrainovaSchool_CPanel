@@ -30,19 +30,19 @@
                             <span class="on-half-expanded">{{ ___('settings.online_admission') }}</span>
                         </a>
                         <ul class="child-menu-list">
-                            @if (hasPermission('certificate_read'))
+                            @if (hasPermission('admission_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['online-admissions']) }}">
                                     <a
                                         href="{{ route('online-admissions.index') }}">{{ ___('settings.online_admission') }}</a>
                                 </li>
                             @endif
-                            @if (hasPermission('certificate_generate_read'))
+                            @if (hasPermission('admission_setting_update'))
                                 <li class="sidebar-menu-item {{ set_menu(['online-admissions.setting.fees']) }}">
                                     <a
                                         href="{{ route('online-admissions.setting.fees') }}">{{ ___('common.admission_fees') }}</a>
                                 </li>
                             @endif
-                            @if (hasPermission('certificate_generate_read'))
+                            @if (hasPermission('admission_setting_update'))
                                 <li class="sidebar-menu-item {{ set_menu(['online-admissions.setting.index']) }}">
                                     <a
                                         href="{{ route('online-admissions.setting.index') }}">{{ ___('common.Setting') }}</a>
@@ -300,22 +300,22 @@
                 {{-- End Attendance --}}
 
 
-                {{-- Start Attendance --}}
-                @if ((hasPermission('attendance_read') || hasPermission('report_attendance_read')) && hasFeature('attendance'))
+                {{-- Start Leave --}}
+                @if ((hasPermission('leave_type_read') || hasPermission('leave_request_read')) && hasFeature('attendance'))
                     <li class="sidebar-menu-item {{ set_menu(['attendance*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-stopwatch"></i>
                             <span class="on-half-expanded">{{ ___('leave.Leave') }}</span>
                         </a>
                         <ul class="child-menu-list">
-                            @if (hasPermission('attendance_read'))
+                            @if (hasPermission('leave_type_read'))
                                 <li
                                     class="sidebar-menu-item {{ set_menu(['leave-type.index', 'leave-type.create', 'leave-type.edit']) }}">
                                     <a href="{{ route('leave-type.index') }}">{{ ___('leave.Type') }}</a>
                                 </li>
                             @endif
 
-                            @if (hasPermission('attendance_read'))
+                            @if (hasPermission('leave_request_read'))
                                 <li
                                     class="sidebar-menu-item {{ set_menu(['leave-request.index', 'leave-request.edit']) }}">
                                     <a href="{{ route('leave-request.index') }}">{{ ___('leave.Request Log') }}</a>
@@ -327,7 +327,7 @@
                         </ul>
                     </li>
                 @endif
-                {{-- End Attendance --}}
+                {{-- End Leave --}}
 
                 {{-- Start Fees --}}
                 @if (
@@ -503,136 +503,138 @@
                     </li>
                 @endif
                 <!-- Online Examination end -->
-                @if (hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve'))
-                    <li class="sidebar-menu-item {{ set_menu(['class-content*']) }}">
-                        <a class="parent-item-content has-arrow">
-                            <i class="las la-book-reader"></i>
-                            <span class="on-half-expanded">Class Content</span>
-                        </a>
-                        <ul class="child-menu-list">
-                            @if (hasPermission('class_content_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['class-content', 'class-content/create', 'class-content/edit*']) }}">
-                                    <a href="{{ route('class-content-module.index') }}">Modules</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('class_content_coordinator_review'))
-                                <li class="sidebar-menu-item {{ set_menu(['class-content-coordinator*']) }}">
-                                    <a href="{{ route('class-content-coordinator.index') }}">Coordinator Review</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('class_content_approve'))
-                                <li class="sidebar-menu-item {{ set_menu(['class-content-admin*']) }}">
-                                    <a href="{{ route('class-content-admin.index') }}">Approval Queue</a>
-                                </li>
-                            @endif
-                        </ul>
-                    </li>
-                @endif
-                <!-- Class Content end -->
-                @if (hasPermission('portal_access'))
-                    <li class="sidebar-menu-item {{ set_menu(['portal*']) }}">
+                {{-- Staff Workspace: groups the staff-facing tools (curriculum review,
+                     the internal team portal, the social-media board and Reel Studio)
+                     that used to sit as separate top-level items, so they're easy to
+                     find in one place instead of scattered through the main menu. --}}
+                @if (hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve') || hasPermission('portal_access') || hasPermission('reel_studio_access') || hasPermission('portal_manage'))
+                    <li class="sidebar-menu-item {{ set_menu(['class-content*', 'portal*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-users-cog"></i>
-                            <span class="on-half-expanded">Team Portal</span>
+                            <span class="on-half-expanded">Staff Workspace</span>
                         </a>
                         <ul class="child-menu-list">
-                            <li class="sidebar-menu-item {{ set_menu(['portal/employees*']) }}">
-                                <a href="{{ route('portal-employees.index') }}">Employees</a>
-                            </li>
-                            @if (hasPermission('portal_manage'))
-                                <li class="sidebar-menu-item {{ set_menu(['portal/tasks', 'portal/tasks/create', 'portal/tasks/show*']) }}">
-                                    <a href="{{ route('portal-tasks.index') }}">Tasks</a>
+                            @if (hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve'))
+                                <li class="sidebar-menu-item {{ set_menu(['class-content*']) }}">
+                                    <a class="has-arrow">Class Content</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('class_content_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['class-content', 'class-content/create', 'class-content/edit*']) }}">
+                                                <a href="{{ route('class-content-module.index') }}">Modules</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('class_content_coordinator_review'))
+                                            <li class="sidebar-menu-item {{ set_menu(['class-content-coordinator*']) }}">
+                                                <a href="{{ route('class-content-coordinator.index') }}">Coordinator Review</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('class_content_approve'))
+                                            <li class="sidebar-menu-item {{ set_menu(['class-content-admin*']) }}">
+                                                <a href="{{ route('class-content-admin.index') }}">Approval Queue</a>
+                                            </li>
+                                        @endif
+                                    </ul>
                                 </li>
                             @endif
-                            <li class="sidebar-menu-item {{ set_menu(['portal/my-tasks']) }}">
-                                <a href="{{ route('portal-my-tasks.index') }}">My Tasks</a>
-                            </li>
-                            <li class="sidebar-menu-item {{ set_menu(['portal/paid-tasks']) }}">
-                                <a href="{{ route('portal-paid-tasks.index') }}">Paid Tasks</a>
-                            </li>
-                            <li class="sidebar-menu-item {{ set_menu(['portal/work-log']) }}">
-                                <a href="{{ route('portal-work-log.index') }}">My Work Log</a>
-                            </li>
-                            <li class="sidebar-menu-item {{ set_menu(['portal/my-responsibilities']) }}">
-                                <a href="{{ route('portal-my-responsibilities.index') }}">My Responsibilities</a>
-                            </li>
-                            <li class="sidebar-menu-item {{ set_menu(['portal/my-performance']) }}">
-                                <a href="{{ route('portal-my-performance.index') }}">My Performance</a>
-                            </li>
-                            @if (hasPermission('portal_manage'))
-                                <li class="sidebar-menu-item {{ set_menu(['portal/attendance']) }}">
-                                    <a href="{{ route('portal-attendance.index') }}">Attendance</a>
+                            @if (hasPermission('portal_access'))
+                                <li class="sidebar-menu-item {{ set_menu(['portal*']) }}">
+                                    <a class="has-arrow">Team Portal</a>
+                                    <ul class="child-menu-list">
+                                        <li class="sidebar-menu-item {{ set_menu(['portal/employees*']) }}">
+                                            <a href="{{ route('portal-employees.index') }}">Employees</a>
+                                        </li>
+                                        @if (hasPermission('portal_manage'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/tasks', 'portal/tasks/create', 'portal/tasks/show*']) }}">
+                                                <a href="{{ route('portal-tasks.index') }}">Tasks</a>
+                                            </li>
+                                        @endif
+                                        <li class="sidebar-menu-item {{ set_menu(['portal/my-tasks']) }}">
+                                            <a href="{{ route('portal-my-tasks.index') }}">My Tasks</a>
+                                        </li>
+                                        <li class="sidebar-menu-item {{ set_menu(['portal/paid-tasks']) }}">
+                                            <a href="{{ route('portal-paid-tasks.index') }}">Paid Tasks</a>
+                                        </li>
+                                        <li class="sidebar-menu-item {{ set_menu(['portal/work-log']) }}">
+                                            <a href="{{ route('portal-work-log.index') }}">My Work Log</a>
+                                        </li>
+                                        <li class="sidebar-menu-item {{ set_menu(['portal/my-responsibilities']) }}">
+                                            <a href="{{ route('portal-my-responsibilities.index') }}">My Responsibilities</a>
+                                        </li>
+                                        <li class="sidebar-menu-item {{ set_menu(['portal/my-performance']) }}">
+                                            <a href="{{ route('portal-my-performance.index') }}">My Performance</a>
+                                        </li>
+                                        @if (hasPermission('portal_manage'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/attendance']) }}">
+                                                <a href="{{ route('portal-attendance.index') }}">Attendance</a>
+                                            </li>
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/work-logs*']) }}">
+                                                <a href="{{ route('portal-work-logs.index') }}">Work Logs</a>
+                                            </li>
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/responsibilities*']) }}">
+                                                <a href="{{ route('portal-responsibilities.index') }}">Responsibilities</a>
+                                            </li>
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/analytics']) }}">
+                                                <a href="{{ route('portal-analytics.index') }}">Analytics</a>
+                                            </li>
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/settings']) }}">
+                                                <a href="{{ route('portal-settings.edit') }}">Settings</a>
+                                            </li>
+                                        @endif
+                                    </ul>
                                 </li>
-                                <li class="sidebar-menu-item {{ set_menu(['portal/work-logs*']) }}">
-                                    <a href="{{ route('portal-work-logs.index') }}">Work Logs</a>
-                                </li>
-                                <li class="sidebar-menu-item {{ set_menu(['portal/responsibilities*']) }}">
-                                    <a href="{{ route('portal-responsibilities.index') }}">Responsibilities</a>
-                                </li>
-                                <li class="sidebar-menu-item {{ set_menu(['portal/analytics']) }}">
-                                    <a href="{{ route('portal-analytics.index') }}">Analytics</a>
-                                </li>
-                                <li class="sidebar-menu-item {{ set_menu(['portal/settings']) }}">
-                                    <a href="{{ route('portal-settings.edit') }}">Settings</a>
-                                </li>
-                            @endif
-                        </ul>
-                    </li>
 
-                    <li class="sidebar-menu-item {{ set_menu(['portal/social*']) }}">
-                        <a class="parent-item-content has-arrow">
-                            <i class="las la-hashtag"></i>
-                            <span class="on-half-expanded">Social Board</span>
-                        </a>
-                        <ul class="child-menu-list">
-                            <li class="sidebar-menu-item {{ set_menu(['portal/social/reels*']) }}">
-                                <a href="{{ route('portal-social-reels.index') }}">Reels</a>
-                            </li>
-                            <li class="sidebar-menu-item {{ set_menu(['portal/social/month-plan']) }}">
-                                <a href="{{ route('portal-social-month-plan.index') }}">Month Plan</a>
-                            </li>
-                            @if (portalOwnsResponsibility('audience'))
-                                <li class="sidebar-menu-item {{ set_menu(['portal/social/audience']) }}">
-                                    <a href="{{ route('portal-social-audience.index') }}">Audience Numbers</a>
+                                <li class="sidebar-menu-item {{ set_menu(['portal/social*']) }}">
+                                    <a class="has-arrow">Social Board</a>
+                                    <ul class="child-menu-list">
+                                        <li class="sidebar-menu-item {{ set_menu(['portal/social/reels*']) }}">
+                                            <a href="{{ route('portal-social-reels.index') }}">Reels</a>
+                                        </li>
+                                        <li class="sidebar-menu-item {{ set_menu(['portal/social/month-plan']) }}">
+                                            <a href="{{ route('portal-social-month-plan.index') }}">Month Plan</a>
+                                        </li>
+                                        @if (portalOwnsResponsibility('audience'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/audience']) }}">
+                                                <a href="{{ route('portal-social-audience.index') }}">Audience Numbers</a>
+                                            </li>
+                                        @endif
+                                        @if (portalOwnsResponsibility('content'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">
+                                                <a href="{{ route('portal-social-daily-plan.index') }}">Daily Plan &amp; Goals</a>
+                                            </li>
+                                        @endif
+                                        <li class="sidebar-menu-item {{ set_menu(['portal/social/page-fixes']) }}">
+                                            <a href="{{ route('portal-social-page-fixes.index') }}">Page Fixes</a>
+                                        </li>
+                                        @if (hasPermission('portal_manage'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/growth-pay']) }}">
+                                                <a href="{{ route('portal-growth-pay.index') }}">Growth Pay</a>
+                                            </li>
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/settings']) }}">
+                                                <a href="{{ route('portal-social-settings.edit') }}">Social Settings</a>
+                                            </li>
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-characters*']) }}">
+                                                <a href="{{ route('portal-social-reel-characters.index') }}">Reel Characters</a>
+                                            </li>
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-settings']) }}">
+                                                <a href="{{ route('portal-social-reel-settings.edit') }}">Reel Settings</a>
+                                            </li>
+                                        @endif
+                                    </ul>
                                 </li>
                             @endif
-                            @if (portalOwnsResponsibility('content'))
-                                <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">
-                                    <a href="{{ route('portal-social-daily-plan.index') }}">Daily Plan &amp; Goals</a>
-                                </li>
-                            @endif
-                            <li class="sidebar-menu-item {{ set_menu(['portal/social/page-fixes']) }}">
-                                <a href="{{ route('portal-social-page-fixes.index') }}">Page Fixes</a>
-                            </li>
-                            @if (hasPermission('portal_manage'))
-                                <li class="sidebar-menu-item {{ set_menu(['portal/growth-pay']) }}">
-                                    <a href="{{ route('portal-growth-pay.index') }}">Growth Pay</a>
-                                </li>
-                                <li class="sidebar-menu-item {{ set_menu(['portal/social/settings']) }}">
-                                    <a href="{{ route('portal-social-settings.edit') }}">Social Settings</a>
-                                </li>
-                                <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-characters*']) }}">
-                                    <a href="{{ route('portal-social-reel-characters.index') }}">Reel Characters</a>
-                                </li>
-                                <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-settings']) }}">
-                                    <a href="{{ route('portal-social-reel-settings.edit') }}">Reel Settings</a>
+                            {{-- Reel Studio is deliberately shown whenever reel_studio_access OR
+                                 portal_manage is present, independent of portal_access above: that
+                                 keeps it reachable for exactly the teachers it's meant for, even if
+                                 they don't otherwise have Team Portal access. --}}
+                            @if (hasPermission('reel_studio_access') || hasPermission('portal_manage'))
+                                <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-studio*']) }}">
+                                    <a href="{{ route('portal-social-reel-studio.index') }}">Reel Studio</a>
                                 </li>
                             @endif
                         </ul>
                     </li>
                 @endif
-                <!-- Team Portal end -->
-                {{-- Reel Studio is deliberately OUTSIDE the portal_access-gated block above: that
-                     whole block (Team Portal + Social Board) is hidden from anyone without staff
-                     Portal access, which would hide Reel Studio from exactly the teachers it's for. --}}
-                @if (hasPermission('reel_studio_access') || hasPermission('portal_manage'))
-                    <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-studio*']) }}">
-                        <a href="{{ route('portal-social-reel-studio.index') }}">
-                            <i class="las la-hashtag"></i>
-                            <span class="on-half-expanded">Reel Studio</span>
-                        </a>
-                    </li>
-                @endif
+                <!-- Staff Workspace end -->
                 @if (hasPermission('homework_read'))
 
                     <li class="sidebar-menu-item {{ set_menu(['homework*']) }}">
@@ -661,17 +663,19 @@
                 @endif
 
                 @if (auth()->check() && in_array((int) auth()->user()->role_id, [1, 5]))
-                    <li class="sidebar-menu-item {{ set_menu(['ai-help-teacher*']) }}">
-                        <a href="{{ route('ai-help-teacher.index') }}" class="parent-item-content">
+                    <li class="sidebar-menu-item {{ set_menu(['ai-help-teacher*', 'skill-mastery-report*']) }}">
+                        <a class="parent-item-content has-arrow">
                             <i class="las la-robot"></i>
-                            <span class="on-half-expanded">{{ ___('settings.ai_help_teacher') }}</span>
+                            <span class="on-half-expanded">Teacher Tools</span>
                         </a>
-                    </li>
-                    <li class="sidebar-menu-item {{ set_menu(['skill-mastery-report*']) }}">
-                        <a href="{{ route('skill-mastery-report.index') }}" class="parent-item-content">
-                            <i class="las la-chart-bar"></i>
-                            <span class="on-half-expanded">{{ ___('settings.skill_mastery_report') }}</span>
-                        </a>
+                        <ul class="child-menu-list">
+                            <li class="sidebar-menu-item {{ set_menu(['ai-help-teacher*']) }}">
+                                <a href="{{ route('ai-help-teacher.index') }}">{{ ___('settings.ai_help_teacher') }}</a>
+                            </li>
+                            <li class="sidebar-menu-item {{ set_menu(['skill-mastery-report*']) }}">
+                                <a href="{{ route('skill-mastery-report.index') }}">{{ ___('settings.skill_mastery_report') }}</a>
+                            </li>
+                        </ul>
                     </li>
                 @endif
 
@@ -1025,90 +1029,143 @@
                 @endif
                 <!-- Subscription layout end -->
 
-                <!-- Program waitlist layout start -->
-                @if (hasPermission('program_waitlist_read'))
-                    <li class="sidebar-menu-item {{ set_menu(['program-waitlist*']) }}">
-                        <a href="{{ route('program-waitlist.index') }}" class="parent-item-content">
-                            <i class="las la-clock"></i>
-                            <span class="on-half-expanded">Program Waitlist</span>
-                        </a>
-                    </li>
-                @endif
-                <!-- Program waitlist layout end -->
-
-                <!-- Home videos layout start -->
-                @if (hasPermission('home_video_read'))
-                    <li class="sidebar-menu-item {{ set_menu(['home-video*']) }}">
-                        <a href="{{ route('home-video.index') }}" class="parent-item-content">
-                            <i class="las la-video"></i>
-                            <span class="on-half-expanded">Home Videos</span>
-                        </a>
-                    </li>
-                @endif
-                <!-- Home videos layout end -->
-
-                <!-- Watch & Learn layout start -->
-                @if (hasPermission('watch_learn_tab_read') || hasPermission('watch_learn_template_read') || hasPermission('watch_learn_video_read'))
-                    <li class="sidebar-menu-item {{ set_menu(['watch-learn-tab*', 'watch-learn-template*', 'watch-learn-video*']) }}">
+                <!-- Course Catalogue start: the public-facing programs/courses
+                     offering, grouped separately from plain site content so it's
+                     easy to find (used to be split between Website Setup and a
+                     standalone Program Waitlist item). -->
+                @if (hasPermission('program_category_read') || hasPermission('program_focus_read') || hasPermission('program_read') || hasPermission('testimonial_read') || hasPermission('trial_slot_read') || hasPermission('program_waitlist_read'))
+                    <li class="sidebar-menu-item {{ set_menu(['program-category*', 'program-focus*', 'program/*', 'testimonial*', 'trial-slot*', 'program-waitlist*']) }}">
                         <a class="parent-item-content has-arrow">
-                            <i class="las la-film"></i>
-                            <span class="on-half-expanded">Watch & Learn</span>
+                            <i class="las la-graduation-cap"></i>
+                            <span class="on-half-expanded">Course Catalogue</span>
                         </a>
                         <ul class="child-menu-list">
-                            @if (hasPermission('watch_learn_video_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['watch-learn-video*']) }}">
-                                    <a href="{{ route('watch-learn-video.index') }}">Videos</a>
+                            @if (hasPermission('program_category_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['program-category*']) }}">
+                                    <a href="{{ route('program-category.index') }}">{{ ___('settings.program_categories') }}</a>
                                 </li>
                             @endif
-                            @if (hasPermission('watch_learn_tab_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['watch-learn-tab*']) }}">
-                                    <a href="{{ route('watch-learn-tab.index') }}">Tabs</a>
+                            @if (hasPermission('program_focus_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['program-focus*']) }}">
+                                    <a href="{{ route('program-focus.index') }}">{{ ___('settings.program_focus_areas') }}</a>
                                 </li>
                             @endif
-                            @if (hasPermission('watch_learn_template_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['watch-learn-template*']) }}">
-                                    <a href="{{ route('watch-learn-template.index') }}">Tile Templates</a>
+                            @if (hasPermission('program_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['program', 'program/*']) }}">
+                                    <a href="{{ route('program.index') }}">{{ ___('settings.programs') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('testimonial_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['testimonial*']) }}">
+                                    <a href="{{ route('testimonial.index') }}">{{ ___('settings.testimonials') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('trial_slot_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['trial-slot*']) }}">
+                                    <a href="{{ route('trial-slot.index') }}">{{ ___('settings.free_trial_slots') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('program_waitlist_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['program-waitlist*']) }}">
+                                    <a href="{{ route('program-waitlist.index') }}">Program Waitlist</a>
                                 </li>
                             @endif
                         </ul>
                     </li>
                 @endif
-                <!-- Watch & Learn layout end -->
+                <!-- Course Catalogue end -->
 
-                <!-- Knowledge Hub layout start -->
-                @if (hasPermission('knowledge_hub_page_read'))
-                    <li class="sidebar-menu-item {{ set_menu(['knowledge-hub-*']) }}">
-                        <a href="{{ route('knowledge-hub-page.index') }}" class="parent-item-content">
-                            <i class="las la-book"></i>
-                            <span class="on-half-expanded">Knowledge Hub</span>
+                <!-- Learning Engine start: the student-facing gamification and
+                     learning-content features (skills, missions, avatars, Watch &
+                     Learn, Knowledge Hub) — used to be split across Website Setup
+                     and several standalone top-level items. -->
+                @if (hasPermission('skill_read') || hasPermission('dashboard_features_read') || hasPermission('avatar_item_read') || hasPermission('student_feature_access_read') || hasPermission('character_line_read') || hasPermission('mission_read') || hasPermission('watch_learn_tab_read') || hasPermission('watch_learn_template_read') || hasPermission('watch_learn_video_read') || hasPermission('knowledge_hub_page_read'))
+                    <li class="sidebar-menu-item {{ set_menu(['skill*', 'dashboard-features*', 'avatar-item*', 'student-feature-access*', 'character-line*', 'mission*', 'watch-learn-tab*', 'watch-learn-template*', 'watch-learn-video*', 'knowledge-hub-*']) }}">
+                        <a class="parent-item-content has-arrow">
+                            <i class="las la-puzzle-piece"></i>
+                            <span class="on-half-expanded">Learning Engine</span>
                         </a>
+                        <ul class="child-menu-list">
+                            @if (hasPermission('skill_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['skill*']) }}">
+                                    <a href="{{ route('skill.index') }}">{{ ___('settings.skills') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('dashboard_features_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['dashboard-features*']) }}">
+                                    <a href="{{ route('dashboard-features.index') }}">{{ ___('settings.dashboard_features') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('avatar_item_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['avatar-item*']) }}">
+                                    <a href="{{ route('avatar-item.index') }}">{{ ___('settings.avatar_gallery') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('student_feature_access_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['student-feature-access*']) }}">
+                                    <a href="{{ route('student-feature-access.index') }}">Student Feature Access</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('character_line_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['character-line*']) }}">
+                                    <a href="{{ route('character-line.index') }}">Character Lines</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('mission_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['mission*']) }}">
+                                    <a href="{{ route('mission.index') }}">Missions</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('watch_learn_tab_read') || hasPermission('watch_learn_template_read') || hasPermission('watch_learn_video_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['watch-learn-tab*', 'watch-learn-template*', 'watch-learn-video*']) }}">
+                                    <a class="has-arrow">Watch & Learn</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('watch_learn_video_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['watch-learn-video*']) }}">
+                                                <a href="{{ route('watch-learn-video.index') }}">Videos</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('watch_learn_tab_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['watch-learn-tab*']) }}">
+                                                <a href="{{ route('watch-learn-tab.index') }}">Tabs</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('watch_learn_template_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['watch-learn-template*']) }}">
+                                                <a href="{{ route('watch-learn-template.index') }}">Tile Templates</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
+                            @endif
+                            @if (hasPermission('knowledge_hub_page_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['knowledge-hub-*']) }}">
+                                    <a href="{{ route('knowledge-hub-page.index') }}">Knowledge Hub</a>
+                                </li>
+                            @endif
+                        </ul>
                     </li>
                 @endif
-                <!-- Knowledge Hub layout end -->
+                <!-- Learning Engine end -->
 
                 <!-- Website setup start -->
                 @if (
                     !cannotAccessSchoolSettings() &&
-                    (hasPermission('page_sections_read') ||
+                    (hasPermission('page_read') ||
+                        hasPermission('page_sections_read') ||
                         hasPermission('slider_read') ||
                         hasPermission('about_read') ||
                         hasPermission('counter_read') ||
                         hasPermission('contact_info_read') ||
                         hasPermission('dep_contact_read') ||
                         hasPermission('news_read') ||
-                        hasPermission('program_category_read') ||
-                        hasPermission('program_focus_read') ||
-                        hasPermission('program_read') ||
-                        hasPermission('testimonial_read') ||
-                        hasPermission('trial_slot_read') ||
-                        hasPermission('ai_helper_read') ||
-                        hasPermission('dashboard_features_read') ||
-                        hasPermission('avatar_item_read') ||
+                        hasPermission('event_read') ||
                         hasPermission('notice_board_read') ||
-                        hasPermission('event_read')) &&
+                        hasPermission('home_video_read') ||
+                        hasPermission('ai_helper_read')) &&
                         hasFeature('website_setup'))
                     <li
-                        class="sidebar-menu-item {{ set_menu(['page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'communication/notice*', 'program-category*', 'program-focus*', 'program/*', 'testimonial*', 'trial-slot*', 'ai-helper*', 'skill*', 'dashboard-features*', 'avatar-item*', 'student-feature-access*']) }}">
+                        class="sidebar-menu-item {{ set_menu(['page*', 'page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'home-video*', 'ai-helper*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-wrench"></i>
                             <span class="on-half-expanded">{{ ___('settings.Website_setup') }}</span>
@@ -1117,7 +1174,7 @@
                         <!-- second layer child menu list start  -->
 
                         <ul class="child-menu-list">
-                            @if (hasPermission('page_sections_read'))
+                            @if (hasPermission('page_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['page*']) }}">
                                     <a href="{{ route('page.index') }}">{{ ___('settings.pages') }}</a>
                                 </li>
@@ -1131,6 +1188,11 @@
                             @if (hasPermission('slider_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['slider*']) }}">
                                     <a href="{{ route('slider.index') }}">{{ ___('settings.Slider') }}</a>
+                                </li>
+                            @endif
+                            @if (hasPermission('home_video_read'))
+                                <li class="sidebar-menu-item {{ set_menu(['home-video*']) }}">
+                                    <a href="{{ route('home-video.index') }}">Home Videos</a>
                                 </li>
                             @endif
                             @if (hasPermission('about_read'))
@@ -1170,75 +1232,11 @@
                                     <a href="{{ route('notice-board.index') }}">{{ ___('common.notice_board') }}</a>
                                 </li>
                             @endif
-
-                            @if (hasPermission('program_category_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['program-category*']) }}">
-                                    <a href="{{ route('program-category.index') }}">{{ ___('settings.program_categories') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('program_focus_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['program-focus*']) }}">
-                                    <a href="{{ route('program-focus.index') }}">{{ ___('settings.program_focus_areas') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('program_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['program', 'program/*']) }}">
-                                    <a href="{{ route('program.index') }}">{{ ___('settings.programs') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('testimonial_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['testimonial*']) }}">
-                                    <a href="{{ route('testimonial.index') }}">{{ ___('settings.testimonials') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('trial_slot_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['trial-slot*']) }}">
-                                    <a href="{{ route('trial-slot.index') }}">{{ ___('settings.free_trial_slots') }}</a>
-                                </li>
-                            @endif
-
                             @if (hasPermission('ai_helper_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['ai-helper*']) }}">
                                     <a href="{{ route('ai-helper.index') }}">{{ ___('settings.ai_helper') }}</a>
                                 </li>
                             @endif
-
-                            @if (hasPermission('skill_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['skill*']) }}">
-                                    <a href="{{ route('skill.index') }}">{{ ___('settings.skills') }}</a>
-                                </li>
-                            @endif
-
-                            @if (hasPermission('dashboard_features_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['dashboard-features*']) }}">
-                                    <a href="{{ route('dashboard-features.index') }}">{{ ___('settings.dashboard_features') }}</a>
-                                </li>
-                            @endif
-
-                            @if (hasPermission('avatar_item_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['avatar-item*']) }}">
-                                    <a href="{{ route('avatar-item.index') }}">{{ ___('settings.avatar_gallery') }}</a>
-                                </li>
-                            @endif
-
-                            @if (hasPermission('student_feature_access_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['student-feature-access*']) }}">
-                                    <a href="{{ route('student-feature-access.index') }}">Student Feature Access</a>
-                                </li>
-                            @endif
-
-                            @if (hasPermission('character_line_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['character-line*']) }}">
-                                    <a href="{{ route('character-line.index') }}">Character Lines</a>
-                                </li>
-                            @endif
-
-                            @if (hasPermission('mission_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['mission*']) }}">
-                                    <a href="{{ route('mission.index') }}">Missions</a>
-                                </li>
-                            @endif
-
                         </ul>
                     </li>
                 @endif

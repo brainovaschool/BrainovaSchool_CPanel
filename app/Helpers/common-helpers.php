@@ -1252,3 +1252,167 @@ if (!function_exists('portalOwnsResponsibility')) {
         return in_array($staff->id, \App\Models\Portal\PortalResponsibility::ownerStaffIdsForKey($key), true);
     }
 }
+
+if (!function_exists('permission_category_map')) {
+    /**
+     * Permission attribute => display category, for the Roles / Change
+     * Permission screens. Mirrors the top-level groupings used in the admin
+     * sidebar (resources/views/backend/partials/sidebar.blade.php) so a
+     * category here reads the same way it does in the menu. Any attribute
+     * not listed falls back to "Other" rather than being dropped, so a
+     * module/add-on's own permissions still show up somewhere.
+     *
+     * @return array<string, string>
+     */
+    function permission_category_map(): array
+    {
+        return [
+            'dashboard' => 'Dashboard',
+            'admission' => 'Online Admission',
+            'admission_setting' => 'Online Admission',
+            'student' => 'Student Info',
+            'student_category' => 'Student Info',
+            'promote_students' => 'Student Info',
+            'disabled_students' => 'Student Info',
+            'parent' => 'Student Info',
+            'id_card' => 'Id Cards',
+            'id_card_generate' => 'Id Cards',
+            'certificate' => 'Certificates',
+            'certificate_generate' => 'Certificates',
+            'classes' => 'Academic',
+            'section' => 'Academic',
+            'shift' => 'Academic',
+            'class_setup' => 'Academic',
+            'subject' => 'Academic',
+            'subject_assign' => 'Academic',
+            'time_schedule' => 'Academic',
+            'class_room' => 'Academic',
+            'class_routine' => 'Routines',
+            'exam_routine' => 'Routines',
+            'attendance' => 'Attendance',
+            'attendance_report' => 'Attendance',
+            'leave_type' => 'Leave',
+            'leave_request' => 'Leave',
+            'fees_group' => 'Fees',
+            'fees_type' => 'Fees',
+            'fees_master' => 'Fees',
+            'fees_assign' => 'Fees',
+            'fees_collect' => 'Fees',
+            'discount_setup' => 'Fees',
+            'fees_payment_proof' => 'Fees',
+            'exam_type' => 'Examination',
+            'marks_grade' => 'Examination',
+            'exam_assign' => 'Examination',
+            'marks_register' => 'Examination',
+            'exam_setting' => 'Examination',
+            'online_exam_type' => 'Online Examination',
+            'question_group' => 'Online Examination',
+            'question_bank' => 'Online Examination',
+            'online_exam' => 'Online Examination',
+            'class_content' => 'Staff Workspace',
+            'portal' => 'Staff Workspace',
+            'reel_studio' => 'Staff Workspace',
+            'homework' => 'Homework',
+            'notice_board' => 'Communication',
+            'sms_mail_template' => 'Communication',
+            'sms_mail' => 'Communication',
+            'gmeet' => 'Live Class',
+            'book_category' => 'Library',
+            'book' => 'Library',
+            'member' => 'Library',
+            'member_category' => 'Library',
+            'issue_book' => 'Library',
+            'account_head' => 'Accounts',
+            'income' => 'Accounts',
+            'expense' => 'Accounts',
+            'marksheet' => 'Reports',
+            'merit_list' => 'Reports',
+            'progress_card' => 'Reports',
+            'due_fees' => 'Reports',
+            'fees_collection' => 'Reports',
+            'account' => 'Reports',
+            'report_class_routine' => 'Reports',
+            'report_exam_routine' => 'Reports',
+            'language' => 'Language',
+            'roles' => 'Staff Manage',
+            'users' => 'Staff Manage',
+            'department' => 'Staff Manage',
+            'designation' => 'Staff Manage',
+            'subscribe' => 'Subscribers & Messages',
+            'contact_message' => 'Subscribers & Messages',
+            'program_category' => 'Course Catalogue',
+            'program_focus' => 'Course Catalogue',
+            'program' => 'Course Catalogue',
+            'testimonial' => 'Course Catalogue',
+            'trial_slot' => 'Course Catalogue',
+            'program_waitlist' => 'Course Catalogue',
+            'skill' => 'Learning Engine',
+            'dashboard_features' => 'Learning Engine',
+            'avatar_item' => 'Learning Engine',
+            'student_feature_access' => 'Learning Engine',
+            'character_line' => 'Learning Engine',
+            'mission' => 'Learning Engine',
+            'watch_learn_tab' => 'Learning Engine',
+            'watch_learn_template' => 'Learning Engine',
+            'watch_learn_video' => 'Learning Engine',
+            'knowledge_hub_page' => 'Learning Engine',
+            'knowledge_hub_topic' => 'Learning Engine',
+            'page' => 'Website Setup',
+            'sections' => 'Website Setup',
+            'slider' => 'Website Setup',
+            'about' => 'Website Setup',
+            'counter' => 'Website Setup',
+            'contact_info' => 'Website Setup',
+            'dep_contact' => 'Website Setup',
+            'news' => 'Website Setup',
+            'event' => 'Website Setup',
+            'home_video' => 'Website Setup',
+            'ai_helper' => 'Website Setup',
+            'gallery_category' => 'Gallery',
+            'gallery' => 'Gallery',
+            'forums' => 'Forums',
+            'forum_comment' => 'Forums',
+            'memories' => 'Memories',
+            'general_settings' => 'General Settings',
+            'mobile_app_settings' => 'General Settings',
+            'storage_settings' => 'General Settings',
+            'task_schedules' => 'General Settings',
+            'software_update' => 'General Settings',
+            'recaptcha_settings' => 'General Settings',
+            'payment_gateway_settings' => 'General Settings',
+            'email_settings' => 'General Settings',
+            'sms_settings' => 'General Settings',
+            'genders' => 'Basic Data',
+            'religions' => 'Basic Data',
+            'blood_groups' => 'Basic Data',
+            'sessions' => 'Basic Data',
+            'tax_setup' => 'Basic Data',
+        ];
+    }
+}
+
+if (!function_exists('group_permissions_by_category')) {
+    /**
+     * Groups a Permission collection into ['Category' => Collection<Permission>],
+     * ordered the same way categories first appear in permission_category_map()
+     * (so the Roles/Change-Permission screens, the sidebar, and this grouping
+     * all agree on the same order), with anything unmapped collected last
+     * under "Other" instead of silently disappearing.
+     *
+     * @param  iterable<\App\Models\Permission>  $permissions
+     * @return \Illuminate\Support\Collection<string, \Illuminate\Support\Collection>
+     */
+    function group_permissions_by_category($permissions)
+    {
+        $map = permission_category_map();
+        $order = array_values(array_unique(array_merge(array_values($map), ['Other'])));
+
+        $grouped = collect($permissions)->groupBy(
+            fn ($permission) => $map[$permission->attribute] ?? 'Other'
+        );
+
+        return collect($order)
+            ->mapWithKeys(fn ($category) => [$category => $grouped->get($category, collect())])
+            ->filter(fn ($group) => $group->isNotEmpty());
+    }
+}

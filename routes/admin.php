@@ -110,15 +110,15 @@ Route::middleware(saasMiddleware())->group(function () {
                 });
 
                 Route::controller(SmsMailLogController::class)->group(function () {
-                    Route::get('communication/smsmail/',                 'index')->name('smsmail.index')->middleware('PermissionCheck:sms_mail_read_read');
-                    Route::get('communication/smsmail/create',           'create')->name('smsmail.create')->middleware('PermissionCheck:sms_mail_read_send');
-                    Route::post('communication/smsmail/store',           'store')->name('smsmail.store')->middleware('PermissionCheck:sms_mail_read_send');
-                    Route::get('communication/smsmail/edit/{id}',        'edit')->name('smsmail.edit')->middleware('PermissionCheck:sms_mail_read_update');
-                    Route::put('communication/smsmail/update/{id}',      'update')->name('smsmail.update')->middleware('PermissionCheck:sms_mail_read_update');
-                    Route::delete('communication/smsmail/delete/{id}',   'delete')->name('smsmail.delete')->middleware('PermissionCheck:sms_mail_read_delete', 'DemoCheck');
+                    Route::get('communication/smsmail/',                 'index')->name('smsmail.index')->middleware('PermissionCheck:sms_mail_read');
+                    Route::get('communication/smsmail/create',           'create')->name('smsmail.create')->middleware('PermissionCheck:sms_mail_send');
+                    Route::post('communication/smsmail/store',           'store')->name('smsmail.store')->middleware('PermissionCheck:sms_mail_send');
+                    Route::get('communication/smsmail/edit/{id}',        'edit')->name('smsmail.edit')->middleware('PermissionCheck:sms_mail_update');
+                    Route::put('communication/smsmail/update/{id}',      'update')->name('smsmail.update')->middleware('PermissionCheck:sms_mail_update');
+                    Route::delete('communication/smsmail/delete/{id}',   'delete')->name('smsmail.delete')->middleware('PermissionCheck:sms_mail_delete', 'DemoCheck');
 
-                    Route::get('communication/smsmail/users',        'users')->name('smsmail.users')->middleware('PermissionCheck:sms_mail_read_read');
-                    Route::get('communication/smsmail/template',        'template')->name('smsmail.template')->middleware('PermissionCheck:sms_mail_read_read');
+                    Route::get('communication/smsmail/users',        'users')->name('smsmail.users')->middleware('PermissionCheck:sms_mail_read');
+                    Route::get('communication/smsmail/template',        'template')->name('smsmail.template')->middleware('PermissionCheck:sms_mail_read');
                 });
 
                 Route::controller(ModuleInstallController::class)->group(function () {

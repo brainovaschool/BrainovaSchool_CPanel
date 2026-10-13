@@ -35,8 +35,8 @@ class RoleController extends Controller
 
     public function create()
     {
-        $data['title']       = ___('common.create_role');
-        $data['permissions'] = $this->permission->all();
+        $data['title']             = ___('common.create_role');
+        $data['permissionGroups']  = group_permissions_by_category($this->permission->all());
         return view('backend.roles.create', compact('data'));
     }
 
@@ -51,9 +51,9 @@ class RoleController extends Controller
 
     public function edit($id)
     {
-        $data['role']        = $this->role->show($id);
-        $data['title']       = ___('common.roles');
-        $data['permissions'] = $this->permission->all();
+        $data['role']              = $this->role->show($id);
+        $data['title']             = ___('common.roles');
+        $data['permissionGroups']  = group_permissions_by_category($this->permission->all());
         return view('backend.roles.edit', compact('data'));
     }
 
