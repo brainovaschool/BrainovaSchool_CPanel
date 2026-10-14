@@ -18,7 +18,10 @@ class AiHelperRepository
         $this->model = $model;
     }
 
-    public function updateSettings($request)
+    /** Returns ['status' => bool, 'warning' => ?string] — the warning (e.g.
+     *  about duplicate-model fallback accounts) is informational only and
+     *  doesn't block the save. */
+    public function updateSettings($request): array
     {
         try {
             $fields = [
@@ -49,16 +52,17 @@ class AiHelperRepository
                 }
             }
 
+            $warning = null;
             if ($request->has('ai_helper_accounts')) {
-                $this->saveAccounts($request->input('ai_helper_accounts'));
+                $warning = $this->saveAccounts($request->input('ai_helper_accounts'));
             }
 
             $this->uploadMascot($request, 'ai_helper_teacher_mascot');
             $this->uploadMascot($request, 'ai_helper_student_mascot');
 
-            return true;
+            return ['status' => true, 'warning' => $warning];
         } catch (\Throwable $th) {
-            return false;
+            return ['status' => false, 'warning' => null];
         }
     }
 
@@ -66,9 +70,14 @@ class AiHelperRepository
      * Validates and re-encodes the AI accounts list submitted as JSON from
      * the settings form (one row per API key, built client-side) — drops
      * any row missing a provider/key/model so a stray empty row can't
-     * silently sit in the fallback chain and always fail.
+     * silently sit in the fallback chain and always fail. Returns a
+     * warning string if two or more ENABLED accounts share the exact same
+     * provider+model — a key falling back to another key configured with
+     * the identical model gives no real protection against that specific
+     * model being overloaded/unavailable, which is the single most common
+     * real-world failure (Gemini's "HTTP 503 temporarily overloaded").
      */
-    private function saveAccounts(?string $raw): void
+    private function saveAccounts(?string $raw): ?string
     {
         $decoded = json_decode((string) $raw, true);
         $clean   = [];
@@ -98,6 +107,32 @@ class AiHelperRepository
         }
 
         $this->setSetting('ai_helper_accounts', json_encode($clean));
+
+        return $this->duplicateModelWarning($clean);
+    }
+
+    private function duplicateModelWarning(array $accounts): ?string
+    {
+        $seen = [];
+        $duplicateKeys = [];
+
+        foreach ($accounts as $row) {
+            if (empty($row['enabled'])) {
+                continue;
+            }
+            $key = $row['provider'] . '/' . strtolower($row['model']);
+            if (isset($seen[$key]) && !in_array($key, $duplicateKeys, true)) {
+                $duplicateKeys[] = $key;
+            }
+            $seen[$key] = true;
+        }
+
+        if (empty($duplicateKeys)) {
+            return null;
+        }
+
+        $examples = implode(', ', array_map(fn ($k) => str_replace('/', ' — ', $k), $duplicateKeys));
+        return "Heads up: more than one enabled account uses the exact same model ({$examples}). If that specific model is busy or unavailable, falling back to another account using the SAME model won't help — for real protection, give your accounts different models (or different providers).";
     }
 
     private function uploadMascot($request, string $field): void

@@ -43,7 +43,11 @@
                                 the system automatically retries and then moves on to the next account — so
                                 generation only ever fails if <em>every</em> row below has failed. For the
                                 strongest protection, add keys from more than one provider (Gemini, OpenAI,
-                                Anthropic), not just more than one key from the same one.
+                                Anthropic), not just more than one key from the same one. Multiple Gemini keys
+                                help against quota limits on one key, but if you give two rows the exact same
+                                <strong>model</strong> name, they won't protect each other against that specific
+                                model itself being overloaded (a common Gemini "HTTP 503" error) — spread your
+                                keys across a couple of different model names too, not just different keys.
                             </p>
                         </div>
 

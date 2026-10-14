@@ -38,10 +38,15 @@ class AiHelperController extends Controller
     public function update(Request $request)
     {
         $result = $this->repo->updateSettings($request);
-        if ($result) {
-            return redirect()->back()->with('success', ___('alert.updated_successfully'));
+        if (!$result['status']) {
+            return redirect()->back()->with('danger', ___('alert.something_went_wrong_please_try_again'));
         }
-        return redirect()->back()->with('danger', ___('alert.something_went_wrong_please_try_again'));
+
+        $message = ___('alert.updated_successfully');
+        if ($result['warning']) {
+            $message .= ' ' . $result['warning'];
+        }
+        return redirect()->back()->with('success', $message);
     }
 
     // Sends the admin to Google's own consent screen. access_type=offline +
