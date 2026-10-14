@@ -93,7 +93,7 @@
             <div id="aiGenerateStatus" class="card-body border-top" style="display:none;">
                 <div class="d-flex align-items-center gap-2">
                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                    <span id="aiGenerateStatusText">AI is generating scenes… this can take up to 2 minutes.</span>
+                    <span id="aiGenerateStatusText" style="white-space:pre-line;">AI is generating scenes… this can take up to 2 minutes.</span>
                     <button type="button" id="aiGenerateCancelBtn" class="btn btn-sm btn-outline-danger ms-auto">Cancel — I'll add scenes manually</button>
                 </div>
             </div>

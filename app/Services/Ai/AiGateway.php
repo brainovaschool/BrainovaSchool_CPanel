@@ -24,9 +24,14 @@ use App\Services\Ai\Providers\AnthropicProvider;
  */
 class AiGateway
 {
-    private const TIMEOUT_SECONDS_PER_ATTEMPT = 20;
+    // 30s/100s (not 20s/90s) because Reel Studio's prompts can be far larger
+    // than AI Helper's original lesson-plan prompts (a multi-thousand-word
+    // custom style template plus structured JSON for many scenes) — a
+    // genuinely slower response for a big request shouldn't be misread as
+    // a dead account. A higher ceiling never slows down a fast response.
+    private const TIMEOUT_SECONDS_PER_ATTEMPT = 30;
     private const MAX_ATTEMPTS_PER_ACCOUNT    = 3;
-    private const TOTAL_BUDGET_SECONDS        = 90;
+    private const TOTAL_BUDGET_SECONDS        = 100;
 
     /** @var array<string,object> */
     private array $providers;
@@ -54,17 +59,25 @@ class AiGateway
 
         $deadline    = microtime(true) + self::TOTAL_BUDGET_SECONDS;
         $lastMessage = 'The AI helper could not generate an answer right now. Please try again shortly.';
+        // One line per account tried, so a final failure can show exactly
+        // what happened with EVERY key, not just the last one — otherwise
+        // accounts 1 and 2's real errors are silently lost, and all the
+        // admin ever sees is whatever the last account happened to say.
+        $accountFailures = [];
 
         foreach ($accounts as $account) {
-            $provider = $this->providers[$account['provider']] ?? null;
+            $accountLabel = ($account['label'] ?: ucfirst($account['provider'])) . " ({$account['provider']})";
+            $provider     = $this->providers[$account['provider']] ?? null;
             if (!$provider) {
+                $accountFailures[] = "{$accountLabel}: unknown provider";
                 continue;
             }
 
             for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS_PER_ACCOUNT; $attempt++) {
                 $remaining = $deadline - microtime(true);
                 if ($remaining <= 1) {
-                    return ['ok' => false, 'message' => $lastMessage];
+                    $accountFailures[] = "{$accountLabel}: ran out of time to try";
+                    return ['ok' => false, 'message' => $this->summarizeFailure($accountFailures)];
                 }
 
                 $timeout = max(5, (int) min(self::TIMEOUT_SECONDS_PER_ATTEMPT, $remaining));
@@ -85,6 +98,7 @@ class AiGateway
                 Log::warning("AI Helper [{$account['provider']}/{$account['label']}] attempt {$attempt} failed: " . $result['message']);
 
                 if ($result['kind'] !== 'transient') {
+                    $accountFailures[] = "{$accountLabel}: {$result['message']}";
                     break; // rate-limited or permanently broken — try the next account, not this one again
                 }
 
@@ -94,11 +108,22 @@ class AiGateway
                     if ($backoff > 0) {
                         usleep((int) ($backoff * 1_000_000));
                     }
+                } elseif ($attempt === self::MAX_ATTEMPTS_PER_ACCOUNT) {
+                    $accountFailures[] = "{$accountLabel}: {$result['message']} (after {$attempt} tries)";
                 }
             }
         }
 
-        return ['ok' => false, 'message' => 'All configured AI accounts failed. ' . $lastMessage];
+        return ['ok' => false, 'message' => $this->summarizeFailure($accountFailures) ?: ('All configured AI accounts failed. ' . $lastMessage)];
+    }
+
+    private function summarizeFailure(array $accountFailures): string
+    {
+        if (empty($accountFailures)) {
+            return '';
+        }
+        $count = count($accountFailures);
+        return "All {$count} configured AI account(s) failed:\n" . implode("\n", $accountFailures);
     }
 
     /**
