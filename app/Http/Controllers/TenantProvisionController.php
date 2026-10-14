@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tenant;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Database\Models\Domain;
 
 /**
@@ -26,6 +28,13 @@ class TenantProvisionController extends Controller
 
         if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
             abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        // Stancl Tenancy's own central tables (tenants/domains) were never part of
+        // this project's migrations — create them once, on the central database,
+        // the first time this route runs. Harmless to check on every later call.
+        if (!Schema::hasTable('tenants') || !Schema::hasTable('domains')) {
+            Artisan::call('migrate', ['--force' => true]);
         }
 
         if (Tenant::find($schoolKey)) {
