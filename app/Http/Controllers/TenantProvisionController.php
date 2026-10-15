@@ -102,6 +102,31 @@ class TenantProvisionController extends Controller
         );
     }
 
+    /** Read-only: lists every registered tenant + domain, and whether the login/dashboard
+     *  routes actually run through tenancy-switching middleware anywhere in routes/web.php. */
+    public function diagnose(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $rows = Domain::with('tenant')->get()->map(function ($d) {
+            return "{$d->domain} -> tenant \"{$d->tenant_id}\"";
+        })->implode("\n") ?: '(no domains registered at all)';
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Registered domains:\n{$rows}\n\n"
+            . "Central DB (default connection): " . env('DB_DATABASE') . "\n"
+            . "Central domains config: " . json_encode(config('tenancy.central_domains')) . "\n"
+            . "</pre>"
+        );
+    }
+
     /** Checks the central connection's server for a database by name, without switching to it. */
     private function databaseExists(string $name): bool
     {

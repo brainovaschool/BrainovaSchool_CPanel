@@ -139,6 +139,9 @@ Route::middleware(saasMiddleware())->group(function () {
             Route::get('/db/create-tenant/{key}/{schoolKey}/{domain}', [\App\Http\Controllers\TenantProvisionController::class, 'create'])
                 ->where('domain', '.*');
 
+            // Read-only: lists every registered tenant/domain mapping (admin-only + key).
+            Route::get('/db/diagnose-tenants/{key}', [\App\Http\Controllers\TenantProvisionController::class, 'diagnose']);
+
             // One-off: create a dummy student login for testing (admin-only + key).
             Route::get('/db/create-demo-student/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'createDemoStudent']);
 
