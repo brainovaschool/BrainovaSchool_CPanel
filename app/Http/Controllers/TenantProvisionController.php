@@ -102,7 +102,10 @@ class TenantProvisionController extends Controller
     /** Checks the central connection's server for a database by name, without switching to it. */
     private function databaseExists(string $name): bool
     {
-        $result = DB::select('SHOW DATABASES LIKE ?', [$name]);
+        // SHOW DATABASES LIKE ? doesn't support bound placeholders on this MySQL
+        // version; information_schema.SCHEMATA is a normal table, so a plain
+        // parameterized SELECT works safely instead.
+        $result = DB::select('SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?', [$name]);
         return count($result) > 0;
     }
 }
