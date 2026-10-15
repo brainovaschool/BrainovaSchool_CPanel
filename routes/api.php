@@ -44,6 +44,10 @@ Route::middleware(saasApiMiddleware())->group(function () {
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
+    // Public (no login needed) -- app name + logo for the splash/login
+    // screens, shown before anyone has signed in.
+    Route::get('/app-branding', [App\Http\Controllers\Api\AppBrandingController::class, 'index']);
+
 
 
     Route::group(['middleware' => ['auth:sanctum']], function () {
