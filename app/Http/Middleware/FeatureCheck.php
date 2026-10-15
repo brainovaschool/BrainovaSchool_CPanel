@@ -22,7 +22,7 @@ class FeatureCheck
         }
 
         // if (Auth::check() && in_array($feature, Setting('features'))) :
-        if (Auth::check() && in_array($feature, activeSubscriptionFeatures())) :
+        if (Auth::check() && in_array($feature, activeSubscriptionFeatures() ?? [])) :
             return $next($request);
         endif;
         return abort(403, 'Access Denied');

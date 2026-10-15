@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Status;
+use App\Models\Subscription;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
@@ -31,6 +33,17 @@ class TenantProvisionController extends Controller
 {
     private const KEY = 'brainova-db-2026';
 
+    // Every feature key any route in this app actually checks via FeatureCheck:<key>
+    // (confirmed by grepping routes/*.php) -- a school created through the full
+    // signup flow gets these from its chosen Package instead; this route has no
+    // Package to read, so every school it provisions gets full access to the
+    // same core modules your own site has, same as before APP_SAAS was ever on.
+    private const DEFAULT_FEATURES = [
+        'online_admission', 'student_info', 'academic', 'routine', 'attendance',
+        'fees', 'examination', 'online_examination', 'library', 'account',
+        'report', 'language', 'staff_manage', 'website_setup', 'gallery', 'setting',
+    ];
+
     public function create(string $key, string $schoolKey, string $domain)
     {
         if (!hash_equals(self::KEY, $key)) {
@@ -51,7 +64,10 @@ class TenantProvisionController extends Controller
         $tenant = Tenant::find($schoolKey);
 
         if ($tenant && $tenant->domains()->where('domain', $domain)->exists()) {
-            return response("Tenant \"{$schoolKey}\" and domain \"{$domain}\" are already fully set up — nothing done.", 422);
+            // Already fully set up -- still worth healing a subscription whose
+            // features never got backfilled (e.g. testschool before this fix).
+            $this->ensureFullFeatureAccess($tenant);
+            return response("Tenant \"{$schoolKey}\" and domain \"{$domain}\" are already fully set up — feature access checked/healed, nothing else done.", 422);
         }
 
         if (!$tenant && Domain::where('domain', $domain)->exists()) {
@@ -85,6 +101,8 @@ class TenantProvisionController extends Controller
             dispatch_sync(new MigrateDatabase($tenant));
             dispatch_sync(new SeedDatabase($tenant));
         }
+
+        $this->ensureFullFeatureAccess($tenant);
 
         if (!$tenant->domains()->where('domain', $domain)->exists()) {
             $tenant->domains()->create(['domain' => $domain]);
@@ -176,6 +194,24 @@ class TenantProvisionController extends Controller
             . "Central domains config: " . json_encode(config('tenancy.central_domains')) . "\n"
             . "</pre>"
         );
+    }
+
+    /** Inside the tenant's own database: gives its active subscription a full
+     *  features list if it doesn't have one yet (e.g. seeded with none, since
+     *  this route bypasses the Package/session-based signup flow). Never
+     *  overwrites a subscription that already has real features set. */
+    private function ensureFullFeatureAccess(Tenant $tenant): void
+    {
+        $tenant->run(function () {
+            $subscription = Subscription::active()->first() ?? new Subscription(['status' => Status::ACTIVE]);
+            if (empty($subscription->features)) {
+                $subscription->features = self::DEFAULT_FEATURES;
+                $subscription->save();
+            }
+            // activeSubscriptionFeatures() caches its result forever -- a page
+            // visited before this fix may have already cached the broken null.
+            cache()->forget('activeSubscriptionFeatures');
+        });
     }
 
     /** Checks the central connection's server for a database by name, without switching to it. */
