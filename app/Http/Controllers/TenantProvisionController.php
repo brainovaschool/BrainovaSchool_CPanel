@@ -102,6 +102,57 @@ class TenantProvisionController extends Controller
         );
     }
 
+    /**
+     * ONE-OFF: registers a domain (meant for the school's own main domain) as
+     * a tenant pointing at the app's CURRENT, already-populated database --
+     * never a new empty one. Run this exactly once, before turning on
+     * APP_SAAS, so InitializeTenancyByDomain has something to resolve the
+     * main domain to instead of breaking the live site the moment that
+     * middleware becomes active everywhere. Deliberately skips Stancl's
+     * normal create/migrate/seed pipeline (saveQuietly -- no events fire)
+     * since the database already exists with real data; nothing is created,
+     * migrated, or re-seeded.
+     */
+    public function adoptMainSite(string $key, string $tenantId, string $domain)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        if (!Schema::hasTable('tenants') || !Schema::hasTable('domains')) {
+            Artisan::call('migrate', ['--force' => true]);
+        }
+
+        if (Tenant::find($tenantId)) {
+            return response("A tenant with id \"{$tenantId}\" already exists — nothing done.", 422);
+        }
+
+        if (Domain::where('domain', $domain)->exists()) {
+            return response("Domain \"{$domain}\" is already registered to a tenant — nothing done.", 422);
+        }
+
+        $realDatabase = env('DB_DATABASE');
+
+        $tenant = new Tenant(['id' => $tenantId]);
+        $tenant->setInternal('db_name', $realDatabase);
+        $tenant->saveQuietly();
+
+        $tenant->domains()->create(['domain' => $domain]);
+
+        return response(
+            '<pre style="font:14px/1.5 monospace;padding:24px">'
+            . "Tenant \"{$tenantId}\" registered, pointing at your EXISTING database ({$realDatabase}).\n"
+            . "Nothing was created, migrated, or seeded -- your real data is untouched.\n"
+            . "Domain registered: {$domain}\n\n"
+            . "This has no effect yet. It only takes effect once APP_SAAS=true is set in .env."
+            . "</pre>"
+        );
+    }
+
     /** Read-only: lists every registered tenant + domain, and whether the login/dashboard
      *  routes actually run through tenancy-switching middleware anywhere in routes/web.php. */
     public function diagnose(string $key)

@@ -142,6 +142,12 @@ Route::middleware(saasMiddleware())->group(function () {
             // Read-only: lists every registered tenant/domain mapping (admin-only + key).
             Route::get('/db/diagnose-tenants/{key}', [\App\Http\Controllers\TenantProvisionController::class, 'diagnose']);
 
+            // ONE-OFF: registers the given domain as a tenant pointing at the app's
+            // EXISTING database -- for adopting the school's own main domain into
+            // tenancy without creating/migrating/seeding anything (admin-only + key).
+            Route::get('/db/adopt-main-site/{key}/{tenantId}/{domain}', [\App\Http\Controllers\TenantProvisionController::class, 'adoptMainSite'])
+                ->where('domain', '.*');
+
             // One-off: create a dummy student login for testing (admin-only + key).
             Route::get('/db/create-demo-student/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'createDemoStudent']);
 
