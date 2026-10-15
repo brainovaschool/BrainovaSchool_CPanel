@@ -334,6 +334,42 @@ class SettingRepository implements SettingInterface
                 }
             }
 
+            // Mobile app logo -- deliberately a separate setting from
+            // light_logo/dark_logo (the website's own header logo), since the
+            // app needs a square 250x250 image and the website logos are a
+            // different shape. Read by the public /api/app-branding endpoint.
+            if ($request->has('app_logo') && $request->file('app_logo')->isValid()) {
+                $setting = $this->model::where('name', 'app_logo')->first();
+                $path    = 'backend/uploads/settings';
+                if ($setting) {
+                    $file      = $request->file('app_logo');
+                    $extension = $file->guessExtension();
+                    $filename  = Str::random(6) . '_' . time() . '.' . $extension;
+                    if (setting('file_system') == 's3') {
+                        $filePath       = s3Upload($path, $file);
+                        $setting->value = $filePath;
+                    } else {
+                        $file->move($path, $filename);
+                        $setting->value = $path . '/' . $filename;
+                    }
+                    $setting->save();
+                } else {
+                    $setting        = new $this->model;
+                    $setting->name  = 'app_logo';
+                    $file           = $request->file('app_logo');
+                    $extension      = $file->guessExtension();
+                    $filename       = Str::random(6) . '_' . time() . '.' . $extension;
+                    if (setting('file_system') == 's3') {
+                        $filePath       = s3Upload($path, $file);
+                        $setting->value = $filePath;
+                    } else {
+                        $file->move($path, $filename);
+                        $setting->value = $path . '/' . $filename;
+                    }
+                    $setting->save();
+                }
+            }
+
             if ($request->has('favicon') && $request->file('favicon')->isValid()) {
                 $setting                = $this->model::where('name', 'favicon')->first();
                 $path = 'backend/uploads/settings';

@@ -116,6 +116,31 @@
                                     </div>
                                 </div>
                                 <!--Black Logo End -->
+                                <!--App Logo Start -->
+                                <div class="col-12 col-md-6 col-xl-6 col-lg-6 ">
+                                    <label class="form-label" for="app_logo">{{ ___('settings.app_logo') ?: 'Mobile App Logo' }}
+                                        {{ ___('common.(250 x 250 px)') }}</label>
+                                    <br>
+                                    <div class="d-flex justify-content-center align-items-center">
+                                        <img class="img-thumbnail mb-10 ot-input full-logo setting-image"
+                                            src="{{ @globalAsset(setting('app_logo'), '154X38.webp') }}"
+                                            alt="{{ __('app logo') }}">
+                                    </div>
+                                    {{-- File Uplode --}}
+                                    <div class="ot_fileUploader left-side mb-3">
+                                        <input class="form-control" type="text"
+                                            placeholder="{{ ___('settings.browse_app_logo') ?: 'Browse app logo' }}" readonly=""
+                                            id="placeholder9">
+                                        <button class="primary-btn-small-input" type="button">
+                                            <label class="btn btn-lg ot-btn-primary"
+                                                for="fileBrouse9">{{ ___('common.browse') }}</label>
+                                            <input type="file" class="d-none form-control" name="app_logo"
+                                                id="fileBrouse9" accept="image/*">
+                                        </button>
+                                    </div>
+                                    <small class="text-muted">{{ ___('settings.app_logo_help') ?: 'Used for your mobile app\'s splash and role-selection screens. Keep this square (same width and height).' }}</small>
+                                </div>
+                                <!--App Logo End -->
                                 <div class="col-12">
                                     <div class="">
                                         <div class="row align-items-end">

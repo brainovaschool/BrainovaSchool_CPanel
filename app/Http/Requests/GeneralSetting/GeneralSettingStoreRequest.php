@@ -30,6 +30,7 @@ class GeneralSettingStoreRequest extends FormRequest
             'dark_logo' => 'image|mimes:jpg,png,jpeg,gif,svg|max:2048',
             'dark_logo' => 'image|mimes:jpg,png,jpeg,gif,svg|max:2048',
             'favicon' => 'image|mimes:jpg,png,jpeg,gif,svg|max:2048',
+            'app_logo' => 'image|mimes:jpg,png,jpeg|max:2048',
         ];
     }
 }

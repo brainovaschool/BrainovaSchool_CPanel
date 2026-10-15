@@ -8,9 +8,10 @@ use App\Traits\ReturnFormatTrait;
 /**
  * Public (no login required): the mobile app's splash/login screens show
  * this before anyone signs in, so it can't sit behind auth:sanctum like
- * the rest of this file. Reuses the same setting()/globalAsset() pair the
- * website's own header already uses for its logo, so updating General
- * Settings on the website updates the app too, with no new app build.
+ * the rest of this file. Reads the dedicated "app_logo" General Setting
+ * (General Settings -> Mobile App Logo, 250x250) -- deliberately separate
+ * from light_logo/dark_logo, which are the website's own header logo and a
+ * different shape -- so updating it updates the app too, with no new build.
  */
 class AppBrandingController extends Controller
 {
@@ -21,7 +22,7 @@ class AppBrandingController extends Controller
         try {
             $branding = [
                 'school_name' => setting('application_name'),
-                'logo'        => globalAsset(setting('dark_logo'), 'favicon.png'),
+                'logo'        => globalAsset(setting('app_logo'), 'favicon.png'),
             ];
 
             return $this->responseWithSuccess(___('alert.success'), $branding);
