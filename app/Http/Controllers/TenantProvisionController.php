@@ -171,6 +171,30 @@ class TenantProvisionController extends Controller
         );
     }
 
+    /** ONE-OFF: back-fills full feature access for a tenant created outside
+     *  this controller's own create() -- specifically adoptMainSite(), which
+     *  never touches Subscription at all. Same healing logic as create()'s
+     *  "already set up" branch, just reachable without re-supplying a domain. */
+    public function healFeatures(string $key, string $tenantId)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $tenant = Tenant::find($tenantId);
+        if (!$tenant) {
+            return response("No tenant with id \"{$tenantId}\" exists.", 422);
+        }
+
+        $this->ensureFullFeatureAccess($tenant);
+
+        return response("Feature access checked/healed for tenant \"{$tenantId}\".");
+    }
+
     /** Read-only: lists every registered tenant + domain, and whether the login/dashboard
      *  routes actually run through tenancy-switching middleware anywhere in routes/web.php. */
     public function diagnose(string $key)

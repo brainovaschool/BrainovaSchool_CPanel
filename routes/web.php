@@ -142,6 +142,10 @@ Route::middleware(saasMiddleware())->group(function () {
             // Read-only: lists every registered tenant/domain mapping (admin-only + key).
             Route::get('/db/diagnose-tenants/{key}', [\App\Http\Controllers\TenantProvisionController::class, 'diagnose']);
 
+            // ONE-OFF: back-fills full feature access for a tenant whose subscription
+            // never got one (e.g. the main site, adopted via adoptMainSite above).
+            Route::get('/db/heal-features/{key}/{tenantId}', [\App\Http\Controllers\TenantProvisionController::class, 'healFeatures']);
+
             // ONE-OFF: registers the given domain as a tenant pointing at the app's
             // EXISTING database -- for adopting the school's own main domain into
             // tenancy without creating/migrating/seeding anything (admin-only + key).
