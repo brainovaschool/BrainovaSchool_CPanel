@@ -8,7 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Database\Models\Domain;
-use Stancl\Tenancy\Events\TenantCreated;
+use Stancl\Tenancy\Jobs\MigrateDatabase;
+use Stancl\Tenancy\Jobs\SeedDatabase;
 
 /**
  * Creates a new, fully isolated school (its own database, migrated and
@@ -20,9 +21,11 @@ use Stancl\Tenancy\Events\TenantCreated;
  * the database for each school has to be created by hand in cPanel first
  * (see the response this returns when that hasn't happened yet). A tenant
  * whose database-creation step failed is left as a central "tenants" row
- * with no working database or domain — safe to retry: this re-runs the
- * create/migrate/seed pipeline for an existing tenant instead of refusing,
- * and never re-creates a domain that's already attached.
+ * with no working database or domain — safe to retry: for an existing
+ * tenant this skips straight to migrating + seeding the (now manually
+ * created) database rather than refusing, since Stancl's own CreateDatabase
+ * step refuses to touch a database it didn't create itself. Never re-creates
+ * a domain that's already attached.
  */
 class TenantProvisionController extends Controller
 {
@@ -77,10 +80,10 @@ class TenantProvisionController extends Controller
         } else {
             // A previous attempt left this tenant's central row behind without a
             // working database (the cPanel database didn't exist yet at the time).
-            // Re-run the same create/migrate/seed pipeline now that it does;
-            // CreateDatabase skips the CREATE DATABASE call when the database
-            // already exists, so this is safe to replay.
-            event(new TenantCreated($tenant));
+            // CreateDatabase refuses to touch a database it didn't create itself,
+            // so skip straight to migrating + seeding the one that's there now.
+            dispatch_sync(new MigrateDatabase($tenant));
+            dispatch_sync(new SeedDatabase($tenant));
         }
 
         if (!$tenant->domains()->where('domain', $domain)->exists()) {
