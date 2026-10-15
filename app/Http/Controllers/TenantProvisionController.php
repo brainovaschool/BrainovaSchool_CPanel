@@ -5,16 +5,24 @@ namespace App\Http\Controllers;
 use App\Models\Tenant;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Database\Models\Domain;
+use Stancl\Tenancy\Events\TenantCreated;
 
 /**
  * Creates a new, fully isolated school (its own database, migrated and
  * seeded fresh) and binds it to a subdomain — from the browser, for hosts
  * without shell/artisan access. Same guard pattern as MigrationRunnerController:
- * a fixed key + main-administrator login. Not idempotent on purpose — it
- * refuses to touch a school key or domain that already exists rather than
- * silently reusing or overwriting one.
+ * a fixed key + main-administrator login.
+ *
+ * Shared cPanel hosting can't CREATE DATABASE from the app's own DB user, so
+ * the database for each school has to be created by hand in cPanel first
+ * (see the response this returns when that hasn't happened yet). A tenant
+ * whose database-creation step failed is left as a central "tenants" row
+ * with no working database or domain — safe to retry: this re-runs the
+ * create/migrate/seed pipeline for an existing tenant instead of refusing,
+ * and never re-creates a domain that's already attached.
  */
 class TenantProvisionController extends Controller
 {
@@ -37,23 +45,51 @@ class TenantProvisionController extends Controller
             Artisan::call('migrate', ['--force' => true]);
         }
 
-        if (Tenant::find($schoolKey)) {
-            return response("A tenant with id \"{$schoolKey}\" already exists — nothing done.", 422);
+        $tenant = Tenant::find($schoolKey);
+
+        if ($tenant && $tenant->domains()->where('domain', $domain)->exists()) {
+            return response("Tenant \"{$schoolKey}\" and domain \"{$domain}\" are already fully set up — nothing done.", 422);
         }
 
-        if (Domain::where('domain', $domain)->exists()) {
-            return response("Domain \"{$domain}\" is already registered to a tenant — nothing done.", 422);
+        if (!$tenant && Domain::where('domain', $domain)->exists()) {
+            return response("Domain \"{$domain}\" is already registered to a different tenant — nothing done.", 422);
         }
 
-        // Tenant::create triggers CreateDatabase -> MigrateDatabase -> SeedDatabase
-        // synchronously (see TenancyServiceProvider), so by the time this returns
-        // the new school has its own real database, fully migrated and seeded.
-        $tenant = Tenant::create(['id' => $schoolKey]);
-        $tenant->domains()->create(['domain' => $domain]);
+        $expectedDatabase = env('DB_DATABASE') . '_' . $schoolKey;
+        if (!$this->databaseExists($expectedDatabase)) {
+            return response(
+                '<pre style="font:14px/1.5 monospace;padding:24px">'
+                . "Can't create the database for \"{$schoolKey}\" automatically on this hosting.\n\n"
+                . "One-time manual step in cPanel first:\n"
+                . "1. MySQL Databases -> Create New Database: BrainovaSchool_{$schoolKey}\n"
+                . "   (cPanel will prefix it to {$expectedDatabase})\n"
+                . "2. Add User to Database -> your existing app DB user -> this new database -> ALL PRIVILEGES\n\n"
+                . "Then reload this exact URL again."
+                . "</pre>",
+                422
+            );
+        }
+
+        if (!$tenant) {
+            // Tenant::create triggers CreateDatabase -> MigrateDatabase -> SeedDatabase
+            // synchronously (see TenancyServiceProvider).
+            $tenant = Tenant::create(['id' => $schoolKey]);
+        } else {
+            // A previous attempt left this tenant's central row behind without a
+            // working database (the cPanel database didn't exist yet at the time).
+            // Re-run the same create/migrate/seed pipeline now that it does;
+            // CreateDatabase skips the CREATE DATABASE call when the database
+            // already exists, so this is safe to replay.
+            event(new TenantCreated($tenant));
+        }
+
+        if (!$tenant->domains()->where('domain', $domain)->exists()) {
+            $tenant->domains()->create(['domain' => $domain]);
+        }
 
         return response(
             '<pre style="font:14px/1.5 monospace;padding:24px">'
-            . "Tenant \"{$schoolKey}\" created with its own separate database, migrated and seeded.\n"
+            . "Tenant \"{$schoolKey}\" is set up with its own separate database, migrated and seeded.\n"
             . "Domain registered: {$domain}\n\n"
             . "Visit https://{$domain}/login to sign in.\n\n"
             . "Default super admin login for this new school (from the standard seeder — CHANGE THIS before handing the school access):\n"
@@ -61,5 +97,12 @@ class TenantProvisionController extends Controller
             . "  Password: 123456"
             . "</pre>"
         );
+    }
+
+    /** Checks the central connection's server for a database by name, without switching to it. */
+    private function databaseExists(string $name): bool
+    {
+        $result = DB::select('SHOW DATABASES LIKE ?', [$name]);
+        return count($result) > 0;
     }
 }
