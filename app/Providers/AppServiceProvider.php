@@ -85,6 +85,15 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(2)->by(optional($request->user())->id ?: $request->ip());
         });
 
+        // AppSettingController (the real "App Settings" screen configuring the
+        // mobile app's home screen) renders view('mainapp::...'), but the
+        // MainApp module itself is disabled, so its own ServiceProvider never
+        // registers that view namespace -- "No hint path defined for [mainapp]."
+        // Registering just the namespace here (not enabling the whole module,
+        // which also attaches its own global view composer) fixes the crash
+        // without any of that module's other side effects.
+        $this->loadViewsFrom(base_path('Modules/MainApp/Resources/views'), 'mainapp');
+
 
         if (env('APP_SAAS')):
 
