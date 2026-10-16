@@ -21,7 +21,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered class-table">
+                        <table class="ot-basic-table ot-table-bg">
                             <thead class="thead">
                                 <tr><th>Title</th><th>Frequency</th><th>Description</th><th>This period</th><th class="action">{{ ___('common.action') }}</th></tr>
                             </thead>

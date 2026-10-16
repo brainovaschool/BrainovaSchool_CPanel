@@ -23,7 +23,7 @@
                 <div class="card-body">
                     <p class="text-secondary">Counts any reel/carousel accepted or further along the pipeline, planned for this month.</p>
                     <div class="table-responsive">
-                    <table class="table table-bordered class-table">
+                    <table class="ot-basic-table ot-table-bg">
                         <thead class="thead"><tr><th>Category</th><th>Reels</th><th>Carousels</th></tr></thead>
                         <tbody class="tbody">
                             @forelse ($data['plan'] as $row)
@@ -49,21 +49,21 @@
                     <form action="{{ route('portal-social-month-plan.targets') }}" method="post">
                         @csrf
                         <div class="table-responsive">
-                        <table class="table table-bordered class-table mb-3" id="targetsTable">
+                        <table class="ot-basic-table ot-table-bg mb-3" id="targetsTable">
                             <thead class="thead"><tr><th>Category</th><th>Reel target / month</th><th>Carousel target / month</th></tr></thead>
                             <tbody>
                                 @forelse ($data['plan'] as $row)
                                     <tr>
-                                        <td><input type="text" name="category[]" class="ot-input" value="{{ $row['category'] }}"></td>
-                                        <td><input type="number" min="0" name="reel_target[]" class="ot-input" value="{{ $row['reel_target'] }}"></td>
-                                        <td><input type="number" min="0" name="carousel_target[]" class="ot-input" value="{{ $row['carousel_target'] }}"></td>
+                                        <td><input type="text" name="category[]" class="form-control ot-input" value="{{ $row['category'] }}"></td>
+                                        <td><input type="number" min="0" name="reel_target[]" class="form-control ot-input" value="{{ $row['reel_target'] }}"></td>
+                                        <td><input type="number" min="0" name="carousel_target[]" class="form-control ot-input" value="{{ $row['carousel_target'] }}"></td>
                                     </tr>
                                 @empty
                                 @endforelse
                                 <tr>
-                                    <td><input type="text" name="category[]" class="ot-input" placeholder="New category"></td>
-                                    <td><input type="number" min="0" name="reel_target[]" class="ot-input" value="0"></td>
-                                    <td><input type="number" min="0" name="carousel_target[]" class="ot-input" value="0"></td>
+                                    <td><input type="text" name="category[]" class="form-control ot-input" placeholder="New category"></td>
+                                    <td><input type="number" min="0" name="reel_target[]" class="form-control ot-input" value="0"></td>
+                                    <td><input type="number" min="0" name="carousel_target[]" class="form-control ot-input" value="0"></td>
                                 </tr>
                             </tbody>
                         </table>

@@ -95,7 +95,7 @@
                         @if ($data['isManager'] || $data['isAssignee'])
                             <form action="{{ route('portal-tasks.comment', $task->id) }}" method="post" class="mt-3">
                                 @csrf
-                                <textarea name="body" class="ot-input" rows="2" placeholder="Write a comment..." required></textarea>
+                                <textarea name="body" class="form-control ot-input" rows="2" placeholder="Write a comment..." required></textarea>
                                 <button type="submit" class="btn btn-sm ot-btn-primary mt-2">Post comment</button>
                             </form>
                         @endif
@@ -138,11 +138,11 @@
                                 <form action="{{ route('portal-tasks.submit', $task->id) }}" method="post" enctype="multipart/form-data">
                                     @csrf
                                     <label class="form-label">Link (optional)</label>
-                                    <input type="text" name="link" class="ot-input mb-2">
+                                    <input type="text" name="link" class="form-control ot-input mb-2">
                                     <label class="form-label">File (optional)</label>
-                                    <input type="file" name="file" class="ot-input mb-2">
+                                    <input type="file" name="file" class="form-control ot-input mb-2">
                                     <label class="form-label">Comment</label>
-                                    <textarea name="comment" class="ot-input mb-2" rows="2"></textarea>
+                                    <textarea name="comment" class="form-control ot-input mb-2" rows="2"></textarea>
                                     <button type="submit" class="btn ot-btn-primary w-100">Submit Work</button>
                                 </form>
                             @else
@@ -180,16 +180,16 @@
                                 <form action="{{ route('portal-tasks.request-revision', $task->id) }}" method="post" class="mb-3">
                                     @csrf
                                     <label class="form-label">Revision comment (required)</label>
-                                    <textarea name="comment" class="ot-input mb-2" rows="2" required></textarea>
+                                    <textarea name="comment" class="form-control ot-input mb-2" rows="2" required></textarea>
                                     <button type="submit" class="btn ot-btn-warning w-100">Send Back for Revision</button>
                                 </form>
 
                                 <form action="{{ route('portal-tasks.approve', $task->id) }}" method="post">
                                     @csrf
                                     <label class="form-label">Quality score (0–5)</label>
-                                    <input type="number" name="quality_score" class="ot-input mb-2" min="0" max="5" required>
+                                    <input type="number" name="quality_score" class="form-control ot-input mb-2" min="0" max="5" required>
                                     <label class="form-label">Note (optional)</label>
-                                    <textarea name="comment" class="ot-input mb-2" rows="2"></textarea>
+                                    <textarea name="comment" class="form-control ot-input mb-2" rows="2"></textarea>
                                     <button type="submit" class="btn ot-btn-success w-100">Approve &amp; Complete</button>
                                 </form>
                             @else

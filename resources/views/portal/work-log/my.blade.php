@@ -25,7 +25,7 @@
             <form action="{{ route('portal-work-log.index') }}" method="get">
                 <div class="card ot-card mb-24 position-relative z_1">
                     <div class="card-header d-flex align-items-center gap-4 flex-wrap">
-                        <input type="date" name="date" class="ot-input" value="{{ $data['date'] }}">
+                        <input type="date" name="date" class="form-control ot-input" value="{{ $data['date'] }}">
                         <button class="btn ot-btn-primary" type="submit">Go</button>
                         @if ($data['isLocked'])
                             <span class="badge-basic-success-text">Submitted — locked</span>
@@ -39,7 +39,7 @@
             <div class="card-header"><h4 class="mb-0">{{ \Carbon\Carbon::parse($data['date'])->format('l, d M Y') }}</h4></div>
             <div class="card-body">
                 <div class="table-responsive">
-                <table class="table table-bordered class-table">
+                <table class="ot-basic-table ot-table-bg">
                     <thead class="thead">
                         <tr><th style="width:140px">Time</th><th>Activity</th><th>Notes</th><th class="action">{{ ___('common.action') }}</th></tr>
                     </thead>
@@ -90,7 +90,7 @@
                                                 </select>
                                                 <input type="hidden" name="task_id">
                                                 <input type="hidden" name="activity">
-                                                <input type="text" name="notes" class="ot-input" placeholder="Notes (optional)" style="max-width:200px">
+                                                <input type="text" name="notes" class="form-control ot-input" placeholder="Notes (optional)" style="max-width:200px">
                                                 <button type="submit" class="btn btn-sm ot-btn-primary">Save</button>
                                             </form>
                                         </td>
@@ -125,8 +125,8 @@
                             @csrf
                             <input type="hidden" name="date" value="{{ $data['date'] }}">
                             <input type="hidden" name="is_extra" value="1">
-                            <input type="time" name="start_time" class="ot-input" required>
-                            <input type="time" name="end_time" class="ot-input" required>
+                            <input type="time" name="start_time" class="form-control ot-input" required>
+                            <input type="time" name="end_time" class="form-control ot-input" required>
                             <select name="task_or_activity" class="nice-select niceSelect bordered_style" style="min-width:220px" onchange="
                                 var v=this.value; var f=this.form;
                                 if (v.indexOf('task:')===0){ f.task_id.value=v.slice(5); f.activity.value=''; }
@@ -146,7 +146,7 @@
                             </select>
                             <input type="hidden" name="task_id">
                             <input type="hidden" name="activity">
-                            <input type="text" name="notes" class="ot-input" placeholder="Notes (optional)" style="max-width:200px">
+                            <input type="text" name="notes" class="form-control ot-input" placeholder="Notes (optional)" style="max-width:200px">
                             <button type="submit" class="btn btn-sm ot-btn-primary">Add</button>
                         </form>
                     </div>
@@ -164,7 +164,7 @@
             <div class="card-header"><h4 class="mb-0">Last 14 days</h4></div>
             <div class="card-body">
                 <div class="table-responsive">
-                <table class="table table-bordered class-table">
+                <table class="ot-basic-table ot-table-bg">
                     <thead class="thead"><tr><th>Date</th><th>Hours logged</th><th>{{ ___('common.status') }}</th></tr></thead>
                     <tbody class="tbody">
                         @foreach ($data['history'] as $row)

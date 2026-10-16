@@ -34,7 +34,7 @@
                             </div>
 
                             <div class="single_large_selectBox">
-                                <input type="text" class="ot-input" name="search" placeholder="Search name or email" value="{{ $data['search'] }}">
+                                <input type="text" class="form-control ot-input" name="search" placeholder="Search name or email" value="{{ $data['search'] }}">
                             </div>
 
                             <button class="btn btn-lg ot-btn-primary" type="submit">{{ ___('common.Search') }}</button>
@@ -54,7 +54,7 @@
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered class-table">
+                        <table class="ot-basic-table ot-table-bg">
                             <thead class="thead">
                                 <tr>
                                     <th>{{ ___('common.image') }}</th>

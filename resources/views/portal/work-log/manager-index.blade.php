@@ -30,7 +30,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="table-responsive">
-                    <table class="table table-bordered class-table">
+                    <table class="ot-basic-table ot-table-bg">
                         <thead class="thead"><tr><th>Employee</th><th>Role</th><th>Total hours</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                         <tbody class="tbody">
                             @foreach ($data['rows'] as $row)

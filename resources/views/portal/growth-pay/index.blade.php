@@ -20,7 +20,7 @@
         <div class="col-12 p-0">
             <form action="{{ route('portal-growth-pay.index') }}" method="get">
                 <div class="card ot-card mb-24 d-flex flex-row align-items-center gap-3" style="padding:1rem 1.25rem">
-                    <input type="month" name="month" class="ot-input" value="{{ $data['month'] }}">
+                    <input type="month" name="month" class="form-control ot-input" value="{{ $data['month'] }}">
                     <button class="btn ot-btn-primary" type="submit">{{ ___('common.Search') }}</button>
                 </div>
             </form>
@@ -32,7 +32,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="table-responsive">
-                    <table class="table table-bordered class-table">
+                    <table class="ot-basic-table ot-table-bg">
                         <thead class="thead">
                             <tr><th>Employee</th><th>Base</th><th>Bonus</th><th>Total</th><th>Note</th><th>Status</th><th class="action">{{ ___('common.action') }}</th></tr>
                         </thead>
@@ -51,9 +51,9 @@
                                                 @csrf
                                                 <input type="hidden" name="staff_id" value="{{ $row['staff']->id }}">
                                                 <input type="hidden" name="month" value="{{ $data['month'] }}">
-                                                <input type="number" step="0.01" min="0" name="base_amount" class="ot-input" style="max-width:110px" placeholder="Base" value="{{ $pay->base_amount ?? '' }}">
-                                                <input type="number" step="0.01" min="0" name="bonus_amount" class="ot-input" style="max-width:110px" placeholder="Bonus" value="{{ $pay->bonus_amount ?? '' }}">
-                                                <input type="text" name="note" class="ot-input" style="max-width:200px" placeholder="Note (optional)" value="{{ $pay->note ?? '' }}">
+                                                <input type="number" step="0.01" min="0" name="base_amount" class="form-control ot-input" style="max-width:110px" placeholder="Base" value="{{ $pay->base_amount ?? '' }}">
+                                                <input type="number" step="0.01" min="0" name="bonus_amount" class="form-control ot-input" style="max-width:110px" placeholder="Bonus" value="{{ $pay->bonus_amount ?? '' }}">
+                                                <input type="text" name="note" class="form-control ot-input" style="max-width:200px" placeholder="Note (optional)" value="{{ $pay->note ?? '' }}">
                                                 <button type="submit" class="btn btn-sm ot-btn-primary">Save</button>
                                             </form>
                                         @endif
@@ -72,7 +72,7 @@
                 <div class="card-header"><h4 class="mb-0">This month's totals</h4></div>
                 <div class="card-body">
                     <div class="table-responsive">
-                    <table class="table table-bordered class-table">
+                    <table class="ot-basic-table ot-table-bg">
                         <thead class="thead"><tr><th>Employee</th><th>Total</th><th>Status</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                         <tbody class="tbody">
                             @foreach ($data['rows'] as $row)

@@ -22,7 +22,7 @@
                 <div class="card-header"><h4 class="mb-0">Duties</h4></div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered class-table">
+                        <table class="ot-basic-table ot-table-bg">
                             <thead class="thead">
                                 <tr>
                                     <th>Title</th>
@@ -39,11 +39,11 @@
                                         <td>{{ $duty->title }} @if ($duty->key)<span class="badge-basic-info-text">Built-in</span>@endif</td>
                                         <td>{{ ucfirst($duty->freq) }}</td>
                                         <td>{{ $duty->owners->isNotEmpty() ? $duty->owners->map(fn ($o) => trim($o->first_name . ' ' . $o->last_name))->implode(', ') : '— unassigned (admin) —' }}</td>
-                                        <td>{{ $duty->isDoneForCurrentPeriod() ? '✓ Done' : '— not yet —' }}</td>
+                                        <td>{{ $duty->isDoneForCurrentPeriod() ? 'âœ“ Done' : '— not yet —' }}</td>
                                         <td class="action">
                                             <form action="{{ route('portal-responsibilities.update', $duty->id) }}" method="post" class="d-flex gap-2 flex-wrap align-items-center">
                                                 @csrf
-                                                <input type="text" name="title" class="ot-input" value="{{ $duty->title }}" style="max-width:160px" required>
+                                                <input type="text" name="title" class="form-control ot-input" value="{{ $duty->title }}" style="max-width:160px" required>
                                                 <select name="freq" class="nice-select niceSelect bordered_style">
                                                     <option value="daily" {{ $duty->freq === 'daily' ? 'selected' : '' }}>Daily</option>
                                                     <option value="weekly" {{ $duty->freq === 'weekly' ? 'selected' : '' }}>Weekly</option>
@@ -78,7 +78,7 @@
                     @csrf
                     <div>
                         <label class="form-label">Title</label>
-                        <input type="text" name="title" class="ot-input" required maxlength="150">
+                        <input type="text" name="title" class="form-control ot-input" required maxlength="150">
                     </div>
                     <div>
                         <label class="form-label">Frequency</label>
@@ -97,7 +97,7 @@
                     </div>
                     <div style="min-width:240px">
                         <label class="form-label">Description (optional)</label>
-                        <input type="text" name="description" class="ot-input">
+                        <input type="text" name="description" class="form-control ot-input">
                     </div>
                     <button type="submit" class="btn ot-btn-primary">Add</button>
                 </form>

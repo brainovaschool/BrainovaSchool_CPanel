@@ -25,7 +25,7 @@
 
                     <h4>Platforms</h4>
                     <p class="text-secondary">One per line.</p>
-                    <textarea data-list-for="social_platforms" class="ot-input mb-2" rows="4">{{ implode("\n", $settings->social_platforms ?: \App\Models\Portal\PortalSetting::DEFAULT_PLATFORMS) }}</textarea>
+                    <textarea data-list-for="social_platforms" class="form-control ot-input mb-2" rows="4">{{ implode("\n", $settings->social_platforms ?: \App\Models\Portal\PortalSetting::DEFAULT_PLATFORMS) }}</textarea>
                     <div id="social_platformsInputs">
                         @foreach ($settings->social_platforms ?: \App\Models\Portal\PortalSetting::DEFAULT_PLATFORMS as $v)
                             <input type="hidden" name="social_platforms[]" value="{{ $v }}">
@@ -34,7 +34,7 @@
 
                     <h4 class="mt-4">Tracked numbers</h4>
                     <p class="text-secondary">One per line — e.g. Views, Followers, Likes.</p>
-                    <textarea data-list-for="social_metrics" class="ot-input mb-2" rows="4">{{ implode("\n", $settings->social_metrics ?: \App\Models\Portal\PortalSetting::DEFAULT_SOCIAL_METRICS) }}</textarea>
+                    <textarea data-list-for="social_metrics" class="form-control ot-input mb-2" rows="4">{{ implode("\n", $settings->social_metrics ?: \App\Models\Portal\PortalSetting::DEFAULT_SOCIAL_METRICS) }}</textarea>
                     <div id="social_metricsInputs">
                         @foreach ($settings->social_metrics ?: \App\Models\Portal\PortalSetting::DEFAULT_SOCIAL_METRICS as $v)
                             <input type="hidden" name="social_metrics[]" value="{{ $v }}">
@@ -43,7 +43,7 @@
 
                     <h4 class="mt-4">Reel/topic categories</h4>
                     <p class="text-secondary">One per line.</p>
-                    <textarea data-list-for="reel_categories" class="ot-input mb-2" rows="4">{{ implode("\n", $settings->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES) }}</textarea>
+                    <textarea data-list-for="reel_categories" class="form-control ot-input mb-2" rows="4">{{ implode("\n", $settings->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES) }}</textarea>
                     <div id="reel_categoriesInputs">
                         @foreach ($settings->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES as $v)
                             <input type="hidden" name="reel_categories[]" value="{{ $v }}">

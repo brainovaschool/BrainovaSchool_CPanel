@@ -42,7 +42,7 @@
                 <div class="card-header"><h4 class="mb-0">Open — available to claim</h4></div>
                 <div class="card-body">
                     <div class="table-responsive">
-                    <table class="table table-bordered class-table">
+                    <table class="ot-basic-table ot-table-bg">
                         <thead class="thead"><tr><th>Title</th><th>Category</th><th>Due</th><th>Amount</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                         <tbody class="tbody">
                             @forelse ($data['openTasks'] as $t)
@@ -69,7 +69,7 @@
                     <div class="card-header"><h4 class="mb-0">Claimed / in progress</h4></div>
                     <div class="card-body">
                         <div class="table-responsive">
-                        <table class="table table-bordered class-table">
+                        <table class="ot-basic-table ot-table-bg">
                             <thead class="thead"><tr><th>Title</th><th>Employee</th><th>Status</th><th>Amount</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                             <tbody class="tbody">
                                 @forelse ($data['claimedTasks'] as $t)
@@ -95,7 +95,7 @@
                     <div class="card-header"><h4 class="mb-0">Completed</h4></div>
                     <div class="card-body">
                         <div class="table-responsive">
-                        <table class="table table-bordered class-table">
+                        <table class="ot-basic-table ot-table-bg">
                             <thead class="thead"><tr><th>Title</th><th>Employee</th><th>Amount</th><th>Payment</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                             <tbody class="tbody">
                                 @forelse ($data['completedTasks'] as $t)
@@ -127,7 +127,7 @@
                     <div class="card-header"><h4 class="mb-0">My Paid Tasks</h4></div>
                     <div class="card-body">
                         <div class="table-responsive">
-                        <table class="table table-bordered class-table">
+                        <table class="ot-basic-table ot-table-bg">
                             <thead class="thead"><tr><th>Title</th><th>Status</th><th>Amount</th><th>Payment</th></tr></thead>
                             <tbody class="tbody">
                                 @forelse ($data['myPaidTasks'] as $t)

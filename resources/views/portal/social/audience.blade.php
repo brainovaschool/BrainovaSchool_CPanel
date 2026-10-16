@@ -20,7 +20,7 @@
         <div class="col-12 p-0">
             <form action="{{ route('portal-social-audience.index') }}" method="get">
                 <div class="card ot-card mb-24 d-flex flex-row align-items-center gap-3" style="padding:1rem 1.25rem">
-                    <input type="month" name="month" class="ot-input" value="{{ $data['month'] }}">
+                    <input type="month" name="month" class="form-control ot-input" value="{{ $data['month'] }}">
                     <button class="btn ot-btn-primary" type="submit">{{ ___('common.Search') }}</button>
                 </div>
             </form>
@@ -33,7 +33,7 @@
                     @csrf
                     <div>
                         <label class="form-label">Date</label>
-                        <input type="date" name="date" class="ot-input" value="{{ now()->format('Y-m-d') }}" required>
+                        <input type="date" name="date" class="form-control ot-input" value="{{ now()->format('Y-m-d') }}" required>
                     </div>
                     <div>
                         <label class="form-label">Platform</label>
@@ -47,7 +47,7 @@
                         <div>
                             <label class="form-label">{{ $metric }}</label>
                             <input type="hidden" name="metric_name[]" value="{{ $metric }}">
-                            <input type="number" min="0" name="metric_value[]" class="ot-input" style="max-width:110px">
+                            <input type="number" min="0" name="metric_value[]" class="form-control ot-input" style="max-width:110px">
                         </div>
                     @endforeach
                     <button type="submit" class="btn ot-btn-primary">Save</button>
@@ -60,7 +60,7 @@
                 <div class="card-header"><h4 class="mb-0">{{ \Carbon\Carbon::parse($data['month'] . '-01')->format('F Y') }}</h4></div>
                 <div class="card-body">
                     <div class="table-responsive">
-                    <table class="table table-bordered class-table">
+                    <table class="ot-basic-table ot-table-bg">
                         <thead class="thead"><tr><th>Date</th><th>Platform</th><th>Numbers</th></tr></thead>
                         <tbody class="tbody">
                             @forelse ($data['metrics'] as $m)

@@ -34,7 +34,7 @@
                 <div class="card-header"><h4 class="mb-0">Daily Plan</h4></div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered class-table">
+                        <table class="ot-basic-table ot-table-bg">
                             <thead class="thead">
                                 <tr>
                                     <th>Person</th>
@@ -54,7 +54,7 @@
                                                     <form action="{{ route('portal-social-daily-plan.store') }}" method="post">
                                                         @csrf
                                                         <input type="hidden" name="date" value="{{ $day->format('Y-m-d') }}">
-                                                        <textarea name="plan_text" class="ot-input" rows="2" onblur="this.form.requestSubmit()">{{ $plan->plan_text ?? '' }}</textarea>
+                                                        <textarea name="plan_text" class="form-control ot-input" rows="2" onblur="this.form.requestSubmit()">{{ $plan->plan_text ?? '' }}</textarea>
                                                     </form>
                                                 @else
                                                     {{ $plan->plan_text ?? '' }}
@@ -63,7 +63,7 @@
                                         @endforeach
                                     </tr>
                                 @empty
-                                    <tr><td colspan="100%" class="text-center gray-color">No one currently holds the Content responsibility — assign it from Team Portal → Responsibilities.</td></tr>
+                                    <tr><td colspan="100%" class="text-center gray-color">No one currently holds the Content responsibility — assign it from Team Portal â†’ Responsibilities.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>
@@ -77,7 +77,7 @@
                 <div class="card-header"><h4 class="mb-0">Weekly Goals</h4></div>
                 <div class="card-body">
                     <div class="table-responsive">
-                    <table class="table table-bordered class-table">
+                    <table class="ot-basic-table ot-table-bg">
                         <thead class="thead"><tr><th>Person</th><th>Goal</th><th>Target metric</th><th>Achieved</th></tr></thead>
                         <tbody class="tbody">
                             @foreach ($data['contentTeam'] as $member)
@@ -114,11 +114,11 @@
                                 <input type="hidden" name="week_start" value="{{ $weekStart->format('Y-m-d') }}">
                                 <div style="min-width:260px">
                                     <label class="form-label">Goal</label>
-                                    <input type="text" name="goal_text" class="ot-input" value="{{ $myGoal->goal_text ?? '' }}">
+                                    <input type="text" name="goal_text" class="form-control ot-input" value="{{ $myGoal->goal_text ?? '' }}">
                                 </div>
                                 <div>
                                     <label class="form-label">Target metric (optional)</label>
-                                    <input type="text" name="target_metric" class="ot-input" value="{{ $myGoal->target_metric ?? '' }}" placeholder="e.g. 500 new followers">
+                                    <input type="text" name="target_metric" class="form-control ot-input" value="{{ $myGoal->target_metric ?? '' }}" placeholder="e.g. 500 new followers">
                                 </div>
                                 <button type="submit" class="btn ot-btn-primary">Save</button>
                             </form>

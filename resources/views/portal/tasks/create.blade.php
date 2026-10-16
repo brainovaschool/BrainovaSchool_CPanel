@@ -25,7 +25,7 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label">Title</label>
-                            <input type="text" name="title" class="ot-input" value="{{ old('title') }}" required maxlength="150">
+                            <input type="text" name="title" class="form-control ot-input" value="{{ old('title') }}" required maxlength="150">
                             @error('title') <div class="text-danger">{{ $message }}</div> @enderror
                         </div>
                         <div class="col-md-6">
@@ -48,7 +48,7 @@
                         </div>
                         <div class="col-md-3" id="amountWrap" style="{{ old('paid') ? '' : 'display:none' }}">
                             <label class="form-label">Amount ({{ Setting('currency_symbol') }})</label>
-                            <input type="number" step="0.01" min="0" name="amount" class="ot-input" value="{{ old('amount') }}">
+                            <input type="number" step="0.01" min="0" name="amount" class="form-control ot-input" value="{{ old('amount') }}">
                             @error('amount') <div class="text-danger">{{ $message }}</div> @enderror
                         </div>
 
@@ -71,7 +71,7 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Due date</label>
-                            <input type="date" name="due_date" class="ot-input" value="{{ old('due_date') }}" required>
+                            <input type="date" name="due_date" class="form-control ot-input" value="{{ old('due_date') }}" required>
                             @error('due_date') <div class="text-danger">{{ $message }}</div> @enderror
                         </div>
 
@@ -83,36 +83,36 @@
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Estimated hours</label>
-                            <input type="number" step="0.5" min="0" name="est_hours" class="ot-input" value="{{ old('est_hours') }}">
+                            <input type="number" step="0.5" min="0" name="est_hours" class="form-control ot-input" value="{{ old('est_hours') }}">
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Expected format</label>
-                            <input type="text" name="format" class="ot-input" value="{{ old('format') }}" placeholder="e.g. PDF, Reel, Doc">
+                            <input type="text" name="format" class="form-control ot-input" value="{{ old('format') }}" placeholder="e.g. PDF, Reel, Doc">
                         </div>
 
                         <div class="col-md-12">
                             <label class="form-label">Description</label>
-                            <textarea name="description" class="ot-input" rows="3">{{ old('description') }}</textarea>
+                            <textarea name="description" class="form-control ot-input" rows="3">{{ old('description') }}</textarea>
                         </div>
                         <div class="col-md-12">
                             <label class="form-label">What does "done" look like? (output)</label>
-                            <textarea name="output" class="ot-input" rows="2">{{ old('output') }}</textarea>
+                            <textarea name="output" class="form-control ot-input" rows="2">{{ old('output') }}</textarea>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Reference links / notes</label>
-                            <textarea name="refs" class="ot-input" rows="2">{{ old('refs') }}</textarea>
+                            <textarea name="refs" class="form-control ot-input" rows="2">{{ old('refs') }}</textarea>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Drive link (optional)</label>
-                            <input type="text" name="drive_link" class="ot-input" value="{{ old('drive_link') }}">
+                            <input type="text" name="drive_link" class="form-control ot-input" value="{{ old('drive_link') }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Reference file (optional)</label>
-                            <input type="file" name="ref_file" class="ot-input">
+                            <input type="file" name="ref_file" class="form-control ot-input">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Internal notes (not shown to employee unless you say so)</label>
-                            <textarea name="notes" class="ot-input" rows="2">{{ old('notes') }}</textarea>
+                            <textarea name="notes" class="form-control ot-input" rows="2">{{ old('notes') }}</textarea>
                         </div>
 
                         <div class="col-md-12">

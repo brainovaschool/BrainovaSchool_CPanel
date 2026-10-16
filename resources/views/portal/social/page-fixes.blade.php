@@ -21,7 +21,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="table-responsive">
-                    <table class="table table-bordered class-table">
+                    <table class="ot-basic-table ot-table-bg">
                         <thead class="thead"><tr><th>Title</th><th>Description</th><th>Owner</th><th>Status</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                         <tbody class="tbody">
                             @forelse ($data['fixes'] as $fix)
@@ -63,8 +63,8 @@
                 <div class="card-body">
                     <form action="{{ route('portal-social-page-fixes.store') }}" method="post" class="d-flex gap-2 flex-wrap align-items-end">
                         @csrf
-                        <div><label class="form-label">Title</label><input type="text" name="title" class="ot-input" required maxlength="150"></div>
-                        <div style="min-width:240px"><label class="form-label">Description</label><input type="text" name="description" class="ot-input"></div>
+                        <div><label class="form-label">Title</label><input type="text" name="title" class="form-control ot-input" required maxlength="150"></div>
+                        <div style="min-width:240px"><label class="form-label">Description</label><input type="text" name="description" class="form-control ot-input"></div>
                         <div>
                             <label class="form-label">Owner</label>
                             <select name="owner_staff_id" class="nice-select niceSelect bordered_style">

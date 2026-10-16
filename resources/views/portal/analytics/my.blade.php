@@ -21,9 +21,9 @@
         <div class="col-12 p-0">
             <form action="{{ route('portal-my-performance.index') }}" method="get">
                 <div class="card ot-card mb-24 d-flex flex-row align-items-center gap-3 flex-wrap" style="padding: 1rem 1.25rem;">
-                    <input type="date" name="from" class="ot-input" value="{{ $data['from'] }}">
+                    <input type="date" name="from" class="form-control ot-input" value="{{ $data['from'] }}">
                     <span>to</span>
-                    <input type="date" name="to" class="ot-input" value="{{ $data['to'] }}">
+                    <input type="date" name="to" class="form-control ot-input" value="{{ $data['to'] }}">
                     <button class="btn ot-btn-primary" type="submit">{{ ___('common.Search') }}</button>
                 </div>
             </form>
@@ -54,7 +54,7 @@
                 <div class="card-header"><h4 class="mb-0">Completed task history</h4></div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered class-table">
+                        <table class="ot-basic-table ot-table-bg">
                             <thead class="thead">
                                 <tr><th>Title</th><th>Category</th><th>Completed</th><th>Revision score</th><th>Quality score</th><th>Final score</th></tr>
                             </thead>

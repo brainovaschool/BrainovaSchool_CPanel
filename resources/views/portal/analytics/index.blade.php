@@ -23,9 +23,9 @@
                 <div class="card ot-card mb-24 position-relative z_1">
                     <div class="card-header d-flex align-items-center gap-3 flex-wrap">
                         <h3 class="mb-0">{{ ___('common.Filtering') }}</h3>
-                        <input type="date" name="from" class="ot-input" value="{{ $data['from'] }}">
+                        <input type="date" name="from" class="form-control ot-input" value="{{ $data['from'] }}">
                         <span>to</span>
-                        <input type="date" name="to" class="ot-input" value="{{ $data['to'] }}">
+                        <input type="date" name="to" class="form-control ot-input" value="{{ $data['to'] }}">
 
                         <select name="assigned_to" class="nice-select niceSelect bordered_style">
                             <option value="">All employees</option>
@@ -76,7 +76,7 @@
                 <div class="card-header"><h4 class="mb-0">By employee</h4></div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered class-table">
+                        <table class="ot-basic-table ot-table-bg">
                             <thead class="thead">
                                 <tr><th>Employee</th><th>Assigned</th><th>Completed</th><th>Avg score</th><th>On-time rate</th><th>Hours</th><th>Attendance days</th></tr>
                             </thead>

@@ -65,7 +65,7 @@
                                     @endforeach
                                 </select>
                                 <label class="form-label">Note (optional)</label>
-                                <textarea name="note" class="ot-input mb-2" rows="2"></textarea>
+                                <textarea name="note" class="form-control ot-input mb-2" rows="2"></textarea>
                                 <button type="submit" class="btn ot-btn-primary w-100">Update</button>
                             </form>
                         </div>

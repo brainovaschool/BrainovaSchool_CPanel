@@ -55,7 +55,7 @@
                             </div>
 
                             <div class="single_large_selectBox">
-                                <input type="text" class="ot-input" name="search" placeholder="Search title" value="{{ $data['filters']['search'] ?? '' }}">
+                                <input type="text" class="form-control ot-input" name="search" placeholder="Search title" value="{{ $data['filters']['search'] ?? '' }}">
                             </div>
 
                             <button class="btn btn-lg ot-btn-primary" type="submit">{{ ___('common.Search') }}</button>
@@ -69,7 +69,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered class-table">
+                        <table class="ot-basic-table ot-table-bg">
                             <thead class="thead">
                                 <tr>
                                     <th>Title</th>

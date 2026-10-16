@@ -23,7 +23,7 @@
                     <div class="card-header d-flex align-items-center gap-4 flex-wrap">
                         <h3 class="mb-0">{{ ___('common.Filtering') }}</h3>
                         <div class="card_header_right d-flex align-items-center gap-3 flex-fill justify-content-end flex-wrap">
-                            <input type="date" name="date" class="ot-input" value="{{ $data['date'] }}">
+                            <input type="date" name="date" class="form-control ot-input" value="{{ $data['date'] }}">
                             <button class="btn btn-lg ot-btn-primary" type="submit">{{ ___('common.Search') }}</button>
                         </div>
                     </div>
@@ -36,7 +36,7 @@
                 <div class="card-header"><h4 class="mb-0">Attendance — {{ \Carbon\Carbon::parse($data['date'])->format('d M Y') }}</h4></div>
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-bordered class-table">
+                        <table class="ot-basic-table ot-table-bg">
                             <thead class="thead">
                                 <tr>
                                     <th>Name</th>

@@ -29,14 +29,14 @@
                         @foreach ($settings->revision_scores as $i => $score)
                             <div class="col-auto">
                                 <label class="form-label">{{ $i }} revision{{ $i == 1 ? '' : 's' }}{{ $i == count($settings->revision_scores) - 1 ? '+' : '' }}</label>
-                                <input type="number" name="revision_scores[]" class="ot-input" min="0" max="5" value="{{ $score }}" style="width:90px">
+                                <input type="number" name="revision_scores[]" class="form-control ot-input" min="0" max="5" value="{{ $score }}" style="width:90px">
                             </div>
                         @endforeach
                     </div>
 
                     <h4>Task categories</h4>
                     <p class="text-secondary">One per line.</p>
-                    <textarea data-list-for="categories" class="ot-input mb-2" rows="5">{{ implode("\n", $settings->categories) }}</textarea>
+                    <textarea data-list-for="categories" class="form-control ot-input mb-2" rows="5">{{ implode("\n", $settings->categories) }}</textarea>
                     <div id="categoryInputs">
                         @foreach ($settings->categories as $cat)
                             <input type="hidden" name="categories[]" value="{{ $cat }}">
@@ -48,21 +48,21 @@
                     <div class="row g-3 mb-3">
                         <div class="col-md-3">
                             <label class="form-label">Day starts at</label>
-                            <input type="time" name="day_start" class="ot-input" value="{{ $settings->day_start }}">
+                            <input type="time" name="day_start" class="form-control ot-input" value="{{ $settings->day_start }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Work hours per day</label>
-                            <input type="number" step="0.5" min="1" name="work_day_hours" class="ot-input" value="{{ $settings->work_day_hours }}">
+                            <input type="number" step="0.5" min="1" name="work_day_hours" class="form-control ot-input" value="{{ $settings->work_day_hours }}">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Lunch after (hours worked)</label>
-                            <input type="number" step="0.5" min="0" name="lunch_after_hours" class="ot-input" value="{{ $settings->lunch_after_hours }}">
+                            <input type="number" step="0.5" min="0" name="lunch_after_hours" class="form-control ot-input" value="{{ $settings->lunch_after_hours }}">
                         </div>
                     </div>
 
                     <h4>Standard activities</h4>
                     <p class="text-secondary">One per line — shown in the work log dropdown alongside an employee's assigned tasks.</p>
-                    <textarea data-list-for="activities" class="ot-input mb-2" rows="5">{{ implode("\n", $settings->activities ?: \App\Models\Portal\PortalSetting::DEFAULT_ACTIVITIES) }}</textarea>
+                    <textarea data-list-for="activities" class="form-control ot-input mb-2" rows="5">{{ implode("\n", $settings->activities ?: \App\Models\Portal\PortalSetting::DEFAULT_ACTIVITIES) }}</textarea>
                     <div id="activitiesInputs">
                         @foreach ($settings->activities ?: \App\Models\Portal\PortalSetting::DEFAULT_ACTIVITIES as $activity)
                             <input type="hidden" name="activities[]" value="{{ $activity }}">

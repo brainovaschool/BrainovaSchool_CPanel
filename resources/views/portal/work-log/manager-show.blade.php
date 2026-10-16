@@ -32,7 +32,7 @@
                 <div class="card-header"><h5 class="mb-0">{{ \Carbon\Carbon::parse($date)->format('l, d M Y') }} — {{ round($entries->sum(fn($e) => $e->hours()), 2) }}h</h5></div>
                 <div class="card-body">
                     <div class="table-responsive">
-                    <table class="table table-bordered class-table">
+                    <table class="ot-basic-table ot-table-bg">
                         <thead class="thead"><tr><th style="width:140px">Time</th><th>Activity</th><th>Notes</th></tr></thead>
                         <tbody class="tbody">
                             @foreach ($entries as $entry)
