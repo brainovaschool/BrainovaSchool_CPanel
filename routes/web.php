@@ -150,6 +150,11 @@ Route::middleware(saasMiddleware())->group(function () {
             // school-selection access code.
             Route::get('/db/show-access-code/{key}/{tenantId}', [\App\Http\Controllers\TenantProvisionController::class, 'showAccessCode']);
 
+            // Per-school module access control -- which sidebar/pages each school's
+            // whole staff can see (admin-only + key).
+            Route::get('/db/manage-school-features/{key}', [\App\Http\Controllers\SchoolFeatureManagerController::class, 'index'])->name('school-features.index');
+            Route::post('/db/manage-school-features/{key}/update', [\App\Http\Controllers\SchoolFeatureManagerController::class, 'update']);
+
             // ONE-OFF: registers the given domain as a tenant pointing at the app's
             // EXISTING database -- for adopting the school's own main domain into
             // tenancy without creating/migrating/seeding anything (admin-only + key).
