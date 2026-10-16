@@ -101,6 +101,15 @@ class MigrationRunnerController extends Controller
         'report_exam_routine' => ['read' => 'report_exam_routine_read'],
         'ai_help_teacher' => ['read' => 'ai_help_teacher_read'],
         'skill_mastery_report' => ['read' => 'skill_mastery_report_read'],
+        'portal_employees' => ['read' => 'portal_employees_read'],
+        'portal_my_tasks' => ['read' => 'portal_my_tasks_read'],
+        'portal_paid_tasks' => ['read' => 'portal_paid_tasks_read'],
+        'portal_work_log' => ['read' => 'portal_work_log_read'],
+        'portal_my_responsibilities' => ['read' => 'portal_my_responsibilities_read'],
+        'portal_my_performance' => ['read' => 'portal_my_performance_read'],
+        'portal_social_reels' => ['read' => 'portal_social_reels_read'],
+        'portal_social_month_plan' => ['read' => 'portal_social_month_plan_read'],
+        'portal_social_page_fixes' => ['read' => 'portal_social_page_fixes_read'],
     ];
 
     /**
@@ -3803,6 +3812,34 @@ class MigrationRunnerController extends Controller
                 $teacherPerms = is_array($teacherRole->permissions) ? $teacherRole->permissions : [];
                 $teacherRole->permissions = array_values(array_unique(array_merge($teacherPerms, ['ai_help_teacher_read', 'skill_mastery_report_read'])));
                 $teacherRole->save();
+            }
+        }
+
+        // Team Portal / Social Board items (Employees, My Tasks, Paid Tasks,
+        // My Work Log, My Responsibilities, My Performance, Reels, Month
+        // Plan, Page Fixes) used to show unconditionally to any role with
+        // portal_access — there was no way to hide just one of them. Every
+        // role that already has portal_access is grandfathered in with all
+        // nine so nobody loses a page they're currently using, but — same
+        // one-time guard as Leave/Teacher Tools above — only on the single
+        // run that creates these attributes, never again, so an admin's
+        // later choice to uncheck one for a role always sticks.
+        $portalItemGroups = [
+            'portal_employees', 'portal_my_tasks', 'portal_paid_tasks', 'portal_work_log',
+            'portal_my_responsibilities', 'portal_my_performance',
+            'portal_social_reels', 'portal_social_month_plan', 'portal_social_page_fixes',
+        ];
+        if (count(array_intersect($portalItemGroups, $added)) > 0) {
+            $portalItemKeywords = array_map(fn ($attribute) => $attribute . '_read', $portalItemGroups);
+            foreach (Role::all() as $role) {
+                if ((int) $role->id === 1) {
+                    continue;
+                }
+                $rolePerms = is_array($role->permissions) ? $role->permissions : [];
+                if (in_array('portal_access', $rolePerms, true)) {
+                    $role->permissions = array_values(array_unique(array_merge($rolePerms, $portalItemKeywords)));
+                    $role->save();
+                }
             }
         }
 

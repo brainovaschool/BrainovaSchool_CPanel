@@ -22,7 +22,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/portal', [PortalController::class, 'index'])->name('portal.index')->middleware('PermissionCheck:portal_access');
 
                 Route::controller(EmployeeController::class)->prefix('portal/employees')->name('portal-employees.')->group(function () {
-                    Route::get('/',          'index')->name('index')->middleware('PermissionCheck:portal_access');
+                    Route::get('/',          'index')->name('index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_employees_read']);
                     Route::get('/show/{id}', 'show')->name('show')->middleware('PermissionCheck:portal_access');
                 });
 
@@ -42,8 +42,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/{id}/mark-paid',        'markPaid')->name('mark-paid')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
 
-                Route::get('/portal/my-tasks', [TaskController::class, 'myTasks'])->name('portal-my-tasks.index')->middleware('PermissionCheck:portal_access');
-                Route::get('/portal/paid-tasks', [TaskController::class, 'paidTasks'])->name('portal-paid-tasks.index')->middleware('PermissionCheck:portal_access');
+                Route::get('/portal/my-tasks', [TaskController::class, 'myTasks'])->name('portal-my-tasks.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_my_tasks_read']);
+                Route::get('/portal/paid-tasks', [TaskController::class, 'paidTasks'])->name('portal-paid-tasks.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_paid_tasks_read']);
 
                 Route::controller(SettingsController::class)->prefix('portal/settings')->name('portal-settings.')->group(function () {
                     Route::get('/',       'edit')->name('edit')->middleware('PermissionCheck:portal_manage');
@@ -53,7 +53,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/portal/attendance', [AttendanceController::class, 'index'])->name('portal-attendance.index')->middleware('PermissionCheck:portal_manage');
 
                 Route::controller(WorkLogController::class)->prefix('portal/work-log')->name('portal-work-log.')->group(function () {
-                    Route::get('/',             'myLog')->name('index')->middleware('PermissionCheck:portal_access');
+                    Route::get('/',             'myLog')->name('index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_work_log_read']);
                     Route::post('/entry',       'storeEntry')->name('entry.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::delete('/entry/{id}', 'deleteEntry')->name('entry.delete')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/submit',      'submitDay')->name('submit')->middleware('PermissionCheck:portal_access', 'DemoCheck');
@@ -71,14 +71,14 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::delete('/{id}',    'destroy')->name('destroy')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
 
-                Route::get('/portal/my-responsibilities', [ResponsibilityController::class, 'myDuties'])->name('portal-my-responsibilities.index')->middleware('PermissionCheck:portal_access');
+                Route::get('/portal/my-responsibilities', [ResponsibilityController::class, 'myDuties'])->name('portal-my-responsibilities.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_my_responsibilities_read']);
                 Route::post('/portal/responsibilities/{id}/tick', [ResponsibilityController::class, 'tick'])->name('portal-responsibilities.tick')->middleware('PermissionCheck:portal_access', 'DemoCheck');
 
                 Route::get('/portal/analytics', [AnalyticsController::class, 'index'])->name('portal-analytics.index')->middleware('PermissionCheck:portal_manage');
-                Route::get('/portal/my-performance', [AnalyticsController::class, 'myPerformance'])->name('portal-my-performance.index')->middleware('PermissionCheck:portal_access');
+                Route::get('/portal/my-performance', [AnalyticsController::class, 'myPerformance'])->name('portal-my-performance.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_my_performance_read']);
 
                 Route::controller(SocialController::class)->prefix('portal/social/reels')->name('portal-social-reels.')->group(function () {
-                    Route::get('/',              'reels')->name('index')->middleware('PermissionCheck:portal_access');
+                    Route::get('/',              'reels')->name('index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_social_reels_read']);
                     Route::get('/create',        'createReel')->name('create')->middleware('PermissionCheck:portal_access');
                     Route::post('/store',        'storeReel')->name('store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::get('/show/{id}',     'showReel')->name('show')->middleware('PermissionCheck:portal_access');
@@ -88,13 +88,13 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::delete('/{id}',       'destroyReel')->name('destroy')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                 });
 
-                Route::get('/portal/social/month-plan', [SocialController::class, 'monthPlan'])->name('portal-social-month-plan.index')->middleware('PermissionCheck:portal_access');
+                Route::get('/portal/social/month-plan', [SocialController::class, 'monthPlan'])->name('portal-social-month-plan.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_social_month_plan_read']);
                 Route::post('/portal/social/month-plan/targets', [SocialController::class, 'updateCategoryTargets'])->name('portal-social-month-plan.targets')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
 
                 Route::get('/portal/social/audience', [SocialController::class, 'audience'])->name('portal-social-audience.index')->middleware('PermissionCheck:portal_access');
                 Route::post('/portal/social/audience/store', [SocialController::class, 'storeMetric'])->name('portal-social-audience.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
 
-                Route::get('/portal/social/page-fixes', [SocialController::class, 'pageFixes'])->name('portal-social-page-fixes.index')->middleware('PermissionCheck:portal_access');
+                Route::get('/portal/social/page-fixes', [SocialController::class, 'pageFixes'])->name('portal-social-page-fixes.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_social_page_fixes_read']);
                 Route::post('/portal/social/page-fixes/store', [SocialController::class, 'storePageFix'])->name('portal-social-page-fixes.store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 Route::post('/portal/social/page-fixes/{id}/status', [SocialController::class, 'updatePageFixStatus'])->name('portal-social-page-fixes.status')->middleware('PermissionCheck:portal_access', 'DemoCheck');
 

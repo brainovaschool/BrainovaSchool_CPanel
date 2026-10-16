@@ -546,29 +546,41 @@
                                 <li class="sidebar-menu-item {{ set_menu(['portal*']) }}">
                                     <a class="has-arrow">Team Portal</a>
                                     <ul class="child-menu-list">
-                                        <li class="sidebar-menu-item {{ set_menu(['portal/employees*']) }}">
-                                            <a href="{{ route('portal-employees.index') }}">Employees</a>
-                                        </li>
+                                        @if (hasPermission('portal_employees_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/employees*']) }}">
+                                                <a href="{{ route('portal-employees.index') }}">Employees</a>
+                                            </li>
+                                        @endif
                                         @if (hasPermission('portal_manage'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/tasks', 'portal/tasks/create', 'portal/tasks/show*']) }}">
                                                 <a href="{{ route('portal-tasks.index') }}">Tasks</a>
                                             </li>
                                         @endif
-                                        <li class="sidebar-menu-item {{ set_menu(['portal/my-tasks']) }}">
-                                            <a href="{{ route('portal-my-tasks.index') }}">My Tasks</a>
-                                        </li>
-                                        <li class="sidebar-menu-item {{ set_menu(['portal/paid-tasks']) }}">
-                                            <a href="{{ route('portal-paid-tasks.index') }}">Paid Tasks</a>
-                                        </li>
-                                        <li class="sidebar-menu-item {{ set_menu(['portal/work-log']) }}">
-                                            <a href="{{ route('portal-work-log.index') }}">My Work Log</a>
-                                        </li>
-                                        <li class="sidebar-menu-item {{ set_menu(['portal/my-responsibilities']) }}">
-                                            <a href="{{ route('portal-my-responsibilities.index') }}">My Responsibilities</a>
-                                        </li>
-                                        <li class="sidebar-menu-item {{ set_menu(['portal/my-performance']) }}">
-                                            <a href="{{ route('portal-my-performance.index') }}">My Performance</a>
-                                        </li>
+                                        @if (hasPermission('portal_my_tasks_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/my-tasks']) }}">
+                                                <a href="{{ route('portal-my-tasks.index') }}">My Tasks</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('portal_paid_tasks_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/paid-tasks']) }}">
+                                                <a href="{{ route('portal-paid-tasks.index') }}">Paid Tasks</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('portal_work_log_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/work-log']) }}">
+                                                <a href="{{ route('portal-work-log.index') }}">My Work Log</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('portal_my_responsibilities_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/my-responsibilities']) }}">
+                                                <a href="{{ route('portal-my-responsibilities.index') }}">My Responsibilities</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('portal_my_performance_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/my-performance']) }}">
+                                                <a href="{{ route('portal-my-performance.index') }}">My Performance</a>
+                                            </li>
+                                        @endif
                                         @if (hasPermission('portal_manage'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/attendance']) }}">
                                                 <a href="{{ route('portal-attendance.index') }}">Attendance</a>
@@ -592,12 +604,16 @@
                                 <li class="sidebar-menu-item {{ set_menu(['portal/social*']) }}">
                                     <a class="has-arrow">Social Board</a>
                                     <ul class="child-menu-list">
-                                        <li class="sidebar-menu-item {{ set_menu(['portal/social/reels*']) }}">
-                                            <a href="{{ route('portal-social-reels.index') }}">Reels</a>
-                                        </li>
-                                        <li class="sidebar-menu-item {{ set_menu(['portal/social/month-plan']) }}">
-                                            <a href="{{ route('portal-social-month-plan.index') }}">Month Plan</a>
-                                        </li>
+                                        @if (hasPermission('portal_social_reels_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/reels*']) }}">
+                                                <a href="{{ route('portal-social-reels.index') }}">Reels</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('portal_social_month_plan_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/month-plan']) }}">
+                                                <a href="{{ route('portal-social-month-plan.index') }}">Month Plan</a>
+                                            </li>
+                                        @endif
                                         @if (portalOwnsResponsibility('audience'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/audience']) }}">
                                                 <a href="{{ route('portal-social-audience.index') }}">Audience Numbers</a>
@@ -608,9 +624,11 @@
                                                 <a href="{{ route('portal-social-daily-plan.index') }}">Daily Plan &amp; Goals</a>
                                             </li>
                                         @endif
-                                        <li class="sidebar-menu-item {{ set_menu(['portal/social/page-fixes']) }}">
-                                            <a href="{{ route('portal-social-page-fixes.index') }}">Page Fixes</a>
-                                        </li>
+                                        @if (hasPermission('portal_social_page_fixes_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/page-fixes']) }}">
+                                                <a href="{{ route('portal-social-page-fixes.index') }}">Page Fixes</a>
+                                            </li>
+                                        @endif
                                         @if (hasPermission('portal_manage'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/growth-pay']) }}">
                                                 <a href="{{ route('portal-growth-pay.index') }}">Growth Pay</a>

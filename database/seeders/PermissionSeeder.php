@@ -136,6 +136,18 @@ class PermissionSeeder extends Seeder
             // Teacher tools
             'ai_help_teacher'      => ['read' => 'ai_help_teacher_read'],
             'skill_mastery_report' => ['read' => 'skill_mastery_report_read'],
+            // Team Portal / Social Board — individual sidebar items that used to be
+            // unconditionally visible to anyone with portal_access, with no way to
+            // hide just one of them for a given role.
+            'portal_employees'           => ['read' => 'portal_employees_read'],
+            'portal_my_tasks'            => ['read' => 'portal_my_tasks_read'],
+            'portal_paid_tasks'          => ['read' => 'portal_paid_tasks_read'],
+            'portal_work_log'            => ['read' => 'portal_work_log_read'],
+            'portal_my_responsibilities' => ['read' => 'portal_my_responsibilities_read'],
+            'portal_my_performance'      => ['read' => 'portal_my_performance_read'],
+            'portal_social_reels'        => ['read' => 'portal_social_reels_read'],
+            'portal_social_month_plan'   => ['read' => 'portal_social_month_plan_read'],
+            'portal_social_page_fixes'   => ['read' => 'portal_social_page_fixes_read'],
             // sms_mail_template
             'sms_mail_template'    => ['read' => 'sms_mail_template_read', 'create' => 'sms_mail_template_create', 'update' => 'sms_mail_template_update', 'delete' => 'sms_mail_template_delete'],
             // sms/mail compose
