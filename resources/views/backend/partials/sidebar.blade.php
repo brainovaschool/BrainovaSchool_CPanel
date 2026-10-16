@@ -1311,6 +1311,18 @@
                     </ul>
                 </li>
                 @endif
+                <!-- School Feature Access start: Brainova's own Super Admin only --
+                     every tenant has its own role_id=1 "Super Admin", so this also
+                     checks which tenant is actually logged in, not just the role. -->
+                @if (auth()->user()?->role_id == 1 && (tenant() ? tenant()->id : null) === 'brainova')
+                    <li class="sidebar-menu-item {{ set_menu(['manage-school-features']) }}">
+                        <a href="{{ route('school-features.index') }}" class="parent-item-content">
+                            <i class="las la-school"></i>
+                            <span class="on-half-expanded">Manage School Features</span>
+                        </a>
+                    </li>
+                @endif
+                <!-- School Feature Access end -->
                 <!-- Settings layout start -->
                 @if (
                     (hasPermission('general_settings_read') ||
