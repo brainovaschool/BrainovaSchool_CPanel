@@ -12,10 +12,14 @@ use App\Http\Controllers\Admin\SmsMailTemplateController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
-        Route::group(['middleware' => ['lang', 'CheckSubscription', 'FeatureCheck:account']], function () {
+        Route::group(['middleware' => ['lang', 'CheckSubscription']], function () {
             // auth routes
             Route::group(['middleware' => ['auth.routes', 'AdminPanel']], function () {
-                Route::controller(HomeworkController::class)->group(function () {
+                // Was blanket-gated by FeatureCheck:account, which doesn't relate to any
+                // controller in this file (no Accounts/income-expense controller is even
+                // here) -- a copy-paste leftover. Each controller group below now gets its
+                // own correct feature key instead.
+                Route::controller(HomeworkController::class)->middleware('FeatureCheck:homework')->group(function () {
                     Route::get('homework/',                 'index')->name('homework.index')->middleware('PermissionCheck:homework_read');
                     Route::get('homework-question-group/',  'questionGroup')->name('homework.question-group')->middleware('PermissionCheck:question_group_read');
                     Route::get('homework-question-list/',  'questionList')->name('homework.question-list')->middleware(['PermissionCheck:homework_read', 'DenyTeacherRole']);
@@ -50,7 +54,7 @@ Route::middleware(saasMiddleware())->group(function () {
                      Route::POST('homework/mark/submit',   'markSubmit')->name('homework.mark.submit');
                 });
 
-                Route::controller(IdCardController::class)->group(function () {
+                Route::controller(IdCardController::class)->middleware('FeatureCheck:id_card')->group(function () {
                     Route::get('idcard/',                 'index')->name('idcard.index')->middleware('PermissionCheck:id_card_read');
                     Route::get('idcard/create',           'create')->name('idcard.create')->middleware('PermissionCheck:id_card_create');
                     Route::post('idcard/store',           'store')->name('idcard.store')->middleware('PermissionCheck:id_card_create');
@@ -64,7 +68,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('idcard/generate',                 'generateSearch')->name('idcard.generate.search')->middleware('PermissionCheck:id_card_generate_read');
                 });
 
-                Route::controller(CertificateController::class)->group(function () {
+                Route::controller(CertificateController::class)->middleware('FeatureCheck:certificate')->group(function () {
                     Route::get('certificate/',                 'index')->name('certificate.index')->middleware('PermissionCheck:certificate_read');
                     Route::get('certificate/create',           'create')->name('certificate.create')->middleware('PermissionCheck:certificate_create');
                     Route::post('certificate/store',           'store')->name('certificate.store')->middleware('PermissionCheck:certificate_create');
@@ -78,7 +82,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('certificate/generate',                 'generateSearch')->name('certificate.generate.search')->middleware('PermissionCheck:certificate_read');
                 });
 
-                Route::controller(GmeetController::class)->group(function () {
+                Route::controller(GmeetController::class)->middleware('FeatureCheck:live_class')->group(function () {
                     Route::get('liveclass/gmeet/',                 'index')->name('gmeet.index')->middleware('PermissionCheck:gmeet_read');
                     Route::get('liveclass/gmeet/create',           'create')->name('gmeet.create')->middleware('PermissionCheck:gmeet_create');
                     Route::post('liveclass/gmeet/store',           'store')->name('gmeet.store')->middleware('PermissionCheck:gmeet_create');
@@ -89,7 +93,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::any('liveclass/gmeet/search',           'search')->name('gmeet.search')->middleware('PermissionCheck:gmeet_read');
                 });
 
-                Route::controller(NoticeBoardController::class)->group(function () {
+                Route::controller(NoticeBoardController::class)->middleware('FeatureCheck:communication')->group(function () {
                     Route::get('communication/notice-board/',                 'index')->name('notice-board.index')->middleware('PermissionCheck:notice_board_read');
                     Route::get('communication/notice-board/create',           'create')->name('notice-board.create')->middleware('PermissionCheck:notice_board_create');
                     Route::post('communication/notice-board/store',           'store')->name('notice-board.store')->middleware('PermissionCheck:notice_board_create');
@@ -100,7 +104,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::put('/translate/update/{id}',                'translateUpdate')->name('notice-board.translate.update')->middleware('PermissionCheck:notice_board_update');
                 });
 
-                Route::controller(SmsMailTemplateController::class)->group(function () {
+                Route::controller(SmsMailTemplateController::class)->middleware('FeatureCheck:communication')->group(function () {
                     Route::get('communication/template/',                 'index')->name('template.index')->middleware('PermissionCheck:sms_mail_template_read');
                     Route::get('communication/template/create',           'create')->name('template.create')->middleware('PermissionCheck:sms_mail_template_create');
                     Route::post('communication/template/store',           'store')->name('template.store')->middleware('PermissionCheck:sms_mail_template_create');
@@ -109,7 +113,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::delete('communication/template/delete/{id}',   'delete')->name('template.delete')->middleware('PermissionCheck:sms_mail_template_delete', 'DemoCheck');
                 });
 
-                Route::controller(SmsMailLogController::class)->group(function () {
+                Route::controller(SmsMailLogController::class)->middleware('FeatureCheck:communication')->group(function () {
                     Route::get('communication/smsmail/',                 'index')->name('smsmail.index')->middleware('PermissionCheck:sms_mail_read');
                     Route::get('communication/smsmail/create',           'create')->name('smsmail.create')->middleware('PermissionCheck:sms_mail_send');
                     Route::post('communication/smsmail/store',           'store')->name('smsmail.store')->middleware('PermissionCheck:sms_mail_send');

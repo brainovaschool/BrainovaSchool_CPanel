@@ -420,7 +420,7 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::put('/general-settings/translate/update',                'translateUpdate')->name('settings.general-settings.translate.update')->middleware('PermissionCheck:general_settings_update');
                     });
 
-                    Route::controller(AppSettingController::class)->middleware('DenyTeacherAndStudent')->prefix('/app-settings')->group(function () {
+                    Route::controller(AppSettingController::class)->middleware(['DenyTeacherAndStudent', 'FeatureCheck:app_settings'])->prefix('/app-settings')->group(function () {
                         // Route::get('/mobile-app-settings',  'appSettings')->name('settings.app-settings');
                         Route::get('/student-app-settings',  'studentAppSettings')->name('settings.student-app-settings');
                         Route::get('/teacher-app-settings',  'teacherAppSettings')->name('settings.teacher-app-settings');

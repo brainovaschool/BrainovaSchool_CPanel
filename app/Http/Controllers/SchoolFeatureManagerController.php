@@ -41,6 +41,18 @@ class SchoolFeatureManagerController extends Controller
         'website_setup'      => 'Website Setup',
         'gallery'            => 'Gallery',
         'setting'            => 'General Settings',
+        'id_card'            => 'ID Cards',
+        'certificate'        => 'Certificates',
+        'class_content'      => 'Class Content (curriculum modules/lessons)',
+        'homework'           => 'Homeworks',
+        'teacher_tools'      => 'Teacher Tools (AI Help, Skill Mastery Report)',
+        'communication'      => 'Communication (Notices, SMS/Email)',
+        'live_class'         => 'Live Class',
+        'subscribers'        => 'Subscribers',
+        'contact_message'    => 'Contact Messages',
+        'course_catalogue'   => 'Course Catalogue',
+        'learning_engine'    => 'Learning Engine (skills, missions, avatars)',
+        'app_settings'       => 'Mobile App Settings',
     ];
 
     private function authorizeOwner(): void

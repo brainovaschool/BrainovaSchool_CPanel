@@ -121,7 +121,7 @@
 
 
 
-                @if (hasPermission('id_card_read') || hasPermission('id_card_generate_read'))
+                @if ((hasPermission('id_card_read') || hasPermission('id_card_generate_read')) && hasFeature('id_card'))
                     <li class="sidebar-menu-item {{ set_menu(['idcard*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-id-badge"></i>
@@ -143,7 +143,7 @@
                     </li>
                 @endif
 
-                @if (hasPermission('certificate_read') || hasPermission('certificate_generate_read'))
+                @if ((hasPermission('certificate_read') || hasPermission('certificate_generate_read')) && hasFeature('certificate'))
                     <li class="sidebar-menu-item {{ set_menu(['certificate*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-graduation-cap"></i>
@@ -507,14 +507,20 @@
                      the internal team portal, the social-media board and Reel Studio)
                      that used to sit as separate top-level items, so they're easy to
                      find in one place instead of scattered through the main menu. --}}
-                @if (hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve') || hasPermission('portal_access') || hasPermission('reel_studio_access') || hasPermission('portal_manage'))
+                @if ((hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve')) && hasFeature('class_content')
+                        || hasPermission('portal_access') || hasPermission('reel_studio_access') || hasPermission('portal_manage'))
                     <li class="sidebar-menu-item {{ set_menu(['class-content*', 'portal*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-users-cog"></i>
                             <span class="on-half-expanded">Staff Workspace</span>
                         </a>
                         <ul class="child-menu-list">
-                            @if (hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve'))
+                            {{-- Class Content is the real, sellable school feature here --
+                                 Team Portal / Social Board / Reel Studio below are Brainova's
+                                 own internal tooling and deliberately stay permission-only,
+                                 never gated by hasFeature(), so they're not a toggle a school
+                                 package could ever accidentally grant or remove. --}}
+                            @if ((hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve')) && hasFeature('class_content'))
                                 <li class="sidebar-menu-item {{ set_menu(['class-content*']) }}">
                                     <a class="has-arrow">Class Content</a>
                                     <ul class="child-menu-list">
@@ -635,7 +641,7 @@
                     </li>
                 @endif
                 <!-- Staff Workspace end -->
-                @if (hasPermission('homework_read'))
+                @if (hasPermission('homework_read') && hasFeature('homework'))
 
                     <li class="sidebar-menu-item {{ set_menu(['homework*']) }}">
                         <a class="parent-item-content has-arrow">
@@ -662,7 +668,7 @@
                     </li>
                 @endif
 
-                @if (hasPermission('ai_help_teacher_read') || hasPermission('skill_mastery_report_read'))
+                @if ((hasPermission('ai_help_teacher_read') || hasPermission('skill_mastery_report_read')) && hasFeature('teacher_tools'))
                     <li class="sidebar-menu-item {{ set_menu(['ai-help-teacher*', 'skill-mastery-report*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-robot"></i>
@@ -687,7 +693,7 @@
                     @include('studymaterial::admin_sidebar_menu')
                 @endif
 
-                @if (hasPermission('notice_board_read') || hasPermission('sms_mail_template_read') || hasPermission('sms_mail_read'))
+                @if ((hasPermission('notice_board_read') || hasPermission('sms_mail_template_read') || hasPermission('sms_mail_read')) && hasFeature('communication'))
 
                     <li class="sidebar-menu-item {{ set_menu(['communication/*']) }}">
                         <a class="parent-item-content has-arrow">
@@ -789,7 +795,7 @@
                 @endif
 
 
-                @if (hasPermission('gmeet_read'))
+                @if (hasPermission('gmeet_read') && hasFeature('live_class'))
 
                     <li class="sidebar-menu-item {{ set_menu(['liveclass/gmeet*']) }}">
                         <a class="parent-item-content has-arrow">
@@ -1011,7 +1017,7 @@
                     </li>
                 @endif
                 <!-- Subscription layout start -->
-                @if (hasPermission('subscribe_read'))
+                @if (hasPermission('subscribe_read') && hasFeature('subscribers'))
                     <li class="sidebar-menu-item {{ set_menu(['subscribe*']) }}">
                         <a href="{{ route('subscribe.index') }}" class="parent-item-content">
                             <i class="las la-tags"></i>
@@ -1023,7 +1029,7 @@
 
                 <!-- Subscription layout start -->
 
-                @if (hasPermission('contact_message_read'))
+                @if (hasPermission('contact_message_read') && hasFeature('contact_message'))
                     <li class="sidebar-menu-item {{ set_menu(['contact-message*']) }}">
                         <a href="{{ route('contact-message.index') }}" class="parent-item-content">
                             <i class="las la-sms"></i>
@@ -1037,7 +1043,7 @@
                      offering, grouped separately from plain site content so it's
                      easy to find (used to be split between Website Setup and a
                      standalone Program Waitlist item). -->
-                @if (hasPermission('program_category_read') || hasPermission('program_focus_read') || hasPermission('program_read') || hasPermission('testimonial_read') || hasPermission('trial_slot_read') || hasPermission('program_waitlist_read'))
+                @if ((hasPermission('program_category_read') || hasPermission('program_focus_read') || hasPermission('program_read') || hasPermission('testimonial_read') || hasPermission('trial_slot_read') || hasPermission('program_waitlist_read')) && hasFeature('course_catalogue'))
                     <li class="sidebar-menu-item {{ set_menu(['program-category*', 'program-focus*', 'program/*', 'testimonial*', 'trial-slot*', 'program-waitlist*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-graduation-cap"></i>
@@ -1083,7 +1089,7 @@
                      learning-content features (skills, missions, avatars, Watch &
                      Learn, Knowledge Hub) — used to be split across Website Setup
                      and several standalone top-level items. -->
-                @if (hasPermission('skill_read') || hasPermission('dashboard_features_read') || hasPermission('avatar_item_read') || hasPermission('student_feature_access_read') || hasPermission('character_line_read') || hasPermission('mission_read') || hasPermission('watch_learn_tab_read') || hasPermission('watch_learn_template_read') || hasPermission('watch_learn_video_read') || hasPermission('knowledge_hub_page_read'))
+                @if ((hasPermission('skill_read') || hasPermission('dashboard_features_read') || hasPermission('avatar_item_read') || hasPermission('student_feature_access_read') || hasPermission('character_line_read') || hasPermission('mission_read') || hasPermission('watch_learn_tab_read') || hasPermission('watch_learn_template_read') || hasPermission('watch_learn_video_read') || hasPermission('knowledge_hub_page_read')) && hasFeature('learning_engine'))
                     <li class="sidebar-menu-item {{ set_menu(['skill*', 'dashboard-features*', 'avatar-item*', 'student-feature-access*', 'character-line*', 'mission*', 'watch-learn-tab*', 'watch-learn-template*', 'watch-learn-video*', 'knowledge-hub-*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-puzzle-piece"></i>
@@ -1284,7 +1290,7 @@
                     @include('forums::menus.forums_menu')
                 @endif
                 <!-- Live Chat end-->
-                @if (!cannotAccessSchoolSettings())
+                @if (!cannotAccessSchoolSettings() && hasFeature('app_settings'))
                 <li class="sidebar-menu-item {{ set_menu(['app-settings*']) }}">
                     <a class="parent-item-content has-arrow">
                         <i class="las la-photo-video"></i>

@@ -38,8 +38,14 @@ use App\Http\Controllers\WebsiteSetup\HomeVideoController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
-        Route::group(['middleware' => ['lang', 'CheckSubscription', 'FeatureCheck:website_setup']], function () {
+        Route::group(['middleware' => ['lang', 'CheckSubscription']], function () {
             Route::group(['middleware' => ['auth.routes', 'DenyTeacherAndStudent']], function () {
+              // Was one blanket FeatureCheck:website_setup for this whole file --
+              // split into the real categories the sidebar actually shows
+              // (website_setup / course_catalogue / learning_engine / subscribers /
+              // contact_message), each its own group below, so each can be toggled
+              // independently per school.
+              Route::group(['middleware' => ['FeatureCheck:website_setup']], function () {
 
                 Route::controller(AiHelperController::class)->prefix('ai-helper')->group(function () {
                     Route::get('/',        'index')->name('ai-helper.index')->middleware('PermissionCheck:ai_helper_read');
@@ -122,6 +128,10 @@ Route::middleware(saasMiddleware())->group(function () {
 
                 });
 
+              }); // end FeatureCheck:website_setup
+
+              Route::group(['middleware' => ['FeatureCheck:course_catalogue']], function () {
+
                 Route::controller(ProgramCategoryController::class)->prefix('program-category')->name('program-category.')->group(function () {
                     Route::get('/',                'index')->name('index')->middleware('PermissionCheck:program_category_read');
                     Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:program_category_create');
@@ -165,6 +175,10 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:testimonial_delete', 'DemoCheck');
                     Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:testimonial_update', 'DemoCheck');
                 });
+
+              }); // end FeatureCheck:course_catalogue (program/testimonial parts)
+
+              Route::group(['middleware' => ['FeatureCheck:learning_engine']], function () {
 
                 Route::controller(SkillController::class)->prefix('skill')->name('skill.')->group(function () {
                     Route::get('/',                'index')->name('index')->middleware('PermissionCheck:skill_read');
@@ -280,6 +294,10 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:knowledge_hub_topic_update', 'DemoCheck');
                 });
 
+              }); // end FeatureCheck:learning_engine
+
+              Route::group(['middleware' => ['FeatureCheck:website_setup']], function () {
+
                 Route::controller(HomeVideoController::class)->prefix('home-video')->name('home-video.')->group(function () {
                     Route::get('/',                'index')->name('index')->middleware('PermissionCheck:home_video_read');
                     Route::get('/create',          'create')->name('create')->middleware('PermissionCheck:home_video_create');
@@ -290,6 +308,10 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:home_video_delete', 'DemoCheck');
                     Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:home_video_update', 'DemoCheck');
                 });
+
+              }); // end FeatureCheck:website_setup (home-video part)
+
+              Route::group(['middleware' => ['FeatureCheck:course_catalogue']], function () {
 
                 Route::controller(TrialSlotController::class)->prefix('trial-slot')->name('trial-slot.')->group(function () {
                     Route::get('/',                'index')->name('index')->middleware('PermissionCheck:trial_slot_read');
@@ -302,6 +324,10 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:trial_slot_update', 'DemoCheck');
                     Route::post('/page-mode',       'updatePageMode')->name('page-mode')->middleware('PermissionCheck:trial_slot_update', 'DemoCheck');
                 });
+
+              }); // end FeatureCheck:course_catalogue (trial-slot part)
+
+              Route::group(['middleware' => ['FeatureCheck:website_setup']], function () {
 
                 Route::controller(CounterController::class)->prefix('counter')->group(function () {
                     Route::get('/',                         'index')->name('counter.index')->middleware('PermissionCheck:counter_read');
@@ -348,16 +374,26 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::put('/translate/update/{id}',                'translateUpdate')->name('department-contact.translate.update')->middleware('PermissionCheck:dep_contact_update');
                 });
 
+              }); // end FeatureCheck:website_setup (contact-info/department-contact part)
+
+              Route::group(['middleware' => ['FeatureCheck:subscribers']], function () {
                 Route::controller(SubscribeController::class)->prefix('subscribe')->group(function () {
                     Route::get('/',                         'index')->name('subscribe.index')->middleware('PermissionCheck:subscribe_read');
                 });
+              });
+
+              Route::group(['middleware' => ['FeatureCheck:contact_message']], function () {
                 Route::controller(ContactMessageController::class)->prefix('contact-message')->group(function () {
                     Route::get('/',                         'index')->name('contact-message.index')->middleware('PermissionCheck:contact_message_read');
                 });
+              });
+
+              Route::group(['middleware' => ['FeatureCheck:course_catalogue']], function () {
                 Route::controller(ProgramWaitlistController::class)->prefix('program-waitlist')->group(function () {
                     Route::get('/',                         'index')->name('program-waitlist.index')->middleware('PermissionCheck:program_waitlist_read');
                     Route::delete('/delete/{id}',            'delete')->name('program-waitlist.delete')->middleware('PermissionCheck:program_waitlist_delete', 'DemoCheck');
                 });
+              }); // end FeatureCheck:course_catalogue (program-waitlist part)
 
             });
         });

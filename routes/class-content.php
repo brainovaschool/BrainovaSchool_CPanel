@@ -8,7 +8,7 @@ use App\Http\Controllers\ClassContent\ClassContentCoordinatorController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
-        Route::group(['middleware' => ['lang', 'CheckSubscription']], function () {
+        Route::group(['middleware' => ['lang', 'CheckSubscription', 'FeatureCheck:class_content']], function () {
             Route::group(['middleware' => ['auth.routes', 'AdminPanel']], function () {
 
                 Route::controller(ClassContentModuleController::class)->prefix('class-content')->name('class-content-module.')->group(function () {

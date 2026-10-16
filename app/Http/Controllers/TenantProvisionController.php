@@ -38,10 +38,14 @@ class TenantProvisionController extends Controller
     // signup flow gets these from its chosen Package instead; this route has no
     // Package to read, so every school it provisions gets full access to the
     // same core modules your own site has, same as before APP_SAAS was ever on.
+    // Restrict a specific school afterwards via Manage School Features.
     private const DEFAULT_FEATURES = [
         'online_admission', 'student_info', 'academic', 'routine', 'attendance',
         'fees', 'examination', 'online_examination', 'library', 'account',
         'report', 'language', 'staff_manage', 'website_setup', 'gallery', 'setting',
+        'id_card', 'certificate', 'class_content', 'homework', 'teacher_tools',
+        'communication', 'live_class', 'subscribers', 'contact_message',
+        'course_catalogue', 'learning_engine', 'app_settings',
     ];
 
     public function create(string $key, string $schoolKey, string $domain)
