@@ -146,6 +146,10 @@ Route::middleware(saasMiddleware())->group(function () {
             // never got one (e.g. the main site, adopted via adoptMainSite above).
             Route::get('/db/heal-features/{key}/{tenantId}', [\App\Http\Controllers\TenantProvisionController::class, 'healFeatures']);
 
+            // ONE-OFF: shows (generating one first if needed) a tenant's mobile-app
+            // school-selection access code.
+            Route::get('/db/show-access-code/{key}/{tenantId}', [\App\Http\Controllers\TenantProvisionController::class, 'showAccessCode']);
+
             // ONE-OFF: registers the given domain as a tenant pointing at the app's
             // EXISTING database -- for adopting the school's own main domain into
             // tenancy without creating/migrating/seeding anything (admin-only + key).

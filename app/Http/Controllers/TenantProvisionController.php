@@ -103,6 +103,7 @@ class TenantProvisionController extends Controller
         }
 
         $this->ensureFullFeatureAccess($tenant);
+        $accessCode = $this->ensureAccessCode($tenant);
 
         if (!$tenant->domains()->where('domain', $domain)->exists()) {
             $tenant->domains()->create(['domain' => $domain]);
@@ -115,7 +116,9 @@ class TenantProvisionController extends Controller
             . "Visit https://{$domain}/login to sign in.\n\n"
             . "Default super admin login for this new school (from the standard seeder — CHANGE THIS before handing the school access):\n"
             . "  Email: superadmin@onest.com\n"
-            . "  Password: 123456"
+            . "  Password: 123456\n\n"
+            . "Mobile app school-selection access code (give this to the school's staff, not students):\n"
+            . "  {$accessCode}"
             . "</pre>"
         );
     }
@@ -195,6 +198,29 @@ class TenantProvisionController extends Controller
         return response("Feature access checked/healed for tenant \"{$tenantId}\".");
     }
 
+    /** ONE-OFF: shows (generating one first if it doesn't have one yet) the
+     *  mobile app's school-selection access code for an existing tenant --
+     *  for brainova/testschool, created before this code existed. */
+    public function showAccessCode(string $key, string $tenantId)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $tenant = Tenant::find($tenantId);
+        if (!$tenant) {
+            return response("No tenant with id \"{$tenantId}\" exists.", 422);
+        }
+
+        $code = $this->ensureAccessCode($tenant);
+
+        return response("Access code for tenant \"{$tenantId}\": {$code}");
+    }
+
     /** Read-only: lists every registered tenant + domain, and whether the login/dashboard
      *  routes actually run through tenancy-switching middleware anywhere in routes/web.php. */
     public function diagnose(string $key)
@@ -236,6 +262,21 @@ class TenantProvisionController extends Controller
             // visited before this fix may have already cached the broken null.
             cache()->forget('activeSubscriptionFeatures');
         });
+    }
+
+    /** On the CENTRAL tenants row (not inside the tenant's own database --
+     *  this gates which school you can even pick in the mobile app's school
+     *  selector, before any per-school login happens): generates a random
+     *  access code if this tenant doesn't have one yet. Never overwrites an
+     *  existing code, so re-running this is always safe. */
+    private function ensureAccessCode(Tenant $tenant): string
+    {
+        if (empty($tenant->access_code)) {
+            $tenant->access_code = strtoupper(\Illuminate\Support\Str::random(6));
+            $tenant->save();
+        }
+
+        return $tenant->access_code;
     }
 
     /** Checks the central connection's server for a database by name, without switching to it. */

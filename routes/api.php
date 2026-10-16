@@ -38,6 +38,20 @@ use App\Http\Controllers\Api\Instructor\InstructorLivechatAPIController;
 use App\Http\Controllers\Api\Parent\HomeworkAPIController as ParentHomeworkAPIController;
 
 
+// Deliberately OUTSIDE saasApiMiddleware()'s group below: that group applies
+// InitializeTenancyByDomain + PreventAccessFromCentralDomains once APP_SAAS
+// is on, so a request to these from the main domain (now itself a tenant)
+// would get switched into THAT tenant's own database -- wrong for an
+// endpoint that needs to see every school, and for one that runs before a
+// school has even been picked. Plain 'api' middleware only -> always runs
+// in the central context, regardless of which domain it's reached from.
+Route::middleware('api')->group(function () {
+    // Public: lists every school for the mobile app's "Select a School" screen.
+    Route::get('/saas/get-all-school', [App\Http\Controllers\Api\SchoolDirectoryController::class, 'index']);
+    // Public: the access-code check gating actually proceeding into a school.
+    Route::post('/saas/verify-school-code', [App\Http\Controllers\Api\SchoolDirectoryController::class, 'verifyCode']);
+});
+
 Route::middleware(saasApiMiddleware())->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'loginRoleWise']);
