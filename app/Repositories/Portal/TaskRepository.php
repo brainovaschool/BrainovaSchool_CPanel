@@ -77,7 +77,11 @@ class TaskRepository
                 'assigned_by'    => $assignedByUserId,
                 'assigned_date'  => now()->format('Y-m-d'),
                 'due_date'       => $request->due_date,
-                'est_hours'      => $request->est_hours,
+                // "" (field left blank, not omitted — a real HTML form always
+                // posts the key) into a nullable decimal column throws under
+                // strict SQL mode ("Incorrect decimal value: ''"), caught
+                // below and shown as a blank "something went wrong".
+                'est_hours'      => $request->filled('est_hours') ? $request->est_hours : null,
                 'output'         => $request->output,
                 'format'         => $request->format,
                 'refs'           => $request->refs,
@@ -106,6 +110,7 @@ class TaskRepository
 
             return $this->responseWithSuccess($isOpen ? 'Open paid task created.' : 'Task created and assigned.', ['id' => $task->id]);
         } catch (\Throwable $th) {
+            \Illuminate\Support\Facades\Log::error('Portal task creation failed: ' . $th->getMessage(), ['exception' => $th]);
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
     }
