@@ -295,17 +295,92 @@
 
         {{-- Calendar --}}
         @if (hasPermission('calendar_read'))
-            <div class="col-12">
+            <div class="col-lg-8">
                 <div class="ot-card mb-24">
                     <div id='calendar'></div>
                 </div>
             </div>
         @endif
 
+        {{-- Recent notifications: comments, due-date reminders and anything
+             else raised through the system — the header bell has the same
+             list, but it's easy to miss up there. --}}
+        <div class="{{ hasPermission('calendar_read') ? 'col-lg-4' : 'col-12' }}">
+            <div class="ot-card mb-24 bn-dash-notifications">
+                <div class="d-flex align-items-center justify-content-between mb-20">
+                    <h4 class="mb-0">{{ ___('common.Notifications') }}</h4>
+                    @if ($data['recentNotifications']->isNotEmpty())
+                        <span class="badge-basic-info-text">{{ $data['recentNotifications']->count() }} unread</span>
+                    @endif
+                </div>
+                @forelse ($data['recentNotifications'] as $notification)
+                    <a href="{{ route('viewNotification', $notification->id) }}" class="bn-dash-notification-item">
+                        <span class="bn-dash-notification-dot"></span>
+                        <span class="bn-dash-notification-body">
+                            <span class="bn-dash-notification-title">{{ $notification->title }}</span>
+                            <span class="bn-dash-notification-message">{{ $notification->message }}</span>
+                            <span class="bn-dash-notification-time">{{ \Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}</span>
+                        </span>
+                    </a>
+                @empty
+                    <p class="text-secondary mb-0">{{ ___('common.no_data_available') }}</p>
+                @endforelse
+            </div>
+        </div>
 
     </div>
 </div>
 @endsection
+
+@push('css')
+    <style>
+        .bn-dash-notification-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--ot-border-primary, #eaeaea);
+        }
+        .bn-dash-notification-item:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .bn-dash-notification-item:first-child {
+            padding-top: 0;
+        }
+        .bn-dash-notification-dot {
+            flex: 0 0 8px;
+            width: 8px;
+            height: 8px;
+            margin-top: 6px;
+            border-radius: 50%;
+            background: linear-gradient(130.57deg, #936DFF -0.48%, #3A5EE3 71.79%);
+        }
+        .bn-dash-notification-body {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .bn-dash-notification-title {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--ot-text-title);
+        }
+        .bn-dash-notification-message {
+            font-size: 13px;
+            color: var(--ot-text-secondary, var(--ot-text-primary));
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .bn-dash-notification-time {
+            font-size: 12px;
+            color: var(--ot-text-secondary, var(--ot-text-primary));
+            opacity: .7;
+            margin-top: 2px;
+        }
+    </style>
+@endpush
 
 @push('script')
 <script src="{{ global_asset('backend') }}/assets/js/apex-chart.js"></script>

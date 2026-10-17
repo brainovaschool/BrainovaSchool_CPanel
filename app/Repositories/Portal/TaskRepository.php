@@ -417,10 +417,17 @@ class TaskRepository
         // "The other party" — whichever side of the conversation didn't
         // just post this comment. Simplest faithful reading when more than
         // one manager can exist (the spec's own model has exactly one).
-        $assigneeUserId = $task->assignee->user_id ?? null;
-        $otherPartyId = $userId === (int) $task->assigned_by ? $assigneeUserId : (int) $task->assigned_by;
-        if ($otherPartyId && $otherPartyId !== $userId) {
-            PortalNotifier::send($otherPartyId, 'New comment on a task', $task->title, route('portal-tasks.show', $task->id));
+        // Wrapped separately from the comment save above so a notification
+        // problem (e.g. a task with no resolvable assignee) never costs the
+        // comment itself — it's already saved by this point regardless.
+        try {
+            $assigneeUserId = $task->assignee->user_id ?? null;
+            $otherPartyId = $userId === (int) $task->assigned_by ? $assigneeUserId : (int) $task->assigned_by;
+            if ($otherPartyId && $otherPartyId !== $userId) {
+                PortalNotifier::send($otherPartyId, 'New comment on a task', $task->title, route('portal-tasks.show', $task->id));
+            }
+        } catch (\Throwable $th) {
+            \Illuminate\Support\Facades\Log::error('Portal task comment notification failed: ' . $th->getMessage(), ['exception' => $th, 'task_id' => $task->id]);
         }
 
         return $this->responseWithSuccess('Comment added.', []);
