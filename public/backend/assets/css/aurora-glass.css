@@ -77,8 +77,24 @@ body {
   transition: background-color .15s ease, color .15s ease;
 }
 
+/* The base theme's hover state (style.css / style2.css) paints the link's
+   text with a gradient via background-clip: text + a transparent text
+   fill — this skin only overrides the `background`, which left the text
+   clipped to the old gradient trick and rendering invisible on hover.
+   Reset the clip/fill explicitly so hovered text stays solid and readable. */
 .sidebar .sidebar-menu-item:not(.mm-active) > a:hover {
   background: rgba(var(--bn-purple-rgb), .10) !important;
+  background-clip: border-box !important;
+  -webkit-background-clip: border-box !important;
+  -webkit-text-fill-color: var(--bn-ink) !important;
+  color: var(--bn-ink) !important;
+}
+
+.sidebar .sidebar-menu-item:not(.mm-active) > a:hover i,
+.sidebar .sidebar-menu-item:not(.mm-active) > a:hover svg,
+.sidebar .sidebar-menu-item:not(.mm-active) > a:hover .on-half-expanded {
+  color: var(--bn-ink) !important;
+  -webkit-text-fill-color: var(--bn-ink) !important;
 }
 
 .sidebar .sidebar-menu .sidebar-menu-section .mm-active > a {
