@@ -150,6 +150,59 @@ class AuthController extends Controller
         }
     }
 
+    /** Staff "Team" mobile login — unlike loginRoleWise, this does NOT filter
+     *  by an exact role_id. Staff designations like Coordinator/Content
+     *  Creator are custom Role rows created via the Roles screen (see
+     *  seedCoordinatorRole()), so their role_id is whatever auto-increment
+     *  value that role got, never a fixed number the app could guess ahead
+     *  of time. Access into Team Portal itself is already gated by the
+     *  portal_access permission on the API routes, so this only needs to
+     *  keep the three admin-type roles (SuperAdmin/Admin/Accounting)
+     *  website-only, same as loginRoleWise does for everyone else. */
+    public function loginTeam(Request $request)
+    {
+        try {
+            $data = Validator::make($request->all(), [
+                'email'     => 'required|email',
+                'password'  => 'required',
+            ]);
+
+            if ($data->fails()) {
+                return $this->responseWithError(___('alert.validation_error'), $data->errors());
+            }
+
+            $user = User::where('email', $request->email)
+                ->get()
+                ->first(fn ($candidate) => Hash::check($request->password, $candidate->password));
+
+            if (!$user) {
+                return $this->responseWithError(___('alert.invalid_credentials'));
+            }
+
+            if (in_array((int) $user->role_id, [RoleEnum::SUPERADMIN, RoleEnum::ADMIN, RoleEnum::ACCOUNTING], true)) {
+                return $this->responseWithError(___('alert.unauthorized'));
+            }
+
+            if (!$user->status) {
+                return $this->responseWithError(___('alert.your_account_is_inactive'));
+            }
+
+            $token = $user->createToken('auth_token')->plainTextToken;
+
+            $userData = $user->only('id', 'name', 'email', 'phone', 'permissions', 'status', 'role_id', 'upload_id', 'uuid');
+            $userData['access_token'] = $token;
+            $userData['avatar'] = @globalAsset($user->upload->path, '40X40.webp');
+
+            return $this->responseWithSuccess(___('alert.login_successfully'), [
+                'token_type' => 'Bearer',
+                'user'       => $userData,
+            ]);
+
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong'), $th->getMessage());
+        }
+    }
+
 
     public function forgotPassword(Request $request)
     {

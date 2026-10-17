@@ -55,6 +55,7 @@ Route::middleware('api')->group(function () {
 Route::middleware(saasApiMiddleware())->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'loginRoleWise']);
+    Route::post('/login-team', [AuthController::class, 'loginTeam']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
     Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
