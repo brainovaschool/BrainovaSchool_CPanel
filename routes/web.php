@@ -263,6 +263,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     // has its own role_id=1 "Super Admin").
                     Route::get('manage-school-features',       [\App\Http\Controllers\SchoolFeatureManagerController::class, 'index'])->name('school-features.index');
                     Route::post('manage-school-features/update', [\App\Http\Controllers\SchoolFeatureManagerController::class, 'update'])->name('school-features.update');
+                    Route::post('manage-school-features/reset-password', [\App\Http\Controllers\SchoolFeatureManagerController::class, 'resetPassword'])->name('school-features.reset-password');
                     Route::get('fees-collection-monthly',      [DashboardController::class, 'feesCollectionMonthly']);
                     Route::get('revenue',                      [DashboardController::class, 'revenueYearly']);
                     Route::get('fees-collection-current-month', [DashboardController::class, 'feesCollectionCurrentMonth']);

@@ -36,6 +36,22 @@
                     </select>
                 </form>
 
+                @if (session('success'))
+                    <div class="alert alert-success" style="max-width:600px;word-break:break-word">{{ session('success') }}</div>
+                @endif
+                @if (session('error'))
+                    <div class="alert alert-danger" style="max-width:600px">{{ session('error') }}</div>
+                @endif
+
+                @if ($selectedId)
+                    <form method="POST" action="{{ route('school-features.reset-password') }}" class="mb-4"
+                        onsubmit="return confirm('Reset the Super Admin password for this school? Their current password will stop working immediately.')">
+                        @csrf
+                        <input type="hidden" name="tenant_id" value="{{ $selectedId }}">
+                        <button type="submit" class="btn btn-outline-danger btn-sm">Reset Super Admin Password</button>
+                    </form>
+                @endif
+
                 @if ($selectedId)
                     <form method="POST" action="{{ route('school-features.update') }}" style="max-width:420px">
                         @csrf

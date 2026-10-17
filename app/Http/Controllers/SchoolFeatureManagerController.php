@@ -5,8 +5,11 @@ namespace App\Http\Controllers;
 use App\Enums\Status;
 use App\Models\Subscription;
 use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 /**
  * Lets the platform owner control which core modules each school can see
@@ -112,5 +115,40 @@ class SchoolFeatureManagerController extends Controller
         return redirect()
             ->route('school-features.index', ['school' => $tenant->id])
             ->with('success', "Saved — \"{$tenant->id}\" now has " . count($features) . ' module(s) enabled.');
+    }
+
+    /** Resets that school's own Super Admin (role_id=1) password to a fresh
+     *  random one and shows it once -- for when a school's admin is locked
+     *  out and asks for help. Never touches their email, so this can't be
+     *  used to take over the login, only to regain access to it. */
+    public function resetPassword(Request $request)
+    {
+        $this->authorizeOwner();
+
+        $tenant = Tenant::find($request->input('tenant_id'));
+        if (!$tenant) {
+            abort(404);
+        }
+
+        $newPassword = Str::random(10);
+        $email = $tenant->run(function () use ($newPassword) {
+            $admin = User::where('role_id', 1)->first();
+            if (!$admin) {
+                return null;
+            }
+            $admin->password = Hash::make($newPassword);
+            $admin->save();
+            return $admin->email;
+        });
+
+        if (!$email) {
+            return redirect()
+                ->route('school-features.index', ['school' => $tenant->id])
+                ->with('error', "\"{$tenant->id}\" has no Super Admin account to reset.");
+        }
+
+        return redirect()
+            ->route('school-features.index', ['school' => $tenant->id])
+            ->with('success', "Password reset for \"{$tenant->id}\" -- Email: {$email} -- New password: {$newPassword} (shown once, save it now)");
     }
 }
