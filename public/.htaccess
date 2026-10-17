@@ -5,6 +5,13 @@
 
     RewriteEngine On
 
+    # Canonicalize to the non-www host — same reason as the root .htaccess
+    # (duplicated here in case the server's document root points straight
+    # at this public/ folder, in which case the root .htaccess, one level
+    # up, is never read by Apache at all).
+    RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
+    RewriteRule ^ https://%1%{REQUEST_URI} [L,R=301]
+
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
     RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
