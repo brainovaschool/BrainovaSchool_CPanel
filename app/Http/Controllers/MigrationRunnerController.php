@@ -3670,6 +3670,55 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
     }
 
+    /** Diagnoses why a staff member's mobile "Team" login fails. Shows,
+     *  per Staff row: the linked User's email/role_id/status and whether
+     *  the row even has a usable password hash -- without ever printing
+     *  the password itself. Pass ?email=someone@example.com to filter to
+     *  one person. */
+    public function inspectStaffLogins(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $filterEmail = request()->query('email');
+
+        $rows = Staff::with(['role', 'user'])->orderBy('id')->get();
+
+        $lines = [];
+        foreach ($rows as $s) {
+            $user = $s->user;
+            if ($filterEmail && strtolower((string) $user?->email) !== strtolower($filterEmail)) {
+                continue;
+            }
+            $lines[] = sprintf(
+                "Staff #%d %-20s staff.role_id=%s(%s) staff.status=%s\n  user_id=%s | user.email=%s | user.role_id=%s | user.status=%s | password_hash_len=%s",
+                $s->id,
+                $s->first_name . ' ' . $s->last_name,
+                $s->role_id,
+                optional($s->role)->name ?: 'NO ROLE ROW',
+                $s->status,
+                $s->user_id ?: 'NULL (no linked login account!)',
+                $user?->email ?: ($s->user_id ? 'NULL/empty email on user row!' : 'n/a'),
+                $user?->role_id ?? 'n/a',
+                $user?->status ?? 'n/a',
+                $user ? strlen((string) $user->password) : 'n/a'
+            );
+        }
+
+        if (empty($lines)) {
+            $lines[] = $filterEmail
+                ? "No Staff row's linked user.email matches '{$filterEmail}'."
+                : 'No staff rows found.';
+        }
+
+        return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n\n", $lines)) . '</pre>');
+    }
+
     /** Most of these are Website Setup / admin-only screens — nothing a
      *  Teacher, Parent or Student role should ever see. Earlier versions
      *  of this method granted them to any role holding 'news_read' (meant
