@@ -14,6 +14,7 @@
   --bn-turquoise: #0097b2;
   --bn-turquoise-light: #5ce1e6;
   --bn-turquoise-text: #007585;
+  --bn-turquoise-rgb: 92, 225, 230;
   --bn-purple: #8b7bf0;
   --bn-purple-light: #a996ff;
   --bn-purple-rgb: 139, 123, 240;
@@ -83,7 +84,7 @@ body {
    clipped to the old gradient trick and rendering invisible on hover.
    Reset the clip/fill explicitly so hovered text stays solid and readable. */
 .sidebar .sidebar-menu-item:not(.mm-active) > a:hover {
-  background: rgba(var(--bn-purple-rgb), .10) !important;
+  background: rgba(var(--bn-turquoise-rgb), .16) !important;
   background-clip: border-box !important;
   -webkit-background-clip: border-box !important;
   -webkit-text-fill-color: var(--bn-ink) !important;
@@ -98,10 +99,10 @@ body {
 }
 
 .sidebar .sidebar-menu .sidebar-menu-section .mm-active > a {
-  background: linear-gradient(135deg, var(--bn-purple), var(--bn-purple-light)) !important;
+  background: linear-gradient(135deg, var(--bn-turquoise), var(--bn-turquoise-light)) !important;
   color: #fff !important;
   border-left: none !important;
-  box-shadow: 0 10px 22px -10px rgba(var(--bn-purple-rgb), .6);
+  box-shadow: 0 10px 22px -10px rgba(var(--bn-turquoise-rgb), .6);
 }
 
 .sidebar .sidebar-menu .sidebar-menu-section .mm-active > a svg,
