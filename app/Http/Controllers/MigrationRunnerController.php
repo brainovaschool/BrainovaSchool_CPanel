@@ -3097,6 +3097,57 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /** Same as viewLogs(), but scans EVERY tenant's log directory plus the
+     *  central one (using base_path(), not the tenancy-aware storage_path(),
+     *  so it isn't limited to whichever tenant the current browser session
+     *  happens to be in) and shows whichever log file anywhere was modified
+     *  most recently. Use this when a mobile API request's log entry isn't
+     *  showing up where expected -- it may have landed in a different
+     *  tenant's storage (or the central one) than assumed. */
+    public function viewLogsAll(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $candidates = array_merge(
+            [base_path('storage/logs/laravel.log')],
+            glob(base_path('storage/logs/laravel-*.log')) ?: [],
+            glob(base_path('storage/tenant*/logs/laravel.log')) ?: [],
+            glob(base_path('storage/tenant*/logs/laravel-*.log')) ?: []
+        );
+        $candidates = array_filter($candidates, 'file_exists');
+
+        if (empty($candidates)) {
+            return response('No log files found anywhere under ' . base_path('storage'));
+        }
+
+        usort($candidates, fn ($a, $b) => filemtime($b) <=> filemtime($a));
+
+        $listing = array_map(fn ($p) => $p . ' (modified ' . date('Y-m-d H:i:s', filemtime($p)) . ')', $candidates);
+
+        $path = $candidates[0];
+        $size = filesize($path);
+        $tail = $size > 60000
+            ? file_get_contents($path, false, null, $size - 60000)
+            : file_get_contents($path);
+
+        $blocks = preg_split('/\n(?=\[\d{4}-\d{2}-\d{2})/', $tail);
+        $blocks = array_reverse($blocks);
+
+        return response(
+            '<pre style="font:12px/1.5 monospace;padding:24px;white-space:pre-wrap;word-break:break-word">'
+            . e("All log files found, newest first:\n" . implode("\n", $listing) . "\n\n")
+            . e('Showing newest: ' . $path . "\n\n")
+            . e(implode("\n\n", $blocks))
+            . '</pre>'
+        );
+    }
+
     /** One-off: seeds a single Home Videos row for trying the feature at
      *  /test-video-page before anything goes on the real homepage. Safe
      *  to re-run — updates the same row (matched by title) instead of

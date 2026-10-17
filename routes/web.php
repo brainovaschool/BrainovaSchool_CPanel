@@ -197,6 +197,7 @@ Route::middleware(saasMiddleware())->group(function () {
 
             // View the tail of the Laravel error log from the browser (admin-only + key) — for hosts without SSH/file-manager log access.
             Route::get('/db/logs/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'viewLogs']);
+            Route::get('/db/logs-all/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'viewLogsAll']);
 
             // One-off: build a full test fixture (skills, exam, questions, graded attempt) for the latest demo student (admin-only + key).
             Route::get('/db/seed-demo-exam/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedDemoExam']);
