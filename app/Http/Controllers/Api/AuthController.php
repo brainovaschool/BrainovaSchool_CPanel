@@ -103,6 +103,16 @@ class AuthController extends Controller
 
      public function loginRoleWise(Request $request)
     {
+        // TEMP DEBUG -- remove alongside the loginTeam debug logging once
+        // the mobile Team-login issue is confirmed fixed. Tells us whether
+        // an old build of the app is still hitting this endpoint instead
+        // of /login-team.
+        \Illuminate\Support\Facades\Log::info('loginRoleWise attempt', [
+            'full_url'       => $request->fullUrl(),
+            'email_received' => $request->input('email'),
+            'role_id_sent'   => $request->input('role_id'),
+        ]);
+
         try {
             $data = Validator::make($request->all(), [
                 'email'     => 'required|email',
@@ -161,6 +171,21 @@ class AuthController extends Controller
      *  website-only, same as loginRoleWise does for everyone else. */
     public function loginTeam(Request $request)
     {
+        // TEMP DEBUG -- remove once the mobile Team-login issue is confirmed
+        // fixed. Logs every attempt (never the raw password) to
+        // storage/logs so a failing attempt from the phone can be compared
+        // against a working one from curl/Postman.
+        \Illuminate\Support\Facades\Log::info('loginTeam attempt', [
+            'host'            => $request->getHost(),
+            'full_url'        => $request->fullUrl(),
+            'tenant'          => function_exists('tenant') && tenant() ? tenant()->id : 'NO TENANT RESOLVED',
+            'content_type'    => $request->header('Content-Type'),
+            'user_agent'      => $request->header('User-Agent'),
+            'all_input_keys'  => array_keys($request->all()),
+            'email_received'  => $request->input('email'),
+            'password_length' => strlen((string) $request->input('password')),
+        ]);
+
         try {
             $data = Validator::make($request->all(), [
                 'email'     => 'required|email',
@@ -168,22 +193,27 @@ class AuthController extends Controller
             ]);
 
             if ($data->fails()) {
+                \Illuminate\Support\Facades\Log::info('loginTeam: validation failed', ['errors' => $data->errors()->toArray()]);
                 return $this->responseWithError(___('alert.validation_error'), $data->errors());
             }
 
-            $user = User::where('email', $request->email)
-                ->get()
-                ->first(fn ($candidate) => Hash::check($request->password, $candidate->password));
+            $candidates = User::where('email', $request->email)->get();
+            \Illuminate\Support\Facades\Log::info('loginTeam: candidates found by email', ['count' => $candidates->count()]);
+
+            $user = $candidates->first(fn ($candidate) => Hash::check($request->password, $candidate->password));
 
             if (!$user) {
+                \Illuminate\Support\Facades\Log::info('loginTeam: no candidate matched password -> invalid_credentials');
                 return $this->responseWithError(___('alert.invalid_credentials'));
             }
 
             if (in_array((int) $user->role_id, [RoleEnum::SUPERADMIN, RoleEnum::ADMIN, RoleEnum::ACCOUNTING], true)) {
+                \Illuminate\Support\Facades\Log::info('loginTeam: blocked admin-type role', ['role_id' => $user->role_id]);
                 return $this->responseWithError(___('alert.unauthorized'));
             }
 
             if (!$user->status) {
+                \Illuminate\Support\Facades\Log::info('loginTeam: inactive user', ['user_id' => $user->id]);
                 return $this->responseWithError(___('alert.your_account_is_inactive'));
             }
 
@@ -193,12 +223,15 @@ class AuthController extends Controller
             $userData['access_token'] = $token;
             $userData['avatar'] = @globalAsset($user->upload->path, '40X40.webp');
 
+            \Illuminate\Support\Facades\Log::info('loginTeam: success', ['user_id' => $user->id]);
+
             return $this->responseWithSuccess(___('alert.login_successfully'), [
                 'token_type' => 'Bearer',
                 'user'       => $userData,
             ]);
 
         } catch (\Throwable $th) {
+            \Illuminate\Support\Facades\Log::info('loginTeam: exception', ['message' => $th->getMessage()]);
             return $this->responseWithError(___('alert.something_went_wrong'), $th->getMessage());
         }
     }
