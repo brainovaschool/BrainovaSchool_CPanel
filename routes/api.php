@@ -217,6 +217,18 @@ Route::middleware(saasApiMiddleware())->group(function () {
 
         });
 
+        // Team Portal (internal staff tool: tasks, reels, work log) -- not
+        // nested under 'teacher' since whoever has portal_access may have
+        // logged in as Teacher or Staff; same PermissionCheck the website
+        // uses, so only staff actually granted Team Portal access see this.
+        Route::group(['prefix' => 'portal', 'middleware' => 'PermissionCheck:portal_access'], function () {
+            Route::get('my-tasks',          [App\Http\Controllers\Api\Portal\PortalTaskController::class, 'myTasks']);
+            Route::get('assignable-staff',  [App\Http\Controllers\Api\Portal\PortalTaskController::class, 'assignableStaff']);
+            Route::post('tasks',            [App\Http\Controllers\Api\Portal\PortalTaskController::class, 'store']);
+            Route::get('reels',             [App\Http\Controllers\Api\Portal\PortalReelController::class, 'index']);
+            Route::get('work-log',          [App\Http\Controllers\Api\Portal\PortalWorkLogController::class, 'today']);
+            Route::post('work-log',         [App\Http\Controllers\Api\Portal\PortalWorkLogController::class, 'store']);
+        });
 
     });
 });
