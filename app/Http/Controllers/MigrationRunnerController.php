@@ -3719,6 +3719,46 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n\n", $lines)) . '</pre>');
     }
 
+    /** Resets one staff/teacher login's password to a freshly generated
+     *  random value and shows it once, so a failing mobile login can be
+     *  tested against a password we know for certain is correct -- without
+     *  ever needing to see or guess what was typed on the phone. Pass
+     *  ?email=someone@example.com. Never touches role_id 1 (use the
+     *  existing Super Admin reset tool for that). */
+    public function resetUserPassword(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $email = request()->query('email');
+        if (!$email) {
+            return response('Pass ?email=someone@example.com in the URL.');
+        }
+
+        $user = User::where('email', $email)->first();
+        if (!$user) {
+            return response("No user found with email '{$email}'.");
+        }
+        if ((int) $user->role_id === 1) {
+            return response('Refusing -- use the existing Super Admin reset tool for role_id 1 accounts.');
+        }
+
+        $newPassword = \Illuminate\Support\Str::random(10);
+        $user->password = Hash::make($newPassword);
+        $user->save();
+
+        return response(
+            '<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' .
+            e("Password reset for {$user->email} (user #{$user->id}).\n\nNew password: {$newPassword}\n\nUse this exact password to test the Team login now.") .
+            '</pre>'
+        );
+    }
+
     /** Most of these are Website Setup / admin-only screens — nothing a
      *  Teacher, Parent or Student role should ever see. Earlier versions
      *  of this method granted them to any role holding 'news_read' (meant

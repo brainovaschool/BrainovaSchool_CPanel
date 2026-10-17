@@ -185,6 +185,7 @@ Route::middleware(saasMiddleware())->group(function () {
             Route::get('/db/php-upload-limits/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'phpUploadLimits']);
             Route::get('/db/inspect-teachers/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectTeachers']);
             Route::get('/db/inspect-staff-logins/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectStaffLogins']);
+            Route::get('/db/reset-user-password/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'resetUserPassword']);
             Route::get('/db/seed-feature-access/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedFeatureAccess']);
             Route::get('/db/seed-coordinator-role/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedCoordinatorRole']);
             Route::get('/db/inspect-coordinator-permissions/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectCoordinatorPermissions']);
