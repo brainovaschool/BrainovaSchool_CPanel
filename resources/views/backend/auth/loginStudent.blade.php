@@ -79,6 +79,12 @@
         </button>
     </form>
 
+    <p class="authenticate-now mb-0">
+        <a class="link-text" href="{{ route('login') }}">Teacher Login</a>
+        &nbsp;·&nbsp;
+        <a class="link-text" href="{{ route('loginGuardian') }}">Guardian Login</a>
+    </p>
+
     <!-- End form -->
     @if (\Config::get('app.APP_DEMO'))
         <div class="col-md-12">

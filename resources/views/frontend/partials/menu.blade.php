@@ -45,7 +45,14 @@
                                 </div>
                                 <div class="login__regiter d-flex align-items-center">
                                     @if(!\Auth::check())
-                                    <a href="{{route('login')}}">{{ ___('frontend.Login') }} </a>
+                                    <div class="bn-dropdown bn-login-dropdown">
+                                        <a href="{{ route('login') }}">{{ ___('frontend.Login') }}</a>
+                                        <ul class="bn-dropdown-menu">
+                                            <li><a href="{{ route('login') }}">Teacher Login</a></li>
+                                            <li><a href="{{ route('loginStudent') }}">Student Login</a></li>
+                                            <li><a href="{{ route('loginGuardian') }}">Guardian Login</a></li>
+                                        </ul>
+                                    </div>
                                     @else
                                         @if(\Auth::user()->role_id == 6)
                                             <a href="{{route('student-panel-dashboard.index')}}">{{ ___('frontend.Dashboard') }} </a>

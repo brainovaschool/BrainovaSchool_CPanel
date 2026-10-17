@@ -319,6 +319,80 @@ footer.home_three_footer .copyright_area .footer_border {
     color: var(--bn-primary-strong);
 }
 
+/* Login dropdown (topbar, next to phone/email/social icons) — Teacher,
+   Student, Guardian. Same bn-dropdown/bn-dropdown-menu markup as Contact
+   Us above, re-scoped here since that one's rules are scoped to
+   .header__right, not the topbar's .login__regiter. */
+.login__regiter .bn-dropdown {
+    position: relative;
+}
+
+.login__regiter .bn-dropdown .bn-dropdown-menu {
+    width: 180px;
+    position: absolute;
+    right: 0;
+    top: 120%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    background: var(--bn-surface);
+    border: 1px solid var(--bn-line);
+    border-radius: 14px;
+    box-shadow: var(--bn-shadow-near), var(--bn-shadow-far);
+    text-align: left;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s;
+    z-index: 999;
+    overflow: hidden;
+}
+
+.login__regiter .bn-dropdown:hover .bn-dropdown-menu {
+    top: 100%;
+    opacity: 1;
+    visibility: visible;
+}
+
+.login__regiter .bn-dropdown .bn-dropdown-menu li {
+    display: block;
+    margin: 0;
+}
+
+.login__regiter .bn-dropdown .bn-dropdown-menu li a,
+.header_area .header_topbar_area .header_topbar_wrapper .header_topbar_right .login__regiter .bn-dropdown .bn-dropdown-menu li a {
+    display: block;
+    padding: 10px 18px;
+    font-size: 14px;
+    line-height: 1.2;
+    font-weight: 400;
+    color: var(--bn-ink);
+    white-space: nowrap;
+    text-transform: none;
+    transition: 0.3s;
+}
+
+.login__regiter .bn-dropdown .bn-dropdown-menu li a:hover,
+.header_area .header_topbar_area .header_topbar_wrapper .header_topbar_right .login__regiter .bn-dropdown .bn-dropdown-menu li a:hover {
+    color: var(--bn-primary-strong);
+}
+
+@supports ((-webkit-backdrop-filter: blur(6px)) or (backdrop-filter: blur(6px))) {
+    .login__regiter .bn-dropdown .bn-dropdown-menu {
+        background: var(--bn-glass);
+        -webkit-backdrop-filter: blur(24px) saturate(170%);
+        backdrop-filter: blur(24px) saturate(170%);
+        border-color: var(--bn-glass-brd);
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    .login__regiter .bn-dropdown .bn-dropdown-menu {
+        background: var(--bn-surface);
+        -webkit-backdrop-filter: none;
+        backdrop-filter: none;
+    }
+}
+
 
 /* ============================================================
    AURORA GLASS — brand-role fixes layered on top of the token swap
