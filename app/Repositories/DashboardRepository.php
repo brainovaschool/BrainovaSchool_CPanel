@@ -18,8 +18,10 @@ use App\Models\StudentInfo\ParentGuardian;
 use App\Models\StudentInfo\SessionClassStudent;
 use App\Models\StudentInfo\Student;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Academic\Subject;
 use App\Models\Academic\SubjectAssignChildren;
+use App\Models\Portal\PortalTask;
 
 class DashboardRepository implements DashboardInterface
 {
@@ -215,6 +217,44 @@ class DashboardRepository implements DashboardInterface
                 'end'   => $value->date.'T'.$value->end_time,
             ];
         }
+
+        // Team Portal task deadlines, shown alongside school events — a
+        // manager sees the whole team's pending work for the month, anyone
+        // else just their own, so this doesn't clutter a teacher's
+        // dashboard with tasks that have nothing to do with them.
+        if (Schema::hasTable('portal_tasks') && Auth::check()) {
+            $isManager = hasPermission('portal_manage');
+            $staffId = optional(Auth::user()->staff)->id;
+
+            if ($isManager || $staffId) {
+                $tasks = PortalTask::with('assignee')
+                    ->whereIn('status', PortalTask::OVERDUE_STATUSES)
+                    ->whereMonth('due_date', date('m'))
+                    ->whereYear('due_date', date('Y'))
+                    ->when(!$isManager, fn ($q) => $q->where('assigned_to', $staffId))
+                    ->get();
+
+                foreach ($tasks as $task) {
+                    $assigneeName = $task->assignee
+                        ? trim($task->assignee->first_name . ' ' . $task->assignee->last_name)
+                        : null;
+
+                    $data[] = [
+                        'title'    => $task->title . ($isManager && $assigneeName ? " — {$assigneeName}" : ''),
+                        'start'    => $task->due_date->format('Y-m-d'),
+                        'url'      => route('portal-tasks.show', $task->id),
+                        'color'    => $task->is_overdue ? '#FF6A54' : '#936DFF',
+                        // The calendar's shared "editable" option lets school
+                        // Events be dragged around; a task deadline has
+                        // nothing wired up to persist that, so it's turned
+                        // off per-event rather than letting it silently
+                        // revert on refresh.
+                        'editable' => false,
+                    ];
+                }
+            }
+        }
+
         return response()->json($data, 200);
     }
 

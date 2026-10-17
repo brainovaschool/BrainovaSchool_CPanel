@@ -100,6 +100,10 @@ class TaskController extends Controller
         $data['task']      = $task;
         $data['isManager']  = $isManager;
         $data['isAssignee'] = $staffId !== null && (int) $task->assigned_to === $staffId;
+        // Reassigning is narrower than general manage access — only the
+        // person who actually created/assigned this task (or the main
+        // admin) can hand it to someone else, not any manager.
+        $data['isCreator']  = $isManager && ((int) $task->assigned_by === (int) Auth::id() || (int) Auth::user()->role_id === 1);
         $data['canClaim']   = $task->paid && $task->status === \App\Models\Portal\PortalTask::OPEN && $staffId !== null;
         $data['claimBlockers'] = $data['canClaim'] ? $this->repo->claimBlockers($staffId) : collect();
         $data['canMarkPaid'] = $isManager && $task->paid && $task->status === \App\Models\Portal\PortalTask::COMPLETED && $task->pay_status === 'due';
@@ -150,6 +154,21 @@ class TaskController extends Controller
     public function reassign(Request $request, $id)
     {
         $request->validate(['assigned_to' => 'required|exists:staff,id']);
+
+        $task = $this->repo->show((int) $id);
+        if (!$task) {
+            return back()->with('danger', ___('alert.not_found'));
+        }
+
+        // Mirrors show()'s $isCreator — reassigning is only for whoever
+        // created/assigned this specific task (or the main admin), not
+        // every portal_manage holder. The UI already hides this for anyone
+        // else; this is the check that actually matters.
+        $isCreator = (int) $task->assigned_by === (int) Auth::id() || (int) Auth::user()->role_id === 1;
+        if (!$isCreator) {
+            abort(403, 'Only the person who created this task can reassign it.');
+        }
+
         $result = $this->repo->reassign((int) $id, (int) $request->assigned_to);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }

@@ -16,14 +16,21 @@ class TaskDeadlineCron extends Command
     protected $signature = 'portal:task-deadlines';
     protected $description = 'Notify on tasks due today/tomorrow and tasks overdue (Team Portal)';
 
+    /** How many days out the daily countdown starts (inclusive) — a task
+     *  due in 3 days gets its first reminder then, one a day, down to
+     *  "due today". */
+    private const REMINDER_WINDOW_DAYS = 3;
+
     public function handle()
     {
-        $today    = now()->format('Y-m-d');
-        $tomorrow = now()->addDay()->format('Y-m-d');
+        $today = now()->startOfDay();
 
         $pending = PortalTask::with('assignee')
             ->whereIn('status', PortalTask::OVERDUE_STATUSES)
-            ->whereIn('due_date', [$today, $tomorrow])
+            ->whereBetween('due_date', [
+                $today->format('Y-m-d'),
+                $today->copy()->addDays(self::REMINDER_WINDOW_DAYS)->format('Y-m-d'),
+            ])
             ->get();
 
         foreach ($pending as $task) {
@@ -32,16 +39,30 @@ class TaskDeadlineCron extends Command
                 continue;
             }
 
+            // Absolute, not signed — Carbon's non-absolute diffInDays sign
+            // convention is easy to get backwards, and the query above
+            // already guarantees due_date >= today, so there's nothing to
+            // disambiguate here.
+            $daysLeft = $today->diffInDays($task->due_date->copy()->startOfDay());
+            $title = match (true) {
+                $daysLeft <= 0 => 'Due today',
+                $daysLeft === 1 => 'Due tomorrow',
+                default => "Due in {$daysLeft} days",
+            };
+
             $url = route('portal-tasks.show', $task->id);
 
-            if (!PortalNotifier::alreadySentToday($assigneeUserId, 'Deadline approaching', $url)) {
-                PortalNotifier::send($assigneeUserId, 'Deadline approaching', $task->title, $url);
+            // $title itself carries the day count, so each day's distinct
+            // countdown message naturally gets its own one-time send —
+            // this still never repeats the same title twice in one day.
+            if (!PortalNotifier::alreadySentToday($assigneeUserId, $title, $url)) {
+                PortalNotifier::send($assigneeUserId, $title, $task->title, $url);
             }
         }
 
         $overdue = PortalTask::with('assignee')
             ->whereIn('status', PortalTask::OVERDUE_STATUSES)
-            ->where('due_date', '<', $today)
+            ->where('due_date', '<', $today->format('Y-m-d'))
             ->get();
 
         foreach ($overdue as $task) {

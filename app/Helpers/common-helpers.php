@@ -1435,3 +1435,29 @@ if (!function_exists('group_permissions_by_category')) {
             ->filter(fn ($group) => $group->isNotEmpty());
     }
 }
+
+if (!function_exists('linkify')) {
+    /**
+     * Escapes free text and turns any http(s) URL inside it into a real,
+     * clickable link — e.g. a task description or comment where someone
+     * pasted a reference URL, which Blade's {{ }} alone renders as plain,
+     * unclickable text. Safe to use with {!! !!}: the whole string is
+     * HTML-escaped first, so the only markup introduced is the <a> tag
+     * this function adds itself; nothing from the original text can break
+     * out of it.
+     */
+    function linkify(?string $text): string
+    {
+        if ($text === null || $text === '') {
+            return '';
+        }
+
+        $escaped = nl2br(e($text));
+
+        return preg_replace_callback('/(https?:\/\/[^\s<]+)/i', function ($matches) {
+            $url = rtrim($matches[1], '.,;:!?)');
+            $trailing = substr($matches[1], strlen($url));
+            return '<a href="' . $url . '" target="_blank" rel="noopener noreferrer nofollow">' . $url . '</a>' . $trailing;
+        }, $escaped);
+    }
+}

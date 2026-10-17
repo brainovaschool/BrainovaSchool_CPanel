@@ -27,8 +27,8 @@
                         <span class="badge-basic-info-text">{{ str_replace('_', ' ', ucfirst($task->status)) }}</span>
                     </div>
                     <div class="card-body">
-                        <p class="text-secondary">{{ $task->description ?: 'No description given.' }}</p>
-                        <div class="row">
+                        <p class="text-secondary">{!! $task->description ? linkify($task->description) : 'No description given.' !!}</p>
+                        <div class="row gy-2">
                             <div class="col-md-6"><strong>Employee:</strong> {{ optional($task->assignee)->first_name }} {{ optional($task->assignee)->last_name }}</div>
                             <div class="col-md-6"><strong>Assigned by:</strong> {{ optional($task->assignedBy)->name }}</div>
                             <div class="col-md-6"><strong>Category:</strong> {{ $task->category ?: '—' }}</div>
@@ -41,11 +41,11 @@
                             @if ($task->est_hours)<div class="col-md-6"><strong>Estimated hours:</strong> {{ $task->est_hours }}</div>@endif
                             @if ($task->format)<div class="col-md-6"><strong>Expected format:</strong> {{ $task->format }}</div>@endif
                         </div>
-                        @if ($task->output)<p class="mt-3"><strong>What "done" looks like:</strong><br>{{ $task->output }}</p>@endif
-                        @if ($task->refs)<p><strong>References:</strong><br>{{ $task->refs }}</p>@endif
-                        @if ($task->drive_link)<p><strong>Drive link:</strong> <a href="{{ $task->drive_link }}" target="_blank">{{ $task->drive_link }}</a></p>@endif
-                        @if ($task->refUpload)<p><strong>Reference file:</strong> <a href="{{ globalAsset($task->refUpload->path) }}" target="_blank">Download</a></p>@endif
-                        @if ($data['isManager'] && $task->notes)<p><strong>Internal notes:</strong><br>{{ $task->notes }}</p>@endif
+                        @if ($task->output)<p class="mt-3 mb-0"><strong>What "done" looks like:</strong><br>{!! linkify($task->output) !!}</p>@endif
+                        @if ($task->refs)<p class="mt-3 mb-0"><strong>References:</strong><br>{!! linkify($task->refs) !!}</p>@endif
+                        @if ($task->drive_link)<p class="mt-3 mb-0"><strong>Drive link:</strong> <a href="{{ $task->drive_link }}" target="_blank" rel="noopener noreferrer nofollow">{{ $task->drive_link }}</a></p>@endif
+                        @if ($task->refUpload)<p class="mt-3 mb-0"><strong>Reference file:</strong> <a href="{{ globalAsset($task->refUpload->path) }}" target="_blank">Download</a></p>@endif
+                        @if ($data['isManager'] && $task->notes)<p class="mt-3 mb-0"><strong>Internal notes:</strong><br>{!! linkify($task->notes) !!}</p>@endif
                         @if ($task->final_score !== null)
                             <p class="mt-3"><strong>Final score:</strong> {{ $task->final_score }}/10
                                 <span class="text-secondary">(revision {{ $task->revision_score }}/5 + quality {{ $task->quality_score }}/5)</span></p>
@@ -70,11 +70,11 @@
                                     @elseif ($sub->result === 'revision')<span class="badge-basic-warning-text">Sent back for revision</span>
                                     @else <span class="badge-basic-info-text">Waiting on review</span>@endif
                                 </p>
-                                @if ($sub->comment)<p class="mb-1">{{ $sub->comment }}</p>@endif
-                                @if ($sub->link)<p class="mb-1"><a href="{{ $sub->link }}" target="_blank">{{ $sub->link }}</a></p>@endif
+                                @if ($sub->comment)<p class="mb-1">{!! linkify($sub->comment) !!}</p>@endif
+                                @if ($sub->link)<p class="mb-1"><a href="{{ $sub->link }}" target="_blank" rel="noopener noreferrer nofollow">{{ $sub->link }}</a></p>@endif
                                 @if ($sub->upload)<p class="mb-1"><a href="{{ globalAsset($sub->upload->path) }}" target="_blank">Download attached file</a></p>@endif
                                 @if ($sub->admin_comment)
-                                    <p class="mb-0 text-secondary"><strong>Reviewer note:</strong> {{ $sub->admin_comment }} — {{ optional($sub->reviewedBy)->name }}, {{ $sub->reviewed_at?->format('d M Y, h:i A') }}</p>
+                                    <p class="mb-0 text-secondary"><strong>Reviewer note:</strong> {!! linkify($sub->admin_comment) !!} — {{ optional($sub->reviewedBy)->name }}, {{ $sub->reviewed_at?->format('d M Y, h:i A') }}</p>
                                 @endif
                             </div>
                         @empty
@@ -87,7 +87,7 @@
                     <div class="card-header"><h4 class="mb-0">Comments</h4></div>
                     <div class="card-body">
                         @forelse ($task->comments as $comment)
-                            <p class="mb-2"><strong>{{ optional($comment->user)->name }}</strong> — {{ $comment->created_at->diffForHumans() }}<br>{{ $comment->body }}</p>
+                            <p class="mb-2"><strong>{{ optional($comment->user)->name }}</strong> — {{ $comment->created_at->diffForHumans() }}<br>{!! linkify($comment->body) !!}</p>
                         @empty
                             <p class="text-secondary">No comments yet.</p>
                         @endforelse
@@ -198,10 +198,11 @@
                         </div>
                     </div>
 
-                    @if ($task->status !== 'completed')
+                    @if ($task->status !== 'completed' && $data['isCreator'])
                         <div class="card ot-card mt-4">
                             <div class="card-header"><h4 class="mb-0">Reassign</h4></div>
                             <div class="card-body">
+                                <p class="text-secondary" style="font-size:.85rem;">Only you can reassign this — you created it.</p>
                                 <form action="{{ route('portal-tasks.reassign', $task->id) }}" method="post">
                                     @csrf
                                     <select name="assigned_to" class="nice-select niceSelect bordered_style wide mb-2" required>
