@@ -541,15 +541,22 @@ function activeSubscriptionStudentLimit()
         return cache()->rememberForever('activeSubscriptionStudentLimit', function () {
             $subscription = Subscription::active()->first();
 
-            if ($subscription) {
-                return $subscription->payment_type == PackagePaymentType::PREPAID ? $subscription->student_limit : 99999999;
+            // No active subscription row, or a prepaid one seeded without a
+            // student_limit (nullable column — happens when the tenant was
+            // provisioned without that value ever being set), must mean
+            // "no real limit to enforce", not zero. Before this fix,
+            // `$count >= null` evaluated true in PHP's loose comparison for
+            // ANY student count including zero, so new installs could never
+            // create even their very first student.
+            if ($subscription && $subscription->payment_type == PackagePaymentType::PREPAID && $subscription->student_limit) {
+                return (int) $subscription->student_limit;
             }
 
-            return null;
+            return PHP_INT_MAX;
         });
     }
 
-    return null;
+    return PHP_INT_MAX;
 }
 
 function activeSubscriptionStaffLimit()
@@ -558,15 +565,16 @@ function activeSubscriptionStaffLimit()
         return cache()->rememberForever('activeSubscriptionStaffLimit', function () {
             $subscription = Subscription::active()->first();
 
-            if ($subscription) {
-                return $subscription->payment_type == PackagePaymentType::PREPAID ? $subscription->staff_limit : 99999999;
+            // See activeSubscriptionStudentLimit() above — same fix.
+            if ($subscription && $subscription->payment_type == PackagePaymentType::PREPAID && $subscription->staff_limit) {
+                return (int) $subscription->staff_limit;
             }
 
-            return null;
+            return PHP_INT_MAX;
         });
     }
 
-    return null;
+    return PHP_INT_MAX;
 }
 
 function activeSubscriptionExpiryDate()

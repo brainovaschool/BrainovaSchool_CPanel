@@ -199,6 +199,18 @@ class MigrationRunnerController extends Controller
             $lines = 'error: ' . $e->getMessage();
         }
 
+        // These three are cached forever (cache()->rememberForever), so a
+        // bad value — e.g. null from a subscription row whose student_limit/
+        // staff_limit was never populated, which previously made `count() >=
+        // null` evaluate true for ANY count and block every single student/
+        // staff creation — never self-corrects even after the underlying
+        // logic is fixed in code. Forgotten here on every run so the next
+        // read always recomputes with whatever the current code/data says.
+        cache()->forget('activeSubscriptionStudentLimit');
+        cache()->forget('activeSubscriptionStaffLimit');
+        cache()->forget('activeSubscriptionExpiryDate');
+        $subLimits = 'cleared — student limit: ' . activeSubscriptionStudentLimit() . ', staff limit: ' . activeSubscriptionStaffLimit();
+
         return response(
             '<pre style="font:14px/1.5 monospace;padding:24px">'
             . e($migrate) . "\n\nPermissions: " . e($perms)
@@ -207,6 +219,7 @@ class MigrationRunnerController extends Controller
             . "\nNotice seed: " . e($notice)
             . "\nDashboard features seed: " . e($features)
             . "\nCharacter lines seed: " . e($lines)
+            . "\nSubscription limits cache: " . e($subLimits)
             . "</pre>"
         );
     }
