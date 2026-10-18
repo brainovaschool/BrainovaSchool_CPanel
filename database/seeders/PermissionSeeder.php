@@ -148,6 +148,20 @@ class PermissionSeeder extends Seeder
             'portal_social_reels'        => ['read' => 'portal_social_reels_read'],
             'portal_social_month_plan'   => ['read' => 'portal_social_month_plan_read'],
             'portal_social_page_fixes'   => ['read' => 'portal_social_page_fixes_read'],
+            // Manager-tier items — previously portal_manage-only with no way
+            // to grant just one; the actual admin actions (editing, approving,
+            // paying out) still require portal_manage, these only add the
+            // option to let a role view without being a full portal manager.
+            'portal_manager_tasks'          => ['read' => 'portal_manager_tasks_read'],
+            'portal_settings'               => ['read' => 'portal_settings_read'],
+            'portal_team_attendance'        => ['read' => 'portal_team_attendance_read'],
+            'portal_manager_work_logs'      => ['read' => 'portal_manager_work_logs_read'],
+            'portal_responsibilities_manage' => ['read' => 'portal_responsibilities_manage_read'],
+            'portal_analytics'              => ['read' => 'portal_analytics_read'],
+            'portal_social_settings'        => ['read' => 'portal_social_settings_read'],
+            'portal_growth_pay'             => ['read' => 'portal_growth_pay_read'],
+            'portal_reel_characters'        => ['read' => 'portal_reel_characters_read'],
+            'portal_reel_settings'          => ['read' => 'portal_reel_settings_read'],
             // sms_mail_template
             'sms_mail_template'    => ['read' => 'sms_mail_template_read', 'create' => 'sms_mail_template_create', 'update' => 'sms_mail_template_update', 'delete' => 'sms_mail_template_delete'],
             // sms/mail compose

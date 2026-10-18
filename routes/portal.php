@@ -27,7 +27,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 });
 
                 Route::controller(TaskController::class)->prefix('portal/tasks')->name('portal-tasks.')->group(function () {
-                    Route::get('/',                    'index')->name('index')->middleware('PermissionCheck:portal_manage');
+                    Route::get('/',                    'index')->name('index')->middleware('PermissionCheck:portal_manage,portal_manager_tasks_read');
                     Route::get('/create',               'create')->name('create')->middleware('PermissionCheck:portal_manage');
                     Route::post('/store',               'store')->name('store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::get('/show/{id}',             'show')->name('show')->middleware('PermissionCheck:portal_access');
@@ -46,11 +46,11 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/portal/paid-tasks', [TaskController::class, 'paidTasks'])->name('portal-paid-tasks.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_paid_tasks_read']);
 
                 Route::controller(SettingsController::class)->prefix('portal/settings')->name('portal-settings.')->group(function () {
-                    Route::get('/',       'edit')->name('edit')->middleware('PermissionCheck:portal_manage');
+                    Route::get('/',       'edit')->name('edit')->middleware('PermissionCheck:portal_manage,portal_settings_read');
                     Route::post('/',      'update')->name('update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
 
-                Route::get('/portal/attendance', [AttendanceController::class, 'index'])->name('portal-attendance.index')->middleware('PermissionCheck:portal_manage');
+                Route::get('/portal/attendance', [AttendanceController::class, 'index'])->name('portal-attendance.index')->middleware('PermissionCheck:portal_manage,portal_team_attendance_read');
 
                 Route::controller(WorkLogController::class)->prefix('portal/work-log')->name('portal-work-log.')->group(function () {
                     Route::get('/',             'myLog')->name('index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_work_log_read']);
@@ -60,14 +60,14 @@ Route::middleware(saasMiddleware())->group(function () {
                 });
 
                 Route::controller(WorkLogController::class)->prefix('portal/work-logs')->name('portal-work-logs.')->group(function () {
-                    Route::get('/',                'managerIndex')->name('index')->middleware('PermissionCheck:portal_manage');
-                    Route::get('/show/{staffId}',  'managerShow')->name('show')->middleware('PermissionCheck:portal_manage');
+                    Route::get('/',                'managerIndex')->name('index')->middleware('PermissionCheck:portal_manage,portal_manager_work_logs_read');
+                    Route::get('/show/{staffId}',  'managerShow')->name('show')->middleware('PermissionCheck:portal_manage,portal_manager_work_logs_read');
                     Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::post('/entry/{entryId}/feedback', 'saveFeedback')->name('entry.feedback')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
 
                 Route::controller(ResponsibilityController::class)->prefix('portal/responsibilities')->name('portal-responsibilities.')->group(function () {
-                    Route::get('/',           'index')->name('index')->middleware('PermissionCheck:portal_manage');
+                    Route::get('/',           'index')->name('index')->middleware('PermissionCheck:portal_manage,portal_responsibilities_manage_read');
                     Route::post('/store',     'store')->name('store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::post('/{id}/update', 'update')->name('update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::delete('/{id}',    'destroy')->name('destroy')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
@@ -76,7 +76,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/portal/my-responsibilities', [ResponsibilityController::class, 'myDuties'])->name('portal-my-responsibilities.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_my_responsibilities_read']);
                 Route::post('/portal/responsibilities/{id}/tick', [ResponsibilityController::class, 'tick'])->name('portal-responsibilities.tick')->middleware('PermissionCheck:portal_access', 'DemoCheck');
 
-                Route::get('/portal/analytics', [AnalyticsController::class, 'index'])->name('portal-analytics.index')->middleware('PermissionCheck:portal_manage');
+                Route::get('/portal/analytics', [AnalyticsController::class, 'index'])->name('portal-analytics.index')->middleware('PermissionCheck:portal_manage,portal_analytics_read');
                 Route::get('/portal/my-performance', [AnalyticsController::class, 'myPerformance'])->name('portal-my-performance.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_my_performance_read']);
 
                 Route::controller(SocialController::class)->prefix('portal/social/reels')->name('portal-social-reels.')->group(function () {
@@ -100,7 +100,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::post('/portal/social/page-fixes/store', [SocialController::class, 'storePageFix'])->name('portal-social-page-fixes.store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 Route::post('/portal/social/page-fixes/{id}/status', [SocialController::class, 'updatePageFixStatus'])->name('portal-social-page-fixes.status')->middleware('PermissionCheck:portal_access', 'DemoCheck');
 
-                Route::get('/portal/social/settings', [SocialController::class, 'settings'])->name('portal-social-settings.edit')->middleware('PermissionCheck:portal_manage');
+                Route::get('/portal/social/settings', [SocialController::class, 'settings'])->name('portal-social-settings.edit')->middleware('PermissionCheck:portal_manage,portal_social_settings_read');
                 Route::post('/portal/social/settings', [SocialController::class, 'updateSettings'])->name('portal-social-settings.update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
 
                 Route::get('/portal/social/daily-plan', [SocialController::class, 'dailyPlan'])->name('portal-social-daily-plan.index')->middleware('PermissionCheck:portal_access');
@@ -109,21 +109,21 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::post('/portal/social/weekly-goal/{id}/toggle', [SocialController::class, 'toggleGoal'])->name('portal-social-weekly-goal.toggle')->middleware('PermissionCheck:portal_access', 'DemoCheck');
 
                 Route::controller(GrowthPayController::class)->prefix('portal/growth-pay')->name('portal-growth-pay.')->group(function () {
-                    Route::get('/',             'index')->name('index')->middleware('PermissionCheck:portal_manage');
+                    Route::get('/',             'index')->name('index')->middleware('PermissionCheck:portal_manage,portal_growth_pay_read');
                     Route::post('/save',        'save')->name('save')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::post('/{id}/mark-paid', 'markPaid')->name('mark-paid')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
 
                 // Reel Studio — admin character catalogue (portal_manage; Social Board admin).
                 Route::controller(ReelCharacterController::class)->prefix('portal/social/reel-characters')->name('portal-social-reel-characters.')->group(function () {
-                    Route::get('/',            'index')->name('index')->middleware('PermissionCheck:portal_manage');
+                    Route::get('/',            'index')->name('index')->middleware('PermissionCheck:portal_manage,portal_reel_characters_read');
                     Route::get('/create',      'create')->name('create')->middleware('PermissionCheck:portal_manage');
                     Route::post('/store',      'store')->name('store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::get('/edit/{id}',   'edit')->name('edit')->middleware('PermissionCheck:portal_manage');
                     Route::put('/update/{id}', 'update')->name('update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::delete('/{id}',     'destroy')->name('destroy')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
-                Route::get('/portal/social/reel-settings',  [ReelCharacterController::class, 'settings'])->name('portal-social-reel-settings.edit')->middleware('PermissionCheck:portal_manage');
+                Route::get('/portal/social/reel-settings',  [ReelCharacterController::class, 'settings'])->name('portal-social-reel-settings.edit')->middleware('PermissionCheck:portal_manage,portal_reel_settings_read');
                 Route::post('/portal/social/reel-settings', [ReelCharacterController::class, 'updateSettings'])->name('portal-social-reel-settings.update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
 
                 // Reel Studio — teacher-facing scene builder (reel_studio_access; portal_manage holders get it auto-granted).

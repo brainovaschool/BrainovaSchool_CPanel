@@ -16,8 +16,15 @@ class PermissionCheck
      */
     public function handle(Request $request, Closure $next, $permission)
     {
-        if (authHasPermission($permission)) {
-            return $next($request);
+        // A single permission still works exactly as before (splitting a
+        // string with no comma just yields one element). Comma-separated
+        // is new, opt-in OR logic — e.g. 'PermissionCheck:portal_manage,
+        // portal_analytics_read' passes with either one, for a view-only
+        // route that a broader "manage" permission should also unlock.
+        foreach (explode(',', $permission) as $single) {
+            if (authHasPermission(trim($single))) {
+                return $next($request);
+            }
         }
 
         return abort(403, 'Access Denied');
