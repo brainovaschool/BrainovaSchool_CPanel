@@ -143,7 +143,7 @@
                                         </tr>
                                     </thead>
                                     <tbody class="tbody">
-                                        @forelse (@$data['activeSubscription']->features_name as $key => $value)
+                                        @forelse (optional($data['activeSubscription'])->features_name ?? [] as $key => $value)
                                         <tr id="row_{{ $row->id }}">
                                             <td class="serial">{{ $loop->iteration }}</td>
                                             <td>{{ $value }}</td>
