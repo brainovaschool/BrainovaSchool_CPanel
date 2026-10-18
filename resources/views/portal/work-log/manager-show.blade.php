@@ -33,13 +33,20 @@
                 <div class="card-body">
                     <div class="table-responsive">
                     <table class="ot-basic-table ot-table-bg">
-                        <thead class="thead"><tr><th style="width:140px">Time</th><th>Activity</th><th>Notes</th></tr></thead>
+                        <thead class="thead"><tr><th style="width:140px">Time</th><th>Activity</th><th>Notes</th><th style="min-width:260px">Your Feedback</th></tr></thead>
                         <tbody class="tbody">
                             @foreach ($entries as $entry)
                                 <tr>
                                     <td>{{ $entry->start_label }}–{{ $entry->end_label }} @if ($entry->is_extra)<span class="badge-basic-info-text">Extra</span>@endif</td>
                                     <td>{{ $entry->task ? 'Task: ' . $entry->task->title : $entry->activity }}</td>
                                     <td>{{ $entry->notes }}</td>
+                                    <td>
+                                        <form action="{{ route('portal-work-log.entry.feedback', $entry->id) }}" method="post" class="d-flex gap-2 align-items-center">
+                                            @csrf
+                                            <input type="text" name="feedback" class="form-control ot-input" value="{{ $entry->feedback }}" placeholder="Leave an observation...">
+                                            <button type="submit" class="btn btn-sm ot-btn-primary">{{ $entry->feedback ? 'Update' : 'Send' }}</button>
+                                        </form>
+                                    </td>
                                 </tr>
                             @endforeach
                         </tbody>

@@ -26,6 +26,22 @@
             </div>
         </div>
 
+        @if ($data['isSuperAdmin'])
+            <div class="card ot-card mb-24">
+                <div class="card-header"><h5 class="mb-0">Clean up old entries</h5></div>
+                <div class="card-body">
+                    <form action="{{ route('portal-work-logs.bulk-delete') }}" method="post" class="d-flex gap-2 align-items-center flex-wrap"
+                        onsubmit="return confirm('This permanently deletes every work log entry older than the number of days you enter. This cannot be undone. Continue?');">
+                        @csrf
+                        <span>Delete every entry logged more than</span>
+                        <input type="number" name="days" value="45" min="1" class="form-control ot-input" style="width:90px">
+                        <span>days ago</span>
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                    </form>
+                </div>
+            </div>
+        @endif
+
         <div class="table-content table-basic">
             <div class="card">
                 <div class="card-body">

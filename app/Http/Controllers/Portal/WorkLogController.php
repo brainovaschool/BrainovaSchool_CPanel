@@ -37,8 +37,9 @@ class WorkLogController extends Controller
         $data['date']     = $date;
         $data['settings'] = PortalSetting::current();
         $data['slots']    = $data['settings']->daySlots();
-        $data['entries']  = $this->repo->entriesForDay($staffId, $date);
-        $data['isLocked'] = $this->repo->isLocked($staffId, $date);
+        $data['entries']    = $this->repo->entriesForDay($staffId, $date);
+        $data['isSubmitted'] = $this->repo->isSubmitted($staffId, $date);
+        $data['isLocked']   = $this->repo->isLocked($staffId, $date);
         $data['myTasks']  = PortalTask::where('assigned_to', $staffId)->whereNotIn('status', [PortalTask::COMPLETED])->get();
         $data['history']  = $this->repo->history($staffId);
         $data['title']    = 'My Work Log';
@@ -89,16 +90,45 @@ class WorkLogController extends Controller
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    /** Coordinator leaves an observation on one entry -- gated by
+     *  portal_manage at the route level, same as the rest of this
+     *  manager-facing controller. */
+    public function saveFeedback(Request $request, $entryId)
+    {
+        $request->validate(['feedback' => 'required|string|max:1000']);
+
+        $result = $this->repo->saveFeedback((int) $entryId, $request->feedback);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
     public function managerIndex(Request $request)
     {
         [$from, $to] = $this->rangeFor($request->string('range', 'week')->toString());
 
-        $data['range'] = $request->string('range', 'week')->toString();
-        $data['from']  = $from;
-        $data['to']    = $to;
-        $data['rows']  = $this->repo->managerSummary($from, $to);
-        $data['title'] = 'Team Portal — Work Logs';
+        $data['range']       = $request->string('range', 'week')->toString();
+        $data['from']        = $from;
+        $data['to']          = $to;
+        $data['rows']        = $this->repo->managerSummary($from, $to);
+        $data['isSuperAdmin'] = (int) Auth::user()->role_id === 1;
+        $data['title']       = 'Team Portal — Work Logs';
         return view('portal.work-log.manager-index', compact('data'));
+    }
+
+    /** Super Admin only -- permanently deletes every work log entry (and
+     *  their day-submission records) older than $days days. Logs are kept
+     *  indefinitely otherwise; this is a manual, deliberate cleanup action,
+     *  not an automatic expiry. */
+    public function bulkDelete(Request $request)
+    {
+        if ((int) Auth::user()->role_id !== 1) {
+            abort(403, 'Only the main administrator can bulk-delete work log entries.');
+        }
+
+        $request->validate(['days' => 'required|integer|min:1']);
+        $beforeDate = now()->subDays((int) $request->days)->format('Y-m-d');
+        $deleted = $this->repo->bulkDeleteOlderThan($beforeDate);
+
+        return back()->with('success', "Deleted {$deleted} work log entr" . ($deleted === 1 ? 'y' : 'ies') . " logged before {$beforeDate}.");
     }
 
     public function managerShow(Request $request, $staffId)

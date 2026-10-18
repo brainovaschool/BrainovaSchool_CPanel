@@ -62,6 +62,8 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::controller(WorkLogController::class)->prefix('portal/work-logs')->name('portal-work-logs.')->group(function () {
                     Route::get('/',                'managerIndex')->name('index')->middleware('PermissionCheck:portal_manage');
                     Route::get('/show/{staffId}',  'managerShow')->name('show')->middleware('PermissionCheck:portal_manage');
+                    Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::post('/entry/{entryId}/feedback', 'saveFeedback')->name('entry.feedback')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
 
                 Route::controller(ResponsibilityController::class)->prefix('portal/responsibilities')->name('portal-responsibilities.')->group(function () {

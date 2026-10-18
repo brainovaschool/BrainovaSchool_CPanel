@@ -27,8 +27,10 @@
                     <div class="card-header d-flex align-items-center gap-4 flex-wrap">
                         <input type="date" name="date" class="form-control ot-input" value="{{ $data['date'] }}">
                         <button class="btn ot-btn-primary" type="submit">Go</button>
-                        @if ($data['isLocked'])
+                        @if ($data['isSubmitted'])
                             <span class="badge-basic-success-text">Submitted — locked</span>
+                        @elseif ($data['isLocked'])
+                            <span class="badge-basic-warning-text">Locked — grace period expired (never submitted)</span>
                         @endif
                     </div>
                 </div>
@@ -41,12 +43,12 @@
                 <div class="table-responsive">
                 <table class="ot-basic-table ot-table-bg">
                     <thead class="thead">
-                        <tr><th style="width:140px">Time</th><th>Activity</th><th>Notes</th><th class="action">{{ ___('common.action') }}</th></tr>
+                        <tr><th style="width:140px">Time</th><th>Activity</th><th>Notes</th><th>Coordinator Feedback</th><th class="action">{{ ___('common.action') }}</th></tr>
                     </thead>
                     <tbody class="tbody">
                         @foreach ($data['slots'] as $slot)
                             @if ($slot['is_lunch'])
-                                <tr class="table-light"><td>{{ $slot['start'] }}–{{ $slot['end'] }}</td><td colspan="3" class="text-secondary">Lunch</td></tr>
+                                <tr class="table-light"><td>{{ $slot['start'] }}–{{ $slot['end'] }}</td><td colspan="4" class="text-secondary">Lunch</td></tr>
                             @else
                                 @php($entry = $entriesByStart->get($slot['start']))
                                 <tr>
@@ -54,6 +56,7 @@
                                     @if ($entry)
                                         <td>{{ $entry->task ? 'Task: ' . $entry->task->title : $entry->activity }}</td>
                                         <td>{{ $entry->notes }}</td>
+                                        <td>@if ($entry->feedback)<span class="badge-basic-info-text">{{ $entry->feedback }}</span>@endif</td>
                                         <td class="action">
                                             @unless ($data['isLocked'])
                                                 <form action="{{ route('portal-work-log.entry.delete', $entry->id) }}" method="post" onsubmit="return confirm('Remove this entry?');">
@@ -63,9 +66,9 @@
                                             @endunless
                                         </td>
                                     @elseif ($data['isLocked'])
-                                        <td colspan="3" class="text-secondary">— not logged —</td>
+                                        <td colspan="4" class="text-secondary">— not logged —</td>
                                     @else
-                                        <td colspan="3">
+                                        <td colspan="4">
                                             <form action="{{ route('portal-work-log.entry.store') }}" method="post" class="d-flex gap-2 flex-wrap align-items-center">
                                                 @csrf
                                                 <input type="hidden" name="date" value="{{ $data['date'] }}">
@@ -105,6 +108,7 @@
                                 <td>{{ $entry->start_label }}–{{ $entry->end_label }} <span class="badge-basic-info-text">Extra</span></td>
                                 <td>{{ $entry->task ? 'Task: ' . $entry->task->title : $entry->activity }}</td>
                                 <td>{{ $entry->notes }}</td>
+                                <td>@if ($entry->feedback)<span class="badge-basic-info-text">{{ $entry->feedback }}</span>@endif</td>
                                 <td class="action">
                                     @unless ($data['isLocked'])
                                         <form action="{{ route('portal-work-log.entry.delete', $entry->id) }}" method="post" onsubmit="return confirm('Remove this entry?');">
@@ -176,6 +180,8 @@
                                 <td>
                                     @if ($row['submitted'])
                                         <span class="badge-basic-success-text">Submitted</span>
+                                    @elseif ($row['locked'])
+                                        <span class="badge-basic-danger-text">Locked — never submitted</span>
                                     @else
                                         <span class="badge-basic-warning-text">Not submitted</span>
                                     @endif

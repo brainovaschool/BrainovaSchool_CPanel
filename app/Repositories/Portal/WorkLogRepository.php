@@ -6,6 +6,7 @@ use App\Models\Portal\PortalDaySubmission;
 use App\Models\Portal\PortalTask;
 use App\Models\Portal\PortalWorkLogEntry;
 use App\Models\Staff\Staff;
+use App\Services\Portal\PortalNotifier;
 use App\Traits\ReturnFormatTrait;
 use Carbon\Carbon;
 
@@ -16,9 +17,26 @@ class WorkLogRepository
 {
     use ReturnFormatTrait;
 
+    /** A day is locked once it's either explicitly submitted, or its grace
+     *  period has run out -- whichever comes first. Keeps someone from
+     *  editing a log indefinitely just by never pressing Submit. */
     public function isLocked(int $staffId, string $date): bool
     {
+        return $this->isSubmitted($staffId, $date) || $this->gracePeriodExpired($date);
+    }
+
+    public function isSubmitted(int $staffId, string $date): bool
+    {
         return PortalDaySubmission::where('staff_id', $staffId)->where('date', $date)->exists();
+    }
+
+    /** The grace period for a given day's log runs until noon the day
+     *  after it, so someone who forgets to submit at the end of the day
+     *  can still fix it first thing the next morning -- but it can't be
+     *  edited forever. */
+    public function gracePeriodExpired(string $date): bool
+    {
+        return now()->greaterThan(Carbon::parse($date)->addDay()->setTime(12, 0));
     }
 
     public function entriesForDay(int $staffId, string $date)
@@ -89,7 +107,7 @@ class WorkLogRepository
 
     public function submitDay(int $staffId, string $date): array
     {
-        if ($this->isLocked($staffId, $date)) {
+        if ($this->isSubmitted($staffId, $date)) {
             return $this->responseWithError('This day has already been submitted.', []);
         }
 
@@ -116,10 +134,12 @@ class WorkLogRepository
         $rows = [];
         for ($i = 0; $i < $days; $i++) {
             $d = now()->subDays($i)->format('Y-m-d');
+            $submitted = $submittedDates->has($d);
             $rows[] = [
                 'date'      => $d,
                 'hours'     => round(($entriesByDate->get($d) ?? collect())->sum(fn ($e) => $e->hours()), 2),
-                'submitted' => $submittedDates->has($d),
+                'submitted' => $submitted,
+                'locked'    => $submitted || $this->gracePeriodExpired($d),
             ];
         }
         return $rows;
@@ -147,5 +167,39 @@ class WorkLogRepository
             ->orderBy('date')->orderBy('start_time')
             ->get()
             ->groupBy(fn ($e) => $e->date->format('Y-m-d'));
+    }
+
+    /** Permanently deletes every entry (and its day-submission record)
+     *  logged before $beforeDate. Returns the number of entries removed. */
+    public function bulkDeleteOlderThan(string $beforeDate): int
+    {
+        $deleted = PortalWorkLogEntry::where('date', '<', $beforeDate)->delete();
+        PortalDaySubmission::where('date', '<', $beforeDate)->delete();
+        return $deleted;
+    }
+
+    /** A coordinator's observation on one specific entry. Notifies the
+     *  staff member it belongs to so they see it without having to go
+     *  looking -- same bell/table every other Team Portal notice uses. */
+    public function saveFeedback(int $entryId, string $feedback): array
+    {
+        $entry = PortalWorkLogEntry::with('staff')->find($entryId);
+        if (!$entry) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+
+        $entry->feedback = $feedback;
+        $entry->save();
+
+        if ($entry->staff && $entry->staff->user_id) {
+            PortalNotifier::send(
+                $entry->staff->user_id,
+                'Feedback on your work log',
+                "{$entry->start_label}–{$entry->end_label} on " . $entry->date->format('d M Y') . ': ' . $feedback,
+                route('portal-work-log.index', ['date' => $entry->date->format('Y-m-d')])
+            );
+        }
+
+        return $this->responseWithSuccess('Feedback saved.', []);
     }
 }
