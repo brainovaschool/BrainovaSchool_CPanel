@@ -288,7 +288,25 @@
                             @enderror
                         </div>
 
-
+                        <div class="col-lg-6 col-md-12 mb-3">
+                            <label class="form-label">Coordinator(s) / Supervisor(s)</label>
+                            <div class="border rounded p-3" style="max-height:220px;overflow-y:auto">
+                                @forelse ($data['allStaff'] as $staffOption)
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="coordinators[]"
+                                            value="{{ $staffOption->id }}" id="coordinator_{{ $staffOption->id }}"
+                                            {{ in_array($staffOption->id, old('coordinators', [])) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="coordinator_{{ $staffOption->id }}">
+                                            {{ trim($staffOption->first_name . ' ' . $staffOption->last_name) }}
+                                            @if ($staffOption->role) <span class="text-secondary">({{ $staffOption->role->name }})</span> @endif
+                                        </label>
+                                    </div>
+                                @empty
+                                    <span class="text-secondary">No other staff to choose from yet.</span>
+                                @endforelse
+                            </div>
+                            <small class="text-secondary">Who this staff member's work (tasks, work log) is overseen by. Super Admin and Admin can always see everyone regardless of this.</small>
+                        </div>
 
 
 

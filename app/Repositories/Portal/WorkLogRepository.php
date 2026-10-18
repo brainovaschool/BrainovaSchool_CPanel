@@ -146,17 +146,41 @@ class WorkLogRepository
     }
 
     /** One row per staff member with their total hours logged in the
-     *  range — the manager's "hours by employee" overview. */
-    public function managerSummary(string $from, string $to)
+     *  range — the manager's "hours by employee" overview. $seesEveryone
+     *  (Super Admin/Admin) bypasses the coordinator scoping entirely;
+     *  everyone else only sees the staff they're a coordinator for. */
+    public function managerSummary(string $from, string $to, ?int $actingStaffId, bool $seesEveryone)
     {
         $totals = PortalWorkLogEntry::whereBetween('date', [$from, $to])->get()
             ->groupBy('staff_id')
             ->map(fn ($rows) => round($rows->sum(fn ($e) => $e->hours()), 2));
 
-        return Staff::with('role')->orderBy('first_name')->get()->map(fn (Staff $staff) => [
+        $staffQuery = Staff::with('role')->orderBy('first_name');
+        if (!$seesEveryone) {
+            $visibleIds = $actingStaffId
+                ? Staff::find($actingStaffId)?->coordinatees->pluck('id')->toArray() ?? []
+                : [];
+            $staffQuery->whereIn('id', $visibleIds);
+        }
+
+        return $staffQuery->get()->map(fn (Staff $staff) => [
             'staff' => $staff,
             'hours' => $totals->get($staff->id, 0),
         ]);
+    }
+
+    /** Whether $actingStaffId is allowed to view $targetStaffId's work log --
+     *  true for a Super Admin/Admin always, otherwise only if they're one
+     *  of that staff member's assigned coordinators. */
+    public function canView(?int $actingStaffId, int $targetStaffId, bool $seesEveryone): bool
+    {
+        if ($seesEveryone) {
+            return true;
+        }
+        if (!$actingStaffId) {
+            return false;
+        }
+        return Staff::find($actingStaffId)?->coordinatees->contains('id', $targetStaffId) ?? false;
     }
 
     /** One employee's entries in the range, grouped by day — the drill-down. */

@@ -135,6 +135,7 @@ class UserRepository implements UserInterface
             $staff->upload_documents        = $this->uploadDocuments($request);
 
             $staff->save();
+            $staff->coordinators()->sync($request->coordinators ?? []);
             DB::commit();
             return 1;
         } catch (\Throwable $th) {
@@ -196,6 +197,7 @@ class UserRepository implements UserInterface
             $staff->upload_documents        = $this->uploadDocuments($request, $staff->upload_documents);
 
             $staff->save();
+            $staff->coordinators()->sync($request->coordinators ?? []);
             DB::commit();
             return true;
         } catch (\Throwable $th) {

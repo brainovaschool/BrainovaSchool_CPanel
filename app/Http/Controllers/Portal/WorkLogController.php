@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Portal\PortalSetting;
 use App\Models\Portal\PortalTask;
+use App\Models\Portal\PortalWorkLogEntry;
 use App\Models\Staff\Staff;
 use App\Repositories\Portal\WorkLogRepository;
 
@@ -91,14 +92,31 @@ class WorkLogController extends Controller
     }
 
     /** Coordinator leaves an observation on one entry -- gated by
-     *  portal_manage at the route level, same as the rest of this
-     *  manager-facing controller. */
+     *  portal_manage at the route level, plus the same coordinator-scoping
+     *  as managerShow() here, so a coordinator can't leave feedback on a
+     *  staff member they don't actually oversee. */
     public function saveFeedback(Request $request, $entryId)
     {
         $request->validate(['feedback' => 'required|string|max:1000']);
 
+        $entry = PortalWorkLogEntry::find($entryId);
+        if (!$entry) {
+            return back()->with('danger', ___('alert.not_found'));
+        }
+        if (!$this->repo->canView($this->actingStaffId(), (int) $entry->staff_id, $this->seesEveryone())) {
+            abort(403, "You're not set as a coordinator for this staff member.");
+        }
+
         $result = $this->repo->saveFeedback((int) $entryId, $request->feedback);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    /** Super Admin and Admin see every staff member's work regardless of
+     *  coordinator assignment; everyone else with portal_manage only sees
+     *  the staff they're set as a coordinator for. */
+    private function seesEveryone(): bool
+    {
+        return in_array((int) Auth::user()->role_id, [1, 2], true);
     }
 
     public function managerIndex(Request $request)
@@ -108,7 +126,7 @@ class WorkLogController extends Controller
         $data['range']       = $request->string('range', 'week')->toString();
         $data['from']        = $from;
         $data['to']          = $to;
-        $data['rows']        = $this->repo->managerSummary($from, $to);
+        $data['rows']        = $this->repo->managerSummary($from, $to, $this->actingStaffId(), $this->seesEveryone());
         $data['isSuperAdmin'] = (int) Auth::user()->role_id === 1;
         $data['title']       = 'Team Portal — Work Logs';
         return view('portal.work-log.manager-index', compact('data'));
@@ -138,6 +156,10 @@ class WorkLogController extends Controller
         $staff = Staff::find($staffId);
         if (!$staff) {
             return redirect()->route('portal-work-logs.index')->with('danger', ___('alert.not_found'));
+        }
+
+        if (!$this->repo->canView($this->actingStaffId(), (int) $staffId, $this->seesEveryone())) {
+            abort(403, "You're not set as a coordinator for this staff member.");
         }
 
         $data['range'] = $request->string('range', 'week')->toString();

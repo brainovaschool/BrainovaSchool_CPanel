@@ -84,4 +84,16 @@ class Staff extends BaseModel
             'subject_assign_id'              // Local key on the SubjectAssignChildren model
         );
     }
+
+    /** The coordinator(s)/supervisor(s) who oversee THIS staff member. */
+    public function coordinators()
+    {
+        return $this->belongsToMany(Staff::class, 'staff_coordinators', 'staff_id', 'coordinator_staff_id');
+    }
+
+    /** The staff member(s) THIS person coordinates/supervises. */
+    public function coordinatees()
+    {
+        return $this->belongsToMany(Staff::class, 'staff_coordinators', 'coordinator_staff_id', 'staff_id');
+    }
 }

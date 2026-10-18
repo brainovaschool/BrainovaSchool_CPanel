@@ -64,6 +64,7 @@ class UserController extends Controller
         $data['designations']  = $this->designation->all();
         $data['departments']   = $this->department->all();
         $data['genders']       = $this->gender->all();
+        $data['allStaff']      = Staff::orderBy('first_name')->get();
         return view('backend.users.create', compact('data'));
     }
 
@@ -88,6 +89,8 @@ class UserController extends Controller
         $data['designations']  = $this->designation->all();
         $data['departments']   = $this->department->all();
         $data['genders']       = $this->gender->all();
+        $data['allStaff']      = Staff::where('id', '!=', $id)->orderBy('first_name')->get();
+        $data['selectedCoordinators'] = $data['user']->coordinators->pluck('id')->toArray();
         // dd($data);
         return view('backend.users.edit', compact('data'));
     }
