@@ -42,6 +42,38 @@
 
     .notification_wrapper .notification_items .notification_body .notification_item {
         grid-gap: 10px;
+        padding: 8px;
+        border-radius: 8px;
+        transition: background-color .2s;
+    }
+
+    /* Unread: highlighted and bold, so it stands out at a glance.
+       Read: stays in the list (doesn't disappear on click) but fades back
+       so the two are easy to tell apart. */
+    .notification_wrapper .notification_items .notification_body .notification_item.is-unread {
+        background-color: #eef1ff;
+    }
+
+    .notification_wrapper .notification_items .notification_body .notification_item.is-unread .notification_item_content h6 {
+        font-weight: 700;
+    }
+
+    .notification_wrapper .notification_items .notification_body .notification_item.is-unread::before {
+        content: '';
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #7367f0;
+        flex-shrink: 0;
+        margin-right: 2px;
+    }
+
+    .notification_wrapper .notification_items .notification_body .notification_item.is-read {
+        opacity: .55;
+    }
+
+    .notification_wrapper .notification_items .notification_body .notification_item.is-read .notification_item_content h6 {
+        font-weight: 500;
     }
 
     .notification_wrapper .notification_items .notification_body .notification_item .icon {
@@ -262,8 +294,8 @@
                 <div class="notification_wrapper position-relative d-none d-xl-flex">
                     <a href="#" class="search-home ">
                         <i class="las la-bell fs_25"></i>
-                        @if(count($notifications) > 0)
-                            <span class="position-absolute notification_counter ">{{count($notifications)}}</span>
+                        @if(($unreadNotificationsCount ?? 0) > 0)
+                            <span class="position-absolute notification_counter ">{{ $unreadNotificationsCount }}</span>
                         @endif
                     </a>
                     <div class="notification_items position-absolute">
@@ -273,7 +305,7 @@
                         <div class="notification_body d-flex flex-column gap-2">
                             @foreach ($notifications as $notification)
                                 <a href="{{route('viewNotification',$notification->id)}}"
-                                   class="notification_item d-flex align-items-center">
+                                   class="notification_item d-flex align-items-center {{ $notification->is_read ? 'is-read' : 'is-unread' }}">
                                     <div class="icon">
                                         <i class="fas fa-bell"></i>
                                     </div>

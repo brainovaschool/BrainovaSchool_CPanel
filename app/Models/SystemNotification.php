@@ -18,4 +18,15 @@ class SystemNotification extends BaseModel
             return [];
         }
     }
+
+    /** The list actually shown in the bell/dashboard — read notifications
+     *  stay visible (styled differently), only the unread count comes
+     *  from myNotification()/unreadNotifications(). */
+    public static function recentNotifications(){
+        if(Auth::check()){
+            return Auth::user()->recentNotifications;
+        }else{
+            return [];
+        }
+    }
 }

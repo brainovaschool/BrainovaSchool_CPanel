@@ -57,16 +57,17 @@ class DashboardRepository implements DashboardInterface
             $data['teacher_assigned_subjects'] = $this->teacherAssignedSubjectsForStaff($staffId, $sessionId);
         }
 
-        // Same unread list the header bell already uses — surfaced here
-        // too since the bell is easy to miss. Capped at 10 for the card;
-        // the bell itself still shows (and the counter still counts) the
-        // full unread list.
-        $data['recentNotifications'] = \App\Models\SystemNotification::myNotification();
+        // Same list the header bell shows — read notifications stay here
+        // too (styled differently), rather than vanishing once opened.
+        // Capped at 10 for the card itself; the bell's own badge counts
+        // unread only, separately, not the size of this list.
+        $data['recentNotifications'] = \App\Models\SystemNotification::recentNotifications();
         if (is_countable($data['recentNotifications'])) {
             $data['recentNotifications'] = collect($data['recentNotifications'])->take(10);
         } else {
             $data['recentNotifications'] = collect();
         }
+        $data['unreadNotificationsCount'] = Auth::check() ? (int) Auth::user()->unreadNotifications()->count() : 0;
 
         return $data;
     }

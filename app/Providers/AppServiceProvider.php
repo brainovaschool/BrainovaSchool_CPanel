@@ -113,13 +113,19 @@ class AppServiceProvider extends ServiceProvider
         view()->composer(['backend.partials.header', 'parent-panel.partials.header'], function ($view) {
 
             try {
-                $notifications = SystemNotification::myNotification();
+                // $notifications drives the dropdown list (read ones stay,
+                // styled differently); $unreadNotificationsCount — a
+                // separate, cheap count query, not the size of that list —
+                // drives the bell's badge number.
+                $notifications = SystemNotification::recentNotifications();
                 $view->with([
-                    'notifications' => $notifications
+                    'notifications' => $notifications,
+                    'unreadNotificationsCount' => \Illuminate\Support\Facades\Auth::check() ? \Illuminate\Support\Facades\Auth::user()->unreadNotifications()->count() : 0,
                 ]);
             } catch (\Exception $e) {
                 $view->with([
-                    'notifications' => []
+                    'notifications' => [],
+                    'unreadNotificationsCount' => 0,
                 ]);
             }
         });

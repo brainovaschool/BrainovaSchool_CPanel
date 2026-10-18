@@ -111,6 +111,14 @@ class User extends Authenticatable
         return $this->hasMany(SystemNotification::class, 'reciver_id', 'id')->latest()->where('is_read', 0)->select('id', 'title', 'message', 'reciver_id', 'created_at');
     }
 
+    /** Same list as unreadNotifications(), but read ones stay too instead
+     *  of vanishing the moment they're opened — the bell/dashboard list
+     *  tells read from unread by styling (is_read), not by disappearing. */
+    public function recentNotifications()
+    {
+        return $this->hasMany(SystemNotification::class, 'reciver_id', 'id')->latest()->limit(20)->select('id', 'title', 'message', 'url', 'reciver_id', 'is_read', 'created_at');
+    }
+
     public function messages()
     {
         return $this->hasMany(Message::class, 'sender_id');

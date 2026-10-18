@@ -309,12 +309,12 @@
             <div class="ot-card mb-24 bn-dash-notifications">
                 <div class="d-flex align-items-center justify-content-between mb-20">
                     <h4 class="mb-0">{{ ___('common.Notifications') }}</h4>
-                    @if ($data['recentNotifications']->isNotEmpty())
-                        <span class="badge-basic-info-text">{{ $data['recentNotifications']->count() }} unread</span>
+                    @if ($data['unreadNotificationsCount'] > 0)
+                        <span class="badge-basic-info-text">{{ $data['unreadNotificationsCount'] }} unread</span>
                     @endif
                 </div>
                 @forelse ($data['recentNotifications'] as $notification)
-                    <a href="{{ route('viewNotification', $notification->id) }}" class="bn-dash-notification-item">
+                    <a href="{{ route('viewNotification', $notification->id) }}" class="bn-dash-notification-item {{ $notification->is_read ? 'is-read' : 'is-unread' }}">
                         <span class="bn-dash-notification-dot"></span>
                         <span class="bn-dash-notification-body">
                             <span class="bn-dash-notification-title">{{ $notification->title }}</span>
@@ -355,6 +355,19 @@
             margin-top: 6px;
             border-radius: 50%;
             background: linear-gradient(130.57deg, #936DFF -0.48%, #3A5EE3 71.79%);
+            visibility: hidden;
+        }
+        /* Unread: the dot shows and the title is bold, so it's obvious at
+           a glance. Read: stays in the list instead of disappearing, just
+           faded back — same convention as the header bell dropdown. */
+        .bn-dash-notification-item.is-unread .bn-dash-notification-dot {
+            visibility: visible;
+        }
+        .bn-dash-notification-item.is-read {
+            opacity: .55;
+        }
+        .bn-dash-notification-item.is-read .bn-dash-notification-title {
+            font-weight: 500;
         }
         .bn-dash-notification-body {
             display: flex;
