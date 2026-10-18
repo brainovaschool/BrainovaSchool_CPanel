@@ -6131,6 +6131,8 @@ hr {
 
 .nice-select .list {
   padding: 55px 0 0;
+  max-height: 280px;
+  overflow-y: auto;
 }
 
 

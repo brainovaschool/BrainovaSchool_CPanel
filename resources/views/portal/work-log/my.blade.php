@@ -86,6 +86,7 @@
                                                         @foreach ($data['settings']->activities as $act)
                                                             <option value="{{ $act }}">{{ $act }}</option>
                                                         @endforeach
+                                                        <option value="Other">Other (specify in notes)</option>
                                                     </optgroup>
                                                 </select>
                                                 <input type="hidden" name="task_id">
@@ -142,6 +143,7 @@
                                     @foreach ($data['settings']->activities as $act)
                                         <option value="{{ $act }}">{{ $act }}</option>
                                     @endforeach
+                                    <option value="Other">Other (specify in notes)</option>
                                 </optgroup>
                             </select>
                             <input type="hidden" name="task_id">
