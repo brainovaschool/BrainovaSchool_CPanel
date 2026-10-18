@@ -42,6 +42,6 @@ class PortalWorkLogEntry extends Model
     {
         $start = \Carbon\Carbon::parse($this->start_time);
         $end   = \Carbon\Carbon::parse($this->end_time);
-        return round($end->diffInMinutes($start) / 60, 2);
+        return round($end->diffInMinutes($start, true) / 60, 2);
     }
 }
