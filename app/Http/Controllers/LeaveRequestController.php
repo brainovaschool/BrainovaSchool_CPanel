@@ -22,7 +22,11 @@ class LeaveRequestController extends Controller
     }
 
     public function index(){
-        $data['leave_requests'] = $this->leaveRequestRepo->all();
+        $isManager = hasPermission('leave_request_update');
+        $data['leave_requests'] = $isManager
+            ? $this->leaveRequestRepo->all()
+            : $this->leaveRequestRepo->mine(auth()->id());
+        $data['isManager'] = $isManager;
         $data['title'] = ___('leave.Leave Request');
         $data['types'] = LeaveType::where('active_status', true)->get();
 
@@ -51,7 +55,16 @@ class LeaveRequestController extends Controller
 
     public function edit($id)
     {
-        $data['leave_requests'] = $this->leaveRequestRepo->all();
+        $editLeave = $this->leaveRequestRepo->show($id);
+        $isManager = hasPermission('leave_request_update');
+        if (!$isManager && (!$editLeave || $editLeave->request_by != auth()->id())) {
+            abort(403);
+        }
+
+        $data['leave_requests'] = $isManager
+            ? $this->leaveRequestRepo->all()
+            : $this->leaveRequestRepo->mine(auth()->id());
+        $data['isManager'] = $isManager;
         $data['title'] = ___('leave.Leave Request');
         $data['types'] = LeaveType::where('active_status', true)->get();
 
@@ -59,8 +72,6 @@ class LeaveRequestController extends Controller
         $data['sections'] = [];
 
         $data['students'] = [];
-
-        $editLeave = $this->leaveRequestRepo->show($id);
 
         $student = Student::with('session_class_student')
         ->where('user_id', $editLeave->user_id)->first();
@@ -74,6 +85,11 @@ class LeaveRequestController extends Controller
 
     public function delete($id)
     {
+        $leaveRequest = $this->leaveRequestRepo->show($id);
+        if (!hasPermission('leave_request_update') && (!$leaveRequest || $leaveRequest->request_by != auth()->id())) {
+            abort(403);
+        }
+
         $result = $this->leaveRequestRepo->delete($id);
         if ($result) {
             $success[0] = 'Deleted Successfully';

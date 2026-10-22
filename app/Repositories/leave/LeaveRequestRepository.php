@@ -39,6 +39,17 @@ class LeaveRequestRepository
             ->latest()->paginate(10);
     }
 
+    // A role with only leave_request_create (no leave_request_update, the
+    // approver capability) should only ever see the leave it raised itself,
+    // not the whole school's requests.
+    public function mine($userId)
+    {
+        return LeaveRequest::
+            with('leaveType:id,name', 'user:id,name', 'approvedBy:id,name', 'requestedBy:id,name', 'session:id,name', 'role:id,name', 'attachment')
+            ->where('request_by', $userId)
+            ->latest()->paginate(10);
+    }
+
     public function store(Request $request): bool
     {
         try {
@@ -78,7 +89,10 @@ class LeaveRequestRepository
             'end_date' => $request->end_date,
             'description' => $request->description,
             'leave_days' => $this->calculateLeaveDays($request),
-            'approval_status' => $request->approval_status,
+            // Only an approver (leave_request_update) may decide the status
+            // at submission time — anyone just raising a leave always lands
+            // as pending, regardless of what the hidden/posted field says.
+            'approval_status' => hasPermission('leave_request_update') ? $request->approval_status : 'pending',
             'attachment_id' => $upload_id ?? null,
         ]);
 
@@ -98,6 +112,7 @@ class LeaveRequestRepository
             $upload_id         = $this->UploadImageCreate($request->image, 'backend/uploads/students');
         }
 
+        $approvalStatus = hasPermission('leave_request_update') ? $request->approval_status : 'pending';
         foreach ($students as $student) {
             $leaveRequests[] = [
                 'leave_type_id' => $request->leave_type,
@@ -108,7 +123,7 @@ class LeaveRequestRepository
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
                 'description' => $request->description,
-                'approval_status' => $request->approval_status,
+                'approval_status' => $approvalStatus,
                 'leave_days' => $leaveDays,
                 'attachment_id' => $upload_id ?? null,
             ];
@@ -134,6 +149,15 @@ class LeaveRequestRepository
 
         try {
             $leaveRequest = $this->show($request->editLeaveId);
+            $isManager = hasPermission('leave_request_update');
+
+            // Someone who can only raise leave (no approver permission) may
+            // only ever touch their own request, and can never set the
+            // approval status themselves — only an approver can.
+            if (!$isManager && (!$leaveRequest || $leaveRequest->request_by != auth()->id())) {
+                return false;
+            }
+
             if ($request->hasFile('attachment')){
                 $uploads = Upload::find($leaveRequest->attachment_id);
                 if ($uploads) {
@@ -145,7 +169,7 @@ class LeaveRequestRepository
             $student = $this->studentRepo->show($request->student);
             $leaveRequest->leave_type_id = $request->leave_type;
             $leaveRequest->user_id = $student->user_id;
-            $leaveRequest->approval_status = $request->approval_status;
+            $leaveRequest->approval_status = $isManager ? $request->approval_status : 'pending';
             if ($leaveRequest->approval_status == 'approved'){
                 $leaveRequest->approved_by = auth()->id();
             }

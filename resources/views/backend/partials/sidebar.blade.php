@@ -55,7 +55,7 @@
 
 
                 <!-- Subscription of schools start -->
-                @if (env('APP_SAAS'))
+                @if (env('APP_SAAS') && hasPermission('subscription_read'))
                     <li class="sidebar-menu-item {{ set_menu(['subscription*']) }}">
                         <a href="{{ route('subscription') }}" class="parent-item-content">
                             <i class="las la-user"></i>
@@ -1199,7 +1199,6 @@
                         hasPermission('dep_contact_read') ||
                         hasPermission('news_read') ||
                         hasPermission('event_read') ||
-                        hasPermission('notice_board_read') ||
                         hasPermission('home_video_read') ||
                         hasPermission('ai_helper_read')) &&
                         hasFeature('website_setup'))
@@ -1264,11 +1263,6 @@
                             @if (hasPermission('event_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['event*']) }}">
                                     <a href="{{ route('event.index') }}">{{ ___('settings.event') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('notice_board_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['communication/notice*']) }}">
-                                    <a href="{{ route('notice-board.index') }}">{{ ___('common.notice_board') }}</a>
                                 </li>
                             @endif
                             @if (hasPermission('ai_helper_read'))

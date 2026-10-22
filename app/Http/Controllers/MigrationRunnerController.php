@@ -97,6 +97,7 @@ class MigrationRunnerController extends Controller
         'admission_setting' => ['update' => 'admission_setting_update'],
         'leave_type' => ['read' => 'leave_type_read', 'create' => 'leave_type_create', 'update' => 'leave_type_update', 'delete' => 'leave_type_delete'],
         'leave_request' => ['read' => 'leave_request_read', 'create' => 'leave_request_create', 'update' => 'leave_request_update', 'delete' => 'leave_request_delete'],
+        'subscription' => ['read' => 'subscription_read'],
         'report_class_routine' => ['read' => 'report_class_routine_read'],
         'report_exam_routine' => ['read' => 'report_exam_routine_read'],
         'ai_help_teacher' => ['read' => 'ai_help_teacher_read'],
@@ -3975,6 +3976,23 @@ class MigrationRunnerController extends Controller
                 $teacherPerms = is_array($teacherRole->permissions) ? $teacherRole->permissions : [];
                 $teacherRole->permissions = array_values(array_unique(array_merge($teacherPerms, ['ai_help_teacher_read', 'skill_mastery_report_read'])));
                 $teacherRole->save();
+            }
+        }
+
+        // Subscriptions used to show to every logged-in account (the sidebar
+        // link and the route both only checked env('APP_SAAS'), no
+        // permission at all). Grandfathered onto the Admin role (id 2) only
+        // — Super Admin already gets every new keyword via the id===1
+        // branch above, and Subscriptions is a billing/plan screen no
+        // Teacher/Staff/Student/Parent role should have had anyway. Same
+        // one-time guard as the blocks above: only fires the run that
+        // creates 'subscription_read', never again.
+        if (in_array('subscription', $added, true)) {
+            $adminRole = Role::find(2);
+            if ($adminRole) {
+                $adminPerms = is_array($adminRole->permissions) ? $adminRole->permissions : [];
+                $adminRole->permissions = array_values(array_unique(array_merge($adminPerms, ['subscription_read'])));
+                $adminRole->save();
             }
         }
 

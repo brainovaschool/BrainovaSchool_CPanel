@@ -462,7 +462,7 @@ Route::middleware(saasMiddleware())->group(function () {
         Route::post('logout',         [AuthenticationController::class, 'logout'])->name('logout');
 
         Route::group(['middleware' => 'AdminPanel'], function () {
-            Route::get('subscription',    [SubscriptionController::class, 'index'])->name('subscription');
+            Route::get('subscription',    [SubscriptionController::class, 'index'])->name('subscription')->middleware('PermissionCheck:subscription_read');
         });
 
 

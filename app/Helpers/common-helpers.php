@@ -1367,6 +1367,7 @@ if (!function_exists('permission_category_map')) {
             'users' => 'Staff Manage',
             'department' => 'Staff Manage',
             'designation' => 'Staff Manage',
+            'subscription' => 'Staff Manage',
             'subscribe' => 'Subscribers & Messages',
             'contact_message' => 'Subscribers & Messages',
             'program_category' => 'Course Catalogue',

@@ -43,7 +43,14 @@ class NoticeBoardRepository implements NoticeBoardInterface
 
         $query = $this->model::query();
         if ($user->role_id != RoleEnum::SUPERADMIN) {
-            if ($user->role_id == RoleEnum::STAFF || $user->role_id == RoleEnum::TEACHER) {
+            $departmentId = null;
+            // Any staff-type account, not just the two hardcoded role IDs —
+            // a custom role built on top of one (e.g. "Teacher + Content
+            // Creator") still has a linked staff record, but its role_id
+            // matches neither STAFF nor TEACHER, which left $departmentId
+            // undefined below and crashed with "Undefined variable
+            // $departmentId" for exactly that kind of role.
+            if ($user->staff) {
                 $departmentId = @$user->staff->department_id;
                 $query->whereJsonContains('visible_to', "$user->role_id");
             }
