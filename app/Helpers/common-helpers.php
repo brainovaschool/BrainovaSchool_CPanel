@@ -624,6 +624,17 @@ if (!function_exists('hasFeature')) {
     }
 }
 
+if (!function_exists('decisionAllows')) {
+    /** Whether the current viewer should see $field (e.g.
+     *  'show_replacement_day') for a record whose subject is
+     *  $subjectRoleId, per the admin-configured Decisions rules
+     *  (Website Setup > Decisions). See DecisionRuleRepository::allows(). */
+    function decisionAllows(string $category, ?int $subjectRoleId, string $field): bool
+    {
+        return \App\Repositories\WebsiteSetup\DecisionRuleRepository::allows($category, $subjectRoleId, $field);
+    }
+}
+
 
 /** The student's one PRIMARY (main/grade) enrollment — a student may
  *  also hold secondary short-course enrollments, deliberately excluded
@@ -1369,6 +1380,7 @@ if (!function_exists('permission_category_map')) {
             'department' => 'Staff Manage',
             'designation' => 'Staff Manage',
             'subscription' => 'Staff Manage',
+            'decision_rule' => 'Staff Manage',
             'subscribe' => 'Subscribers & Messages',
             'contact_message' => 'Subscribers & Messages',
             'program_category' => 'Course Catalogue',

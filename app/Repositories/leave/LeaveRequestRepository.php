@@ -94,6 +94,10 @@ class LeaveRequestRepository
             // as pending, regardless of what the hidden/posted field says.
             'approval_status' => hasPermission('leave_request_update') ? $request->approval_status : 'pending',
             'attachment_id' => $upload_id ?? null,
+            // Staff-only details, same manager-only gate as approval_status —
+            // whether a VIEWER later sees these is a separate Decisions rule.
+            'replacement_day' => hasPermission('leave_request_update') ? $request->replacement_day : null,
+            'is_half_day' => hasPermission('leave_request_update') ? $request->boolean('is_half_day') : false,
         ]);
 
         return $leaveRequest->save();
@@ -177,6 +181,10 @@ class LeaveRequestRepository
             $leaveRequest->end_date     = $request->end_date;
             $leaveRequest->leave_days = $this->calculateLeaveDays($request);
             $leaveRequest->description = $request->description;
+            if ($isManager) {
+                $leaveRequest->replacement_day = $request->replacement_day;
+                $leaveRequest->is_half_day = $request->boolean('is_half_day');
+            }
             $leaveRequest->save();
             return true;
         }catch (\Exception $e){

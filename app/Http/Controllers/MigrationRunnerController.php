@@ -99,6 +99,7 @@ class MigrationRunnerController extends Controller
         'leave_request' => ['read' => 'leave_request_read', 'create' => 'leave_request_create', 'update' => 'leave_request_update', 'delete' => 'leave_request_delete'],
         'subscription' => ['read' => 'subscription_read'],
         'attendance_teacher' => ['read' => 'attendance_teacher_read'],
+        'decision_rule' => ['read' => 'decision_rule_read', 'create' => 'decision_rule_create', 'delete' => 'decision_rule_delete'],
         'report_class_routine' => ['read' => 'report_class_routine_read'],
         'report_exam_routine' => ['read' => 'report_exam_routine_read'],
         'ai_help_teacher' => ['read' => 'ai_help_teacher_read'],
@@ -4028,6 +4029,22 @@ class MigrationRunnerController extends Controller
             if ($adminRole) {
                 $adminPerms = is_array($adminRole->permissions) ? $adminRole->permissions : [];
                 $adminRole->permissions = array_values(array_unique(array_merge($adminPerms, ['attendance_teacher_read'])));
+                $adminRole->save();
+            }
+        }
+
+        // Decisions (new, under Website Setup) configures which roles see
+        // which extra fields on another role's records. Grandfathered onto
+        // Admin only — same reasoning as Subscriptions/Teacher Attendance
+        // above, since this is a school-policy screen, not something every
+        // role should default into.
+        if (in_array('decision_rule', $added, true)) {
+            $adminRole = Role::find(2);
+            if ($adminRole) {
+                $adminPerms = is_array($adminRole->permissions) ? $adminRole->permissions : [];
+                $adminRole->permissions = array_values(array_unique(array_merge($adminPerms, [
+                    'decision_rule_read', 'decision_rule_create', 'decision_rule_delete',
+                ])));
                 $adminRole->save();
             }
         }

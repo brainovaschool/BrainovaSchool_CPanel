@@ -35,6 +35,7 @@ use App\Http\Controllers\WebsiteSetup\AvatarItemController;
 use App\Http\Controllers\WebsiteSetup\CharacterLineController;
 use App\Http\Controllers\WebsiteSetup\MissionController;
 use App\Http\Controllers\WebsiteSetup\HomeVideoController;
+use App\Http\Controllers\WebsiteSetup\DecisionController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -215,6 +216,12 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::controller(StudentFeatureAccessController::class)->prefix('student-feature-access')->name('student-feature-access.')->group(function () {
                     Route::get('/',             'index')->name('index')->middleware('PermissionCheck:student_feature_access_read');
                     Route::post('/{featureKey}', 'update')->name('update')->middleware('PermissionCheck:student_feature_access_update', 'DemoCheck');
+                });
+
+                Route::controller(DecisionController::class)->prefix('decision')->name('decision.')->group(function () {
+                    Route::get('/',           'index')->name('index')->middleware('PermissionCheck:decision_rule_read');
+                    Route::post('/store',     'store')->name('store')->middleware('PermissionCheck:decision_rule_create', 'DemoCheck');
+                    Route::delete('/delete/{id}', 'delete')->name('delete')->middleware('PermissionCheck:decision_rule_delete', 'DemoCheck');
                 });
 
                 Route::controller(CharacterLineController::class)->prefix('character-line')->name('character-line.')->group(function () {
