@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\RoleEnum;
 use Illuminate\Foundation\Http\FormRequest;
 
 class LeaveRequestStoreRequest extends FormRequest
@@ -17,9 +16,7 @@ class LeaveRequestStoreRequest extends FormRequest
 
     public function rules(): array
     {
-        $studentRole = (string) RoleEnum::STUDENT;
-
-        $rules = [
+        return [
             'leave_type' => 'required|exists:leave_types,id',
             'start_date' => 'required',
             'end_date' => 'required',
@@ -27,17 +24,5 @@ class LeaveRequestStoreRequest extends FormRequest
             'is_half_day' => 'nullable|boolean',
             'replacement_day' => 'nullable|date',
         ];
-
-        // Who the leave is about is only ever picked explicitly when raising
-        // it for someone else - raising your own never posts these fields,
-        // the server resolves "you" from the session instead.
-        if (hasPermission('leave_request_update')) {
-            $rules['role_id'] = 'required';
-            $rules['student'] = 'required_if:role_id,' . $studentRole . '|exists:users,id';
-            $rules['class'] = 'required_if:role_id,' . $studentRole . '|exists:classes,id';
-            $rules['staff'] = 'required_unless:role_id,' . $studentRole . '|exists:staff,id';
-        }
-
-        return $rules;
     }
 }

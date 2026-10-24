@@ -5,24 +5,19 @@ namespace App\Repositories\leave;
 use App\Enums\RoleEnum;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
-use App\Models\Staff\Staff;
 use App\Models\Upload;
-use App\Repositories\Academic\ClassesRepository;
 use App\Repositories\StudentInfo\StudentRepository;
 use App\Traits\CommonHelperTrait;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class LeaveRequestRepository
 {
     use CommonHelperTrait;
 
-    private $classRepo;
     private $studentRepo;
 
-    public function __construct(ClassesRepository $classRepo, StudentRepository $studentRepo){
-        $this->classRepo = $classRepo;
+    public function __construct(StudentRepository $studentRepo){
         $this->studentRepo = $studentRepo;
     }
 
@@ -126,171 +121,41 @@ class LeaveRequestRepository
         }
     }
 
+    // Raising leave always means raising your own - identity comes from
+    // the session, never from posted input, so there is nothing left to
+    // pick: no role, no class, no staff/student lookup.
     public function store(Request $request): bool
     {
         try {
-            // Whatever role_id/staff/student the request carries is only
-            // ever honoured for someone who can act on others' leave -
-            // otherwise it always resolves to the logged-in user, no matter
-            // what was posted.
-            if (!hasPermission('leave_request_update')) {
-                return $this->createSelfLeaveRequest($request);
+            $user = auth()->user();
+
+            if ($request->hasFile('attachment')) {
+                $upload_id = $this->UploadImageCreate($request->file('attachment'), 'backend/uploads/students');
             }
 
-            if ((string) $request->role_id !== (string) RoleEnum::STUDENT) {
-                return $this->createStaffLeaveRequest($request);
-            }
-
-            $isSingleStudent = $request->class !== null && $request->section !== null && $request->student !== null;
-            $isEntireClass = $request->class !== null && $request->section === null && $request->student === null;
-            $isEntireSection = $request->class !== null && $request->section !== null && $request->student === null;
-
-            if ($isSingleStudent) {
-                return $this->createSingleStudentLeaveRequest($request);
-            }
-
-            if ($isEntireClass || $isEntireSection) {
-                return $this->createBulkLeaveRequests($request);
-            }
-
-            return false;
-        } catch (\Exception $e) {
-            return false;
-        }
-    }
-
-    // Someone raising their own leave - identity comes from the session,
-    // never from posted input.
-    private function createSelfLeaveRequest(Request $request): bool
-    {
-        $user = auth()->user();
-
-        if ($request->hasFile('attachment')) {
-            $upload_id = $this->UploadImageCreate($request->file('attachment'), 'backend/uploads/students');
-        }
-
-        $leaveRequest = new LeaveRequest();
-        $leaveRequest->fill([
-            'leave_type_id' => $request->leave_type,
-            'user_id' => $user->id,
-            'role_id' => $user->role_id,
-            'request_by' => $user->id,
-            'session_id' => setting('session'),
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'description' => $request->description,
-            'leave_days' => $this->calculateLeaveDays($request),
-            'approval_status' => 'pending',
-            'attachment_id' => $upload_id ?? null,
-            'is_half_day' => $request->boolean('is_half_day'),
-            // Substitute day only applies to staff, never to a student
-            // raising their own leave.
-            'replacement_day' => $user->staff ? ($request->replacement_day ?: null) : null,
-        ]);
-
-        return $leaveRequest->save();
-    }
-
-    private function createStaffLeaveRequest(Request $request): bool
-    {
-        $staff = Staff::find($request->staff);
-        if (!$staff || !$staff->user_id) {
-            return false;
-        }
-
-        if ($request->hasFile('attachment')) {
-            $upload_id = $this->UploadImageCreate($request->file('attachment'), 'backend/uploads/students');
-        }
-
-        $leaveRequest = new LeaveRequest();
-        $leaveRequest->fill([
-            'leave_type_id' => $request->leave_type,
-            'user_id' => $staff->user_id,
-            // The real role (Teacher, Staff, a custom combined role, etc.)
-            // comes from the staff member picked, not the Student/Staff
-            // toggle in the form - that toggle only decides which picker
-            // to show.
-            'role_id' => $staff->role_id,
-            'request_by' => auth()->id(),
-            'session_id' => setting('session'),
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'description' => $request->description,
-            'leave_days' => $this->calculateLeaveDays($request),
-            // Every new request starts pending - approval only happens on
-            // the dedicated Approval page (setStatus()), never at raise time.
-            'approval_status' => 'pending',
-            'attachment_id' => $upload_id ?? null,
-            'is_half_day' => $request->boolean('is_half_day'),
-            // Substitute/make-up day - staff leave only, never set for students.
-            'replacement_day' => $request->replacement_day ?: null,
-        ]);
-
-        return $leaveRequest->save();
-    }
-
-    private function createSingleStudentLeaveRequest(Request $request): bool
-    {
-        $leaveRequest = new LeaveRequest();
-        $student = $this->studentRepo->show($request->student);
-
-        if ($request->hasFile('attachment')){
-            $upload_id         = $this->UploadImageCreate($request->file('attachment'), 'backend/uploads/students');
-        }
-        $leaveRequest->fill([
-            'leave_type_id' => $request->leave_type,
-            'user_id' => $student->user_id,
-            'role_id' => $request->role_id,
-            'request_by' => auth()->id(),
-            'session_id' => setting('session'),
-            'start_date' => $request->start_date,
-            'end_date' => $request->end_date,
-            'description' => $request->description,
-            'leave_days' => $this->calculateLeaveDays($request),
-            // Every new request starts pending - approval only happens on
-            // the dedicated Approval page (setStatus()), never at raise time.
-            'approval_status' => 'pending',
-            'attachment_id' => $upload_id ?? null,
-            'is_half_day' => $request->boolean('is_half_day'),
-        ]);
-
-        return $leaveRequest->save();
-    }
-
-    private function createBulkLeaveRequests(Request $request): bool
-    {
-        $students = $request->section
-            ? $this->studentRepo->getStudents($request)
-            : $this->studentRepo->getStudentsByClass($request->class);
-
-        $leaveDays = $this->calculateLeaveDays($request);
-        $leaveRequests = [];
-
-        if ($request->hasFile('attachment')){
-            $upload_id         = $this->UploadImageCreate($request->image, 'backend/uploads/students');
-        }
-
-        $isHalfDay = $request->boolean('is_half_day');
-        foreach ($students as $student) {
-            $leaveRequests[] = [
+            $leaveRequest = new LeaveRequest();
+            $leaveRequest->fill([
                 'leave_type_id' => $request->leave_type,
-                'user_id' => $student->student->user_id,
-                'role_id' => $request->role_id,
-                'request_by' => auth()->id(),
+                'user_id' => $user->id,
+                'role_id' => $user->role_id,
+                'request_by' => $user->id,
                 'session_id' => setting('session'),
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
                 'description' => $request->description,
-                // Every new request starts pending - approval only happens
-                // on the dedicated Approval page, never at raise time.
+                'leave_days' => $this->calculateLeaveDays($request),
                 'approval_status' => 'pending',
-                'leave_days' => $leaveDays,
                 'attachment_id' => $upload_id ?? null,
-                'is_half_day' => $isHalfDay,
-            ];
-        }
+                'is_half_day' => $request->boolean('is_half_day'),
+                // Substitute day only applies to staff, never to a student
+                // raising their own leave.
+                'replacement_day' => $user->staff ? ($request->replacement_day ?: null) : null,
+            ]);
 
-        return DB::transaction(fn() => LeaveRequest::insert($leaveRequests));
+            return $leaveRequest->save();
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     public function calculateLeaveDays($request)
@@ -301,27 +166,16 @@ class LeaveRequestRepository
     }
 
 
+    // Editing never changes WHOSE leave this is - that was fixed at
+    // creation from the session, and stays fixed. A manager may edit
+    // anyone's request (details only); anyone else may only edit their own.
     public function update(Request $request): bool
     {
-        // Only someone who can act on others' leave may repoint whose
-        // request this is - a self-service edit never changes "who",
-        // only the leave's own details, no matter what's posted.
         $isManager = hasPermission('leave_request_update');
-        $isStaff = $isManager && (string) $request->role_id !== (string) RoleEnum::STUDENT;
-
-        if ($isManager && !$isStaff) {
-            $request->validate([
-                'section' => 'required|exists:sections,id',
-                'class' => 'required|exists:classes,id',
-            ]);
-        }
 
         try {
             $leaveRequest = $this->show($request->editLeaveId);
 
-            // Someone who can only raise leave (no approver permission) may
-            // only ever touch their own request, and can never set the
-            // approval status themselves — only an approver can.
             if (!$isManager && (!$leaveRequest || $leaveRequest->request_by != auth()->id())) {
                 return false;
             }
@@ -334,23 +188,7 @@ class LeaveRequestRepository
                     $leaveRequest->attachment_id = $upload_id;
                 }
             }
-            if ($isManager) {
-                if ($isStaff) {
-                    $staff = Staff::find($request->staff);
-                    if (!$staff || !$staff->user_id) {
-                        return false;
-                    }
-                    $leaveRequest->user_id = $staff->user_id;
-                    $leaveRequest->role_id = $staff->role_id;
-                    $leaveRequest->replacement_day = $request->replacement_day ?: null;
-                } else {
-                    $student = $this->studentRepo->show($request->student);
-                    $leaveRequest->user_id = $student->user_id;
-                    $leaveRequest->replacement_day = null;
-                }
-            } elseif ((int) $leaveRequest->role_id !== RoleEnum::STUDENT) {
-                // Self-service staff editing their own leave may still
-                // adjust their own substitute day.
+            if ((int) $leaveRequest->role_id !== RoleEnum::STUDENT) {
                 $leaveRequest->replacement_day = $request->replacement_day ?: null;
             }
             $leaveRequest->leave_type_id = $request->leave_type;

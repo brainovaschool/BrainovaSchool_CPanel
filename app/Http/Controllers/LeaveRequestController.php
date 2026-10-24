@@ -4,23 +4,16 @@ namespace App\Http\Controllers;
 
 use App\Enums\RoleEnum;
 use App\Http\Requests\LeaveRequestStoreRequest;
-use App\Models\Academic\Section;
-use App\Models\LeaveRequest;
 use App\Models\LeaveType;
-use App\Models\Staff\Staff;
-use App\Models\StudentInfo\Student;
-use App\Repositories\Academic\ClassesRepository;
 use App\Repositories\leave\LeaveRequestRepository;
 use Illuminate\Http\Request;
 
 class LeaveRequestController extends Controller
 {
     private $leaveRequestRepo;
-    private $classRepo;
 
-    public function __construct(LeaveRequestRepository $leaveRequestRepo, ClassesRepository $classRepo){
+    public function __construct(LeaveRequestRepository $leaveRequestRepo){
         $this->leaveRequestRepo = $leaveRequestRepo;
-        $this->classRepo = $classRepo;
     }
 
     // A Teacher sees two tabs: her own leave, and her class students' leave.
@@ -62,26 +55,17 @@ class LeaveRequestController extends Controller
         return view('backend.leave.request', compact('data'));
     }
 
+    // Same shape as the student self-service page (one page: a short form
+    // to raise leave, plus your own leave list beside it) - just with
+    // Substitute Day added for staff.
     public function create()
     {
         $data['title'] = ___('leave.Leave Request');
         $data['types'] = LeaveType::where('active_status', true)->get();
-        // Raising leave for someone else (bulk class leave, entering a
-        // colleague's leave) needs the Role/Class/Section/Student/Staff
-        // pickers. Raising your own needs none of it - the system already
-        // knows who's logged in.
-        $data['canActForOthers'] = hasPermission('leave_request_update');
+        $data['selfIsStaff'] = (bool) auth()->user()->staff;
+        $data['leave_requests'] = $this->leaveRequestRepo->mine(auth()->id());
 
-        if ($data['canActForOthers']) {
-            $data['classes'] = $this->classRepo->assignedAll();
-            $data['sections'] = [];
-            $data['students'] = [];
-            $data['staffs'] = Staff::with('role')->active()->orderBy('first_name')->get();
-        } else {
-            $data['selfIsStaff'] = (bool) auth()->user()->staff;
-        }
-
-        return view('backend.leave.form', compact('data'));
+        return view('backend.leave.request-form', compact('data'));
     }
 
     public function store(LeaveRequestStoreRequest $request)
@@ -110,31 +94,12 @@ class LeaveRequestController extends Controller
 
         $data['title'] = ___('leave.Leave Request');
         $data['types'] = LeaveType::where('active_status', true)->get();
-        $data['canActForOthers'] = $isManager;
+        // Whose leave this is never changes on edit - just whether
+        // Substitute Day applies, fixed by what the record already is.
+        $data['selfIsStaff'] = (int) $editLeave->role_id !== RoleEnum::STUDENT;
+        $data['leave_requests'] = $this->leaveRequestRepo->mine($editLeave->user_id);
 
-        if ($isManager) {
-            $data['classes'] = $this->classRepo->assignedAll();
-            $data['sections'] = [];
-            $data['students'] = [];
-            $data['staffs'] = Staff::with('role')->active()->orderBy('first_name')->get();
-
-            if ((int) $editLeave->role_id === RoleEnum::STUDENT) {
-                $student = Student::with('session_class_student')
-                    ->where('user_id', $editLeave->user_id)->first();
-
-                $data['class_id'] = $student->session_class_student->classes_id ?? null;
-                $data['section'] = $student->session_class_student->section ?? null;
-                $data['student_id'] = $student->id ?? null;
-            } else {
-                $data['staff_id'] = optional(Staff::where('user_id', $editLeave->user_id)->first())->id;
-            }
-        } else {
-            // Editing your own leave - the only "who" field left is whether
-            // Substitute Day applies, fixed by what the record already is.
-            $data['selfIsStaff'] = (int) $editLeave->role_id !== RoleEnum::STUDENT;
-        }
-
-        return view('backend.leave.form', compact('data', 'editLeave'));
+        return view('backend.leave.request-form', compact('data', 'editLeave'));
     }
 
     public function approval()
