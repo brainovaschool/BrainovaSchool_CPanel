@@ -98,7 +98,7 @@ class MigrationRunnerController extends Controller
         'leave_type' => ['read' => 'leave_type_read', 'create' => 'leave_type_create', 'update' => 'leave_type_update', 'delete' => 'leave_type_delete'],
         'leave_request' => ['read' => 'leave_request_read', 'create' => 'leave_request_create', 'update' => 'leave_request_update', 'delete' => 'leave_request_delete'],
         'subscription' => ['read' => 'subscription_read'],
-        'attendance_teacher' => ['read' => 'attendance_teacher_read'],
+        'attendance_teacher' => ['read' => 'attendance_teacher_read', 'edit' => 'attendance_teacher_edit'],
         'report_class_routine' => ['read' => 'report_class_routine_read'],
         'report_exam_routine' => ['read' => 'report_exam_routine_read'],
         'ai_help_teacher' => ['read' => 'ai_help_teacher_read'],
@@ -143,6 +143,12 @@ class MigrationRunnerController extends Controller
         'sms_mail' => ['read' => 'sms_mail_read', 'send' => 'sms_mail_send', 'update' => 'sms_mail_update', 'delete' => 'sms_mail_delete'],
         'sms_mail_template' => ['read' => 'sms_mail_template_read', 'create' => 'sms_mail_template_create', 'update' => 'sms_mail_template_update', 'delete' => 'sms_mail_template_delete'],
         'users' => ['read' => 'user_read', 'create' => 'user_create', 'update' => 'user_update', 'delete' => 'user_delete', 'change_permission' => 'change_permission'],
+        // attendance_teacher shipped Read-only; this adds the matching Edit
+        // keyword so the Roles screen shows the same Read/Edit pair as
+        // attendance_student. PERMISSION_GROUPS only creates a row once and
+        // never revisits it, so this repairs any tenant that already
+        // synced before 'edit' existed.
+        'attendance_teacher' => ['read' => 'attendance_teacher_read', 'edit' => 'attendance_teacher_edit'],
     ];
 
     public function run(string $key)
@@ -3851,7 +3857,7 @@ class MigrationRunnerController extends Controller
         // for the same reason reel_studio/portal are: existing roles already
         // had real access to it (its routes carried no permission check at
         // all until this sync), so its keywords must never be auto-stripped.
-        $nonStrippableGroups = ['class_content', 'fees_payment_proof', 'portal', 'reel_studio', 'leave_type', 'leave_request'];
+        $nonStrippableGroups = ['class_content', 'fees_payment_proof', 'portal', 'reel_studio', 'leave_type', 'leave_request', 'subscription', 'attendance_teacher'];
 
         foreach (self::PERMISSION_GROUPS as $attribute => $keywords) {
             if (!Permission::where('attribute', $attribute)->exists()) {
@@ -3862,6 +3868,21 @@ class MigrationRunnerController extends Controller
             if (!in_array($attribute, $nonStrippableGroups, true)) {
                 $strippableKeywords = array_merge($strippableKeywords, array_values($keywords));
             }
+        }
+
+        // One-time rename: the old 'attendance' row (Read/Create) becomes
+        // 'attendance_student', pairing with 'attendance_teacher' so the
+        // Roles screen shows a plain Teacher/Student split instead of
+        // Attendance/Attendance Report/Attendance Teacher. The keyword
+        // STRINGS (attendance_read/attendance_create) are untouched, only
+        // the row's attribute/keyword-keys change, so every role that
+        // already has them keeps them with no re-grant needed. Self-guards:
+        // once renamed, no row named 'attendance' is ever found again.
+        $oldAttendance = Permission::where('attribute', 'attendance')->first();
+        if ($oldAttendance) {
+            $oldAttendance->attribute = 'attendance_student';
+            $oldAttendance->keywords = ['read' => 'attendance_read', 'edit' => 'attendance_create'];
+            $oldAttendance->save();
         }
 
         // Repair/complete rows an older tenant already has (see the doc
