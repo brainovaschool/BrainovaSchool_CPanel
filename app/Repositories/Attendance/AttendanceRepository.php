@@ -220,6 +220,9 @@ class AttendanceRepository implements AttendanceInterface
         $query = $hasSubject ? SubjectAttendance::query() : Attendance::query();
 
         $query->where('session_id', setting('session'));
+        if ($request->department != "") {
+            $query->whereHas('student', fn ($q) => $q->where('department_id', $request->department));
+        }
         if ($request->class != "") {
             $query->where('classes_id', $request->class);
         }
@@ -228,6 +231,9 @@ class AttendanceRepository implements AttendanceInterface
         }
         if ($hasSubject) {
             $query->where('subject_id', $request->subject);
+        }
+        if ($request->student != "") {
+            $query->where('student_id', $request->student);
         }
         if ($request->date_from != "" && $request->date_to != "") {
             $query->whereBetween('date', [$request->date_from, $request->date_to]);

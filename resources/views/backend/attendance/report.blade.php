@@ -494,22 +494,30 @@
                             <h3 class="mb-0">{{ ___('common.Filtering') }}</h3>
 
                             <div
-                                class="card_header_right d-flex align-items-center gap-3 flex-fill justify-content-end flex-wrap">
+                                class="card_header_right d-flex align-items-end gap-3 flex-nowrap overflow-auto justify-content-end">
                                 <!-- table_searchBox -->
 
                                 <div class="single_large_selectBox">
-                                    <select class="class nice-select niceSelect bordered_style wide" name="view">
-                                        <option {{ old('view', @$data['request']->view) == '0' ? 'selected' : '' }}
-                                            value="0">{{ ___('report.short_view') }}</option>
-                                        <option {{ old('view', @$data['request']->view) == '1' ? 'selected' : '' }}
-                                            value="1">{{ ___('report.details_view') }}</option>
+                                    <select class="nice-select niceSelect bordered_style wide @error('department') is-invalid @enderror"
+                                        name="department">
+                                        <option value="">{{ ___('common.All') }}</option>
+                                        @foreach ($data['departments'] as $item)
+                                            <option
+                                                {{ old('department', @$data['request']->department) == $item->id ? 'selected' : '' }}
+                                                value="{{ $item->id }}">{{ $item->name }}</option>
+                                        @endforeach
                                     </select>
+                                    @error('department')
+                                        <div id="validationServer04Feedback" class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
                                 </div>
                                 <div class="single_large_selectBox">
                                     <select id="getSections"
                                         class="class nice-select niceSelect bordered_style wide @error('class') is-invalid @enderror"
                                         name="class">
-                                        <option value="">{{ ___('student_info.select_class') }} *</option>
+                                        <option value="">{{ ___('common.All') }}</option>
                                         @foreach ($data['classes'] as $item)
                                             <option
                                                 {{ old('class', @$data['request']->class) == $item->id ? 'selected' : '' }}
@@ -526,7 +534,7 @@
                                     <select id="getSubjects"
                                         class="sections section nice-select niceSelect bordered_style wide @error('section') is-invalid @enderror"
                                         name="section">
-                                        <option value="">{{ ___('student_info.select_section') }} *</option>
+                                        <option value="">{{ ___('common.All') }}</option>
                                         @foreach ($data['sections'] as $item)
                                             <option
                                                 {{ old('section', @$data['request']->section) == $item->section->id ? 'selected' : '' }}
@@ -543,7 +551,7 @@
                                     <select
                                         class="subjects nice-select niceSelect bordered_style wide @error('subject') is-invalid @enderror"
                                         name="subject">
-                                        <option value="">{{ ___('student_info.select subject') }}</option>
+                                        <option value="">{{ ___('common.All') }}</option>
                                         @foreach ($data['subjects'] as $item)
                                             <option
                                                 {{ old('subject', @$data['request']->subject) == $item->subject->id ? 'selected' : '' }}
@@ -551,6 +559,23 @@
                                         @endforeach
                                     </select>
                                     @error('subject')
+                                        <div id="validationServer04Feedback" class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+                                <div class="single_large_selectBox">
+                                    <select
+                                        class="students nice-select niceSelect bordered_style wide @error('student') is-invalid @enderror"
+                                        name="student">
+                                        <option value="">{{ ___('common.All') }}</option>
+                                        @foreach ($data['studentOptions'] as $item)
+                                            <option
+                                                {{ old('student', @$data['request']->student) == $item->student_id ? 'selected' : '' }}
+                                                value="{{ $item->student_id }}">{{ $item->student->first_name }} {{ $item->student->last_name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('student')
                                         <div id="validationServer04Feedback" class="invalid-feedback">
                                             {{ $message }}
                                         </div>
@@ -579,7 +604,7 @@
                                     @enderror
                                 </div>
 
-                                <button class="btn btn-lg ot-btn-primary">
+                                <button class="btn btn-lg ot-btn-primary text-nowrap">
                                     {{ ___('common.Search') }}
                                 </button>
                             </div>
@@ -612,9 +637,11 @@
                     </form>
                     <form action="{{ route('attendance.export') }}" method="post">
                         @csrf
+                        <input type="hidden" name="department" value="{{ $data['request']->department }}">
                         <input type="hidden" name="class" value="{{ $data['request']->class }}">
                         <input type="hidden" name="section" value="{{ $data['request']->section }}">
                         <input type="hidden" name="subject" value="{{ $data['request']->subject }}">
+                        <input type="hidden" name="student" value="{{ $data['request']->student }}">
                         <input type="hidden" name="date_from" value="{{ $data['request']->date_from }}">
                         <input type="hidden" name="date_to" value="{{ $data['request']->date_to }}">
                         <button class="btn btn-lg ot-btn-primary mt-3" type="submit">{{ ___('common.export_excel') }}
@@ -652,7 +679,6 @@
                                 <tr>
                                     <th class="purchase">{{ ___('common.name') }}</th>
                                     <th class="purchase">{{ ___('student_info.roll_no') }}</th>
-                                    <th class="purchase">{{ ___('student_info.admission_no') }}</th>
                                     @foreach ($data['days'] as $day => $date)
                                         <th>{{ ++$day }}</th>
                                     @endforeach
@@ -667,7 +693,6 @@
                                     <tr>
                                         <td>{{ @$item->student->first_name }} {{ @$item->student->last_name }}</td>
                                         <td>{{ @$item->roll }}</td>
-                                        <td>{{ @$item->student->admission_no }}</td>
                                         @php
                                             $p = 0;
                                             $l = 0;
@@ -722,7 +747,6 @@
                                 <tr>
                                     <th class="purchase">{{ ___('student_info.student_name') }}</th>
                                     <th class="purchase">{{ ___('student_info.roll_no') }}</th>
-                                    <th class="purchase">{{ ___('student_info.admission_no') }}</th>
                                     <th class="purchase">{{ ___('academic.class') }} ({{ ___('academic.section') }})</th>
                                      <th class="purchase">{{ ___('attendance.Attendance') }}</th>
                                     <th class="purchase">{{ ___('common.date') }}</th>
@@ -735,7 +759,6 @@
                                     <tr id="document-file">
                                         <td>{{ @$item->student->first_name }} {{ @$item->student->last_name }}</td>
                                         <td>{{ @$item->roll }}</td>
-                                        <td>{{ @$item->student->admission_no }}</td>
                                         <td>{{ @$item->class->name }} ({{ @$item->section->name }})</td>
                                         <td>
                                             @if (@$item->attendance == App\Enums\AttendanceType::PRESENT)

@@ -9,11 +9,13 @@ use App\Http\Requests\Attendance\AttendanceSearchRequest;
 use App\Http\Requests\Attendance\AttendanceStoreRequest;
 use App\Http\Requests\Report\AttendanceRequest;
 use App\Http\Requests\SubjectAttendanceSearchRequest;
+use App\Models\Staff\Department;
 use App\Repositories\Academic\ClassesRepository;
 use App\Repositories\Academic\ClassSetupRepository;
 use App\Repositories\Academic\SubjectAssignRepository;
 use App\Repositories\Academic\SubjectRepository;
 use App\Repositories\Attendance\AttendanceRepository;
+use App\Repositories\StudentInfo\StudentRepository;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
 use PDF;
@@ -28,12 +30,15 @@ class AttendanceController extends Controller
 
     private $subjectAssignRepo;
 
+    private $studentRepo;
+
     function __construct(
         AttendanceRepository   $repo,
         ClassesRepository      $classRepo,
         ClassSetupRepository   $classSetupRepo,
         SubjectRepository      $subjectRepo,
         SubjectAssignRepository $subjectAssignRepo,
+        StudentRepository       $studentRepo,
     )
     {
         $this->repo              = $repo;
@@ -41,6 +46,7 @@ class AttendanceController extends Controller
         $this->classSetupRepo    = $classSetupRepo;
         $this->subjectRepo       = $subjectRepo;
         $this->subjectAssignRepo = $subjectAssignRepo;
+        $this->studentRepo       = $studentRepo;
     }
 
     public function index()
@@ -129,9 +135,11 @@ class AttendanceController extends Controller
     public function report()
     {
         $data['title']              = ___('attendance.Attendance');
+        $data['departments']        = Department::active()->get();
         $data['classes']            = $this->classRepo->assignedAll();
         $data['sections']           = [];
         $data['subjects']           = collect();
+        $data['studentOptions']     = collect();
         $data['students']           = [];
         $data['request']            = [];
 
@@ -143,15 +151,34 @@ class AttendanceController extends Controller
     {
         $data['title']        = ___('attendance.Attendance');
         $data['request']      = $request;
+        $data['departments']  = Department::active()->get();
         $data['classes']      = $this->classRepo->assignedAll();
         $data['sections']     = $this->classSetupRepo->getSections($request->class);
         $data['subjects']     = $this->subjectsForClassSection($request->class, $request->section);
+        $data['studentOptions'] = $this->studentOptionsForClassSection($request->class, $request->section);
         $results              = $this->repo->searchReport($request);
         $data['students']     = $results['students'];
         $data['days']         = $results['days'];
         $data['attendances']  = $results['attendances'];
         $data['effective_view'] = $results['effective_view'];
         return view('backend.attendance.report', compact('data'));
+    }
+
+    /**
+     * Students assigned to a class/section (for the report's Student filter dropdown).
+     */
+    private function studentOptionsForClassSection($classId, $sectionId)
+    {
+        if (!$classId || !$sectionId) {
+            return collect();
+        }
+
+        $request = new Request([
+            'class' => $classId,
+            'section' => $sectionId,
+        ]);
+
+        return $this->studentRepo->getStudents($request);
     }
 
     public function exportExcel(AttendanceRequest $request)
