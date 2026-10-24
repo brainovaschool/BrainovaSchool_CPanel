@@ -13,4 +13,6 @@ class StudentAbsentNotification extends BaseModel
     // shift_id => time ("1":"10:00"); it is json_encode()'d on write and
     // json_decode()'d on read in the blade, not Eloquent-cast — an 'array'
     // cast here would double-decode and break that.
+
+    protected $guarded = ['id'];
 }
