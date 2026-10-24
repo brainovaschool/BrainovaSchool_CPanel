@@ -58,11 +58,39 @@
                                 <input type="text" class="form-control ot-input" name="search" placeholder="Search title" value="{{ $data['filters']['search'] ?? '' }}">
                             </div>
 
+                            <div class="single_large_selectBox">
+                                <select class="nice-select niceSelect bordered_style wide" name="show">
+                                    @foreach (['active' => 'Active', 'archived' => 'Archived', 'all' => 'All'] as $key => $label)
+                                        <option value="{{ $key }}" {{ ($data['filters']['show'] ?? 'active') === $key ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
                             <button class="btn btn-lg ot-btn-primary" type="submit">{{ ___('common.Search') }}</button>
                         </div>
                     </div>
                 </div>
             </form>
+        </div>
+
+        <div class="d-none align-items-center gap-2 mb-3 p-2 border rounded flex-wrap" id="bulkActionsBar">
+            <span class="me-2"><strong id="bulkSelectedCount">0</strong> {{ ___('common.selected') }}</span>
+            <select class="nice-select niceSelect bordered_style" id="bulkReassignTo" style="min-width: 180px;">
+                <option value="">Reassign to…</option>
+                @foreach ($data['employeesList'] as $emp)
+                    <option value="{{ $emp->id }}">{{ trim($emp->first_name . ' ' . $emp->last_name) }}</option>
+                @endforeach
+            </select>
+            <button type="button" class="btn btn-sm ot-btn-primary" onclick="bulk_reassign()">Reassign</button>
+            <button type="button" class="btn btn-sm btn-outline-success" onclick="bulk_status(1)">
+                <i class="fa-solid fa-check"></i> {{ ___('common.activate') }}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="bulk_status(0)">
+                <i class="fa-solid fa-ban"></i> {{ ___('common.deactivate') }}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="bulk_delete()">
+                <i class="fa-solid fa-trash-can"></i> {{ ___('common.delete_selected') }}
+            </button>
         </div>
 
         <div class="table-content table-basic">
@@ -72,6 +100,7 @@
                         <table class="ot-basic-table ot-table-bg">
                             <thead class="thead">
                                 <tr>
+                                    <th><input type="checkbox" id="bulkSelectAll"></th>
                                     <th>Title</th>
                                     <th>Employee</th>
                                     <th>Category</th>
@@ -84,8 +113,13 @@
                             </thead>
                             <tbody class="tbody">
                                 @forelse ($data['tasks'] as $task)
-                                    <tr>
-                                        <td>{{ $task->title }} @if ($task->urgent)<span class="badge-basic-danger-text">Urgent</span>@endif</td>
+                                    <tr id="row_{{ $task->id }}" class="{{ $task->active_status ? '' : 'opacity-50' }}">
+                                        <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $task->id }}"></td>
+                                        <td>
+                                            {{ $task->title }}
+                                            @if ($task->urgent)<span class="badge-basic-danger-text">Urgent</span>@endif
+                                            @unless ($task->active_status)<span class="badge-basic-secondary-text">Archived</span>@endunless
+                                        </td>
                                         <td>{{ optional($task->assignee)->first_name }} {{ optional($task->assignee)->last_name }}</td>
                                         <td>{{ $task->category ?: '—' }}</td>
                                         <td>{{ $task->priority }}</td>
@@ -127,3 +161,127 @@
         </div>
     </div>
 @endsection
+@push('script')
+<script>
+(function () {
+    function bulkSelectedIds() {
+        return $('.bulk-row-checkbox:checked').map(function () { return $(this).val(); }).get();
+    }
+
+    function bulkToggleBar() {
+        var n = bulkSelectedIds().length;
+        $('#bulkSelectedCount').text(n);
+        if (n > 0) {
+            $('#bulkActionsBar').removeClass('d-none').addClass('d-flex');
+        } else {
+            $('#bulkActionsBar').addClass('d-none').removeClass('d-flex');
+        }
+    }
+
+    $(document).on('change', '.bulk-row-checkbox', function () {
+        var all = $('.bulk-row-checkbox').length === $('.bulk-row-checkbox:checked').length;
+        $('#bulkSelectAll').prop('checked', all);
+        bulkToggleBar();
+    });
+
+    $(document).on('change', '#bulkSelectAll', function () {
+        $('.bulk-row-checkbox').prop('checked', this.checked);
+        bulkToggleBar();
+    });
+
+    window.bulk_delete = function () {
+        var ids = bulkSelectedIds();
+        if (!ids.length) return;
+
+        Swal.fire({
+            title: $('#alert_title').val(),
+            text: $('#alert_subtitle').val(),
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: $('#alert_yes_btn').val(),
+            cancelButtonText: $('#alert_cancel_btn').val(),
+        }).then(function (confirmed) {
+            if (!confirmed.isConfirmed) return;
+
+            $.ajax({
+                type: 'POST',
+                dataType: 'json',
+                data: { ids: ids },
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                url: "{{ route('portal-tasks.bulk-delete') }}",
+            }).done(function (response) {
+                Swal.fire({
+                    icon: response[1],
+                    title: response[2],
+                    text: response[0],
+                    showCloseButton: true,
+                    confirmButtonText: response[3],
+                });
+                if (response[1] !== 'error') {
+                    setTimeout(function () { location.reload(); }, 900);
+                }
+            }).fail(function () {
+                Swal.fire('{{ ___('common.opps') }}...', '{{ ___('common.something_went_wrong_with_ajax') }}', 'error');
+            });
+        });
+    };
+
+    window.bulk_status = function (status) {
+        var ids = bulkSelectedIds();
+        if (!ids.length) return;
+
+        $.ajax({
+            type: 'POST',
+            dataType: 'json',
+            data: { ids: ids, status: status },
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            url: "{{ route('portal-tasks.bulk-status') }}",
+        }).done(function (response) {
+            Swal.fire({
+                icon: response[1],
+                title: response[2],
+                text: response[0],
+                showCloseButton: true,
+                confirmButtonText: response[3],
+            });
+            if (response[1] !== 'error') {
+                setTimeout(function () { location.reload(); }, 900);
+            }
+        }).fail(function () {
+            Swal.fire('{{ ___('common.opps') }}...', '{{ ___('common.something_went_wrong_with_ajax') }}', 'error');
+        });
+    };
+
+    window.bulk_reassign = function () {
+        var ids = bulkSelectedIds();
+        var staffId = $('#bulkReassignTo').val();
+        if (!ids.length) return;
+        if (!staffId) {
+            Swal.fire('{{ ___('common.opps') }}...', 'Pick who to reassign these to first.', 'warning');
+            return;
+        }
+
+        $.ajax({
+            type: 'POST',
+            dataType: 'json',
+            data: { ids: ids, assigned_to: staffId },
+            headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+            url: "{{ route('portal-tasks.bulk-reassign') }}",
+        }).done(function (response) {
+            Swal.fire({
+                icon: response[1],
+                title: response[2],
+                text: response[0],
+                showCloseButton: true,
+                confirmButtonText: response[3],
+            });
+            if (response[1] !== 'error') {
+                setTimeout(function () { location.reload(); }, 900);
+            }
+        }).fail(function () {
+            Swal.fire('{{ ___('common.opps') }}...', '{{ ___('common.something_went_wrong_with_ajax') }}', 'error');
+        });
+    };
+})();
+</script>
+@endpush

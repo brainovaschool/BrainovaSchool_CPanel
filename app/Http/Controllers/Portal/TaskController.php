@@ -30,12 +30,61 @@ class TaskController extends Controller
 
     public function index(Request $request)
     {
-        $data['tasks']     = $this->repo->forManager($request->only(['status', 'category', 'assigned_to', 'search']));
+        $filters = $request->only(['status', 'category', 'assigned_to', 'search', 'show']);
+        $data['tasks']     = $this->repo->forManager($filters);
         $data['employeesList'] = \App\Models\Staff\Staff::orderBy('first_name')->get();
         $data['settings']  = PortalSetting::current();
-        $data['filters']   = $request->only(['status', 'category', 'assigned_to', 'search']);
+        $data['filters']   = $filters;
         $data['title']     = 'Team Portal — Tasks';
         return view('portal.tasks.index', compact('data'));
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+
+        $result = $this->repo->bulkDelete($ids);
+        if ($result['deleted'] === 0 && $result['blocked'] === 0) {
+            return response()->json([___('alert.something_went_wrong_please_try_again'), 'error', ___('alert.oops'), ___('alert.OK')]);
+        }
+
+        $message = $result['deleted'] . ' task(s) deleted.';
+        if ($result['blocked'] > 0) {
+            $message .= ' ' . $result['blocked'] . ' paid task(s) with a payment record were skipped.';
+        }
+        return response()->json([$message, 'success', ___('alert.deleted'), ___('alert.OK')]);
+    }
+
+    public function bulkStatus(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+
+        $result = $this->repo->bulkArchive($ids, (bool) $request->input('status', 1));
+        if ($result['status']) {
+            return response()->json([$result['message'], 'success', ___('alert.updated'), ___('alert.OK')]);
+        }
+        return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
+    }
+
+    public function bulkReassign(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+        $request->validate(['assigned_to' => 'required|exists:staff,id']);
+
+        $result = $this->repo->bulkReassign($ids, (int) $request->assigned_to);
+        if ($result['status']) {
+            return response()->json([$result['message'], 'success', ___('alert.updated'), ___('alert.OK')]);
+        }
+        return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
     }
 
     public function myTasks()

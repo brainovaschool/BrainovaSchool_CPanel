@@ -23,13 +23,21 @@ class PortalTask extends Model
     public const OVERDUE_STATUSES = [self::ASSIGNED, self::IN_PROGRESS, self::REVISION];
 
     protected $casts = [
-        'urgent'       => 'boolean',
-        'paid'         => 'boolean',
+        'urgent'        => 'boolean',
+        'paid'          => 'boolean',
+        'active_status' => 'boolean',
         'assigned_date' => 'date',
         'due_date'      => 'date',
         'completed_at'  => 'datetime',
         'claimed_at'    => 'datetime',
     ];
+
+    /** Archived-or-not, independent of the workflow `status` column -
+     *  drives the default Tasks list and bulk Activate/Deactivate. */
+    public function scopeActive($query)
+    {
+        return $query->where('active_status', true);
+    }
 
     public function assignee()
     {

@@ -30,6 +30,9 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/',                    'index')->name('index')->middleware('PermissionCheck:portal_manage,portal_manager_tasks_read');
                     Route::get('/create',               'create')->name('create')->middleware('PermissionCheck:portal_manage');
                     Route::post('/store',               'store')->name('store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::post('/bulk-delete',          'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::post('/bulk-status',          'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::post('/bulk-reassign',        'bulkReassign')->name('bulk-reassign')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::get('/show/{id}',             'show')->name('show')->middleware('PermissionCheck:portal_access');
                     Route::post('/{id}/reassign',        'reassign')->name('reassign')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::post('/{id}/accept',          'accept')->name('accept')->middleware('PermissionCheck:portal_access', 'DemoCheck');

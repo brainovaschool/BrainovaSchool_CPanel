@@ -26,13 +26,63 @@ class TaskRepository
 
     public function forManager(array $filters)
     {
+        $show = $filters['show'] ?? 'active';
+
         return PortalTask::with(['assignee', 'assignedBy'])
+            ->when($show === 'active', fn ($q) => $q->where('active_status', true))
+            ->when($show === 'archived', fn ($q) => $q->where('active_status', false))
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
             ->when($filters['assigned_to'] ?? null, fn ($q, $v) => $q->where('assigned_to', $v))
             ->when($filters['search'] ?? null, fn ($q, $v) => $q->where('title', 'like', "%{$v}%"))
             ->orderByDesc('id')
             ->paginate(Settings::PAGINATE);
+    }
+
+    /** Deleting a task cascades to its submissions/comments/payout row (FK
+     *  cascadeOnDelete) - fine for ordinary tasks, but a paid task that's
+     *  already been marked paid has a real Expense behind it, so that audit
+     *  trail (the PortalPayout linking task -> expense) is never silently
+     *  deleted with it. Those are skipped, not deleted. */
+    public function bulkDelete(array $ids): array
+    {
+        $blocked = PortalTask::whereIn('id', $ids)->whereHas('payout')->count();
+        $deletableIds = PortalTask::whereIn('id', $ids)->whereDoesntHave('payout')->pluck('id');
+        $deleted = PortalTask::whereIn('id', $deletableIds)->delete();
+
+        return ['deleted' => $deleted, 'blocked' => $blocked];
+    }
+
+    /** Archive/unarchive - independent of the workflow `status` column, so
+     *  this never interferes with where a task actually is in the review
+     *  pipeline. Archived tasks just drop out of the default list. */
+    public function bulkArchive(array $ids, bool $active): array
+    {
+        try {
+            PortalTask::whereIn('id', $ids)->update(['active_status' => $active]);
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
+    /** Bulk version of reassign() - same completed-task guard, just over a
+     *  set. Completed tasks are skipped (counted, not silently dropped). */
+    public function bulkReassign(array $ids, int $staffId): array
+    {
+        try {
+            $blocked = PortalTask::whereIn('id', $ids)->where('status', PortalTask::COMPLETED)->count();
+            $reassigned = PortalTask::whereIn('id', $ids)->where('status', '!=', PortalTask::COMPLETED)
+                ->update(['assigned_to' => $staffId]);
+
+            $message = $reassigned . ' task(s) reassigned.';
+            if ($blocked > 0) {
+                $message .= ' ' . $blocked . ' completed task(s) were skipped.';
+            }
+            return $this->responseWithSuccess($message, []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
     }
 
     /** Overdue first, matching the spec's "Employee: grouped lists with
