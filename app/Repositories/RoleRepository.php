@@ -40,11 +40,25 @@ class RoleRepository implements RoleInterface
             $roleStore->slug        = Str::slug($request->name);
             $roleStore->status      = $request->status;
             $roleStore->permissions = is_array($request->permissions) ? $request->permissions : [];
+            $roleStore->leave_field_visibility = $this->normalizeLeaveVisibility($request->leave_field_visibility);
             $roleStore->save();
             return true;
         } catch (\Throwable $th) {
             return false;
         }
+    }
+
+    /** Casts every submitted role id to int and drops anything that isn't
+     *  one of the two known fields, so stray form input can't pollute the
+     *  stored JSON. */
+    private function normalizeLeaveVisibility($raw): array
+    {
+        $raw = is_array($raw) ? $raw : [];
+        $result = [];
+        foreach (['replacement_day', 'half_day_full_day'] as $field) {
+            $result[$field] = array_values(array_unique(array_map('intval', (array) ($raw[$field] ?? []))));
+        }
+        return $result;
     }
 
     public function show($id)
@@ -62,6 +76,7 @@ class RoleRepository implements RoleInterface
             $roleUpdate->name        = $request->name;
             $roleUpdate->status      = $request->status;
             $roleUpdate->permissions = is_array($request->permissions) ? $request->permissions : [];
+            $roleUpdate->leave_field_visibility = $this->normalizeLeaveVisibility($request->leave_field_visibility);
             $roleUpdate->save();
 
             // Keep users.permissions aligned with the role template (middleware also intersects role ∩ user).

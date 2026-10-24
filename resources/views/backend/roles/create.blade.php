@@ -64,6 +64,9 @@
                         <div class="col-lg-6">
                             @include('backend.roles._permission-picker', ['permissionGroups' => $data['permissionGroups']])
                         </div>
+                        <div class="col-md-12">
+                            @include('backend.roles._leave-visibility', ['roles' => $data['roles']])
+                        </div>
                         <div class="col-md-12 mt-24">
                             <div class="text-end">
                                 <button class="btn btn-lg ot-btn-primary"><span><i class="fa-solid fa-save"></i>

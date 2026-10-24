@@ -1183,11 +1183,10 @@
                         hasPermission('news_read') ||
                         hasPermission('event_read') ||
                         hasPermission('home_video_read') ||
-                        hasPermission('ai_helper_read') ||
-                        hasPermission('decision_rule_read')) &&
+                        hasPermission('ai_helper_read')) &&
                         hasFeature('website_setup'))
                     <li
-                        class="sidebar-menu-item {{ set_menu(['page*', 'page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'home-video*', 'ai-helper*', 'decision*']) }}">
+                        class="sidebar-menu-item {{ set_menu(['page*', 'page-sections*', 'slider*', 'about*', 'counter*', 'contact-info*', 'department-contact*', 'admin-news*', 'event*', 'home-video*', 'ai-helper*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-wrench"></i>
                             <span class="on-half-expanded">{{ ___('settings.Website_setup') }}</span>
@@ -1252,11 +1251,6 @@
                             @if (hasPermission('ai_helper_read'))
                                 <li class="sidebar-menu-item {{ set_menu(['ai-helper*']) }}">
                                     <a href="{{ route('ai-helper.index') }}">{{ ___('settings.ai_helper') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('decision_rule_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['decision*']) }}">
-                                    <a href="{{ route('decision.index') }}">Decisions</a>
                                 </li>
                             @endif
                         </ul>

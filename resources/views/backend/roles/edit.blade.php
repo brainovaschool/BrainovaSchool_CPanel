@@ -73,6 +73,10 @@
                             @include('backend.roles._permission-picker', ['permissionGroups' => $data['permissionGroups'], 'selectedPermissions' => $data['role']->permissions ?? []])
                         </div>
 
+                        <div class="col-md-12">
+                            @include('backend.roles._leave-visibility', ['roles' => $data['roles'], 'leaveVisibility' => $data['role']->leave_field_visibility ?? []])
+                        </div>
+
                         <div class="col-md-12 mt-24">
                             <div class="text-end">
                                 <button class="btn btn-lg ot-btn-primary"><span><i class="fa-solid fa-save"></i>

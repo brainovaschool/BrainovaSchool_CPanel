@@ -625,13 +625,36 @@ if (!function_exists('hasFeature')) {
 }
 
 if (!function_exists('decisionAllows')) {
-    /** Whether the current viewer should see $field (e.g.
+    /** Whether the current viewer (their role) should see $field (e.g.
      *  'show_replacement_day') for a record whose subject is
-     *  $subjectRoleId, per the admin-configured Decisions rules
-     *  (Website Setup > Decisions). See DecisionRuleRepository::allows(). */
+     *  $subjectRoleId. Configured per-role on Roles > Edit > Leave — Extra
+     *  Details Visibility (Role::leave_field_visibility). Super Admin
+     *  always sees everything. */
     function decisionAllows(string $category, ?int $subjectRoleId, string $field): bool
     {
-        return \App\Repositories\WebsiteSetup\DecisionRuleRepository::allows($category, $subjectRoleId, $field);
+        $user = auth()->user();
+        if (!$user) {
+            return false;
+        }
+        if ((int) $user->role_id === \App\Enums\RoleEnum::SUPERADMIN) {
+            return true;
+        }
+        if ($category !== 'leave') {
+            return false;
+        }
+
+        $columnKey = [
+            'show_replacement_day'   => 'replacement_day',
+            'show_half_day_full_day' => 'half_day_full_day',
+        ][$field] ?? null;
+        if (!$columnKey) {
+            return false;
+        }
+
+        $visibility = optional($user->role)->leave_field_visibility ?? [];
+        $allowedRoleIds = array_map('intval', (array) ($visibility[$columnKey] ?? []));
+
+        return in_array((int) $subjectRoleId, $allowedRoleIds, true);
     }
 }
 
@@ -1380,7 +1403,6 @@ if (!function_exists('permission_category_map')) {
             'department' => 'Staff Manage',
             'designation' => 'Staff Manage',
             'subscription' => 'Staff Manage',
-            'decision_rule' => 'Staff Manage',
             'subscribe' => 'Subscribers & Messages',
             'contact_message' => 'Subscribers & Messages',
             'program_category' => 'Course Catalogue',
