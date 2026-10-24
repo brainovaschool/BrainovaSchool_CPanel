@@ -35,7 +35,7 @@
                         <table class="table table-bordered role-table">
                             <thead class="thead">
                             <tr>
-                                <th class="serial">{{ ___('common.Sl No') }}</th>
+                                <th class="serial">{{ ___('common.ID') }}</th>
                                 <th class="purchase">{{ ___('common.Student') }}</th>
                                 <th class="purchase">{{ ___('common.Date') }}</th>
 
@@ -53,9 +53,9 @@
                             </tr>
                             </thead>
                             <tbody class="tbody">
-                            @forelse ($data['leave_requests'] ?? [] as $key => $row)
+                            @forelse ($data['leave_requests'] ?? [] as $row)
                                 <tr id="row_{{ $row->id }}">
-                                    <td class="serial">{{ ++$key }}</td>
+                                    <td class="serial">{{ $row->identifier }}</td>
                                     <td>{{ $row->user->name}}</td>
                                     <td>{{ dateFormat($row->start_date) }} - {{ dateFormat($row->end_date) }} / ({{ $row->leave_days }} {{ ___('student.days') }})</td>
 

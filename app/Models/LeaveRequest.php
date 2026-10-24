@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\RoleEnum;
+use App\Models\Staff\Staff;
+use App\Models\StudentInfo\Student;
 use Illuminate\Database\Eloquent\Model;
 
 class LeaveRequest extends Model
@@ -54,6 +57,30 @@ class LeaveRequest extends Model
     public function attachment()
     {
         return $this->belongsTo(Upload::class);
+    }
+
+    /** For the ID column: student leave shows the student's roll number,
+     *  staff leave shows the staff id - resolved via the shared user_id,
+     *  since leave_requests has no direct FK to either. */
+    public function student()
+    {
+        return $this->hasOne(Student::class, 'user_id', 'user_id');
+    }
+
+    public function staff()
+    {
+        return $this->hasOne(Staff::class, 'user_id', 'user_id');
+    }
+
+    /** Roll number for a student row, staff id for a staff row - the ID
+     *  column shown in the log and approval tables. */
+    public function getIdentifierAttribute()
+    {
+        if ((int) $this->role_id === RoleEnum::STUDENT) {
+            return optional($this->student->session_class_student ?? null)->roll ?? '—';
+        }
+
+        return $this->staff->id ?? '—';
     }
 
 }

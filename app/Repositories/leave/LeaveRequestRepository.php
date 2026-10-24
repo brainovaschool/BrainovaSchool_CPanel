@@ -27,18 +27,22 @@ class LeaveRequestRepository
     }
 
 
+    // ID column: roll number for student rows, staff id for staff rows -
+    // eager loaded everywhere a list of leave requests is built.
+    private const WITH = [
+        'leaveType:id,name', 'user:id,name', 'approvedBy:id,name', 'requestedBy:id,name',
+        'session:id,name', 'role:id,name', 'attachment',
+        'student.session_class_student', 'staff',
+    ];
+
     public function show($id)
     {
-        return LeaveRequest::
-            with('leaveType:id,name', 'user:id,name', 'approvedBy:id,name', 'requestedBy:id,name', 'session:id,name', 'role:id,name', 'attachment')
-            ->find($id);
+        return LeaveRequest::with(self::WITH)->find($id);
     }
 
     public function all()
     {
-        return LeaveRequest::
-            with('leaveType:id,name', 'user:id,name', 'approvedBy:id,name', 'requestedBy:id,name', 'session:id,name', 'role:id,name', 'attachment')
-            ->latest()->paginate(10);
+        return LeaveRequest::with(self::WITH)->latest()->paginate(10);
     }
 
     // A role with only leave_request_create (no leave_request_update, the
@@ -46,10 +50,39 @@ class LeaveRequestRepository
     // not the whole school's requests.
     public function mine($userId)
     {
-        return LeaveRequest::
-            with('leaveType:id,name', 'user:id,name', 'approvedBy:id,name', 'requestedBy:id,name', 'session:id,name', 'role:id,name', 'attachment')
+        return LeaveRequest::with(self::WITH)
             ->where('request_by', $userId)
             ->latest()->paginate(10);
+    }
+
+    // The Approval page: pending requests only, for whoever can approve.
+    public function pending()
+    {
+        return LeaveRequest::with(self::WITH)
+            ->where('approval_status', 'pending')
+            ->latest()->paginate(10);
+    }
+
+    public function setStatus($id, string $status): bool
+    {
+        if (!in_array($status, ['approved', 'rejected'], true)) {
+            return false;
+        }
+
+        try {
+            $leaveRequest = LeaveRequest::find($id);
+            if (!$leaveRequest) {
+                return false;
+            }
+            $leaveRequest->approval_status = $status;
+            if ($status === 'approved') {
+                $leaveRequest->approved_by = auth()->id();
+            }
+            $leaveRequest->save();
+            return true;
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     public function store(Request $request): bool

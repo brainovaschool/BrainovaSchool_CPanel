@@ -94,6 +94,31 @@ class LeaveRequestController extends Controller
         return view('backend.leave.form', compact('data', 'editLeave'));
     }
 
+    public function approval()
+    {
+        $data['leave_requests'] = $this->leaveRequestRepo->pending();
+        $data['title'] = ___('leave.Leave Approval');
+        return view('backend.leave.approval', compact('data'));
+    }
+
+    public function approve($id)
+    {
+        $result = $this->leaveRequestRepo->setStatus($id, 'approved');
+        return redirect()->back()->with(
+            $result ? 'success' : 'danger',
+            $result ? ___('alert.updated_successfully') : ___('alert.something_went_wrong_please_try_again')
+        );
+    }
+
+    public function reject($id)
+    {
+        $result = $this->leaveRequestRepo->setStatus($id, 'rejected');
+        return redirect()->back()->with(
+            $result ? 'success' : 'danger',
+            $result ? ___('alert.updated_successfully') : ___('alert.something_went_wrong_please_try_again')
+        );
+    }
+
     public function delete($id)
     {
         $leaveRequest = $this->leaveRequestRepo->show($id);
