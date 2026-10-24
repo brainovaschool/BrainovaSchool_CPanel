@@ -29,6 +29,10 @@
   --bn-glass-hi: rgba(255, 255, 255, .9);
   --bn-shadow: rgba(31, 34, 74, .16);
   --bn-track: rgba(16, 26, 43, .07);
+  /* --bn-glass-border is tuned for big panels (cards/sidebar) sitting on
+     their own ambient glow - too faint for a small input box to read as
+     "a box" against the page. Inputs get their own, stronger border. */
+  --bn-input-border: rgba(16, 26, 43, .35);
 }
 
 .dark-theme {
@@ -43,6 +47,7 @@
   --bn-glass-hi: rgba(255, 255, 255, .07);
   --bn-shadow: rgba(0, 0, 0, .55);
   --bn-track: rgba(255, 255, 255, .08);
+  --bn-input-border: rgba(255, 255, 255, .3);
 }
 
 /* ---------- Ambient page background ---------- */
@@ -258,7 +263,7 @@ body {
 .form-select {
   border-radius: 14px !important;
   background: var(--bn-glass-strong) !important;
-  border: 1px solid var(--bn-glass-border) !important;
+  border: 1px solid var(--bn-input-border) !important;
   color: var(--bn-ink) !important;
 }
 
@@ -267,6 +272,24 @@ body {
 .form-control:focus {
   border-color: rgba(var(--bn-purple-rgb), .5) !important;
   box-shadow: 0 0 0 3px rgba(var(--bn-purple-rgb), .15) !important;
+}
+
+/* Date/time/month inputs draw their calendar/clock icon using the browser's
+   native light-mode glyph by default - black-on-near-black on a dark card,
+   effectively invisible. color-scheme tells the browser which palette to
+   draw that native icon (and other native widget chrome) in, per theme. */
+input[type="date"],
+input[type="time"],
+input[type="datetime-local"],
+input[type="month"] {
+  color-scheme: light;
+}
+
+.dark-theme input[type="date"],
+.dark-theme input[type="time"],
+.dark-theme input[type="datetime-local"],
+.dark-theme input[type="month"] {
+  color-scheme: dark;
 }
 
 /* Keep Bootstrap's validation-error border visible — the blanket glass
