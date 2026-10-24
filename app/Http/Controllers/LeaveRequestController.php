@@ -39,19 +39,26 @@ class LeaveRequestController extends Controller
         $isManager = hasPermission('leave_request_update');
         $teacherStaffId = $this->teacherStaffId();
         $view = $request->query('view', 'mine');
+        $filters = [
+            'month' => $request->query('month'),
+            'leave_type' => $request->query('leave_type'),
+            'status' => $request->query('status'),
+        ];
 
         if ($isManager) {
-            $data['leave_requests'] = $this->leaveRequestRepo->all();
+            $data['leave_requests'] = $this->leaveRequestRepo->all($filters);
         } elseif ($teacherStaffId !== null && $view === 'class') {
-            $data['leave_requests'] = $this->leaveRequestRepo->forClassStudents($teacherStaffId);
+            $data['leave_requests'] = $this->leaveRequestRepo->forClassStudents($teacherStaffId, $filters);
         } else {
-            $data['leave_requests'] = $this->leaveRequestRepo->mine(auth()->id());
+            $data['leave_requests'] = $this->leaveRequestRepo->mine(auth()->id(), $filters);
             $view = 'mine';
         }
 
         $data['showClassTab'] = !$isManager && $teacherStaffId !== null;
         $data['activeView'] = $view;
-        $data['title'] = ___('leave.Leave Request');
+        $data['filters'] = $filters;
+        $data['types'] = LeaveType::where('active_status', true)->get();
+        $data['title'] = ___('leave.Leave Log');
         return view('backend.leave.request', compact('data'));
     }
 

@@ -298,10 +298,17 @@
                                 </li>
                             @endif
 
+                            @if (hasPermission('leave_request_create'))
+                                <li
+                                    class="sidebar-menu-item {{ set_menu(['leave-request.create', 'leave-request.edit']) }}">
+                                    <a href="{{ route('leave-request.create') }}">{{ ___('leave.Leave Request') }}</a>
+                                </li>
+                            @endif
+
                             @if (hasPermission('leave_request_read'))
                                 <li
-                                    class="sidebar-menu-item {{ set_menu(['leave-request.index', 'leave-request.edit']) }}">
-                                    <a href="{{ route('leave-request.index') }}">{{ ___('leave.Request Log') }}</a>
+                                    class="sidebar-menu-item {{ set_menu(['leave-request.index']) }}">
+                                    <a href="{{ route('leave-request.index') }}">{{ ___('leave.Leave Log') }}</a>
                                 </li>
                             @endif
 

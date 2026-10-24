@@ -11,7 +11,7 @@
                     <h4 class="bradecrumb-title mb-1">{{ $data['title'] }}</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('leave-request.index') }}">{{ ___('leave.Leave Request') }}</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('leave-request.index') }}">{{ ___('leave.Leave Log') }}</a></li>
                         <li class="breadcrumb-item">{{ $data['title'] }}</li>
                     </ol>
                 </div>

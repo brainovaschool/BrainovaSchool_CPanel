@@ -40,20 +40,42 @@ class LeaveRequestRepository
         return LeaveRequest::with(self::WITH)->find($id);
     }
 
-    public function all()
+    // Leave Log's filter bar - month (Y-m, matched against either boundary
+    // of the request's date range), leave type, and approval status. Shared
+    // by every list view (all/mine/forClassStudents) so the same filters
+    // work no matter whose leave is being looked at.
+    private function applyFilters($query, array $filters)
     {
-        return LeaveRequest::with(self::WITH)->latest()->paginate(10);
+        if (!empty($filters['month'])) {
+            $query->where(function ($q) use ($filters) {
+                $q->whereRaw("DATE_FORMAT(start_date, '%Y-%m') = ?", [$filters['month']])
+                    ->orWhereRaw("DATE_FORMAT(end_date, '%Y-%m') = ?", [$filters['month']]);
+            });
+        }
+        if (!empty($filters['leave_type'])) {
+            $query->where('leave_type_id', $filters['leave_type']);
+        }
+        if (!empty($filters['status'])) {
+            $query->where('approval_status', $filters['status']);
+        }
+
+        return $query;
+    }
+
+    public function all(array $filters = [])
+    {
+        return $this->applyFilters(LeaveRequest::with(self::WITH)->latest(), $filters)->paginate(10);
     }
 
     // A role with only leave_request_create (no leave_request_update, the
     // approver capability) sees their own leave history - requests ABOUT
     // them (user_id), not ones they happened to submit for someone else
     // (request_by), e.g. a teacher raising leave on behalf of a student.
-    public function mine($userId)
+    public function mine($userId, array $filters = [])
     {
-        return LeaveRequest::with(self::WITH)
-            ->where('user_id', $userId)
-            ->latest()->paginate(10);
+        $query = LeaveRequest::with(self::WITH)->where('user_id', $userId)->latest();
+
+        return $this->applyFilters($query, $filters)->paginate(10);
     }
 
     // The Approval page: pending requests only, for whoever can approve.
@@ -66,7 +88,7 @@ class LeaveRequestRepository
 
     // A Teacher's "Class Students" tab: leave requests belonging to students
     // primarily enrolled in a class/section this staff member teaches.
-    public function forClassStudents(int $staffId)
+    public function forClassStudents(int $staffId, array $filters = [])
     {
         $userIds = $this->studentRepo->getStudentUserIdsForTeacher($staffId);
 
@@ -74,10 +96,12 @@ class LeaveRequestRepository
             return LeaveRequest::with(self::WITH)->whereRaw('0 = 1')->paginate(10);
         }
 
-        return LeaveRequest::with(self::WITH)
+        $query = LeaveRequest::with(self::WITH)
             ->where('role_id', RoleEnum::STUDENT)
             ->whereIn('user_id', $userIds)
-            ->latest()->paginate(10);
+            ->latest();
+
+        return $this->applyFilters($query, $filters)->paginate(10);
     }
 
     public function setStatus($id, string $status): bool

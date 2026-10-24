@@ -31,17 +31,55 @@
             </ul>
         @endif
 
+        <div class="row">
+            <div class="col-12">
+                <div class="card ot-card mb-24 position-relative z_1">
+                    <form action="{{ route('leave-request.index') }}" method="get">
+                        <input type="hidden" name="view" value="{{ $data['activeView'] ?? 'mine' }}">
+                        <div class="card-header d-flex align-items-center gap-4 flex-wrap">
+                            <h3 class="mb-0">{{ ___('common.Filtering') }}</h3>
+                            <div class="card_header_right d-flex align-items-end gap-3 flex-wrap">
+                                <div class="single_large_selectBox">
+                                    <label class="form-label d-block mb-1">{{ ___('leave.Leave Type') }}</label>
+                                    <select class="nice-select niceSelect bordered_style wide" name="leave_type">
+                                        <option value="">{{ ___('common.All') }}</option>
+                                        @foreach ($data['types'] as $type)
+                                            <option value="{{ $type->id }}"
+                                                {{ (string) ($data['filters']['leave_type'] ?? '') === (string) $type->id ? 'selected' : '' }}>
+                                                {{ $type->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="single_large_selectBox">
+                                    <label class="form-label d-block mb-1">{{ ___('common.Status') }}</label>
+                                    <select class="nice-select niceSelect bordered_style wide" name="status">
+                                        <option value="">{{ ___('common.All') }}</option>
+                                        <option value="pending" {{ ($data['filters']['status'] ?? '') === 'pending' ? 'selected' : '' }}>{{ ___('common.Pending') }}</option>
+                                        <option value="approved" {{ ($data['filters']['status'] ?? '') === 'approved' ? 'selected' : '' }}>{{ ___('common.Approved') }}</option>
+                                        <option value="rejected" {{ ($data['filters']['status'] ?? '') === 'rejected' ? 'selected' : '' }}>{{ ___('common.Rejected') }}</option>
+                                    </select>
+                                </div>
+                                <div class="single_large_selectBox">
+                                    <label class="form-label d-block mb-1">{{ ___('common.Month') }}</label>
+                                    <input value="{{ $data['filters']['month'] ?? '' }}" name="month"
+                                           class="form-control ot-input" type="month">
+                                </div>
+                                <button class="btn btn-lg ot-btn-primary text-nowrap">
+                                    {{ ___('common.Search') }}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
         <!--  table content start -->
         <div class="table-content table-basic mt-20">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">{{ $data['title'] }}</h4>
-                    @if (hasPermission('leave_request_create'))
-                        <a href="{{ route('leave-request.create') }}" class="btn btn-lg ot-btn-primary">
-                            <span><i class="fa-solid fa-plus"></i> </span>
-                            <span class="">{{ ___('common.add') }}</span>
-                        </a>
-                    @endif
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -141,7 +179,7 @@
                     <!--  table end -->
                     <!--  pagination start -->
                     <div class="pagination-area mt-20">
-                        {{ $data['leave_requests']->links() }}
+                        {{ $data['leave_requests']->appends(request()->except('page'))->links() }}
                     </div>
                     <!--  pagination end -->
                 </div>

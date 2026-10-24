@@ -12,7 +12,7 @@
                     <h4 class="bradecrumb-title mb-1">{{ isset($editLeave) ? ___('common.edit') : ___('common.add') }} {{ $data['title'] }}</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('leave-request.index') }}">{{ $data['title'] }}</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('leave-request.index') }}">{{ ___('leave.Leave Log') }}</a></li>
                         <li class="breadcrumb-item">{{ isset($editLeave) ? ___('common.edit') : ___('common.add') }}</li>
                     </ol>
                 </div>
