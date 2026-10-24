@@ -46,12 +46,13 @@ class LeaveRequestRepository
     }
 
     // A role with only leave_request_create (no leave_request_update, the
-    // approver capability) should only ever see the leave it raised itself,
-    // not the whole school's requests.
+    // approver capability) sees their own leave history - requests ABOUT
+    // them (user_id), not ones they happened to submit for someone else
+    // (request_by), e.g. a teacher raising leave on behalf of a student.
     public function mine($userId)
     {
         return LeaveRequest::with(self::WITH)
-            ->where('request_by', $userId)
+            ->where('user_id', $userId)
             ->latest()->paginate(10);
     }
 
@@ -60,6 +61,22 @@ class LeaveRequestRepository
     {
         return LeaveRequest::with(self::WITH)
             ->where('approval_status', 'pending')
+            ->latest()->paginate(10);
+    }
+
+    // A Teacher's "Class Students" tab: leave requests belonging to students
+    // primarily enrolled in a class/section this staff member teaches.
+    public function forClassStudents(int $staffId)
+    {
+        $userIds = $this->studentRepo->getStudentUserIdsForTeacher($staffId);
+
+        if (empty($userIds)) {
+            return LeaveRequest::with(self::WITH)->whereRaw('0 = 1')->paginate(10);
+        }
+
+        return LeaveRequest::with(self::WITH)
+            ->where('role_id', RoleEnum::STUDENT)
+            ->whereIn('user_id', $userIds)
             ->latest()->paginate(10);
     }
 
@@ -136,7 +153,9 @@ class LeaveRequestRepository
             'end_date' => $request->end_date,
             'description' => $request->description,
             'leave_days' => $this->calculateLeaveDays($request),
-            'approval_status' => hasPermission('leave_request_update') ? $request->approval_status : 'pending',
+            // Every new request starts pending - approval only happens on
+            // the dedicated Approval page (setStatus()), never at raise time.
+            'approval_status' => 'pending',
             'attachment_id' => $upload_id ?? null,
             'is_half_day' => $request->boolean('is_half_day'),
             // Substitute/make-up day - staff leave only, never set for students.
@@ -164,10 +183,9 @@ class LeaveRequestRepository
             'end_date' => $request->end_date,
             'description' => $request->description,
             'leave_days' => $this->calculateLeaveDays($request),
-            // Only an approver (leave_request_update) may decide the status
-            // at submission time — anyone just raising a leave always lands
-            // as pending, regardless of what the hidden/posted field says.
-            'approval_status' => hasPermission('leave_request_update') ? $request->approval_status : 'pending',
+            // Every new request starts pending - approval only happens on
+            // the dedicated Approval page (setStatus()), never at raise time.
+            'approval_status' => 'pending',
             'attachment_id' => $upload_id ?? null,
             'is_half_day' => $request->boolean('is_half_day'),
         ]);
@@ -188,7 +206,6 @@ class LeaveRequestRepository
             $upload_id         = $this->UploadImageCreate($request->image, 'backend/uploads/students');
         }
 
-        $approvalStatus = hasPermission('leave_request_update') ? $request->approval_status : 'pending';
         $isHalfDay = $request->boolean('is_half_day');
         foreach ($students as $student) {
             $leaveRequests[] = [
@@ -200,7 +217,9 @@ class LeaveRequestRepository
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
                 'description' => $request->description,
-                'approval_status' => $approvalStatus,
+                // Every new request starts pending - approval only happens
+                // on the dedicated Approval page, never at raise time.
+                'approval_status' => 'pending',
                 'leave_days' => $leaveDays,
                 'attachment_id' => $upload_id ?? null,
                 'is_half_day' => $isHalfDay,
@@ -263,10 +282,8 @@ class LeaveRequestRepository
             }
             $leaveRequest->leave_type_id = $request->leave_type;
             $leaveRequest->is_half_day = $request->boolean('is_half_day');
-            $leaveRequest->approval_status = $isManager ? $request->approval_status : 'pending';
-            if ($leaveRequest->approval_status == 'approved'){
-                $leaveRequest->approved_by = auth()->id();
-            }
+            // Approval status is untouched here - it only changes via the
+            // dedicated Approval page (setStatus()), never by editing details.
             $leaveRequest->start_date = $request->start_date;
             $leaveRequest->end_date     = $request->end_date;
             $leaveRequest->leave_days = $this->calculateLeaveDays($request);

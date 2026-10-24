@@ -13,6 +13,8 @@ interface StudentInterface
 
     public function getPaginateAllForTeacher(int $staffId);
 
+    public function getStudentUserIdsForTeacher(int $staffId): array;
+
     public function searchStudents($request, ?int $teacherStaffId = null);
 
     public function store($request);

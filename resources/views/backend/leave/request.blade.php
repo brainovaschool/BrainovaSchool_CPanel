@@ -18,6 +18,19 @@
         </div>
         {{-- bradecrumb Area E n d --}}
 
+        @if ($data['showClassTab'] ?? false)
+            <ul class="nav nav-tabs mb-20">
+                <li class="nav-item">
+                    <a class="nav-link {{ ($data['activeView'] ?? 'mine') === 'mine' ? 'active' : '' }}"
+                       href="{{ route('leave-request.index') }}">{{ ___('leave.My Leave') }}</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ ($data['activeView'] ?? 'mine') === 'class' ? 'active' : '' }}"
+                       href="{{ route('leave-request.index', ['view' => 'class']) }}">{{ ___('leave.My Class Students') }}</a>
+                </li>
+            </ul>
+        @endif
+
         <!--  table content start -->
         <div class="table-content table-basic mt-20">
             <div class="card">

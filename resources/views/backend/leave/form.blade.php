@@ -178,30 +178,8 @@
                                     </div>
                                 </div>
 
-                                @if ($data['isManager'] ?? false)
-                                    <div class="col-md-12 mb-3">
-                                        <label for="validationServer04"
-                                               class="form-label">{{ ___('common.Select Status') }} <span class="text-danger">*</span></label>
-
-                                        <select class="nice-select niceSelect bordered_style wide @error('approval_status') is-invalid @enderror"
-                                                name="approval_status">
-                                            <option value="">{{ ___('common.Select Status') }}</option>
-                                            <option value="pending" {{ old('approval_status', $editLeave->approval_status ?? '') == 'pending' ? 'selected' : '' }}>{{ ___('common.Pending') }}</option>
-                                            <option value="approved" {{ old('approval_status', $editLeave->approval_status ?? '') == 'approved' ? 'selected' : '' }}>{{ ___('common.Approved') }}</option>
-                                            <option value="rejected" {{ old('approval_status', $editLeave->approval_status ?? '') == 'rejected' ? 'selected' : '' }}>{{ ___('common.Rejected') }}</option>
-                                        </select>
-                                        @error('approval_status')
-                                        <div id="validationServer04Feedback" class="invalid-feedback">
-                                            {{ $message }}
-                                        </div>
-                                        @enderror
-                                    </div>
-                                @else
-                                    {{-- A raise-only role never decides the outcome — always submitted
-                                         as pending; the server re-enforces this regardless. --}}
-                                    <input type="hidden" name="approval_status" value="pending">
-                                @endif
-
+                                {{-- Approval decisions happen only on the dedicated Approval page now -
+                                     this form is for raising/editing the request's own details. --}}
                                 <input type="hidden" name="editLeaveId" value="{{ $editLeave->id ?? null }}">
 
                                 {{-- Start Date --}}
@@ -284,7 +262,17 @@
                 staffFields.style.display = isStudent ? 'none' : '';
             }
 
-            roleSelect.addEventListener('change', toggle);
+            {{-- nice-select updates the hidden <select> and fires the change
+                 event through jQuery's trigger(), which a plain
+                 addEventListener('change', ...) never sees - jQuery's .on()
+                 is required to catch it. --}}
+            if (window.jQuery) {
+                jQuery(roleSelect).on('change', toggle);
+            } else {
+                roleSelect.addEventListener('change', toggle);
+            }
+
+            toggle();
         })();
     </script>
 @endpush

@@ -24,7 +24,6 @@ class LeaveRequestStoreRequest extends FormRequest
             'student' => 'required_if:role_id,' . $studentRole . '|exists:users,id',
             'class' => 'required_if:role_id,' . $studentRole . '|exists:classes,id',
             'staff' => 'required_unless:role_id,' . $studentRole . '|exists:staff,id',
-            'approval_status' => 'required',
             'leave_type' => 'required|exists:leave_types,id',
             'start_date' => 'required',
             'end_date' => 'required',

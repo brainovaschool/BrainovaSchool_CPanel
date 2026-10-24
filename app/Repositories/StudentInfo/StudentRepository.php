@@ -457,6 +457,20 @@ class StudentRepository implements StudentInterface
         return $query->exists();
     }
 
+    /** user_ids of every student primarily enrolled in a class/section this
+     *  teacher is assigned to teach this session — used to scope records
+     *  (e.g. leave requests) to "my class students". */
+    public function getStudentUserIdsForTeacher(int $staffId): array
+    {
+        $query = SessionClassStudent::primary()
+            ->whereHas('student')
+            ->where('session_id', setting('session'));
+        $this->applyTeacherClassSectionScope($query, $staffId);
+
+        return $query->with('student:id,user_id')->get()
+            ->pluck('student.user_id')->filter()->unique()->values()->toArray();
+    }
+
     private function applyTeacherClassSectionScope(Builder $query, int $staffId): void
     {
         $sessionId = setting('session');

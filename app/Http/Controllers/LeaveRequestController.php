@@ -23,12 +23,35 @@ class LeaveRequestController extends Controller
         $this->classRepo = $classRepo;
     }
 
-    public function index(){
+    // A Teacher sees two tabs: her own leave, and her class students' leave.
+    // Everyone else (including a manager, who already sees the full list)
+    // just gets the single list.
+    private function teacherStaffId(): ?int
+    {
+        $user = auth()->user();
+        if ($user && (int) $user->role_id === 5 && $user->staff) {
+            return (int) $user->staff->id;
+        }
+        return null;
+    }
+
+    public function index(Request $request){
         $isManager = hasPermission('leave_request_update');
-        $data['leave_requests'] = $isManager
-            ? $this->leaveRequestRepo->all()
-            : $this->leaveRequestRepo->mine(auth()->id());
+        $teacherStaffId = $this->teacherStaffId();
+        $view = $request->query('view', 'mine');
+
+        if ($isManager) {
+            $data['leave_requests'] = $this->leaveRequestRepo->all();
+        } elseif ($teacherStaffId !== null && $view === 'class') {
+            $data['leave_requests'] = $this->leaveRequestRepo->forClassStudents($teacherStaffId);
+        } else {
+            $data['leave_requests'] = $this->leaveRequestRepo->mine(auth()->id());
+            $view = 'mine';
+        }
+
         $data['isManager'] = $isManager;
+        $data['showClassTab'] = !$isManager && $teacherStaffId !== null;
+        $data['activeView'] = $view;
         $data['title'] = ___('leave.Leave Request');
         return view('backend.leave.request', compact('data'));
     }
@@ -36,7 +59,6 @@ class LeaveRequestController extends Controller
     public function create()
     {
         $data['title'] = ___('leave.Leave Request');
-        $data['isManager'] = hasPermission('leave_request_update');
         $data['types'] = LeaveType::where('active_status', true)->get();
         $data['classes'] = $this->classRepo->assignedAll();
         $data['sections'] = [];
@@ -70,7 +92,6 @@ class LeaveRequestController extends Controller
             abort(403);
         }
 
-        $data['isManager'] = $isManager;
         $data['title'] = ___('leave.Leave Request');
         $data['types'] = LeaveType::where('active_status', true)->get();
 
