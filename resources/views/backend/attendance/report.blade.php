@@ -1,7 +1,7 @@
 @extends('backend.master')
 
 @section('title')
-    {{ ___('common.Online Class Routine 2023') }}
+    {{ @$data['title'] }}
 @endsection
 
 <style>
@@ -588,21 +588,10 @@
                                 </div>
 
                                 <div class="single_large_selectBox">
-                                    <label class="form-label d-block mb-1">{{ ___('common.Start Date') }}</label>
-                                    <input value="{{ old('date_from', @$data['request']->date_from) }}" name="date_from"
-                                        class="form-control ot-input @error('date_from') is-invalid @enderror" type="date">
-                                    @error('date_from')
-                                        <div id="validationServer04Feedback" class="invalid-feedback">
-                                            {{ $message }}
-                                        </div>
-                                    @enderror
-                                </div>
-
-                                <div class="single_large_selectBox">
-                                    <label class="form-label d-block mb-1">{{ ___('common.End Date') }}</label>
-                                    <input value="{{ old('date_to', @$data['request']->date_to) }}" name="date_to"
-                                        class="form-control ot-input @error('date_to') is-invalid @enderror" type="date">
-                                    @error('date_to')
+                                    <label class="form-label d-block mb-1">{{ ___('common.Month') }}</label>
+                                    <input value="{{ old('month', @$data['request']->month) }}" name="month"
+                                        class="form-control ot-input @error('month') is-invalid @enderror" type="month">
+                                    @error('month')
                                         <div id="validationServer04Feedback" class="invalid-feedback">
                                             {{ $message }}
                                         </div>
@@ -647,25 +636,13 @@
                         <input type="hidden" name="section" value="{{ $data['request']->section }}">
                         <input type="hidden" name="subject" value="{{ $data['request']->subject }}">
                         <input type="hidden" name="student" value="{{ $data['request']->student }}">
-                        <input type="hidden" name="date_from" value="{{ $data['request']->date_from }}">
-                        <input type="hidden" name="date_to" value="{{ $data['request']->date_to }}">
+                        <input type="hidden" name="month" value="{{ $data['request']->month }}">
                         <button class="btn btn-lg ot-btn-primary mt-3" type="submit">{{ ___('common.export_excel') }}
                             <span><i class="fa-solid fa-file-excel"></i></span></button>
                     </form>
                 </div>
             @endif
             <div class="routine_wrapper" id="printableArea">
-                <div class="routine_wrapper_header">
-                    <div class="routine_wrapper_header_logo">
-                        <img class="header_logo" src="{{ @globalAsset(setting('light_logo'), '154X38.webp') }}"
-                            alt="{{ __('light logo') }}">
-                    </div>
-                    <div class="vertical_seperator"></div>
-                    <div class="routine_wrapper_header_content">
-                        <h4>{{ setting('application_name') }}</h4>
-                            <p>{{ setting('address') }}</p>
-                    </div>
-                </div>
                 @if ((@$data['effective_view'] ?? @$data['request']->view) == '0')
                     <div class="text-end">
                         <strong>

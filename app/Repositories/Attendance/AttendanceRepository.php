@@ -235,8 +235,8 @@ class AttendanceRepository implements AttendanceInterface
         if ($request->student != "") {
             $query->where('student_id', $request->student);
         }
-        if ($request->date_from != "" && $request->date_to != "") {
-            $query->whereBetween('date', [$request->date_from, $request->date_to]);
+        if ($request->month != "") {
+            $query->where('date', 'LIKE', $request->month . '%');
         }
 
         return $query;
@@ -246,8 +246,8 @@ class AttendanceRepository implements AttendanceInterface
     {
         $year = 0;
         $month = 0;
-        if ($request->date_from != "") {
-            $abc = explode('-', $request->date_from);
+        if ($request->month != "") {
+            $abc = explode('-', $request->month);
             $year = $abc[0];
             $month = $abc[1];
         }
@@ -255,26 +255,14 @@ class AttendanceRepository implements AttendanceInterface
         return [$year, $month];
     }
 
-    /**
-     * The "short view" grid has one column per day-of-month (1-31), so it
-     * can only ever represent a single month at a time. A date_from/date_to
-     * range that crosses a month boundary is forced into detail view
-     * instead — otherwise e.g. Jan 5 and Feb 5 would both land in the same
-     * "5" column and look like one day.
-     */
-    private function resolveEffectiveView($request)
-    {
-        $crossMonth = $request->date_from != "" && $request->date_to != ""
-            && substr($request->date_from, 0, 7) !== substr($request->date_to, 0, 7);
-
-        return $crossMonth ? 1 : (int) $request->view;
-    }
-
     public function searchReport($request)
     {
         $students = $this->reportBaseQuery($request);
         [$year, $month] = $this->resolveYearMonth($request);
-        $effectiveView = $this->resolveEffectiveView($request);
+        // The grid has one column per day-of-month, so it only makes sense
+        // once a single month is picked - the Month filter guarantees that
+        // (no more date-range-spanning-months case to fall back from).
+        $effectiveView = $request->month != "" ? 0 : 1;
 
         $data['days'] = getAllDaysInMonth($year, $month);
         $data['effective_view'] = $effectiveView;

@@ -29,8 +29,7 @@ class AttendanceRequest extends FormRequest
             'section'   => 'nullable',
             'subject'   => 'nullable',
             'student'   => 'nullable',
-            'date_from' => 'nullable|date',
-            'date_to'   => 'nullable|date',
+            'month'     => 'nullable|date_format:Y-m',
         ];
     }
 }
