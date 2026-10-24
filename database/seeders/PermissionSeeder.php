@@ -55,6 +55,7 @@ class PermissionSeeder extends Seeder
             'expense'           => ['read' => 'expense_read', 'create' => 'expense_create', 'update' => 'expense_update', 'delete' => 'expense_delete'],
             // Attendance
             'attendance'        => ['read' => 'attendance_read', 'create' => 'attendance_create'],
+            'attendance_teacher' => ['read' => 'attendance_teacher_read'],
             'leave_type'        => ['read' => 'leave_type_read', 'create' => 'leave_type_create', 'update' => 'leave_type_update', 'delete' => 'leave_type_delete'],
             'leave_request'     => ['read' => 'leave_request_read', 'create' => 'leave_request_create', 'update' => 'leave_request_update', 'delete' => 'leave_request_delete'],
             'subscription'      => ['read' => 'subscription_read'],

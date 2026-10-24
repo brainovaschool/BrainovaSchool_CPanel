@@ -33,8 +33,8 @@ Route::middleware(saasMiddleware())->group(function () {
                 });
 
                 Route::controller(StaffAttendanceController::class)->prefix('attendance/teacher')->group(function () {
-                    Route::get('/',       'index')->name('attendance.teacher')->middleware('PermissionCheck:attendance_read');
-                    Route::any('/export', 'exportExcel')->name('attendance.teacher-export')->middleware('PermissionCheck:attendance_read');
+                    Route::get('/',       'index')->name('attendance.teacher')->middleware('PermissionCheck:attendance_teacher_read');
+                    Route::any('/export', 'exportExcel')->name('attendance.teacher-export')->middleware('PermissionCheck:attendance_teacher_read');
                 });
 
             });

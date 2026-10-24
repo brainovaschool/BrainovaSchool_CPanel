@@ -1299,6 +1299,7 @@ if (!function_exists('permission_category_map')) {
             'exam_routine' => 'Routines',
             'attendance' => 'Attendance',
             'attendance_report' => 'Attendance',
+            'attendance_teacher' => 'Attendance',
             'leave_type' => 'Leave',
             'leave_request' => 'Leave',
             'fees_group' => 'Fees',

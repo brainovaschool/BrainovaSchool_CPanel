@@ -98,6 +98,7 @@ class MigrationRunnerController extends Controller
         'leave_type' => ['read' => 'leave_type_read', 'create' => 'leave_type_create', 'update' => 'leave_type_update', 'delete' => 'leave_type_delete'],
         'leave_request' => ['read' => 'leave_request_read', 'create' => 'leave_request_create', 'update' => 'leave_request_update', 'delete' => 'leave_request_delete'],
         'subscription' => ['read' => 'subscription_read'],
+        'attendance_teacher' => ['read' => 'attendance_teacher_read'],
         'report_class_routine' => ['read' => 'report_class_routine_read'],
         'report_exam_routine' => ['read' => 'report_exam_routine_read'],
         'ai_help_teacher' => ['read' => 'ai_help_teacher_read'],
@@ -4013,6 +4014,20 @@ class MigrationRunnerController extends Controller
             if ($adminRole) {
                 $adminPerms = is_array($adminRole->permissions) ? $adminRole->permissions : [];
                 $adminRole->permissions = array_values(array_unique(array_merge($adminPerms, ['subscription_read'])));
+                $adminRole->save();
+            }
+        }
+
+        // Teacher Attendance (new) is a supervisory view of every staff
+        // member's login log, not something every attendance_read holder
+        // (e.g. a Teacher marking their own class) should get for free.
+        // Grandfathered onto Admin only — Super Admin already gets it via
+        // the id===1 branch above — same one-time guard as Subscriptions.
+        if (in_array('attendance_teacher', $added, true)) {
+            $adminRole = Role::find(2);
+            if ($adminRole) {
+                $adminPerms = is_array($adminRole->permissions) ? $adminRole->permissions : [];
+                $adminRole->permissions = array_values(array_unique(array_merge($adminPerms, ['attendance_teacher_read'])));
                 $adminRole->save();
             }
         }
