@@ -169,16 +169,40 @@ body {
 }
 
 /* ---------- Cards ---------- */
+/* backdrop-filter directly on .card makes .card a new stacking context
+   (same as transform/filter/opacity<1 would) - any popover/dropdown
+   inside it then has its z-index trapped inside that context, however
+   high it's set, and can never rise above a LATER sibling card. That's
+   exactly what hid a nice-select options list on any page shaped like
+   "filter card, then a table card below it" (e.g. Social Board's
+   Audience Numbers "Log today's numbers" dropdown being covered by the
+   "October 2026" table card beneath it). The blur/background move to a
+   ::before layer instead - .card itself stays plain (position: relative,
+   no filter/transform/z-index), so it never isolates its children's
+   stacking, and ::before (generated first, no z-index of its own) still
+   paints behind the card's real content through ordinary DOM order. */
 .ot-card,
 .table-content.table-basic .card,
 .card {
-  background: var(--bn-glass) !important;
-  backdrop-filter: blur(20px) saturate(170%);
-  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  position: relative;
+  background: transparent !important;
   border: 1px solid var(--bn-glass-border) !important;
   border-radius: 20px !important;
   box-shadow: 0 18px 40px -26px var(--bn-shadow), inset 0 1px 0 var(--bn-glass-hi);
   filter: none !important;
+}
+
+.ot-card::before,
+.table-content.table-basic .card::before,
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--bn-glass);
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  border-radius: inherit;
+  pointer-events: none;
 }
 
 .table-content.table-basic .card-header {
