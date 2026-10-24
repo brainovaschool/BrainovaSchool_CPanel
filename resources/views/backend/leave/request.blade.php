@@ -178,26 +178,6 @@
                                                        value="{{ old('end_date', $editLeave->end_date ?? '') }}">
                                             </div>
 
-                                            @if ($data['isManager'] ?? false)
-                                                {{-- Staff-only details — visibility to viewers is controlled from
-                                                     Website Setup > Decisions, not here. --}}
-                                                <div class="col-md-12 mb-3">
-                                                    <label class="form-label">Replacement Day</label>
-                                                    <input type="date" class="form-control ot-input"
-                                                           name="replacement_day"
-                                                           value="{{ old('replacement_day', $editLeave->replacement_day ?? '') }}">
-                                                </div>
-
-                                                <div class="col-md-12 mb-3">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" name="is_half_day" value="1"
-                                                               id="is_half_day" {{ old('is_half_day', $editLeave->is_half_day ?? false) ? 'checked' : '' }}>
-                                                        <label class="form-check-label" for="is_half_day">Half Day</label>
-                                                    </div>
-                                                </div>
-                                            @endif
-
-
                                             <div class="col-md-12 mb-3">
                                                 <label for="exampleDataList"
                                                        class="form-label ">{{ ___('common.Attachment') }}<span
@@ -260,8 +240,6 @@
                                         <th class="purchase">{{ ___('common.Requested by')}}</th>
                                         <th class="purchase">{{ ___('common.Approved by') }}</th>
                                         <th class="purchase">{{ ___('common.Attachment') }}</th>
-                                        <th class="purchase">Replacement Day</th>
-                                        <th class="purchase">Half / Full Day</th>
                                         @if (hasPermission('leave_request_update') || hasPermission('leave_request_delete'))
                                             <th class="action">{{ ___('common.Action') }}</th>
                                         @endif
@@ -286,20 +264,6 @@
                                                     </a>
                                                 @else
                                                     <span class="text-muted">{{ ___('common.No Attachment') }}</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if (decisionAllows('leave', $row->role_id, 'show_replacement_day') && $row->replacement_day)
-                                                    {{ dateFormat($row->replacement_day) }}
-                                                @else
-                                                    <span class="text-muted">—</span>
-                                                @endif
-                                            </td>
-                                            <td>
-                                                @if (decisionAllows('leave', $row->role_id, 'show_half_day_full_day'))
-                                                    {{ $row->is_half_day ? 'Half Day' : 'Full Day' }}
-                                                @else
-                                                    <span class="text-muted">—</span>
                                                 @endif
                                             </td>
 

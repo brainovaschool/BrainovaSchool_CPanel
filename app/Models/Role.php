@@ -13,7 +13,6 @@ class Role extends BaseModel
 
     protected $casts = [
         'permissions' => 'array',
-        'leave_field_visibility' => 'array',
     ];
 
     //get active all roles

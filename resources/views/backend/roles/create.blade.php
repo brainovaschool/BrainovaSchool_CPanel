@@ -27,10 +27,6 @@
                 <form action="{{ route('roles.store') }}" enctype="multipart/form-data" method="post" id="visitForm">
                     @csrf
                     <div class="row mb-3">
-                        <div class="col-md-12">
-                            @include('backend.roles._leave-visibility', ['roles' => $data['roles']])
-                        </div>
-
                         <div class="col-lg-6">
                             <div class="row">
                                 <div class="col-md-12 mb-3">

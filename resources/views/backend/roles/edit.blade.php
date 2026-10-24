@@ -29,10 +29,6 @@
                     @csrf
                     @method('PUT')
                     <div class="row mb-3">
-                        <div class="col-md-12">
-                            @include('backend.roles._leave-visibility', ['roles' => $data['roles'], 'leaveVisibility' => $data['role']->leave_field_visibility ?? []])
-                        </div>
-
                         <div class="col-lg-6">
                             <div class="row">
                                 <div class="col-md-12 mb-3">
