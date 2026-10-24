@@ -21,22 +21,21 @@ class StaffAttendanceController extends Controller
 
     public function index(Request $request)
     {
-        // Default to the current month on first visit so the page isn't
-        // empty; any value the admin actually searched with overrides this.
-        $dateFrom = $request->filled('date_from') || $request->filled('date_to')
-            ? $request->date_from
-            : date('Y-m-01');
-        $dateTo = $request->filled('date_from') || $request->filled('date_to')
-            ? $request->date_to
-            : date('Y-m-d');
-
-        $request->merge(['date_from' => $dateFrom, 'date_to' => $dateTo]);
+        // Default to the current month on first visit so the page isn't empty.
+        if (!$request->filled('month')) {
+            $request->merge(['month' => date('Y-m')]);
+        }
 
         $data['title']    = ___('settings.Teacher Attendance');
         $data['roles']    = Role::whereNotIn('id', [RoleEnum::STUDENT, RoleEnum::GUARDIAN])->orderBy('name')->get();
         $data['staffs']   = $this->repo->staffForRole($request->role);
         $data['request']  = $request;
-        $data['rows']     = $this->repo->search($request);
+
+        $results = $this->repo->searchGrid($request);
+        $data['staffList']   = $results['staffList'];
+        $data['days']        = $results['days'];
+        $data['statusGrid']  = $results['statusGrid'];
+        $data['summary']     = $results['summary'];
 
         return view('backend.attendance.teacher', compact('data'));
     }

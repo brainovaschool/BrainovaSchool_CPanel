@@ -16,7 +16,7 @@ class StaffAttendanceExport implements FromCollection, WithHeadings
 
     public function headings(): array
     {
-        return ['Staff', 'Role', 'Date', 'First Login'];
+        return ['Staff', 'Role', 'Date', 'Status', 'First Login'];
     }
 
     public function collection()
@@ -25,6 +25,7 @@ class StaffAttendanceExport implements FromCollection, WithHeadings
             $row['staff'],
             $row['role'],
             $row['date'],
+            $row['status'],
             $row['first_login'],
         ]);
     }

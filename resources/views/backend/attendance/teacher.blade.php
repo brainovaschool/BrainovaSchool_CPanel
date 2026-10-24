@@ -25,9 +25,10 @@
                         <div class="card-header d-flex align-items-center gap-4 flex-wrap">
                             <h3 class="mb-0">{{ ___('common.Filtering') }}</h3>
 
-                            <div class="card_header_right d-flex align-items-center gap-3 flex-fill justify-content-end flex-wrap">
+                            <div class="card_header_right d-flex align-items-end gap-3 flex-wrap justify-content-end">
                                 <div class="single_large_selectBox">
-                                    <select class="nice-select niceSelect bordered_style wide" name="role" onchange="this.form.submit()">
+                                    <label class="form-label d-block mb-1">{{ ___('common.Role') }}</label>
+                                    <select class="nice-select niceSelect bordered_style wide" name="role">
                                         <option value="">{{ ___('common.All') }}</option>
                                         @foreach ($data['roles'] as $role)
                                             <option {{ (string) $data['request']->role === (string) $role->id ? 'selected' : '' }}
@@ -37,8 +38,9 @@
                                 </div>
 
                                 <div class="single_large_selectBox">
+                                    <label class="form-label d-block mb-1">{{ ___('settings.Staff') }}</label>
                                     <select class="nice-select niceSelect bordered_style wide" name="staff">
-                                        <option value="">{{ ___('settings.All Staff') }}</option>
+                                        <option value="">{{ ___('common.All') }}</option>
                                         @foreach ($data['staffs'] as $staff)
                                             <option {{ (string) $data['request']->staff === (string) $staff->id ? 'selected' : '' }}
                                                 value="{{ $staff->id }}">{{ trim($staff->first_name . ' ' . $staff->last_name) }}</option>
@@ -47,15 +49,9 @@
                                 </div>
 
                                 <div class="single_large_selectBox">
-                                    <label class="form-label d-block mb-1">{{ ___('common.Start Date') }}</label>
-                                    <input value="{{ $data['request']->date_from }}" name="date_from"
-                                        class="form-control ot-input" type="date">
-                                </div>
-
-                                <div class="single_large_selectBox">
-                                    <label class="form-label d-block mb-1">{{ ___('common.End Date') }}</label>
-                                    <input value="{{ $data['request']->date_to }}" name="date_to"
-                                        class="form-control ot-input" type="date">
+                                    <label class="form-label d-block mb-1">{{ ___('common.Month') }}</label>
+                                    <input value="{{ $data['request']->month }}" name="month"
+                                        class="form-control ot-input" type="month">
                                 </div>
 
                                 <button class="btn btn-lg ot-btn-primary">
@@ -68,14 +64,13 @@
             </div>
         </div>
 
-        @if (count($data['rows']) > 0)
+        @if (count($data['staffList']) > 0)
             <div class="download_print_btns mb-24">
                 <form action="{{ route('attendance.teacher-export') }}" method="post">
                     @csrf
                     <input type="hidden" name="role" value="{{ $data['request']->role }}">
                     <input type="hidden" name="staff" value="{{ $data['request']->staff }}">
-                    <input type="hidden" name="date_from" value="{{ $data['request']->date_from }}">
-                    <input type="hidden" name="date_to" value="{{ $data['request']->date_to }}">
+                    <input type="hidden" name="month" value="{{ $data['request']->month }}">
                     <button class="btn btn-lg ot-btn-primary" type="submit">{{ ___('common.export_excel') }}
                         <span><i class="fa-solid fa-file-excel"></i></span></button>
                 </form>
@@ -86,23 +81,52 @@
             <div class="card">
                 <div class="card-header"><h4 class="mb-0">{{ $data['title'] }}</h4></div>
                 <div class="card-body">
+                    <div class="text-end mb-3">
+                        <strong>
+                            <span class="text-success">{{ ___('common.Present') }} = P</span>
+                            <span class="text-danger">{{ ___('common.Absent') }} = A</span>
+                            <span class="text-primary">{{ ___('common.Leave') }} = L</span>
+                            <span class="text-warning">{{ ___('common.Half Leave') }} = H</span>
+                        </strong>
+                    </div>
                     <div class="table-responsive">
-                        <table class="ot-basic-table ot-table-bg">
-                            <thead class="thead">
+                        <table class="table">
+                            <thead>
                                 <tr>
-                                    <th>{{ ___('common.name') }}</th>
-                                    <th>{{ ___('common.Role') }}</th>
-                                    <th>{{ ___('common.date') }}</th>
-                                    <th>{{ ___('settings.First Login') }}</th>
+                                    <th class="purchase">{{ ___('common.name') }}</th>
+                                    <th class="purchase">{{ ___('common.Role') }}</th>
+                                    @foreach ($data['days'] as $date)
+                                        <th>{{ \Carbon\Carbon::parse($date)->format('j') }}</th>
+                                    @endforeach
+                                    <th class="purchase text-success">P</th>
+                                    <th class="purchase text-danger">A</th>
+                                    <th class="purchase text-primary">L</th>
+                                    <th class="purchase text-warning">H</th>
                                 </tr>
                             </thead>
-                            <tbody class="tbody">
-                                @forelse ($data['rows'] as $row)
+                            <tbody>
+                                @forelse ($data['staffList'] as $staff)
                                     <tr>
-                                        <td>{{ trim(($row->staff->first_name ?? '') . ' ' . ($row->staff->last_name ?? '')) }}</td>
-                                        <td>{{ optional($row->staff->role ?? null)->name ?? '—' }}</td>
-                                        <td>{{ dateFormat($row->date) }}</td>
-                                        <td>{{ $row->first_login_at ? $row->first_login_at->format('h:i A') : '—' }}</td>
+                                        <td>{{ trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? '')) }}</td>
+                                        <td>{{ optional($staff->role)->name ?? '—' }}</td>
+                                        @foreach ($data['days'] as $date)
+                                            @php($status = $data['statusGrid'][$staff->id][$date] ?? 'A')
+                                            <td>
+                                                @if ($status === 'P')
+                                                    <span class="text-success">P</span>
+                                                @elseif ($status === 'L')
+                                                    <span class="text-primary">L</span>
+                                                @elseif ($status === 'H')
+                                                    <span class="text-warning">H</span>
+                                                @else
+                                                    <span class="text-danger">A</span>
+                                                @endif
+                                            </td>
+                                        @endforeach
+                                        <td><span class="text-success">{{ $data['summary'][$staff->id]['P'] ?? 0 }}</span></td>
+                                        <td><span class="text-danger">{{ $data['summary'][$staff->id]['A'] ?? 0 }}</span></td>
+                                        <td><span class="text-primary">{{ $data['summary'][$staff->id]['L'] ?? 0 }}</span></td>
+                                        <td><span class="text-warning">{{ $data['summary'][$staff->id]['H'] ?? 0 }}</span></td>
                                     </tr>
                                 @empty
                                     <tr>
@@ -116,7 +140,7 @@
                         </table>
                     </div>
                     <div class="pagination-area mt-20">
-                        {{ $data['rows']->links() }}
+                        {{ $data['staffList']->links() }}
                     </div>
                 </div>
             </div>
