@@ -3,7 +3,6 @@
         ['route' => 'attendance.index', 'match' => ['attendance.index', 'attendance.search'], 'label' => ___('settings.Daily Attendance')],
         ['route' => 'attendance.subject-attendance', 'match' => ['attendance.subject-attendance', 'attendance.student.search'], 'label' => ___('settings.Subject Attendance')],
         ['route' => 'attendance.report', 'match' => ['attendance.report', 'attendance.report-search'], 'label' => ___('settings.Daily Attendance Report')],
-        ['route' => 'attendance.notification', 'match' => ['attendance.notification', 'attendance.settinngUpdate'], 'label' => ___('settings.notification_setup')],
     ];
     $currentRoute = request()->route() ? request()->route()->getName() : '';
 @endphp
