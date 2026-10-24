@@ -231,13 +231,6 @@ class AttendanceRepository implements AttendanceInterface
         }
         if ($request->date_from != "" && $request->date_to != "") {
             $query->whereBetween('date', [$request->date_from, $request->date_to]);
-        } elseif ($request->month != "") {
-            $query->where('date', 'LIKE', $request->month . '%');
-        } elseif ($request->date != "") {
-            $query->where('date', $request->date);
-        }
-        if ($request->roll != "") {
-            $query->where('roll', $request->roll);
         }
 
         return $query;
@@ -249,14 +242,6 @@ class AttendanceRepository implements AttendanceInterface
         $month = 0;
         if ($request->date_from != "") {
             $abc = explode('-', $request->date_from);
-            $year = $abc[0];
-            $month = $abc[1];
-        } elseif ($request->month != "") {
-            $abc = explode('-', $request->month);
-            $year = $abc[0];
-            $month = $abc[1];
-        } elseif ($request->date != "") {
-            $abc = explode('-', $request->date);
             $year = $abc[0];
             $month = $abc[1];
         }

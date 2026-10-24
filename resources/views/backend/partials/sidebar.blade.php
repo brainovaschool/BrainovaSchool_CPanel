@@ -267,9 +267,8 @@
                         </a>
                         <ul class="child-menu-list">
                             @if (hasPermission('attendance_read'))
-                                <li
-                                    class="sidebar-menu-item {{ set_menu(['attendance.index', 'attendance.search', 'attendance.subject-attendance', 'attendance.student.search', 'attendance/report*', 'attendance.notification', 'attendance.settinngUpdate']) }}">
-                                    <a href="{{ route('attendance.index') }}">{{ ___('settings.Student') }}</a>
+                                <li class="sidebar-menu-item {{ set_menu(['attendance/report*']) }}">
+                                    <a href="{{ route('attendance.report') }}">{{ ___('settings.Student') }}</a>
                                 </li>
                             @endif
 

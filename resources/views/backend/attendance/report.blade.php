@@ -485,8 +485,6 @@
         </div>
         {{-- bradecrumb Area E n d --}}
 
-        @include('backend.attendance._tabs')
-
         <div class="row">
             <div class="col-12">
                 <div class="card ot-card mb-24 position-relative z_1">
@@ -560,29 +558,6 @@
                                 </div>
 
                                 <div class="single_large_selectBox">
-                                    <input value="{{ old('month', @$data['request']->month) }}" name="month"
-                                        class="form-control ot-input @error('month') is-invalid @enderror" type="month"
-                                        placeholder="Search month">
-
-                                    @error('month')
-                                        <div id="validationServer04Feedback" class="invalid-feedback">
-                                            {{ $message }}
-                                        </div>
-                                    @enderror
-                                </div>
-
-                                <div class="single_large_selectBox">
-                                    <input value="{{ old('date', @$data['request']->date) }}" name="date"
-                                        class="form-control ot-input @error('date') is-invalid @enderror" type="date">
-
-                                    @error('date')
-                                        <div id="validationServer04Feedback" class="invalid-feedback">
-                                            {{ $message }}
-                                        </div>
-                                    @enderror
-                                </div>
-
-                                <div class="single_large_selectBox">
                                     <label class="form-label d-block mb-1">{{ ___('common.Start Date') }}</label>
                                     <input value="{{ old('date_from', @$data['request']->date_from) }}" name="date_from"
                                         class="form-control ot-input @error('date_from') is-invalid @enderror" type="date">
@@ -604,17 +579,6 @@
                                     @enderror
                                 </div>
 
-                                <div class="single_large_selectBox">
-                                    <input value="{{ old('roll', @$data['request']->roll) }}" name="roll"
-                                        class="form-control ot-input @error('roll') is-invalid @enderror" type="number"
-                                        placeholder="{{ ___('report.roll_number') }}">
-
-                                    @error('roll')
-                                        <div id="validationServer04Feedback" class="invalid-feedback">
-                                            {{ $message }}
-                                        </div>
-                                    @enderror
-                                </div>
                                 <button class="btn btn-lg ot-btn-primary">
                                     {{ ___('common.Search') }}
                                 </button>
@@ -651,11 +615,8 @@
                         <input type="hidden" name="class" value="{{ $data['request']->class }}">
                         <input type="hidden" name="section" value="{{ $data['request']->section }}">
                         <input type="hidden" name="subject" value="{{ $data['request']->subject }}">
-                        <input type="hidden" name="month" value="{{ $data['request']->month }}">
-                        <input type="hidden" name="date" value="{{ $data['request']->date }}">
                         <input type="hidden" name="date_from" value="{{ $data['request']->date_from }}">
                         <input type="hidden" name="date_to" value="{{ $data['request']->date_to }}">
-                        <input type="hidden" name="roll" value="{{ $data['request']->roll }}">
                         <button class="btn btn-lg ot-btn-primary mt-3" type="submit">{{ ___('common.export_excel') }}
                             <span><i class="fa-solid fa-file-excel"></i></span></button>
                     </form>

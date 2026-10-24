@@ -21,8 +21,6 @@
         </div>
         {{-- bradecrumb Area E n d --}}
 
-        @include('backend.attendance._tabs')
-
         <div class="card ot-card">
             <div class="card-body">
                 <form action="{{ route('attendance.settinngUpdate') }}" enctype="multipart/form-data" method="post" id="markRegister">

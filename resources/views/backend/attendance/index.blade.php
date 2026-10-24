@@ -19,8 +19,6 @@
         </div>
         {{-- bradecrumb Area E n d --}}
 
-        @include('backend.attendance._tabs')
-
         <div class="row">
             <div class="col-12">
                 <div class="card ot-card mb-24 position-relative z_1">
