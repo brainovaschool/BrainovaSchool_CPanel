@@ -494,10 +494,11 @@
                             <h3 class="mb-0">{{ ___('common.Filtering') }}</h3>
 
                             <div
-                                class="card_header_right d-flex align-items-end gap-3 flex-nowrap overflow-auto justify-content-end">
+                                class="card_header_right d-flex align-items-end gap-3 flex-wrap">
                                 <!-- table_searchBox -->
 
                                 <div class="single_large_selectBox">
+                                    <label class="form-label d-block mb-1">{{ ___('common.Department') }}</label>
                                     <select class="nice-select niceSelect bordered_style wide @error('department') is-invalid @enderror"
                                         name="department">
                                         <option value="">{{ ___('common.All') }}</option>
@@ -514,6 +515,7 @@
                                     @enderror
                                 </div>
                                 <div class="single_large_selectBox">
+                                    <label class="form-label d-block mb-1">{{ ___('academic.class') }}</label>
                                     <select id="getSections"
                                         class="class nice-select niceSelect bordered_style wide @error('class') is-invalid @enderror"
                                         name="class">
@@ -531,6 +533,7 @@
                                     @enderror
                                 </div>
                                 <div class="single_large_selectBox">
+                                    <label class="form-label d-block mb-1">{{ ___('academic.section') }}</label>
                                     <select id="getSubjects"
                                         class="sections section nice-select niceSelect bordered_style wide @error('section') is-invalid @enderror"
                                         name="section">
@@ -548,6 +551,7 @@
                                     @enderror
                                 </div>
                                 <div class="single_large_selectBox">
+                                    <label class="form-label d-block mb-1">{{ ___('academic.subject') }}</label>
                                     <select
                                         class="subjects nice-select niceSelect bordered_style wide @error('subject') is-invalid @enderror"
                                         name="subject">
@@ -565,6 +569,7 @@
                                     @enderror
                                 </div>
                                 <div class="single_large_selectBox">
+                                    <label class="form-label d-block mb-1">{{ ___('student_info.student_name') }}</label>
                                     <select
                                         class="students nice-select niceSelect bordered_style wide @error('student') is-invalid @enderror"
                                         name="student">
