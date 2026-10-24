@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Attendance;
 
+use App\Exports\StudentAttendanceExport;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Attendance\AttendanceReportRequest;
 use App\Http\Requests\Attendance\AttendanceSearchRequest;
@@ -14,6 +15,7 @@ use App\Repositories\Academic\SubjectAssignRepository;
 use App\Repositories\Academic\SubjectRepository;
 use App\Repositories\Attendance\AttendanceRepository;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 use PDF;
 
 class AttendanceController extends Controller
@@ -129,6 +131,7 @@ class AttendanceController extends Controller
         $data['title']              = ___('attendance.Attendance');
         $data['classes']            = $this->classRepo->assignedAll();
         $data['sections']           = [];
+        $data['subjects']           = collect();
         $data['students']           = [];
         $data['request']            = [];
 
@@ -142,11 +145,20 @@ class AttendanceController extends Controller
         $data['request']      = $request;
         $data['classes']      = $this->classRepo->assignedAll();
         $data['sections']     = $this->classSetupRepo->getSections($request->class);
+        $data['subjects']     = $this->subjectsForClassSection($request->class, $request->section);
         $results              = $this->repo->searchReport($request);
         $data['students']     = $results['students'];
         $data['days']         = $results['days'];
         $data['attendances']  = $results['attendances'];
+        $data['effective_view'] = $results['effective_view'];
         return view('backend.attendance.report', compact('data'));
+    }
+
+    public function exportExcel(AttendanceRequest $request)
+    {
+        $rows = $this->repo->searchReportForExport($request);
+
+        return Excel::download(new StudentAttendanceExport($rows), 'student-attendance-' . date('Y-m-d') . '.xlsx');
     }
 
     public function generatePDF(Request $request)

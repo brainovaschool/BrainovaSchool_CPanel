@@ -29,7 +29,6 @@ class AttendaceNotificationController extends Controller
     public function notification(){
         $data = [];
         $data['pt'] = ___('settings.absent_notification_setup');
-        $data['roles'] = $this->role_repo->all()->whereIn('id',[6,7]) ;
         $data['setting'] = $this->student_absense_noti_repo->setting();
         $data['shifts'] = $this->shift_repo->getAll();
         return view('backend.attendance.notification_setting', $data);

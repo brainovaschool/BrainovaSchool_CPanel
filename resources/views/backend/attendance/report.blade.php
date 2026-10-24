@@ -485,6 +485,8 @@
         </div>
         {{-- bradecrumb Area E n d --}}
 
+        @include('backend.attendance._tabs')
+
         <div class="row">
             <div class="col-12">
                 <div class="card ot-card mb-24 position-relative z_1">
@@ -523,7 +525,7 @@
                                     @enderror
                                 </div>
                                 <div class="single_large_selectBox">
-                                    <select
+                                    <select id="getSubjects"
                                         class="sections section nice-select niceSelect bordered_style wide @error('section') is-invalid @enderror"
                                         name="section">
                                         <option value="">{{ ___('student_info.select_section') }} *</option>
@@ -539,6 +541,24 @@
                                         </div>
                                     @enderror
                                 </div>
+                                <div class="single_large_selectBox">
+                                    <select
+                                        class="subjects nice-select niceSelect bordered_style wide @error('subject') is-invalid @enderror"
+                                        name="subject">
+                                        <option value="">{{ ___('student_info.select subject') }}</option>
+                                        @foreach ($data['subjects'] as $item)
+                                            <option
+                                                {{ old('subject', @$data['request']->subject) == $item->subject->id ? 'selected' : '' }}
+                                                value="{{ $item->subject->id }}">{{ $item->subject->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('subject')
+                                        <div id="validationServer04Feedback" class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+
                                 <div class="single_large_selectBox">
                                     <input value="{{ old('month', @$data['request']->month) }}" name="month"
                                         class="form-control ot-input @error('month') is-invalid @enderror" type="month"
@@ -556,6 +576,28 @@
                                         class="form-control ot-input @error('date') is-invalid @enderror" type="date">
 
                                     @error('date')
+                                        <div id="validationServer04Feedback" class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+
+                                <div class="single_large_selectBox">
+                                    <label class="form-label d-block mb-1">{{ ___('common.Start Date') }}</label>
+                                    <input value="{{ old('date_from', @$data['request']->date_from) }}" name="date_from"
+                                        class="form-control ot-input @error('date_from') is-invalid @enderror" type="date">
+                                    @error('date_from')
+                                        <div id="validationServer04Feedback" class="invalid-feedback">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+                                </div>
+
+                                <div class="single_large_selectBox">
+                                    <label class="form-label d-block mb-1">{{ ___('common.End Date') }}</label>
+                                    <input value="{{ old('date_to', @$data['request']->date_to) }}" name="date_to"
+                                        class="form-control ot-input @error('date_to') is-invalid @enderror" type="date">
+                                    @error('date_to')
                                         <div id="validationServer04Feedback" class="invalid-feedback">
                                             {{ $message }}
                                         </div>
@@ -604,6 +646,19 @@
                         <button class="btn btn-lg ot-btn-primary mt-3" type="submit">{{ ___('common.pdf_download') }}
                             <span><i class="fa-brands fa-dochub"></i></span></button>
                     </form>
+                    <form action="{{ route('attendance.export') }}" method="post">
+                        @csrf
+                        <input type="hidden" name="class" value="{{ $data['request']->class }}">
+                        <input type="hidden" name="section" value="{{ $data['request']->section }}">
+                        <input type="hidden" name="subject" value="{{ $data['request']->subject }}">
+                        <input type="hidden" name="month" value="{{ $data['request']->month }}">
+                        <input type="hidden" name="date" value="{{ $data['request']->date }}">
+                        <input type="hidden" name="date_from" value="{{ $data['request']->date_from }}">
+                        <input type="hidden" name="date_to" value="{{ $data['request']->date_to }}">
+                        <input type="hidden" name="roll" value="{{ $data['request']->roll }}">
+                        <button class="btn btn-lg ot-btn-primary mt-3" type="submit">{{ ___('common.export_excel') }}
+                            <span><i class="fa-solid fa-file-excel"></i></span></button>
+                    </form>
                 </div>
             @endif
             <div class="routine_wrapper" id="printableArea">
@@ -618,7 +673,7 @@
                             <p>{{ setting('address') }}</p>
                     </div>
                 </div>
-                @if (@$data['request']->view == '0')
+                @if ((@$data['effective_view'] ?? @$data['request']->view) == '0')
                     <div class="text-end">
                         <strong>
                             <span class="text-success">{{ ___('attendance.Present') }} = {{ ___('common.P') }}</span>
@@ -630,7 +685,7 @@
                     </div>
                 @endif
                 <div class="table-responsive">
-                    @if (@$data['request']->view == '0')
+                    @if ((@$data['effective_view'] ?? @$data['request']->view) == '0')
                         <table class="table">
                             <thead>
                                 <tr>

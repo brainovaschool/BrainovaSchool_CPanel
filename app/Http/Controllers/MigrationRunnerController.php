@@ -3933,6 +3933,27 @@ class MigrationRunnerController extends Controller
             }
         }
 
+        // The Attendance sidebar used to split Daily/Subject Attendance
+        // (gated attendance_read) from Daily Attendance Report and
+        // Notification Setup (gated report_attendance_read) across 4 rows
+        // whose sidebar permission didn't even match their route's
+        // middleware (report_attendance_read in the sidebar vs
+        // attendance_read on the actual routes) — e.g. Coordinator was
+        // seeded with report_attendance_read only, so its "report" link
+        // 403'd the moment it was clicked. Now merged into a single
+        // "Student" entry gated by attendance_read alone, so any role that
+        // already had report_attendance_read needs attendance_read too or
+        // it loses the whole section. Grant-only, re-checked every run,
+        // never strips a manual revoke of report_attendance_read itself
+        // (if that goes, this stops being re-granted).
+        foreach (Role::all() as $role) {
+            $rolePerms = is_array($role->permissions) ? $role->permissions : [];
+            if (in_array('report_attendance_read', $rolePerms, true) && !in_array('attendance_read', $rolePerms, true)) {
+                $role->permissions = array_values(array_merge($rolePerms, ['attendance_read']));
+                $role->save();
+            }
+        }
+
         // Leave Type / Leave Request routes carried no PermissionCheck at
         // all before this sync — every staff role could already view,
         // create, edit and delete both freely. Now that real permission

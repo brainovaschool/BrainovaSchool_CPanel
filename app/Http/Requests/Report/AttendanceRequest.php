@@ -24,8 +24,11 @@ class AttendanceRequest extends FormRequest
     public function rules()
     {
         return [
-            'class'        => 'required',
-            'section'      => 'required',
+            'class'     => 'nullable',
+            'section'   => 'nullable',
+            'subject'   => 'nullable',
+            'date_from' => 'nullable|date',
+            'date_to'   => 'nullable|date',
         ];
     }
 }

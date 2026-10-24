@@ -259,41 +259,21 @@
                 {{-- End routines --}}
 
                 {{-- Start Attendance --}}
-                @if ((hasPermission('attendance_read') || hasPermission('report_attendance_read')) && hasFeature('attendance'))
+                @if (hasPermission('attendance_read') && hasFeature('attendance'))
                     <li class="sidebar-menu-item {{ set_menu(['attendance*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-calendar-plus"></i>
                             <span class="on-half-expanded">{{ ___('settings.Attendance') }}</span>
                         </a>
                         <ul class="child-menu-list">
-                            @if (hasPermission('attendance_read'))
-                                <li
-                                    class="sidebar-menu-item {{ set_menu(['attendance.index', 'attendance.search']) }}">
-                                    <a href="{{ route('attendance.index') }}">{{ ___('settings.Daily Attendance') }}</a>
-                                </li>
-                            @endif
+                            <li
+                                class="sidebar-menu-item {{ set_menu(['attendance.index', 'attendance.search', 'attendance.subject-attendance', 'attendance.student.search', 'attendance/report*', 'attendance.notification', 'attendance.settinngUpdate']) }}">
+                                <a href="{{ route('attendance.index') }}">{{ ___('settings.Student') }}</a>
+                            </li>
 
-                            @if (hasPermission('attendance_read'))
-                                <li
-                                    class="sidebar-menu-item {{ set_menu(['attendance.subject-attendance', 'attendance.student.search']) }}">
-                                    <a href="{{ route('attendance.subject-attendance') }}">{{ ___('settings.Subject Attendance') }}</a>
-                                </li>
-                            @endif
-
-                            @if (hasPermission('report_attendance_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['attendance/report*']) }}">
-                                    <a
-                                        href="{{ route('attendance.report') }}">{{ ___('settings.Daily Attendance Report') }}</a>
-                                </li>
-                            @endif
-
-                            @if (hasPermission('report_attendance_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['attendance.notification']) }}">
-                                    <a
-                                        href="{{ route('attendance.notification') }}">{{ ___('settings.notification_setup') }}</a>
-                                </li>
-                            @endif
-
+                            <li class="sidebar-menu-item {{ set_menu(['attendance/teacher*']) }}">
+                                <a href="{{ route('attendance.teacher') }}">{{ ___('settings.Teacher') }}</a>
+                            </li>
                         </ul>
                     </li>
                 @endif

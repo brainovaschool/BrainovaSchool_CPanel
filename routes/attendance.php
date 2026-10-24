@@ -4,6 +4,7 @@ use App\Http\Controllers\SubjectAttendanceController;
 use Illuminate\Support\Facades\Route;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use App\Http\Controllers\Attendance\AttendanceController;
+use App\Http\Controllers\Attendance\StaffAttendanceController;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 use App\Http\Controllers\Attendance\AttendaceNotificationController;
 
@@ -21,6 +22,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::match(['get', 'post'], '/subject-attendance/search', 'searchAttendance')->name('attendance.student.search');
                     Route::get('/report',           'report')->name('attendance.report')->middleware('PermissionCheck:attendance_read');
                     Route::any('/report-search',    'reportSearch')->name('attendance.report-search')->middleware('PermissionCheck:attendance_read');
+                    Route::any('/export',           'exportExcel')->name('attendance.export')->middleware('PermissionCheck:attendance_read');
 
                 });
 
@@ -28,6 +30,11 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/', 'notification')->name('attendance.notification')->middleware('PermissionCheck:attendance_read');
                     Route::post('/update', 'settinngUpdate')->name('attendance.settinngUpdate')->middleware('PermissionCheck:attendance_read');
 
+                });
+
+                Route::controller(StaffAttendanceController::class)->prefix('attendance/teacher')->group(function () {
+                    Route::get('/',       'index')->name('attendance.teacher')->middleware('PermissionCheck:attendance_read');
+                    Route::any('/export', 'exportExcel')->name('attendance.teacher-export')->middleware('PermissionCheck:attendance_read');
                 });
 
             });

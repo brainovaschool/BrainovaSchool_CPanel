@@ -207,57 +207,123 @@ class AttendanceRepository implements AttendanceInterface
     }
 
 
-    public function searchReport($request)
+    /**
+     * Shared filter-building for the report / PDF / Excel export, so all
+     * three stay in sync. Switches to the SubjectAttendance model when a
+     * subject filter is given — same column shape (student/class/section +
+     * date/attendance/roll/note), just with an extra subject_id, so the
+     * rest of this class and the report view work unchanged either way.
+     */
+    private function reportBaseQuery($request)
     {
-        $students = Attendance::query();
+        $hasSubject = $request->subject != "";
+        $query = $hasSubject ? SubjectAttendance::query() : Attendance::query();
 
-        $students = $students->where('session_id', setting('session'));
+        $query->where('session_id', setting('session'));
         if ($request->class != "") {
-            $students = $students->where('classes_id', $request->class);
+            $query->where('classes_id', $request->class);
         }
         if ($request->section != "") {
-            $students = $students->where('section_id', $request->section);
+            $query->where('section_id', $request->section);
         }
-        if ($request->month != "") {
-            $students = $students->where('date', 'LIKE', $request->month . '%');
+        if ($hasSubject) {
+            $query->where('subject_id', $request->subject);
         }
-        if ($request->date != "") {
-            $students = $students->where('date', $request->date);
+        if ($request->date_from != "" && $request->date_to != "") {
+            $query->whereBetween('date', [$request->date_from, $request->date_to]);
+        } elseif ($request->month != "") {
+            $query->where('date', 'LIKE', $request->month . '%');
+        } elseif ($request->date != "") {
+            $query->where('date', $request->date);
         }
         if ($request->roll != "") {
-            $students = $students->where('roll', $request->roll);
+            $query->where('roll', $request->roll);
         }
 
+        return $query;
+    }
+
+    private function resolveYearMonth($request)
+    {
         $year = 0;
         $month = 0;
-        if ($request->month != "") {
+        if ($request->date_from != "") {
+            $abc = explode('-', $request->date_from);
+            $year = $abc[0];
+            $month = $abc[1];
+        } elseif ($request->month != "") {
             $abc = explode('-', $request->month);
+            $year = $abc[0];
+            $month = $abc[1];
+        } elseif ($request->date != "") {
+            $abc = explode('-', $request->date);
             $year = $abc[0];
             $month = $abc[1];
         }
 
+        return [$year, $month];
+    }
 
-        if ($request->date != "") {
-            $abc   = explode('-', $request->date);
-            $year  = $abc[0];
-            $month = $abc[1];
-        }
+    /**
+     * The "short view" grid has one column per day-of-month (1-31), so it
+     * can only ever represent a single month at a time. A date_from/date_to
+     * range that crosses a month boundary is forced into detail view
+     * instead — otherwise e.g. Jan 5 and Feb 5 would both land in the same
+     * "5" column and look like one day.
+     */
+    private function resolveEffectiveView($request)
+    {
+        $crossMonth = $request->date_from != "" && $request->date_to != ""
+            && substr($request->date_from, 0, 7) !== substr($request->date_to, 0, 7);
 
+        return $crossMonth ? 1 : (int) $request->view;
+    }
+
+    public function searchReport($request)
+    {
+        $students = $this->reportBaseQuery($request);
+        [$year, $month] = $this->resolveYearMonth($request);
+        $effectiveView = $this->resolveEffectiveView($request);
 
         $data['days'] = getAllDaysInMonth($year, $month);
+        $data['effective_view'] = $effectiveView;
 
-        if ($request->view == 0) {
+        if ($effectiveView == 0) {
             $students->select('student_id', 'date', 'attendance');
             $data['attendances'] = $students->get();
             $students->select('student_id', 'roll')->distinct('student_id');
             $data['students']    = $students->paginate(10);
-            // dd($data);
             return $data;
         } else {
-            $data['students']    = $students->paginate(10);
+            $data['students']    = $students->with(['student', 'class', 'section'])->paginate(10);
             $data['attendances'] = [];
             return $data;
         }
+    }
+
+    /** Flat, unpaginated rows for the Excel export — always the full
+     *  filtered set, regardless of which view mode is on screen. */
+    public function searchReportForExport($request)
+    {
+        $hasSubject = $request->subject != "";
+        $query = $this->reportBaseQuery($request)->with(['student', 'class', 'section']);
+        if ($hasSubject) {
+            $query->with('subject');
+        }
+
+        return $query->get()->map(function ($row) use ($hasSubject) {
+            return [
+                'student'      => trim(($row->student->first_name ?? '') . ' ' . ($row->student->last_name ?? '')),
+                'roll'         => $row->roll,
+                'admission_no' => $row->student->admission_no ?? '',
+                'class'        => $row->class->name ?? '',
+                'section'      => $row->section->name ?? '',
+                'subject'      => $hasSubject ? ($row->subject->name ?? '') : '',
+                'date'         => $row->date,
+                'status'       => getAttendanceType($row->attendance),
+                'note'         => $row->note,
+            ];
+        });
     }
 
     public function searchReportPDF($request)

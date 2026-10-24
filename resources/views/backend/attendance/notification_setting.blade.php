@@ -10,7 +10,7 @@
         <div class="page-header">
             <div class="row">
                 <div class="col-sm-6">
-                    <h4 class="bradecrumb-title mb-1">{{ $pt }}</h1>
+                    <h4 class="bradecrumb-title mb-1">{{ $pt }}</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
 
@@ -20,6 +20,9 @@
             </div>
         </div>
         {{-- bradecrumb Area E n d --}}
+
+        @include('backend.attendance._tabs')
+
         <div class="card ot-card">
             <div class="card-body">
                 <form action="{{ route('attendance.settinngUpdate') }}" enctype="multipart/form-data" method="post" id="markRegister">
