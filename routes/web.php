@@ -127,6 +127,18 @@ Route::middleware(saasMiddleware())->group(function () {
 
             Route::get('/optimize', function () {
                 \Artisan::call('optimize:clear');
+                // optimize:clear only clears Laravel's own caches (route,
+                // config, view, compiled classes) - it does NOT reset
+                // OPcache, PHP's separate engine-level bytecode cache. On
+                // shared hosting a git pull can leave OPcache still serving
+                // the PREVIOUS version of a changed .php file (confirmed
+                // live: a repository fix landed in the code but the site
+                // kept executing the old method body until this ran),
+                // so every deploy needs this cleared too, not just
+                // Laravel's caches.
+                if (function_exists('opcache_reset')) {
+                    opcache_reset();
+                }
                 dd('success');
             });
 
