@@ -2,8 +2,10 @@
 
 namespace App\Repositories\leave;
 
+use App\Enums\RoleEnum;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
+use App\Models\Staff\Staff;
 use App\Models\Upload;
 use App\Repositories\Academic\ClassesRepository;
 use App\Repositories\StudentInfo\StudentRepository;
@@ -53,6 +55,10 @@ class LeaveRequestRepository
     public function store(Request $request): bool
     {
         try {
+            if ((string) $request->role_id !== (string) RoleEnum::STUDENT) {
+                return $this->createStaffLeaveRequest($request);
+            }
+
             $isSingleStudent = $request->class !== null && $request->section !== null && $request->student !== null;
             $isEntireClass = $request->class !== null && $request->section === null && $request->student === null;
             $isEntireSection = $request->class !== null && $request->section !== null && $request->student === null;
@@ -69,6 +75,40 @@ class LeaveRequestRepository
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    private function createStaffLeaveRequest(Request $request): bool
+    {
+        $staff = Staff::find($request->staff);
+        if (!$staff || !$staff->user_id) {
+            return false;
+        }
+
+        if ($request->hasFile('attachment')) {
+            $upload_id = $this->UploadImageCreate($request->file('attachment'), 'backend/uploads/students');
+        }
+
+        $leaveRequest = new LeaveRequest();
+        $leaveRequest->fill([
+            'leave_type_id' => $request->leave_type,
+            'user_id' => $staff->user_id,
+            // The real role (Teacher, Staff, a custom combined role, etc.)
+            // comes from the staff member picked, not the Student/Staff
+            // toggle in the form - that toggle only decides which picker
+            // to show.
+            'role_id' => $staff->role_id,
+            'request_by' => auth()->id(),
+            'session_id' => setting('session'),
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'description' => $request->description,
+            'leave_days' => $this->calculateLeaveDays($request),
+            'approval_status' => hasPermission('leave_request_update') ? $request->approval_status : 'pending',
+            'attachment_id' => $upload_id ?? null,
+            'is_half_day' => $request->boolean('is_half_day'),
+        ]);
+
+        return $leaveRequest->save();
     }
 
     private function createSingleStudentLeaveRequest(Request $request): bool
@@ -94,6 +134,7 @@ class LeaveRequestRepository
             // as pending, regardless of what the hidden/posted field says.
             'approval_status' => hasPermission('leave_request_update') ? $request->approval_status : 'pending',
             'attachment_id' => $upload_id ?? null,
+            'is_half_day' => $request->boolean('is_half_day'),
         ]);
 
         return $leaveRequest->save();
@@ -113,6 +154,7 @@ class LeaveRequestRepository
         }
 
         $approvalStatus = hasPermission('leave_request_update') ? $request->approval_status : 'pending';
+        $isHalfDay = $request->boolean('is_half_day');
         foreach ($students as $student) {
             $leaveRequests[] = [
                 'leave_type_id' => $request->leave_type,
@@ -126,6 +168,7 @@ class LeaveRequestRepository
                 'approval_status' => $approvalStatus,
                 'leave_days' => $leaveDays,
                 'attachment_id' => $upload_id ?? null,
+                'is_half_day' => $isHalfDay,
             ];
         }
 
@@ -142,10 +185,14 @@ class LeaveRequestRepository
 
     public function update(Request $request): bool
     {
-        $request->validate([
-            'section' => 'required|exists:sections,id',
-            'class' => 'required|exists:classes,id',
-        ]);
+        $isStaff = (string) $request->role_id !== (string) RoleEnum::STUDENT;
+
+        if (!$isStaff) {
+            $request->validate([
+                'section' => 'required|exists:sections,id',
+                'class' => 'required|exists:classes,id',
+            ]);
+        }
 
         try {
             $leaveRequest = $this->show($request->editLeaveId);
@@ -166,9 +213,19 @@ class LeaveRequestRepository
                     $leaveRequest->attachment_id = $upload_id;
                 }
             }
-            $student = $this->studentRepo->show($request->student);
+            if ($isStaff) {
+                $staff = Staff::find($request->staff);
+                if (!$staff || !$staff->user_id) {
+                    return false;
+                }
+                $leaveRequest->user_id = $staff->user_id;
+                $leaveRequest->role_id = $staff->role_id;
+            } else {
+                $student = $this->studentRepo->show($request->student);
+                $leaveRequest->user_id = $student->user_id;
+            }
             $leaveRequest->leave_type_id = $request->leave_type;
-            $leaveRequest->user_id = $student->user_id;
+            $leaveRequest->is_half_day = $request->boolean('is_half_day');
             $leaveRequest->approval_status = $isManager ? $request->approval_status : 'pending';
             if ($leaveRequest->approval_status == 'approved'){
                 $leaveRequest->approved_by = auth()->id();

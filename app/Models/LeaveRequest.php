@@ -19,6 +19,7 @@ class LeaveRequest extends Model
         'leave_days',
         'approval_status',
         'attachment_id',
+        'is_half_day',
     ];
 
     public function leaveType(){

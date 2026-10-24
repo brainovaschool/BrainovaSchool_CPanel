@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\RoleEnum;
 use App\Http\Requests\LeaveRequestStoreRequest;
 use App\Models\Academic\Section;
 use App\Models\LeaveRequest;
 use App\Models\LeaveType;
+use App\Models\Staff\Staff;
 use App\Models\StudentInfo\Student;
 use App\Repositories\Academic\ClassesRepository;
 use App\Repositories\leave\LeaveRequestRepository;
@@ -34,6 +36,7 @@ class LeaveRequestController extends Controller
         $data['sections'] = [];
 
         $data['students'] = [];
+        $data['staffs'] = Staff::with('role')->active()->orderBy('first_name')->get();
         return view('backend.leave.request', compact('data'));
     }
 
@@ -72,13 +75,18 @@ class LeaveRequestController extends Controller
         $data['sections'] = [];
 
         $data['students'] = [];
+        $data['staffs'] = Staff::with('role')->active()->orderBy('first_name')->get();
 
-        $student = Student::with('session_class_student')
-        ->where('user_id', $editLeave->user_id)->first();
+        if ((int) $editLeave->role_id === RoleEnum::STUDENT) {
+            $student = Student::with('session_class_student')
+                ->where('user_id', $editLeave->user_id)->first();
 
-        $data['class_id'] = $student->session_class_student->classes_id;
-        $data['section'] = $student->session_class_student->section;
-        $data['student_id'] = $student->id;
+            $data['class_id'] = $student->session_class_student->classes_id ?? null;
+            $data['section'] = $student->session_class_student->section ?? null;
+            $data['student_id'] = $student->id ?? null;
+        } else {
+            $data['staff_id'] = optional(Staff::where('user_id', $editLeave->user_id)->first())->id;
+        }
 
         return view('backend.leave.request', compact('data', 'editLeave'));
     }

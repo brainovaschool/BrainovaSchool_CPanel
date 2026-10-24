@@ -33,18 +33,26 @@
                                     <div class="col-lg-12">
                                         <div class="row">
 
+                                            @php
+                                                $isEditingStaffLeave = isset($editLeave) && (int) $editLeave->role_id !== RoleEnum::STUDENT;
+                                                $selectedRoleMode = old('role_id', $isEditingStaffLeave ? 'staff' : ($editLeave->role_id ?? ''));
+                                            @endphp
                                             <div class="col-md-12 mb-3">
-                                                <label for="validationServer04"
+                                                <label for="leaveRoleSelect"
                                                        class="form-label">{{ ___('common.Select Role') }} <span
                                                         class="fillable">*</span></label>
                                                 <select
                                                     class="nice-select niceSelect bordered_style wide @error('role_id') is-invalid @enderror"
-                                                    name="role_id" id="validationServer04"
+                                                    name="role_id" id="leaveRoleSelect"
                                                     aria-describedby="validationServer04Feedback">
                                                     <option value="">{{ ___('common.Select Role') }}</option>
                                                     <option value="{{ RoleEnum::STUDENT }}"
-                                                        {{ old('role_id', $editLeave->role_id ?? '') == RoleEnum::STUDENT ? 'selected' : '' }}>
+                                                        {{ (string) $selectedRoleMode === (string) RoleEnum::STUDENT ? 'selected' : '' }}>
                                                         {{ ___('common.Student') }}
+                                                    </option>
+                                                    <option value="staff"
+                                                        {{ $selectedRoleMode === 'staff' ? 'selected' : '' }}>
+                                                        {{ ___('common.Staff') }}
                                                     </option>
                                                 </select>
                                             </div>
@@ -73,67 +81,94 @@
                                                 @enderror
                                             </div>
 
-                                            <div class="col-md-12 mb-3">
-                                                <label for="validationServer04"
-                                                       class="form-label">{{ ___('common.Select Class') }} <span
-                                                        class="fillable">*</span></label>
+                                            <div id="studentLeaveFields" style="{{ $isEditingStaffLeave ? 'display:none;' : '' }}">
+                                                <div class="col-md-12 mb-3">
+                                                    <label for="validationServer04"
+                                                           class="form-label">{{ ___('common.Select Class') }} <span
+                                                            class="fillable">*</span></label>
 
-                                                <select id="getSections"
-                                                        class="class nice-select niceSelect bordered_style wide @error('class') is-invalid @enderror"
-                                                        name="class">
-                                                    <option value="">{{ ___('student_info.select_class') }} *</option>
-                                                    @foreach ($data['classes'] as $item)
-                                                        <option value="{{ $item->class->id }}"
-                                                            {{ old('class', $data['class_id'] ?? '') == $item->class->id ? 'selected' : '' }}>
-                                                            {{ $item->class->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                @error('class')
-                                                <div id="validationServer04Feedback" class="invalid-feedback">
-                                                    {{ $message }}
+                                                    <select id="getSections"
+                                                            class="class nice-select niceSelect bordered_style wide @error('class') is-invalid @enderror"
+                                                            name="class">
+                                                        <option value="">{{ ___('student_info.select_class') }} *</option>
+                                                        @foreach ($data['classes'] as $item)
+                                                            <option value="{{ $item->class->id }}"
+                                                                {{ old('class', $data['class_id'] ?? '') == $item->class->id ? 'selected' : '' }}>
+                                                                {{ $item->class->name }}
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('class')
+                                                    <div id="validationServer04Feedback" class="invalid-feedback">
+                                                        {{ $message }}
+                                                    </div>
+                                                    @enderror
                                                 </div>
-                                                @enderror
+
+                                                <div class="col-md-12 mb-3">
+                                                    <label for="validationServer04"
+                                                           class="form-label">{{ ___('common.Select Section') }}</label>
+
+                                                    <select
+                                                        class="sections section nice-select niceSelect bordered_style wide @error('section') is-invalid @enderror"
+                                                        name="section">
+                                                        <option value="">{{ ___('student_info.select_section') }}</option>
+                                                        @if(isset($data['section']))
+                                                            <option value="{{$data['section']->id}}" selected>{{$data['section']->name}}</option>
+                                                        @endif
+                                                    </select>
+                                                    @error('section')
+                                                    <div id="validationServer04Feedback" class="invalid-feedback">
+                                                        {{ $message }}
+                                                    </div>
+                                                    @enderror
+                                                </div>
+
+                                                <div class="col-md-12 mb-3">
+                                                    <label for="validationServer04"
+                                                           class="form-label">{{ ___('common.Select Student') }}</label>
+
+                                                    <select
+                                                        class="students nice-select niceSelect bordered_style wide @error('student') is-invalid @enderror"
+                                                        name="student">
+                                                        <option value="">{{ ___('student_info.select_student') }}</option>
+                                                        @if(isset($data['student_id']))
+                                                            <option value="{{ $data['student_id']}}" selected>
+                                                                {{ $editLeave->user->full_name ?? $editLeave->user->name }}
+                                                            </option>
+                                                        @endif
+                                                    </select>
+                                                    @error('student')
+                                                    <div id="validationServer04Feedback" class="invalid-feedback">
+                                                        {{ $message }}
+                                                    </div>
+                                                    @enderror
+                                                </div>
                                             </div>
 
-                                            <div class="col-md-12 mb-3">
-                                                <label for="validationServer04"
-                                                       class="form-label">{{ ___('common.Select Section') }}</label>
-
-                                                <select
-                                                    class="sections section nice-select niceSelect bordered_style wide @error('section') is-invalid @enderror"
-                                                    name="section">
-                                                    <option value="">{{ ___('student_info.select_section') }}</option>
-                                                    @if(isset($data['section']))
-                                                        <option value="{{$data['section']->id}}" selected>{{$data['section']->name}}</option>
-                                                    @endif
-                                                </select>
-                                                @error('section')
-                                                <div id="validationServer04Feedback" class="invalid-feedback">
-                                                    {{ $message }}
+                                            <div id="staffLeaveFields" style="{{ $isEditingStaffLeave ? '' : 'display:none;' }}">
+                                                <div class="col-md-12 mb-3">
+                                                    <label for="leaveStaffSelect"
+                                                           class="form-label">{{ ___('common.Select Staff') }} <span
+                                                            class="fillable">*</span></label>
+                                                    <select id="leaveStaffSelect"
+                                                        class="nice-select niceSelect bordered_style wide @error('staff') is-invalid @enderror"
+                                                        name="staff">
+                                                        <option value="">{{ ___('common.Select Staff') }}</option>
+                                                        @foreach ($data['staffs'] as $staffItem)
+                                                            <option value="{{ $staffItem->id }}"
+                                                                {{ old('staff', $data['staff_id'] ?? '') == $staffItem->id ? 'selected' : '' }}>
+                                                                {{ trim($staffItem->first_name . ' ' . $staffItem->last_name) }}
+                                                                ({{ optional($staffItem->role)->name }})
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('staff')
+                                                    <div id="validationServer04Feedback" class="invalid-feedback">
+                                                        {{ $message }}
+                                                    </div>
+                                                    @enderror
                                                 </div>
-                                                @enderror
-                                            </div>
-
-                                            <div class="col-md-12 mb-3">
-                                                <label for="validationServer04"
-                                                       class="form-label">{{ ___('common.Select Student') }}</label>
-
-                                                <select
-                                                    class="students nice-select niceSelect bordered_style wide @error('student') is-invalid @enderror"
-                                                    name="student">
-                                                    <option value="">{{ ___('student_info.select_student') }}</option>
-                                                    @if(isset($data['student_id']))
-                                                        <option value="{{ $data['student_id']}}" selected>
-                                                            {{ $editLeave->user->full_name ?? $editLeave->user->name }}
-                                                        </option>
-                                                    @endif
-                                                </select>
-                                                @error('student')
-                                                <div id="validationServer04Feedback" class="invalid-feedback">
-                                                    {{ $message }}
-                                                </div>
-                                                @enderror
                                             </div>
 
                                             @if ($data['isManager'] ?? false)
@@ -176,6 +211,14 @@
                                                 <input type="date" class="form-control ot-input @error('end_date') is-invalid @enderror"
                                                        name="end_date"
                                                        value="{{ old('end_date', $editLeave->end_date ?? '') }}">
+                                            </div>
+
+                                            <div class="col-md-12 mb-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="is_half_day" value="1"
+                                                           id="is_half_day" {{ old('is_half_day', $editLeave->is_half_day ?? false) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="is_half_day">{{ ___('common.Half Day') }}</label>
+                                                </div>
                                             </div>
 
                                             <div class="col-md-12 mb-3">
@@ -237,6 +280,7 @@
                                         <th class="purchase">{{ ___('leave.Leave Type') }}</th>
 
                                         <th class="purchase">{{ ___('common.Status') }}</th>
+                                        <th class="purchase">{{ ___('common.Half Day') }}</th>
                                         <th class="purchase">{{ ___('common.Requested by')}}</th>
                                         <th class="purchase">{{ ___('common.Approved by') }}</th>
                                         <th class="purchase">{{ ___('common.Attachment') }}</th>
@@ -254,6 +298,7 @@
 
                                             <td>{{ $row->leaveType->name }}</td>
                                             <td>{{ strtoupper($row->approval_status)}}</td>
+                                            <td>{{ $row->is_half_day ? ___('common.Yes') : ___('common.No') }}</td>
                                             <td>{{ optional($row->requestedBy)->name}}</td>
                                             <td>{{ optional($row->approvedBy)->name}}</td>
                                             <td>
@@ -351,4 +396,22 @@
 @endsection
 @push('script')
     @include('backend.partials.delete-ajax')
+    <script>
+        (function () {
+            var roleSelect = document.getElementById('leaveRoleSelect');
+            var studentFields = document.getElementById('studentLeaveFields');
+            var staffFields = document.getElementById('staffLeaveFields');
+            if (!roleSelect || !studentFields || !staffFields) {
+                return;
+            }
+
+            function toggle() {
+                var isStudent = roleSelect.value === '{{ RoleEnum::STUDENT }}';
+                studentFields.style.display = isStudent ? '' : 'none';
+                staffFields.style.display = isStudent ? 'none' : '';
+            }
+
+            roleSelect.addEventListener('change', toggle);
+        })();
+    </script>
 @endpush
