@@ -106,6 +106,8 @@ class LeaveRequestRepository
             'approval_status' => hasPermission('leave_request_update') ? $request->approval_status : 'pending',
             'attachment_id' => $upload_id ?? null,
             'is_half_day' => $request->boolean('is_half_day'),
+            // Substitute/make-up day - staff leave only, never set for students.
+            'replacement_day' => $request->replacement_day ?: null,
         ]);
 
         return $leaveRequest->save();
@@ -220,9 +222,11 @@ class LeaveRequestRepository
                 }
                 $leaveRequest->user_id = $staff->user_id;
                 $leaveRequest->role_id = $staff->role_id;
+                $leaveRequest->replacement_day = $request->replacement_day ?: null;
             } else {
                 $student = $this->studentRepo->show($request->student);
                 $leaveRequest->user_id = $student->user_id;
+                $leaveRequest->replacement_day = null;
             }
             $leaveRequest->leave_type_id = $request->leave_type;
             $leaveRequest->is_half_day = $request->boolean('is_half_day');

@@ -30,14 +30,20 @@ class LeaveRequestController extends Controller
             : $this->leaveRequestRepo->mine(auth()->id());
         $data['isManager'] = $isManager;
         $data['title'] = ___('leave.Leave Request');
-        $data['types'] = LeaveType::where('active_status', true)->get();
+        return view('backend.leave.request', compact('data'));
+    }
 
+    public function create()
+    {
+        $data['title'] = ___('leave.Leave Request');
+        $data['isManager'] = hasPermission('leave_request_update');
+        $data['types'] = LeaveType::where('active_status', true)->get();
         $data['classes'] = $this->classRepo->assignedAll();
         $data['sections'] = [];
-
         $data['students'] = [];
         $data['staffs'] = Staff::with('role')->active()->orderBy('first_name')->get();
-        return view('backend.leave.request', compact('data'));
+
+        return view('backend.leave.form', compact('data'));
     }
 
     public function store(LeaveRequestStoreRequest $request)
@@ -50,7 +56,7 @@ class LeaveRequestController extends Controller
         }
 
         if ($result) {
-            return redirect()->back()->with('success', ___('alert.updated_successfully'));
+            return redirect()->route('leave-request.index')->with('success', ___('alert.updated_successfully'));
         }
         return redirect()->back()->with('danger', ___('alert.something_went_wrong_please_try_again'));
     }
@@ -64,9 +70,6 @@ class LeaveRequestController extends Controller
             abort(403);
         }
 
-        $data['leave_requests'] = $isManager
-            ? $this->leaveRequestRepo->all()
-            : $this->leaveRequestRepo->mine(auth()->id());
         $data['isManager'] = $isManager;
         $data['title'] = ___('leave.Leave Request');
         $data['types'] = LeaveType::where('active_status', true)->get();
@@ -88,7 +91,7 @@ class LeaveRequestController extends Controller
             $data['staff_id'] = optional(Staff::where('user_id', $editLeave->user_id)->first())->id;
         }
 
-        return view('backend.leave.request', compact('data', 'editLeave'));
+        return view('backend.leave.form', compact('data', 'editLeave'));
     }
 
     public function delete($id)

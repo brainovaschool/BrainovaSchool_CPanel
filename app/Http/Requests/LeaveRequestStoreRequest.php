@@ -31,6 +31,7 @@ class LeaveRequestStoreRequest extends FormRequest
 //            'section' => 'required|exists:sections,id',
             'description' => 'nullable|string|max:255',
             'is_half_day' => 'nullable|boolean',
+            'replacement_day' => 'nullable|date',
         ];
     }
 }

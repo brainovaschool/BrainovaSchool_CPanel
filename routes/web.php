@@ -487,6 +487,7 @@ Route::middleware(saasMiddleware())->group(function () {
 
         Route::prefix('leave-request')->name('leave-request.')->group(function () {
             Route::get('/', [LeaveRequestController::class, 'index'])->name('index')->middleware('PermissionCheck:leave_request_read');
+            Route::get('/create', [LeaveRequestController::class, 'create'])->name('create')->middleware('PermissionCheck:leave_request_create');
             Route::post('/store', [LeaveRequestController::class, 'store'])->name('store')->middleware('PermissionCheck:leave_request_create', 'DemoCheck');
             Route::get('/edit/{id}', [LeaveRequestController::class, 'edit'])->name('edit')->middleware('PermissionCheck:leave_request_update');
             Route::delete('/delete/{id}', [LeaveRequestController::class, 'delete'])->name('delete')->middleware('PermissionCheck:leave_request_delete', 'DemoCheck');
