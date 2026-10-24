@@ -305,7 +305,7 @@
                                 </li>
                             @endif
 
-                            @if (hasPermission('leave_request_update'))
+                            @if (hasPermission('leave_request_approval'))
                                 <li
                                     class="sidebar-menu-item {{ set_menu(['leave-request.approval']) }}">
                                     <a href="{{ route('leave-request.approval') }}">{{ ___('leave.Approval') }}</a>

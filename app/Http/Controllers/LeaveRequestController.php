@@ -49,7 +49,6 @@ class LeaveRequestController extends Controller
             $view = 'mine';
         }
 
-        $data['isManager'] = $isManager;
         $data['showClassTab'] = !$isManager && $teacherStaffId !== null;
         $data['activeView'] = $view;
         $data['title'] = ___('leave.Leave Request');
@@ -60,10 +59,20 @@ class LeaveRequestController extends Controller
     {
         $data['title'] = ___('leave.Leave Request');
         $data['types'] = LeaveType::where('active_status', true)->get();
-        $data['classes'] = $this->classRepo->assignedAll();
-        $data['sections'] = [];
-        $data['students'] = [];
-        $data['staffs'] = Staff::with('role')->active()->orderBy('first_name')->get();
+        // Raising leave for someone else (bulk class leave, entering a
+        // colleague's leave) needs the Role/Class/Section/Student/Staff
+        // pickers. Raising your own needs none of it - the system already
+        // knows who's logged in.
+        $data['canActForOthers'] = hasPermission('leave_request_update');
+
+        if ($data['canActForOthers']) {
+            $data['classes'] = $this->classRepo->assignedAll();
+            $data['sections'] = [];
+            $data['students'] = [];
+            $data['staffs'] = Staff::with('role')->active()->orderBy('first_name')->get();
+        } else {
+            $data['selfIsStaff'] = (bool) auth()->user()->staff;
+        }
 
         return view('backend.leave.form', compact('data'));
     }
@@ -94,22 +103,28 @@ class LeaveRequestController extends Controller
 
         $data['title'] = ___('leave.Leave Request');
         $data['types'] = LeaveType::where('active_status', true)->get();
+        $data['canActForOthers'] = $isManager;
 
-        $data['classes'] = $this->classRepo->assignedAll();
-        $data['sections'] = [];
+        if ($isManager) {
+            $data['classes'] = $this->classRepo->assignedAll();
+            $data['sections'] = [];
+            $data['students'] = [];
+            $data['staffs'] = Staff::with('role')->active()->orderBy('first_name')->get();
 
-        $data['students'] = [];
-        $data['staffs'] = Staff::with('role')->active()->orderBy('first_name')->get();
+            if ((int) $editLeave->role_id === RoleEnum::STUDENT) {
+                $student = Student::with('session_class_student')
+                    ->where('user_id', $editLeave->user_id)->first();
 
-        if ((int) $editLeave->role_id === RoleEnum::STUDENT) {
-            $student = Student::with('session_class_student')
-                ->where('user_id', $editLeave->user_id)->first();
-
-            $data['class_id'] = $student->session_class_student->classes_id ?? null;
-            $data['section'] = $student->session_class_student->section ?? null;
-            $data['student_id'] = $student->id ?? null;
+                $data['class_id'] = $student->session_class_student->classes_id ?? null;
+                $data['section'] = $student->session_class_student->section ?? null;
+                $data['student_id'] = $student->id ?? null;
+            } else {
+                $data['staff_id'] = optional(Staff::where('user_id', $editLeave->user_id)->first())->id;
+            }
         } else {
-            $data['staff_id'] = optional(Staff::where('user_id', $editLeave->user_id)->first())->id;
+            // Editing your own leave - the only "who" field left is whether
+            // Substitute Day applies, fixed by what the record already is.
+            $data['selfIsStaff'] = (int) $editLeave->role_id !== RoleEnum::STUDENT;
         }
 
         return view('backend.leave.form', compact('data', 'editLeave'));

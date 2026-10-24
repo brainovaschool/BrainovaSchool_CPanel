@@ -57,7 +57,7 @@ class PermissionSeeder extends Seeder
             'attendance_student' => ['read' => 'attendance_read', 'edit' => 'attendance_create'],
             'attendance_teacher' => ['read' => 'attendance_teacher_read', 'edit' => 'attendance_teacher_edit'],
             'leave_type'        => ['read' => 'leave_type_read', 'create' => 'leave_type_create', 'update' => 'leave_type_update', 'delete' => 'leave_type_delete'],
-            'leave_request'     => ['read' => 'leave_request_read', 'create' => 'leave_request_create', 'update' => 'leave_request_update', 'delete' => 'leave_request_delete'],
+            'leave_request'     => ['read' => 'leave_request_read', 'create' => 'leave_request_create', 'update' => 'leave_request_update', 'delete' => 'leave_request_delete', 'approval' => 'leave_request_approval'],
             'subscription'      => ['read' => 'subscription_read'],
             'attendance_report' => ['read' => 'report_attendance_read'],
             // Report

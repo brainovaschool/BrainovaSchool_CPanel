@@ -149,6 +149,10 @@ class MigrationRunnerController extends Controller
         // never revisits it, so this repairs any tenant that already
         // synced before 'edit' existed.
         'attendance_teacher' => ['read' => 'attendance_teacher_read', 'edit' => 'attendance_teacher_edit'],
+        // Approval used to ride on leave_request_update (editing someone
+        // else's request). Splitting it into its own keyword lets an admin
+        // grant approval rights without also granting edit/manage rights.
+        'leave_request' => ['approval' => 'leave_request_approval'],
     ];
 
     public function run(string $key)
@@ -4002,6 +4006,28 @@ class MigrationRunnerController extends Controller
                 $rolePerms = is_array($role->permissions) ? $role->permissions : [];
                 $role->permissions = array_values(array_unique(array_merge($rolePerms, $leaveKeywords)));
                 $role->save();
+            }
+        }
+
+        // Leave Approval used to be gated by leave_request_update alone (the
+        // same bit that controls editing/managing someone else's leave
+        // request). Now that Approval is its own permission, every role
+        // that already had leave_request_update is grandfathered onto
+        // leave_request_approval too, so nobody loses the ability to
+        // approve the moment this ships. Fires only on the run where
+        // leave_request's 'approval' keyword is first merged in (lands in
+        // $completed above) — afterward it's fully admin-controlled, same
+        // as the leave_type/leave_request grandfather-in block above.
+        if (in_array('leave_request', $completed, true)) {
+            foreach (Role::all() as $role) {
+                if ((int) $role->id === 1) {
+                    continue;
+                }
+                $rolePerms = is_array($role->permissions) ? $role->permissions : [];
+                if (in_array('leave_request_update', $rolePerms, true) && !in_array('leave_request_approval', $rolePerms, true)) {
+                    $role->permissions = array_values(array_merge($rolePerms, ['leave_request_approval']));
+                    $role->save();
+                }
             }
         }
 

@@ -105,6 +105,14 @@ class LeaveRequestRepository
     public function store(Request $request): bool
     {
         try {
+            // Whatever role_id/staff/student the request carries is only
+            // ever honoured for someone who can act on others' leave -
+            // otherwise it always resolves to the logged-in user, no matter
+            // what was posted.
+            if (!hasPermission('leave_request_update')) {
+                return $this->createSelfLeaveRequest($request);
+            }
+
             if ((string) $request->role_id !== (string) RoleEnum::STUDENT) {
                 return $this->createStaffLeaveRequest($request);
             }
@@ -125,6 +133,38 @@ class LeaveRequestRepository
         } catch (\Exception $e) {
             return false;
         }
+    }
+
+    // Someone raising their own leave - identity comes from the session,
+    // never from posted input.
+    private function createSelfLeaveRequest(Request $request): bool
+    {
+        $user = auth()->user();
+
+        if ($request->hasFile('attachment')) {
+            $upload_id = $this->UploadImageCreate($request->file('attachment'), 'backend/uploads/students');
+        }
+
+        $leaveRequest = new LeaveRequest();
+        $leaveRequest->fill([
+            'leave_type_id' => $request->leave_type,
+            'user_id' => $user->id,
+            'role_id' => $user->role_id,
+            'request_by' => $user->id,
+            'session_id' => setting('session'),
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'description' => $request->description,
+            'leave_days' => $this->calculateLeaveDays($request),
+            'approval_status' => 'pending',
+            'attachment_id' => $upload_id ?? null,
+            'is_half_day' => $request->boolean('is_half_day'),
+            // Substitute day only applies to staff, never to a student
+            // raising their own leave.
+            'replacement_day' => $user->staff ? ($request->replacement_day ?: null) : null,
+        ]);
+
+        return $leaveRequest->save();
     }
 
     private function createStaffLeaveRequest(Request $request): bool
@@ -239,9 +279,13 @@ class LeaveRequestRepository
 
     public function update(Request $request): bool
     {
-        $isStaff = (string) $request->role_id !== (string) RoleEnum::STUDENT;
+        // Only someone who can act on others' leave may repoint whose
+        // request this is - a self-service edit never changes "who",
+        // only the leave's own details, no matter what's posted.
+        $isManager = hasPermission('leave_request_update');
+        $isStaff = $isManager && (string) $request->role_id !== (string) RoleEnum::STUDENT;
 
-        if (!$isStaff) {
+        if ($isManager && !$isStaff) {
             $request->validate([
                 'section' => 'required|exists:sections,id',
                 'class' => 'required|exists:classes,id',
@@ -250,7 +294,6 @@ class LeaveRequestRepository
 
         try {
             $leaveRequest = $this->show($request->editLeaveId);
-            $isManager = hasPermission('leave_request_update');
 
             // Someone who can only raise leave (no approver permission) may
             // only ever touch their own request, and can never set the
@@ -267,18 +310,24 @@ class LeaveRequestRepository
                     $leaveRequest->attachment_id = $upload_id;
                 }
             }
-            if ($isStaff) {
-                $staff = Staff::find($request->staff);
-                if (!$staff || !$staff->user_id) {
-                    return false;
+            if ($isManager) {
+                if ($isStaff) {
+                    $staff = Staff::find($request->staff);
+                    if (!$staff || !$staff->user_id) {
+                        return false;
+                    }
+                    $leaveRequest->user_id = $staff->user_id;
+                    $leaveRequest->role_id = $staff->role_id;
+                    $leaveRequest->replacement_day = $request->replacement_day ?: null;
+                } else {
+                    $student = $this->studentRepo->show($request->student);
+                    $leaveRequest->user_id = $student->user_id;
+                    $leaveRequest->replacement_day = null;
                 }
-                $leaveRequest->user_id = $staff->user_id;
-                $leaveRequest->role_id = $staff->role_id;
+            } elseif ((int) $leaveRequest->role_id !== RoleEnum::STUDENT) {
+                // Self-service staff editing their own leave may still
+                // adjust their own substitute day.
                 $leaveRequest->replacement_day = $request->replacement_day ?: null;
-            } else {
-                $student = $this->studentRepo->show($request->student);
-                $leaveRequest->user_id = $student->user_id;
-                $leaveRequest->replacement_day = null;
             }
             $leaveRequest->leave_type_id = $request->leave_type;
             $leaveRequest->is_half_day = $request->boolean('is_half_day');
