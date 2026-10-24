@@ -96,7 +96,14 @@ class MigrationRunnerController extends Controller
         'page' => ['read' => 'page_read', 'create' => 'page_create', 'update' => 'page_update', 'delete' => 'page_delete'],
         'admission_setting' => ['update' => 'admission_setting_update'],
         'leave_type' => ['read' => 'leave_type_read', 'create' => 'leave_type_create', 'update' => 'leave_type_update', 'delete' => 'leave_type_delete'],
-        'leave_request' => ['read' => 'leave_request_read', 'create' => 'leave_request_create', 'update' => 'leave_request_update', 'delete' => 'leave_request_delete'],
+        // Split across the three actual Leave pages: raising your own
+        // (leave_request), the admin/manager log (leave_log), and
+        // approving (leave_approval). The keyword STRINGS are unchanged
+        // (leave_request_read etc.), only which row groups them in the
+        // Roles screen - see the one-time leave_request shrink below.
+        'leave_request' => ['create' => 'leave_request_create'],
+        'leave_log' => ['read' => 'leave_request_read', 'update' => 'leave_request_update', 'delete' => 'leave_request_delete'],
+        'leave_approval' => ['access' => 'leave_request_approval'],
         'subscription' => ['read' => 'subscription_read'],
         'attendance_teacher' => ['read' => 'attendance_teacher_read', 'edit' => 'attendance_teacher_edit'],
         'report_class_routine' => ['read' => 'report_class_routine_read'],
@@ -149,10 +156,6 @@ class MigrationRunnerController extends Controller
         // never revisits it, so this repairs any tenant that already
         // synced before 'edit' existed.
         'attendance_teacher' => ['read' => 'attendance_teacher_read', 'edit' => 'attendance_teacher_edit'],
-        // Approval used to ride on leave_request_update (editing someone
-        // else's request). Splitting it into its own keyword lets an admin
-        // grant approval rights without also granting edit/manage rights.
-        'leave_request' => ['approval' => 'leave_request_approval'],
     ];
 
     public function run(string $key)
@@ -3861,7 +3864,7 @@ class MigrationRunnerController extends Controller
         // for the same reason reel_studio/portal are: existing roles already
         // had real access to it (its routes carried no permission check at
         // all until this sync), so its keywords must never be auto-stripped.
-        $nonStrippableGroups = ['class_content', 'fees_payment_proof', 'portal', 'reel_studio', 'leave_type', 'leave_request', 'subscription', 'attendance_teacher'];
+        $nonStrippableGroups = ['class_content', 'fees_payment_proof', 'portal', 'reel_studio', 'leave_type', 'leave_request', 'leave_log', 'leave_approval', 'subscription', 'attendance_teacher'];
 
         foreach (self::PERMISSION_GROUPS as $attribute => $keywords) {
             if (!Permission::where('attribute', $attribute)->exists()) {
@@ -3887,6 +3890,22 @@ class MigrationRunnerController extends Controller
             $oldAttendance->attribute = 'attendance_student';
             $oldAttendance->keywords = ['read' => 'attendance_read', 'edit' => 'attendance_create'];
             $oldAttendance->save();
+        }
+
+        // One-time shrink: leave_request's row used to carry
+        // read/create/update/delete(/approval) - those now live on their
+        // own leave_log/leave_approval rows (same keyword STRINGS, just
+        // regrouped), so leave_request itself should only ever show
+        // Create. PERMISSION_GROUPS' create-if-missing check can't fix an
+        // already-existing row, and a PERMISSION_COMPLETIONS merge can only
+        // add keywords, never remove the stale ones a previous sync already
+        // wrote - so this forces the shape directly. Self-guards via the
+        // keys check, so it's a no-op once already shrunk.
+        $leaveRequestPermission = Permission::where('attribute', 'leave_request')->first();
+        if ($leaveRequestPermission && is_array($leaveRequestPermission->keywords)
+            && array_keys($leaveRequestPermission->keywords) !== ['create']) {
+            $leaveRequestPermission->keywords = ['create' => 'leave_request_create'];
+            $leaveRequestPermission->save();
         }
 
         // Repair/complete rows an older tenant already has (see the doc
@@ -4015,10 +4034,10 @@ class MigrationRunnerController extends Controller
         // that already had leave_request_update is grandfathered onto
         // leave_request_approval too, so nobody loses the ability to
         // approve the moment this ships. Fires only on the run where
-        // leave_request's 'approval' keyword is first merged in (lands in
-        // $completed above) — afterward it's fully admin-controlled, same
-        // as the leave_type/leave_request grandfather-in block above.
-        if (in_array('leave_request', $completed, true)) {
+        // leave_approval is first created (lands in $added above) —
+        // afterward it's fully admin-controlled, same as the
+        // leave_type/leave_request grandfather-in block above.
+        if (in_array('leave_approval', $added, true)) {
             foreach (Role::all() as $role) {
                 if ((int) $role->id === 1) {
                     continue;

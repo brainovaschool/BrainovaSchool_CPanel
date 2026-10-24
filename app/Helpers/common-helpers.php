@@ -1303,6 +1303,8 @@ if (!function_exists('permission_category_map')) {
             'attendance_report' => 'Reports',
             'leave_type' => 'Leave',
             'leave_request' => 'Leave',
+            'leave_log' => 'Leave',
+            'leave_approval' => 'Leave',
             'fees_group' => 'Fees',
             'fees_type' => 'Fees',
             'fees_master' => 'Fees',
