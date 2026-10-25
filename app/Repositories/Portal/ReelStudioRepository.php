@@ -33,9 +33,14 @@ class ReelStudioRepository
         $this->aiHelperRepo = $aiHelperRepo;
     }
 
+    /** Only standalone projects (never linked to a Reels/Content Pool
+     *  suggestion) - a linked one already shows on the Reels page itself
+     *  and opens straight into its project from there, so listing it
+     *  again here would just be the same reel twice. */
     public function projects(int $userId, bool $isManager)
     {
         return ReelProject::with('creator')
+            ->whereDoesntHave('portalReel')
             ->when(!$isManager, fn ($q) => $q->where('created_by', $userId))
             ->orderByDesc('id')
             ->get();

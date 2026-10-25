@@ -631,16 +631,12 @@
                                                 <a href="{{ route('portal-social-reel-settings.edit') }}">Reel Settings</a>
                                             </li>
                                         @endif
+                                        @if (hasPermission('reel_studio_access') || hasPermission('portal_manage'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-studio*']) }}">
+                                                <a href="{{ route('portal-social-reel-studio.index') }}">Reel Studio</a>
+                                            </li>
+                                        @endif
                                     </ul>
-                                </li>
-                            @endif
-                            {{-- Reel Studio is deliberately shown whenever reel_studio_access OR
-                                 portal_manage is present, independent of portal_access above: that
-                                 keeps it reachable for exactly the teachers it's meant for, even if
-                                 they don't otherwise have Team Portal access. --}}
-                            @if (hasPermission('reel_studio_access') || hasPermission('portal_manage'))
-                                <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-studio*']) }}">
-                                    <a href="{{ route('portal-social-reel-studio.index') }}">Reel Studio</a>
                                 </li>
                             @endif
                         </ul>
