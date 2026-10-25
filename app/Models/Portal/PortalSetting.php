@@ -16,6 +16,8 @@ class PortalSetting extends Model
         'social_platforms' => 'array',
         'social_metrics'   => 'array',
         'reel_categories'  => 'array',
+        'reel_formats'     => 'array',
+        'series_names'     => 'array',
     ];
 
     public const DEFAULT_REVISION_SCORES = [5, 4, 3, 2, 1, 0];
@@ -23,7 +25,14 @@ class PortalSetting extends Model
     public const DEFAULT_ACTIVITIES      = ['Meeting', 'Email & Admin', 'Training', 'Research', 'Break'];
     public const DEFAULT_PLATFORMS       = ['Instagram', 'Facebook', 'TikTok'];
     public const DEFAULT_SOCIAL_METRICS  = ['Views', 'Followers', 'Likes'];
+    // "Pillar" in the UI - reel_categories is the underlying column/keyword,
+    // kept as-is since renaming it would mean a data migration for no
+    // functional gain; only the label changed.
     public const DEFAULT_REEL_CATEGORIES = ['Educational', 'Promo', 'Entertainment', 'Behind the scenes'];
+    public const DEFAULT_REEL_FORMATS    = ['Reel', 'Carousel', 'Post'];
+    // No sensible universal default - series are project-specific, the
+    // admin defines their own from a blank list.
+    public const DEFAULT_SERIES_NAMES    = [];
 
     /** Always exactly one row — created with sensible defaults the first
      *  time anything asks for it. */
@@ -41,6 +50,8 @@ class PortalSetting extends Model
                 'social_platforms'   => self::DEFAULT_PLATFORMS,
                 'social_metrics'     => self::DEFAULT_SOCIAL_METRICS,
                 'reel_categories'    => self::DEFAULT_REEL_CATEGORIES,
+                'reel_formats'       => self::DEFAULT_REEL_FORMATS,
+                'series_names'       => self::DEFAULT_SERIES_NAMES,
             ]);
         }
         return $row;

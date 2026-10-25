@@ -7,17 +7,26 @@
     <div class="col-md-3">
         <label class="form-label">Format</label>
         <select name="format" class="nice-select niceSelect bordered_style wide">
-            @foreach (['Reel', 'Carousel', 'Post'] as $f)
+            @foreach ($settings->reel_formats ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_FORMATS as $f)
                 <option value="{{ $f }}" {{ old('format', $reel->format ?? 'Reel') === $f ? 'selected' : '' }}>{{ $f }}</option>
             @endforeach
         </select>
     </div>
     <div class="col-md-3">
-        <label class="form-label">Category</label>
+        <label class="form-label">Pillar</label>
         <select name="category" class="nice-select niceSelect bordered_style wide">
             <option value="">—</option>
             @foreach ($settings->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES as $cat)
                 <option value="{{ $cat }}" {{ old('category', $reel->category ?? '') === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Series name</label>
+        <select name="series_name" class="nice-select niceSelect bordered_style wide">
+            <option value="">—</option>
+            @foreach ($settings->series_names ?: [] as $s)
+                <option value="{{ $s }}" {{ old('series_name', $reel->series_name ?? '') === $s ? 'selected' : '' }}>{{ $s }}</option>
             @endforeach
         </select>
     </div>

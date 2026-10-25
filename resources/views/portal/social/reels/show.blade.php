@@ -33,7 +33,8 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6"><strong>Format:</strong> {{ $reel->format }}</div>
-                            <div class="col-md-6"><strong>Category:</strong> {{ $reel->category ?: '—' }}</div>
+                            <div class="col-md-6"><strong>Pillar:</strong> {{ $reel->category ?: '—' }}</div>
+                            <div class="col-md-6"><strong>Series:</strong> {{ $reel->series_name ?: '—' }}</div>
                             <div class="col-md-6"><strong>Planned date:</strong> {{ $reel->planned_date?->format('d M Y') ?: '—' }}</div>
                             <div class="col-md-6"><strong>Suggested by:</strong> {{ optional($reel->suggestedBy)->name }}</div>
                         </div>

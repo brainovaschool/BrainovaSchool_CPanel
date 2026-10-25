@@ -41,12 +41,30 @@
                         @endforeach
                     </div>
 
-                    <h4 class="mt-4">Reel/topic categories</h4>
+                    <h4 class="mt-4">Formats</h4>
+                    <p class="text-secondary">One per line — e.g. Reel, Carousel, Post.</p>
+                    <textarea data-list-for="reel_formats" class="form-control ot-input mb-2" rows="4">{{ implode("\n", $settings->reel_formats ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_FORMATS) }}</textarea>
+                    <div id="reel_formatsInputs">
+                        @foreach ($settings->reel_formats ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_FORMATS as $v)
+                            <input type="hidden" name="reel_formats[]" value="{{ $v }}">
+                        @endforeach
+                    </div>
+
+                    <h4 class="mt-4">Reel/topic pillars</h4>
                     <p class="text-secondary">One per line.</p>
                     <textarea data-list-for="reel_categories" class="form-control ot-input mb-2" rows="4">{{ implode("\n", $settings->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES) }}</textarea>
                     <div id="reel_categoriesInputs">
                         @foreach ($settings->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES as $v)
                             <input type="hidden" name="reel_categories[]" value="{{ $v }}">
+                        @endforeach
+                    </div>
+
+                    <h4 class="mt-4">Series names</h4>
+                    <p class="text-secondary">One per line. Optional — leave blank if you don't group reels/topics into series.</p>
+                    <textarea data-list-for="series_names" class="form-control ot-input mb-2" rows="4">{{ implode("\n", $settings->series_names ?: []) }}</textarea>
+                    <div id="series_namesInputs">
+                        @foreach ($settings->series_names ?: [] as $v)
+                            <input type="hidden" name="series_names[]" value="{{ $v }}">
                         @endforeach
                     </div>
 

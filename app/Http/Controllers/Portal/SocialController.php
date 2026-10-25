@@ -59,9 +59,9 @@ class SocialController extends Controller
     public function reels(Request $request)
     {
         $data['canManage'] = $this->canManageContent();
-        $data['reels']     = $this->repo->reels($request->only(['status', 'category', 'format']));
+        $data['reels']     = $this->repo->reels($request->only(['status', 'category', 'format', 'series_name']));
         $data['settings']  = PortalSetting::current();
-        $data['filters']   = $request->only(['status', 'category', 'format']);
+        $data['filters']   = $request->only(['status', 'category', 'format', 'series_name']);
         $data['title']     = 'Social Board — Reels';
         return view('portal.social.reels.index', compact('data'));
     }
@@ -79,7 +79,9 @@ class SocialController extends Controller
         $this->requireContentAccess();
         $request->validate([
             'title'  => 'required|string|max:150',
-            'format' => 'required|in:Reel,Carousel,Post',
+            // Formats are admin-configurable (Social Board Settings) now,
+            // not a fixed enum - matches how 'category'/pillar is validated.
+            'format' => 'required|string|max:20',
         ]);
 
         $result = $this->repo->storeReel($request, Auth::id());
@@ -121,7 +123,7 @@ class SocialController extends Controller
         $this->requireContentAccess();
         $request->validate([
             'title'  => 'required|string|max:150',
-            'format' => 'required|in:Reel,Carousel,Post',
+            'format' => 'required|string|max:20',
         ]);
 
         $result = $this->repo->updateReel($request, (int) $id);

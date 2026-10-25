@@ -32,17 +32,25 @@
                         @endforeach
                     </select>
                     <select name="category" class="nice-select niceSelect bordered_style">
-                        <option value="">All categories</option>
+                        <option value="">All pillars</option>
                         @foreach ($data['settings']->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES as $cat)
                             <option value="{{ $cat }}" {{ ($data['filters']['category'] ?? '') === $cat ? 'selected' : '' }}>{{ $cat }}</option>
                         @endforeach
                     </select>
                     <select name="format" class="nice-select niceSelect bordered_style">
                         <option value="">All formats</option>
-                        @foreach (['Reel', 'Carousel', 'Post'] as $f)
+                        @foreach ($data['settings']->reel_formats ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_FORMATS as $f)
                             <option value="{{ $f }}" {{ ($data['filters']['format'] ?? '') === $f ? 'selected' : '' }}>{{ $f }}</option>
                         @endforeach
                     </select>
+                    @if ($data['settings']->series_names ?? [])
+                        <select name="series_name" class="nice-select niceSelect bordered_style">
+                            <option value="">All series</option>
+                            @foreach ($data['settings']->series_names as $s)
+                                <option value="{{ $s }}" {{ ($data['filters']['series_name'] ?? '') === $s ? 'selected' : '' }}>{{ $s }}</option>
+                            @endforeach
+                        </select>
+                    @endif
                     <button class="btn ot-btn-primary" type="submit">{{ ___('common.Search') }}</button>
                 </div>
             </form>
@@ -53,13 +61,14 @@
                 <div class="card-body">
                     <div class="table-responsive">
                     <table class="ot-basic-table ot-table-bg">
-                        <thead class="thead"><tr><th>Title</th><th>Format</th><th>Category</th><th>Planned date</th><th>Status</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
+                        <thead class="thead"><tr><th>Title</th><th>Format</th><th>Pillar</th><th>Series</th><th>Planned date</th><th>Status</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                         <tbody class="tbody">
                             @forelse ($data['reels'] as $reel)
                                 <tr>
                                     <td>{{ $reel->title }}</td>
                                     <td>{{ $reel->format }}</td>
                                     <td>{{ $reel->category ?: '—' }}</td>
+                                    <td>{{ $reel->series_name ?: '—' }}</td>
                                     <td>{{ $reel->planned_date?->format('d M Y') ?: '—' }}</td>
                                     <td><span class="badge-basic-info-text">{{ ucfirst($reel->status) }}</span></td>
                                     <td class="action"><a href="{{ route('portal-social-reels.show', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a></td>

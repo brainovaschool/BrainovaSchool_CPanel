@@ -33,6 +33,7 @@ class SocialRepository
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
             ->when($filters['format'] ?? null, fn ($q, $v) => $q->where('format', $v))
+            ->when($filters['series_name'] ?? null, fn ($q, $v) => $q->where('series_name', $v))
             ->orderByDesc('id')
             ->get();
     }
@@ -52,6 +53,7 @@ class SocialRepository
                 'title'            => $request->title,
                 'format'           => $request->format ?: 'Reel',
                 'category'         => $request->category,
+                'series_name'      => $request->series_name,
                 'hook'             => $request->hook,
                 'status'           => PortalReel::SUGGESTED,
                 'suggested_by'     => $userId,
@@ -88,6 +90,7 @@ class SocialRepository
         $reel->title        = $request->title;
         $reel->format       = $request->format ?: $reel->format;
         $reel->category     = $request->category;
+        $reel->series_name  = $request->series_name;
         $reel->hook          = $request->hook;
         $reel->planned_date = $request->planned_date ?: null;
         $reel->drive_link   = $request->drive_link;
@@ -259,11 +262,18 @@ class SocialRepository
         $platforms = array_values(array_filter(array_map('trim', (array) $request->social_platforms)));
         $metrics   = array_values(array_filter(array_map('trim', (array) $request->social_metrics)));
         $reelCategories = array_values(array_filter(array_map('trim', (array) $request->reel_categories)));
+        $reelFormats    = array_values(array_filter(array_map('trim', (array) $request->reel_formats)));
+        $seriesNames    = array_values(array_filter(array_map('trim', (array) $request->series_names)));
 
         $settings = PortalSetting::current();
         $settings->social_platforms = $platforms ?: PortalSetting::DEFAULT_PLATFORMS;
         $settings->social_metrics   = $metrics ?: PortalSetting::DEFAULT_SOCIAL_METRICS;
         $settings->reel_categories  = $reelCategories ?: PortalSetting::DEFAULT_REEL_CATEGORIES;
+        $settings->reel_formats     = $reelFormats ?: PortalSetting::DEFAULT_REEL_FORMATS;
+        // No fallback default here - an empty list is a valid "no series
+        // defined yet" state, unlike the other lists which always have a
+        // sensible non-empty default to fall back to.
+        $settings->series_names     = $seriesNames;
         $settings->save();
 
         return $this->responseWithSuccess('Saved.', []);

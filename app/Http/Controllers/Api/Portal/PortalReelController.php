@@ -25,7 +25,7 @@ class PortalReelController extends Controller
     public function index(Request $request)
     {
         try {
-            $reels = $this->repo->reels($request->only(['status', 'category', 'format']));
+            $reels = $this->repo->reels($request->only(['status', 'category', 'format', 'series_name']));
             return $this->responseWithSuccess(___('alert.success'), $reels);
         } catch (\Throwable $th) {
             return $this->responseWithError(___('alert.something_went_wrong'), $th->getMessage());

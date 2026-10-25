@@ -24,7 +24,7 @@
                     <p class="text-secondary">Counts any reel/carousel accepted or further along the pipeline, planned for this month.</p>
                     <div class="table-responsive">
                     <table class="ot-basic-table ot-table-bg">
-                        <thead class="thead"><tr><th>Category</th><th>Reels</th><th>Carousels</th></tr></thead>
+                        <thead class="thead"><tr><th>Pillar</th><th>Reels</th><th>Carousels</th></tr></thead>
                         <tbody class="tbody">
                             @forelse ($data['plan'] as $row)
                                 <tr>
@@ -33,7 +33,7 @@
                                     <td>{{ $row['carousel_actual'] }} / {{ $row['carousel_target'] }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="100%" class="text-center gray-color">No category targets set yet.</td></tr>
+                                <tr><td colspan="100%" class="text-center gray-color">No pillar targets set yet.</td></tr>
                             @endforelse
                         </tbody>
                     </table>
@@ -50,7 +50,7 @@
                         @csrf
                         <div class="table-responsive">
                         <table class="ot-basic-table ot-table-bg mb-3" id="targetsTable">
-                            <thead class="thead"><tr><th>Category</th><th>Reel target / month</th><th>Carousel target / month</th></tr></thead>
+                            <thead class="thead"><tr><th>Pillar</th><th>Reel target / month</th><th>Carousel target / month</th></tr></thead>
                             <tbody>
                                 @forelse ($data['plan'] as $row)
                                     <tr>
@@ -61,7 +61,7 @@
                                 @empty
                                 @endforelse
                                 <tr>
-                                    <td><input type="text" name="category[]" class="form-control ot-input" placeholder="New category"></td>
+                                    <td><input type="text" name="category[]" class="form-control ot-input" placeholder="New pillar"></td>
                                     <td><input type="number" min="0" name="reel_target[]" class="form-control ot-input" value="0"></td>
                                     <td><input type="number" min="0" name="carousel_target[]" class="form-control ot-input" value="0"></td>
                                 </tr>
