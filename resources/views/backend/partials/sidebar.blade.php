@@ -611,24 +611,25 @@
                                                 <a href="{{ route('portal-social-page-fixes.index') }}">Page Fixes</a>
                                             </li>
                                         @endif
-                                        @if (hasPermission('portal_manage') || hasPermission('portal_growth_pay_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['portal/growth-pay']) }}">
-                                                <a href="{{ route('portal-growth-pay.index') }}">Growth Pay</a>
-                                            </li>
-                                        @endif
                                         @if (hasPermission('portal_manage') || hasPermission('portal_social_settings_read'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/settings']) }}">
                                                 <a href="{{ route('portal-social-settings.edit') }}">Social Settings</a>
                                             </li>
                                         @endif
-                                        @if (hasPermission('portal_manage') || hasPermission('portal_reel_characters_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-characters*']) }}">
-                                                <a href="{{ route('portal-social-reel-characters.index') }}">Reel Characters</a>
-                                            </li>
-                                        @endif
                                         @if (hasPermission('reel_studio_access') || hasPermission('portal_manage'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-studio*']) }}">
                                                 <a href="{{ route('portal-social-reel-studio.index') }}">Reel Studio</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
+
+                                <li class="sidebar-menu-item {{ set_menu(['portal/growth-pay*']) }}">
+                                    <a class="has-arrow">Finance</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('portal_manage') || hasPermission('portal_growth_pay_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/growth-pay']) }}">
+                                                <a href="{{ route('portal-growth-pay.index') }}">Outflow</a>
                                             </li>
                                         @endif
                                     </ul>

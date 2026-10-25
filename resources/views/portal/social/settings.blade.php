@@ -14,6 +14,10 @@
                         <li class="breadcrumb-item">Social Board Settings</li>
                     </ol>
                 </div>
+                <div class="col-sm-4 text-sm-end">
+                    <a href="{{ route('portal-social-reel-characters.index') }}" class="btn btn-outline-secondary">Reel Characters</a>
+                    <a href="{{ route('portal-social-reel-settings.edit') }}" class="btn btn-outline-secondary">Global Instructions</a>
+                </div>
             </div>
         </div>
 
