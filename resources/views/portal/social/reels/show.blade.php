@@ -48,8 +48,15 @@
                         @foreach ($data['customFields'] ?? [] as $field)
                             @php($value = ($reel->custom_fields ?? [])[$field->key] ?? null)
                             @if ($value !== null && $value !== '')
-                                <p class="mb-1"><strong>{{ $field->label }}:</strong>
-                                    {{ $field->type === \App\Models\Portal\PortalReelCustomField::TYPE_CHECKBOX ? ($value ? 'Yes' : 'No') : $value }}</p>
+                                @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_FILE)
+                                    @php($upload = \App\Models\Upload::find($value))
+                                    @if ($upload)
+                                        <p class="mb-1"><strong>{{ $field->label }}:</strong> <a href="{{ globalAsset($upload->path) }}" target="_blank">Download</a></p>
+                                    @endif
+                                @else
+                                    <p class="mb-1"><strong>{{ $field->label }}:</strong>
+                                        {{ $field->type === \App\Models\Portal\PortalReelCustomField::TYPE_CHECKBOX ? ($value ? 'Yes' : 'No') : $value }}</p>
+                                @endif
                             @endif
                         @endforeach
                         @if ($reel->reviewedBy)

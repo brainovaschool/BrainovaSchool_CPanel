@@ -91,6 +91,12 @@
                     </select>
                 @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_TEXTAREA)
                     <textarea name="custom_fields[{{ $field->key }}]" class="form-control ot-input" rows="2">{{ $current }}</textarea>
+                @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_FILE)
+                    <input type="file" name="custom_fields[{{ $field->key }}]" class="form-control ot-input">
+                    @php($currentUpload = $current ? \App\Models\Upload::find($current) : null)
+                    @if ($currentUpload)
+                        <p class="text-secondary mt-1 mb-0"><a href="{{ globalAsset($currentUpload->path) }}" target="_blank">Current file</a></p>
+                    @endif
                 @else
                     <input type="{{ $field->type }}" name="custom_fields[{{ $field->key }}]" class="form-control ot-input" value="{{ $current }}">
                 @endif

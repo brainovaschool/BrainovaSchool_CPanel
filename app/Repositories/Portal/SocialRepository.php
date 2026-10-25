@@ -91,6 +91,8 @@ class SocialRepository
             $reel->thumb_upload_id = $this->UploadImageCreate($request->file('thumb_file'), 'uploads/portal-reels');
         }
 
+        $existingCustomFields = $reel->custom_fields ?: [];
+
         $reel->title        = $request->title;
         $reel->format       = $request->format ?: $reel->format;
         $reel->category     = $request->category;
@@ -101,7 +103,7 @@ class SocialRepository
         $reel->prompt_text  = $request->prompt_text;
         $reel->prompt_link  = $request->prompt_link;
         $reel->note         = $request->note;
-        $reel->custom_fields = $this->collectCustomFieldValues($request);
+        $reel->custom_fields = $this->collectCustomFieldValues($request, $existingCustomFields);
         $reel->save();
 
         return $this->responseWithSuccess('Saved.', []);
@@ -109,14 +111,25 @@ class SocialRepository
 
     /** $request->custom_fields: [field_key => value] - only for whatever
      *  fields currently exist (a deleted field's old value in a reel's
-     *  JSON just stays there, unused, rather than being validated away). */
-    private function collectCustomFieldValues($request): array
+     *  JSON just stays there, unused, rather than being validated away).
+     *  $existing: the reel's current custom_fields, so a File field with
+     *  no new upload on this submit keeps whatever it already had instead
+     *  of being wiped (same rule as the built-in Prompt file/Thumbnail). */
+    private function collectCustomFieldValues($request, array $existing = []): array
     {
         $submitted = (array) $request->input('custom_fields', []);
         $values = [];
         foreach ($this->reelCustomFields() as $field) {
             if ($field->type === PortalReelCustomField::TYPE_CHECKBOX) {
                 $values[$field->key] = isset($submitted[$field->key]);
+                continue;
+            }
+            if ($field->type === PortalReelCustomField::TYPE_FILE) {
+                if ($request->hasFile("custom_fields.{$field->key}")) {
+                    $values[$field->key] = $this->UploadImageCreate($request->file("custom_fields.{$field->key}"), 'uploads/portal-reels');
+                } elseif (isset($existing[$field->key])) {
+                    $values[$field->key] = $existing[$field->key];
+                }
                 continue;
             }
             $v = trim((string) ($submitted[$field->key] ?? ''));

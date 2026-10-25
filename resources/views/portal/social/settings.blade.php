@@ -88,6 +88,7 @@
                                         <label class="form-label">Options come from</label>
                                         <select name="fields[{{ $field->id }}][list_key]" class="nice-select niceSelect bordered_style wide">
                                             <option value="">—</option>
+                                            <option value="{{ \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS }}" {{ $field->list_key === \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS ? 'selected' : '' }}>Reel Characters</option>
                                             @foreach ($data['lists'] as $list)
                                                 <option value="{{ $list->key }}" {{ $field->list_key === $list->key ? 'selected' : '' }}>{{ $list->label }}</option>
                                             @endforeach
@@ -131,6 +132,7 @@
                     <label class="form-label">Options come from</label>
                     <select name="new_fields[__INDEX__][list_key]" class="nice-select niceSelect bordered_style wide">
                         <option value="">—</option>
+                        <option value="{{ \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS }}">Reel Characters</option>
                         @foreach ($data['lists'] as $list)
                             <option value="{{ $list->key }}">{{ $list->label }}</option>
                         @endforeach
@@ -154,6 +156,7 @@
         </div>
     </template>
 
+    @push('script')
     <script>
         (function () {
             // Event delegation (not a per-element listener) so this also
@@ -247,4 +250,5 @@
             });
         })();
     </script>
+    @endpush
 @endsection
