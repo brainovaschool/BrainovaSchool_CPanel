@@ -144,10 +144,16 @@
                                     @csrf
                                     <label class="form-label">Link (optional)</label>
                                     <input type="text" name="link" class="form-control ot-input mb-2">
-                                    <label class="form-label">File (optional)</label>
-                                    <input type="file" name="file" class="form-control ot-input mb-2" style="display:block;width:100%;height:auto;padding:8px 10px;">
-                                    <label class="form-label">Comment</label>
+                                    <label class="form-label">Description</label>
                                     <textarea name="comment" class="form-control ot-input mb-2" rows="2"></textarea>
+                                    <label class="form-label">File (optional)</label>
+                                    <div class="ot_fileUploader left-side mb-2">
+                                        <input class="form-control ot-input" type="text" placeholder="No file chosen" readonly id="taskSubmitFilePlaceholder">
+                                        <button class="primary-btn-small-input" type="button">
+                                            <label class="btn btn-lg ot-btn-primary" for="taskSubmitFileBrowse">Browse</label>
+                                            <input type="file" class="d-none form-control" name="file" id="taskSubmitFileBrowse">
+                                        </button>
+                                    </div>
                                     <button type="submit" class="btn ot-btn-primary w-100">Submit Work</button>
                                 </form>
                             @else
@@ -224,4 +230,21 @@
             </div>
         </div>
     </div>
+
+    @push('script')
+    <script>
+        // The theme hides every input[type=file] globally and expects a
+        // "Browse" label + readonly text sibling to show the picked name -
+        // the global handler's own selector doesn't reach this nested
+        // Browse-button structure, so this fills that in directly.
+        (function () {
+            var fileInput = document.getElementById('taskSubmitFileBrowse');
+            var placeholder = document.getElementById('taskSubmitFilePlaceholder');
+            if (!fileInput || !placeholder) return;
+            fileInput.addEventListener('change', function () {
+                placeholder.value = fileInput.files.length ? fileInput.files[0].name : '';
+            });
+        })();
+    </script>
+    @endpush
 @endsection
