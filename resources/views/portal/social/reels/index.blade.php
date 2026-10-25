@@ -110,18 +110,6 @@
                                                 <button class="btn btn-sm btn-outline-danger">{{ ___('common.delete') }}</button>
                                             </form>
                                         @endif
-                                        @if ($reel->status === \App\Models\Portal\PortalReel::SUGGESTED && $data['canApprove'])
-                                            <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" class="d-inline">
-                                                @csrf
-                                                <input type="hidden" name="status" value="accepted">
-                                                <button type="submit" class="btn btn-sm ot-btn-primary">Approve</button>
-                                            </form>
-                                            <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" class="d-inline" onsubmit="return confirm('Discard this suggestion?');">
-                                                @csrf
-                                                <input type="hidden" name="status" value="rejected">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger">Discard</button>
-                                            </form>
-                                        @endif
                                     </td>
                                 </tr>
                             @empty
