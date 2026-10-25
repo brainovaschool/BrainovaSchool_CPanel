@@ -153,6 +153,9 @@ class PermissionSeeder extends Seeder
             'portal_my_responsibilities' => ['read' => 'portal_my_responsibilities_read'],
             'portal_my_performance'      => ['read' => 'portal_my_performance_read'],
             'portal_social_reels'        => ['read' => 'portal_social_reels_read'],
+            'portal_social_suggest_reel' => ['read' => 'portal_social_suggest_reel_read'],
+            'portal_social_content_pool' => ['read' => 'portal_social_content_pool_read'],
+            'portal_reel_workflow'       => ['assign' => 'portal_reel_assign', 'approve' => 'portal_reel_approve'],
             'portal_social_month_plan'   => ['read' => 'portal_social_month_plan_read'],
             'portal_social_page_fixes'   => ['read' => 'portal_social_page_fixes_read'],
             // Manager-tier items — previously portal_manage-only with no way

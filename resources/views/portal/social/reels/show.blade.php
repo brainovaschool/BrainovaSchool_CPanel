@@ -5,6 +5,8 @@
 @section('content')
     @php($reel = $data['reel'])
     @php($isManager = $data['isManager'])
+    @php($canAssign = $data['canAssign'])
+    @php($canApprove = $data['canApprove'])
     @php($myStaffId = $data['myStaffId'])
     @php($isAssignee = $myStaffId !== null && (int) $reel->assigned_to === (int) $myStaffId)
     <div class="page-content">
@@ -92,7 +94,7 @@
             </div>
 
             <div class="col-lg-4">
-                @if ($isManager)
+                @if ($canAssign)
                     <div class="card ot-card">
                         <div class="card-header"><h4 class="mb-0">Assign</h4></div>
                         <div class="card-body">
@@ -155,7 +157,7 @@
                     @endif
                 @endif
 
-                @if ($isManager)
+                @if ($canApprove)
                     @if ($reel->prompt_link && !$reel->prompt_approved_at)
                         <div class="card ot-card mt-3">
                             <div class="card-header"><h4 class="mb-0">Approve prompt</h4></div>
@@ -201,7 +203,9 @@
                             </div>
                         </div>
                     @endif
+                @endif
 
+                @if ($isManager)
                     <div class="card ot-card mt-3">
                         <div class="card-header"><h4 class="mb-0">Review</h4></div>
                         <div class="card-body">

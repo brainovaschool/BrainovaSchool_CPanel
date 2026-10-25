@@ -352,6 +352,28 @@ class SocialRepository
             ->get();
     }
 
+    /** Who shows up in the "Assign to" dropdown - every staff member
+     *  whose Role is one of the admin-picked Roles in Social Board
+     *  Settings (e.g. "Content Creator", or "Content Creator" + "Teacher"
+     *  for staff doing dual duty). Separate from contentTeam() above
+     *  (Daily Plan/Weekly Goals keeps using the Content responsibility
+     *  list unchanged - this is specifically for reel assignment). */
+    public function assignableStaff()
+    {
+        $roleIds = PortalSetting::current()->content_assignee_role_ids ?: [];
+        if (!$roleIds) {
+            return collect();
+        }
+        return Staff::whereIn('role_id', $roleIds)->orderBy('first_name')->get();
+    }
+
+    public function updateContentAssigneeRoles($request): array
+    {
+        $roleIds = array_values(array_map('intval', (array) $request->input('content_assignee_role_ids', [])));
+        PortalSetting::current()->update(['content_assignee_role_ids' => $roleIds]);
+        return $this->responseWithSuccess('Saved.', []);
+    }
+
     /** The last step - picking when it actually goes live. Locked behind
      *  video approval so a date can't be set before the work is done. */
     public function scheduleUpload(int $id, string $date): array

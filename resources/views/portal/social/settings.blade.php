@@ -211,6 +211,26 @@
                 </form>
             </div>
         </div>
+
+        <div class="card ot-card mt-24">
+            <div class="card-body">
+                <h4>Who can be assigned content?</h4>
+                <p class="text-secondary">Pick one or more staff Roles — everyone holding any of them shows up in the
+                    "Assign to" dropdown on Content Pool and a reel's page. Pick more than one if some staff do dual
+                    duty (e.g. "Content Creator" and "Teacher").</p>
+
+                <form action="{{ route('portal-social-settings.content-assignees') }}" method="post">
+                    @csrf
+                    <select name="content_assignee_role_ids[]" class="form-control ot-input" multiple size="8">
+                        @foreach ($data['roles'] as $role)
+                            <option value="{{ $role->id }}" {{ in_array($role->id, $data['assigneeRoleIds'] ?? [], true) ? 'selected' : '' }}>{{ $role->name }}</option>
+                        @endforeach
+                    </select>
+                    <p class="text-secondary mb-0 mt-1">Hold Ctrl (Cmd on Mac) to pick more than one.</p>
+                    <button type="submit" class="btn btn-lg ot-btn-primary mt-3">Save</button>
+                </form>
+            </div>
+        </div>
     </div>
 
     <template id="newSeriesTemplate">

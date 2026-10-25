@@ -31,11 +31,21 @@ class SocialController extends Controller
 
     private function canManageContent(): bool
     {
-        if (hasPermission('portal_manage')) {
+        if (hasPermission('portal_manage') || hasPermission('portal_social_suggest_reel_read')) {
             return true;
         }
         $staffId = $this->actingStaffId();
         return $staffId !== null && in_array($staffId, PortalResponsibility::ownerStaffIdsForKey(PortalResponsibility::KEY_CONTENT), true);
+    }
+
+    private function canAssignReels(): bool
+    {
+        return hasPermission('portal_manage') || hasPermission('portal_reel_assign');
+    }
+
+    private function canApproveReels(): bool
+    {
+        return hasPermission('portal_manage') || hasPermission('portal_reel_approve');
     }
 
     private function canManageAudience(): bool
@@ -103,11 +113,12 @@ class SocialController extends Controller
 
     public function contentPool()
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('portal_manage') && !hasPermission('portal_social_content_pool_read')) {
             abort(403, 'Only admin/coordinator can see the Content Pool.');
         }
         $data['reels']       = $this->repo->contentPool();
-        $data['contentTeam'] = $this->repo->contentTeam();
+        $data['contentTeam'] = $this->repo->assignableStaff();
+        $data['canAssign']   = $this->canAssignReels();
         $data['title']       = 'Content Pool';
         return view('portal.social.content-pool.index', compact('data'));
     }
@@ -140,7 +151,9 @@ class SocialController extends Controller
         $data['reel']         = $reel;
         $data['canManage']    = $this->canManageContent();
         $data['isManager']    = hasPermission('portal_manage');
-        $data['contentTeam']  = $this->repo->contentTeam();
+        $data['canAssign']    = $this->canAssignReels();
+        $data['canApprove']   = $this->canApproveReels();
+        $data['contentTeam']  = $this->repo->assignableStaff();
         $data['myStaffId']    = $this->actingStaffId();
         $data['customFields'] = $this->repo->reelCustomFields();
         $data['title']        = $reel->title;
@@ -200,7 +213,7 @@ class SocialController extends Controller
      *  paid task for anyone to pick up, plus the work deadline. */
     public function assignReel(Request $request, $id)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!$this->canAssignReels()) {
             abort(403, 'Only admin/coordinator can assign a reel/topic.');
         }
         $openPaid = $request->boolean('open_paid');
@@ -232,7 +245,7 @@ class SocialController extends Controller
 
     public function approveReelStage(Request $request, $id)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!$this->canApproveReels()) {
             abort(403, 'Only admin/coordinator can approve.');
         }
         $request->validate([
@@ -248,7 +261,7 @@ class SocialController extends Controller
      *  actually goes live. */
     public function scheduleReel(Request $request, $id)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!$this->canApproveReels()) {
             abort(403, 'Only admin/coordinator can schedule an upload date.');
         }
         $request->validate(['planned_date' => 'required|date']);
@@ -352,11 +365,13 @@ class SocialController extends Controller
         if (!hasPermission('portal_manage')) {
             abort(403);
         }
-        $data['lists']        = $this->repo->settingLists();
-        $data['customFields'] = $this->repo->reelCustomFields();
-        $data['fieldTypes']   = \App\Models\Portal\PortalReelCustomField::TYPES;
-        $data['series']       = $this->repo->reelSeries();
-        $data['title']        = 'Social Board Settings';
+        $data['lists']              = $this->repo->settingLists();
+        $data['customFields']       = $this->repo->reelCustomFields();
+        $data['fieldTypes']         = \App\Models\Portal\PortalReelCustomField::TYPES;
+        $data['series']             = $this->repo->reelSeries();
+        $data['roles']              = \App\Models\Role::orderBy('name')->get();
+        $data['assigneeRoleIds']    = PortalSetting::current()->content_assignee_role_ids ?: [];
+        $data['title']              = 'Social Board Settings';
         return view('portal.social.settings', compact('data'));
     }
 
@@ -366,6 +381,15 @@ class SocialController extends Controller
             abort(403);
         }
         $result = $this->repo->updateSocialSettings($request);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function updateContentAssigneeRoles(Request $request)
+    {
+        if (!hasPermission('portal_manage')) {
+            abort(403);
+        }
+        $result = $this->repo->updateContentAssigneeRoles($request);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

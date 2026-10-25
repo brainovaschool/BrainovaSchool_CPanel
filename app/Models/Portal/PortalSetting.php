@@ -10,9 +10,10 @@ class PortalSetting extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'revision_scores'  => 'array',
-        'categories'       => 'array',
-        'activities'       => 'array',
+        'revision_scores'           => 'array',
+        'categories'                => 'array',
+        'activities'                => 'array',
+        'content_assignee_role_ids' => 'array',
     ];
 
     public const DEFAULT_REVISION_SCORES = [5, 4, 3, 2, 1, 0];

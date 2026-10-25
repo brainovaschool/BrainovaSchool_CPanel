@@ -45,6 +45,8 @@
                                     <td style="min-width:220px">
                                         @if ($reel->assigned_to || $reel->is_open_paid)
                                             {{ $reel->is_open_paid ? 'Open (Paid Task)' : 'Assigned to ' . trim(optional($reel->assignee)->first_name . ' ' . optional($reel->assignee)->last_name) }}
+                                        @elseif (!$data['canAssign'])
+                                            <span class="text-secondary">Awaiting assignment</span>
                                         @else
                                             <form action="{{ route('portal-social-reels.assign', $reel->id) }}" method="post" class="d-flex flex-column gap-1">
                                                 @csrf
