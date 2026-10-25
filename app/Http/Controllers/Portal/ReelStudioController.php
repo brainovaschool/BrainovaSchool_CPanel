@@ -41,11 +41,12 @@ class ReelStudioController extends Controller
         return false;
     }
 
+    /** No more standalone list to browse - every project is reached
+     *  either from its reel (Open/Reel Setup) or, for a brand new one
+     *  not tied to a suggestion, straight from here into the setup form. */
     public function index()
     {
-        $data['projects'] = $this->repo->projects((int) Auth::id(), $this->isManager());
-        $data['title']    = 'Reel Studio';
-        return view('portal.social.reel-studio.index', compact('data'));
+        return redirect()->route('portal-social-reel-studio.create');
     }
 
     private function projectRules(): array
