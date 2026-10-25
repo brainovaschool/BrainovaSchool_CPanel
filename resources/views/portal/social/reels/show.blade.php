@@ -53,6 +53,7 @@
                                 @if ($reel->prompt_approved_at) <span class="text-success">— approved</span> @else <span class="text-secondary">— pending approval</span> @endif
                             </p>
                         @endif
+                        @if ($reel->prompt_feedback)<p class="mb-1 text-secondary"><strong>Prompt feedback:</strong> {{ $reel->prompt_feedback }}</p>@endif
                         @if ($reel->promptUpload)<p><strong>Prompt file:</strong> <a href="{{ globalAsset($reel->promptUpload->path) }}" target="_blank">Download</a></p>@endif
                         @if ($reel->thumbUpload)<p><strong>Thumbnail:</strong><br><img src="{{ globalAsset($reel->thumbUpload->path) }}" alt="Thumbnail for {{ $reel->title }}" style="max-width:200px;border-radius:8px"></p>@endif
                         @if ($reel->drive_link)
@@ -60,6 +61,7 @@
                                 @if ($reel->video_approved_at) <span class="text-success">— approved</span> @else <span class="text-secondary">— pending approval</span> @endif
                             </p>
                         @endif
+                        @if ($reel->video_feedback)<p class="mb-1 text-secondary"><strong>Video feedback:</strong> {{ $reel->video_feedback }}</p>@endif
                         @if ($reel->note)<p class="mt-3"><strong>Note:</strong> {{ $reel->note }}</p>@endif
                         @foreach ($data['customFields'] ?? [] as $field)
                             @php($value = ($reel->custom_fields ?? [])[$field->key] ?? null)
@@ -162,6 +164,8 @@
                                 <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post">
                                     @csrf
                                     <input type="hidden" name="stage" value="prompt">
+                                    <label class="form-label">Feedback (optional)</label>
+                                    <textarea name="feedback" class="form-control ot-input mb-2" rows="2">{{ $reel->prompt_feedback }}</textarea>
                                     <button type="submit" class="btn ot-btn-primary w-100">Approve prompt</button>
                                 </form>
                             </div>
@@ -176,6 +180,8 @@
                                 <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post">
                                     @csrf
                                     <input type="hidden" name="stage" value="video">
+                                    <label class="form-label">Feedback (optional)</label>
+                                    <textarea name="feedback" class="form-control ot-input mb-2" rows="2">{{ $reel->video_feedback }}</textarea>
                                     <button type="submit" class="btn ot-btn-primary w-100">Approve video</button>
                                 </form>
                             </div>

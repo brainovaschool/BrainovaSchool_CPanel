@@ -82,12 +82,12 @@ class SocialController extends Controller
         return view('portal.social.reels.create', compact('data'));
     }
 
-    // ---- Suggest a Reel (dedicated, always-simplified entry point) ---
+    // ---- Suggest Content (dedicated, always-simplified entry point) --
 
     public function suggestReelIndex()
     {
         $this->requireContentAccess();
-        $data['title'] = 'Suggest a Reel';
+        $data['title'] = 'Suggest Content';
         return view('portal.social.suggest-reel.index', compact('data'));
     }
 
@@ -95,8 +95,21 @@ class SocialController extends Controller
     {
         $this->requireContentAccess();
         $data['series'] = $this->repo->reelSeries();
-        $data['title']  = 'Suggest a Reel';
+        $data['title']  = 'Suggest Content';
         return view('portal.social.suggest-reel.create', compact('data'));
+    }
+
+    // ---- Content Pool (approval inbox for admin/coordinator) ---------
+
+    public function contentPool()
+    {
+        if (!hasPermission('portal_manage')) {
+            abort(403, 'Only admin/coordinator can see the Content Pool.');
+        }
+        $data['reels']       = $this->repo->contentPool();
+        $data['contentTeam'] = $this->repo->contentTeam();
+        $data['title']       = 'Content Pool';
+        return view('portal.social.content-pool.index', compact('data'));
     }
 
     public function storeReel(Request $request)
@@ -222,9 +235,12 @@ class SocialController extends Controller
         if (!hasPermission('portal_manage')) {
             abort(403, 'Only admin/coordinator can approve.');
         }
-        $request->validate(['stage' => 'required|in:prompt,video']);
+        $request->validate([
+            'stage'    => 'required|in:prompt,video',
+            'feedback' => 'nullable|string|max:1000',
+        ]);
 
-        $result = $this->repo->approveStage((int) $id, $request->stage, Auth::id());
+        $result = $this->repo->approveStage((int) $id, $request->stage, Auth::id(), $request->feedback);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

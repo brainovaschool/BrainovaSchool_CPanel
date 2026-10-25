@@ -588,7 +588,12 @@
                                         @endif
                                         @if (portalOwnsResponsibility('content'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/suggest-reel*']) }}">
-                                                <a href="{{ route('portal-social-suggest-reel.index') }}">Suggest a Reel</a>
+                                                <a href="{{ route('portal-social-suggest-reel.index') }}">Suggest Content</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('portal_manage'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/content-pool']) }}">
+                                                <a href="{{ route('portal-social-content-pool.index') }}">Content Pool</a>
                                             </li>
                                         @endif
                                         @if (hasPermission('portal_social_month_plan_read'))

@@ -312,7 +312,7 @@ class SocialRepository
         return $this->responseWithSuccess('Submitted for approval.', []);
     }
 
-    public function approveStage(int $id, string $stage, int $reviewerUserId): array
+    public function approveStage(int $id, string $stage, int $reviewerUserId, ?string $feedback = null): array
     {
         $reel = PortalReel::find($id);
         if (!$reel) {
@@ -324,11 +324,13 @@ class SocialRepository
                 return $this->responseWithError('No prompt link to approve yet.', []);
             }
             $reel->prompt_approved_at = now();
+            $reel->prompt_feedback    = $feedback;
         } elseif ($stage === 'video') {
             if (!$reel->drive_link) {
                 return $this->responseWithError('No video link to approve yet.', []);
             }
             $reel->video_approved_at = now();
+            $reel->video_feedback    = $feedback;
             $reel->status            = PortalReel::READY;
         } else {
             return $this->responseWithError('Not a valid stage.', []);
@@ -338,6 +340,16 @@ class SocialRepository
         $reel->save();
 
         return $this->responseWithSuccess(ucfirst($stage) . ' approved.', []);
+    }
+
+    /** The approval inbox - every reel not yet published or rejected, for
+     *  whoever admin has given portal_manage to review/assign. */
+    public function contentPool()
+    {
+        return PortalReel::with(['suggestedBy.staff.designation', 'assignee'])
+            ->whereNotIn('status', [PortalReel::PUBLISHED, PortalReel::REJECTED])
+            ->orderByDesc('id')
+            ->get();
     }
 
     /** The last step - picking when it actually goes live. Locked behind

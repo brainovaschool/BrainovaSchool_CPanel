@@ -102,6 +102,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/create',  'suggestReelCreate')->name('create')->middleware('PermissionCheck:portal_access');
                 });
 
+                Route::get('/portal/social/content-pool', [SocialController::class, 'contentPool'])->name('portal-social-content-pool.index')->middleware('PermissionCheck:portal_manage');
+
                 Route::get('/portal/social/month-plan', [SocialController::class, 'monthPlan'])->name('portal-social-month-plan.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_social_month_plan_read']);
                 Route::post('/portal/social/month-plan/targets', [SocialController::class, 'updateCategoryTargets'])->name('portal-social-month-plan.targets')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
 

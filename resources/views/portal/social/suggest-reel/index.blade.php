@@ -7,10 +7,10 @@
         <div class="page-header">
             <div class="row">
                 <div class="col-sm-8">
-                    <h4 class="bradecrumb-title mb-1">Suggest a Reel</h4>
+                    <h4 class="bradecrumb-title mb-1">Suggest Content</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
-                        <li class="breadcrumb-item">Suggest a Reel</li>
+                        <li class="breadcrumb-item">Suggest Content</li>
                     </ol>
                 </div>
                 <div class="col-sm-4 text-sm-end">
@@ -21,7 +21,7 @@
 
         <div class="card ot-card">
             <div class="card-body">
-                <p class="text-secondary mb-0">Got an idea for a reel or topic? Click "+ Add", pick the series, and give the topic and hook — everything else is filled in for you.</p>
+                <p class="text-secondary mb-0">Got an idea for content? Click "+ Add", pick the series, and give the topic and hook — everything else is filled in for you. An admin or coordinator will review it in Content Pool.</p>
             </div>
         </div>
     </div>
