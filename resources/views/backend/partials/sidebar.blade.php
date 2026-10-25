@@ -626,11 +626,6 @@
                                                 <a href="{{ route('portal-social-reel-characters.index') }}">Reel Characters</a>
                                             </li>
                                         @endif
-                                        @if (hasPermission('portal_manage') || hasPermission('portal_reel_settings_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-settings']) }}">
-                                                <a href="{{ route('portal-social-reel-settings.edit') }}">Reel Settings</a>
-                                            </li>
-                                        @endif
                                         @if (hasPermission('reel_studio_access') || hasPermission('portal_manage'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-studio*']) }}">
                                                 <a href="{{ route('portal-social-reel-studio.index') }}">Reel Studio</a>
