@@ -101,7 +101,11 @@
                                     </td>
                                     <td>{{ $reel->planned_date?->format('d M Y') ?: '—' }}</td>
                                     <td class="action bn-reel-actions">
-                                        <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a>
+                                        @if ($reel->status === \App\Models\Portal\PortalReel::SUGGESTED)
+                                            <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a>
+                                        @else
+                                            <a href="{{ route('portal-social-reels.setup', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a>
+                                        @endif
                                         @if ($data['canManage'])
                                             <form action="{{ route('portal-social-reels.destroy', $reel->id) }}" method="post" class="d-inline" onsubmit="return confirm('Remove this reel/topic?');">
                                                 @csrf

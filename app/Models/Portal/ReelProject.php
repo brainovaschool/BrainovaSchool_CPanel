@@ -14,14 +14,24 @@ class ReelProject extends Model
         'character_ids' => 'array',
     ];
 
+    // Labelled "Orientation" in the UI (Portrait/Landscape) - the
+    // vertical/horizontal values themselves are unchanged, only the
+    // wording shown to the user changed.
     public const FORMATS = [
-        'vertical'   => 'Vertical (9:16)',
-        'horizontal' => 'Horizontal (16:9)',
+        'vertical'   => 'Portrait (9:16)',
+        'horizontal' => 'Landscape (16:9)',
     ];
 
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** Set when this project was opened from a Content Pool/Reels
+     *  suggestion rather than created standalone via "+ Create". */
+    public function portalReel()
+    {
+        return $this->hasOne(PortalReel::class, 'reel_project_id');
     }
 
     public function scenes()

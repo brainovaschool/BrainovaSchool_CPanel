@@ -20,11 +20,14 @@
                         <li class="breadcrumb-item">{{ $reel->title }}</li>
                     </ol>
                 </div>
-                @if ($data['canManage'])
-                    <div class="col-sm-4 text-sm-end">
+                <div class="col-sm-4 text-sm-end">
+                    @if ($reel->status !== \App\Models\Portal\PortalReel::SUGGESTED && ($canAssign || $isAssignee))
+                        <a href="{{ route('portal-social-reels.setup', $reel->id) }}" class="btn ot-btn-primary">Reel Setup</a>
+                    @endif
+                    @if ($data['canManage'])
                         <a href="{{ route('portal-social-reels.edit', $reel->id) }}" class="btn btn-outline-secondary">Edit</a>
-                    </div>
-                @endif
+                    @endif
+                </div>
             </div>
         </div>
 

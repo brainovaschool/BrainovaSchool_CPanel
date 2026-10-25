@@ -64,6 +64,14 @@ class PortalReel extends Model
         return $this->belongsTo(Upload::class, 'thumb_upload_id');
     }
 
+    /** The Reel Studio project (scenes, AI-generated prompts) this
+     *  suggestion's setup work happens in - null until an admin opens it
+     *  for the first time (see SocialRepository::openOrCreateReelProject()). */
+    public function reelProject()
+    {
+        return $this->belongsTo(ReelProject::class, 'reel_project_id');
+    }
+
     /** One human-readable label summarising where this reel actually
      *  stands right now - the table shows this instead of the raw status
      *  enum, since "assigned to X" / "prompt pending approval" etc. carry

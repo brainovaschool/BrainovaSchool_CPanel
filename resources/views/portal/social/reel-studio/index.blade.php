@@ -29,7 +29,7 @@
                                 <tr>
                                     <th>{{ ___('common.sr_no') }}</th>
                                     <th>Title</th>
-                                    <th>Format</th>
+                                    <th>Orientation</th>
                                     <th>By</th>
                                     <th>Scenes</th>
                                     <th>{{ ___('common.action') }}</th>

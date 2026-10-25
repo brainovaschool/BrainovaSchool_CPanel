@@ -17,6 +17,23 @@
             </div>
         </div>
 
+        @php($linkedReel = $data['project']->portalReel)
+        @if ($linkedReel)
+            <div class="card ot-card mb-3">
+                <div class="card-header"><h4 class="mb-0">From suggestion</h4></div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4"><strong>Series:</strong> {{ $linkedReel->series_name ?: '—' }}</div>
+                        <div class="col-md-4"><strong>Pillar:</strong> {{ $linkedReel->category ?: '—' }}</div>
+                        <div class="col-md-4"><strong>Deadline:</strong> {{ $linkedReel->deadline?->format('d M Y') ?: '—' }}</div>
+                        <div class="col-md-4"><strong>Suggested by:</strong> {{ optional($linkedReel->suggestedBy)->name ?: '—' }}</div>
+                        <div class="col-md-4"><strong>Assigned to:</strong> {{ optional($linkedReel->assignee)->first_name ? trim($linkedReel->assignee->first_name . ' ' . $linkedReel->assignee->last_name) : '—' }}</div>
+                        <div class="col-md-4"><a href="{{ route('portal-social-reels.show', $linkedReel->id) }}">Open the reel's own page</a></div>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         <div class="card ot-card mb-3">
             <div class="card-header">
                 <h4 class="mb-0">Reel Setup</h4>
@@ -31,7 +48,7 @@
                             <input type="text" name="title" class="form-control ot-input" value="{{ $data['project']->title }}" required>
                         </div>
                         <div class="col-12 col-md-4 mb-3">
-                            <label class="form-label">Format</label>
+                            <label class="form-label">Orientation</label>
                             <select name="format" class="form-control ot-input">
                                 @foreach (\App\Models\Portal\ReelProject::FORMATS as $value => $label)
                                     <option value="{{ $value }}" {{ $data['project']->format == $value ? 'selected' : '' }}>{{ $label }}</option>

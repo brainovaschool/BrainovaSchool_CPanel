@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Portal;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Portal\PortalReel;
 use App\Models\Portal\PortalResponsibility;
 use App\Models\Portal\PortalSetting;
 use App\Models\Staff\Staff;
@@ -162,6 +163,30 @@ class SocialController extends Controller
         $data['customFields'] = $this->repo->reelCustomFields();
         $data['title']        = $reel->title;
         return view('portal.social.reels.show', compact('data'));
+    }
+
+    /** The bridge into Reel Studio: a suggestion has to be approved
+     *  before there's anything to set up, so "Open" only lands here past
+     *  that point - the first visit creates the linked project, every
+     *  later one just goes straight back to it. */
+    public function openReelSetup($id)
+    {
+        $reel = PortalReel::find((int) $id);
+        if (!$reel) {
+            return redirect()->route('portal-social-reels.index')->with('danger', ___('alert.not_found'));
+        }
+
+        $staffId    = $this->actingStaffId();
+        $isAssignee = $staffId !== null && (int) $reel->assigned_to === $staffId;
+        if (!$this->canManageContent() && !$isAssignee) {
+            abort(403);
+        }
+        if ($reel->status === PortalReel::SUGGESTED) {
+            return redirect()->route('portal-social-reels.show', $id)->with('danger', 'Approve this suggestion before setting it up.');
+        }
+
+        $project = $this->repo->openOrCreateReelProject($reel, Auth::id());
+        return redirect()->route('portal-social-reel-studio.show', $project->id);
     }
 
     public function editReel($id)

@@ -14,6 +14,7 @@ use App\Models\Portal\PortalSetting;
 use App\Models\Portal\PortalSettingList;
 use App\Models\Portal\PortalTask;
 use App\Models\Portal\PortalWeeklyGoal;
+use App\Models\Portal\ReelProject;
 use App\Models\Staff\Staff;
 use App\Services\Portal\PortalNotifier;
 use App\Traits\CommonHelperTrait;
@@ -261,6 +262,60 @@ class SocialRepository
     }
 
     // ---- Reel workflow: assign, prompt/video stages, schedule --------
+
+    /** Reel Studio (scenes + AI prompt generation) was built as a
+     *  separate system with no link to this one - this is the bridge.
+     *  First "Open" on an approved reel creates its project, pre-filled
+     *  from whatever the reel already has (title/hook/note, plus a
+     *  best-effort read of the Orientation/Time/Characters custom
+     *  fields if those were set up); every later "Open" just reuses it. */
+    public function openOrCreateReelProject(PortalReel $reel, int $userId): ReelProject
+    {
+        if ($reel->reel_project_id) {
+            $existing = ReelProject::find($reel->reel_project_id);
+            if ($existing) {
+                return $existing;
+            }
+        }
+
+        $customFields = $reel->custom_fields ?: [];
+        $orientationValue = null;
+        $timeValue = null;
+        $characterNames = [];
+        foreach ($this->reelCustomFields() as $field) {
+            $value = $customFields[$field->key] ?? null;
+            if ($value === null || $value === '') {
+                continue;
+            }
+            if (str_contains(strtolower($field->label), 'orientation')) {
+                $orientationValue = $value;
+            }
+            if (str_contains(strtolower($field->label), 'time')) {
+                $timeValue = $value;
+            }
+            if ($field->list_key === PortalReelCustomField::SOURCE_REEL_CHARACTERS) {
+                $characterNames = (array) $value;
+            }
+        }
+
+        $format = ($orientationValue && stripos((string) $orientationValue, 'land') !== false) ? 'horizontal' : 'vertical';
+        $characterIds = $characterNames ? \App\Models\Portal\ReelCharacter::whereIn('name', $characterNames)->pluck('id')->all() : [];
+
+        $project = ReelProject::create([
+            'title'                   => $reel->title,
+            'hook'                    => $reel->hook,
+            'description'             => $reel->note,
+            'format'                  => $format,
+            'target_duration_seconds' => is_numeric($timeValue) ? (int) $timeValue : null,
+            'character_ids'           => $characterIds,
+            'created_by'              => $userId,
+        ]);
+
+        $reel->reel_project_id = $project->id;
+        $reel->save();
+
+        return $project;
+    }
 
     public function assignReel(int $id, ?int $staffId, bool $openPaid, ?string $deadline, int $assignedByUserId): array
     {

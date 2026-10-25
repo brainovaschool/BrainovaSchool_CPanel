@@ -27,7 +27,7 @@
                             <input type="text" name="title" class="form-control ot-input" value="{{ old('title') }}" placeholder="e.g. Why do leaves change color?" required>
                         </div>
                         <div class="col-12 col-md-4 mb-3">
-                            <label class="form-label">Format <span class="fillable">*</span></label>
+                            <label class="form-label">Orientation <span class="fillable">*</span></label>
                             <select name="format" class="form-control ot-input">
                                 @foreach (\App\Models\Portal\ReelProject::FORMATS as $value => $label)
                                     <option value="{{ $value }}" {{ old('format', 'vertical') == $value ? 'selected' : '' }}>{{ $label }}</option>

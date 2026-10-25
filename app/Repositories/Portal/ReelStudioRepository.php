@@ -2,12 +2,14 @@
 
 namespace App\Repositories\Portal;
 
+use App\Models\Portal\PortalReel;
 use App\Models\Portal\ReelCharacter;
 use App\Models\Portal\ReelProject;
 use App\Models\Portal\ReelScene;
 use App\Models\Portal\ReelSceneCharacter;
 use App\Repositories\WebsiteSetup\AiHelperRepository;
 use App\Services\Ai\AiGateway;
+use App\Services\Portal\PortalNotifier;
 use App\Services\Reel\ReelPromptBuilder;
 use App\Traits\ReturnFormatTrait;
 use Illuminate\Support\Facades\Auth;
@@ -167,10 +169,24 @@ class ReelStudioRepository
                     ->delete();
             });
 
+            $this->notifyReelAdminOnScenesSaved($projectId);
+
             return $this->responseWithSuccess('Scenes saved.', []);
         } catch (\Throwable $th) {
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
+    }
+
+    /** If this project came from a Reels/Content Pool suggestion and
+     *  whoever's saving isn't the admin who approved it, let that admin
+     *  know the scene setup is ready for their review. */
+    private function notifyReelAdminOnScenesSaved(int $projectId): void
+    {
+        $reel = PortalReel::where('reel_project_id', $projectId)->first();
+        if (!$reel || !$reel->reviewed_by || (int) $reel->reviewed_by === (int) Auth::id()) {
+            return;
+        }
+        PortalNotifier::send($reel->reviewed_by, 'Reel setup ready for review', $reel->title, route('portal-social-reels.show', $reel->id));
     }
 
     /**

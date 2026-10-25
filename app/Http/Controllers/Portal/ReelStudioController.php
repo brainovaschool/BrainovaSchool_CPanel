@@ -23,10 +23,22 @@ class ReelStudioController extends Controller
         return hasPermission('portal_manage');
     }
 
-    /** Non-managers may only act on their own projects. */
+    /** Non-managers may act on their own projects, or a project that
+     *  came from a Content Pool/Reels suggestion they were assigned. */
     private function authorizeProject($project): bool
     {
-        return $project && ($this->isManager() || (int) $project->created_by === (int) Auth::id());
+        if (!$project) {
+            return false;
+        }
+        if ($this->isManager() || (int) $project->created_by === (int) Auth::id()) {
+            return true;
+        }
+        $reel = $project->portalReel;
+        if ($reel && $reel->assigned_to) {
+            $staff = Auth::user()->staff;
+            return $staff && (int) $staff->id === (int) $reel->assigned_to;
+        }
+        return false;
     }
 
     public function index()
