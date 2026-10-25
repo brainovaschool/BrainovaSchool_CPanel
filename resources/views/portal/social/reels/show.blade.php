@@ -71,7 +71,14 @@
                                     @endif
                                 @else
                                     <p class="mb-1"><strong>{{ $field->label }}:</strong>
-                                        {{ $field->type === \App\Models\Portal\PortalReelCustomField::TYPE_CHECKBOX ? ($value ? 'Yes' : 'No') : $value }}</p>
+                                        @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_CHECKBOX)
+                                            {{ $value ? 'Yes' : 'No' }}
+                                        @elseif (is_array($value))
+                                            {{ implode(', ', $value) }}
+                                        @else
+                                            {{ $value }}
+                                        @endif
+                                    </p>
                                 @endif
                             @endif
                         @endforeach

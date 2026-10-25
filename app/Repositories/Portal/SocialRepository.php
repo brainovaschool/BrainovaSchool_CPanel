@@ -55,7 +55,7 @@ class SocialRepository
 
             $defaults = $this->resolveSeriesDefaults($request->series_name);
             $customFields = $this->collectCustomFieldValues($request);
-            $this->applyCharacterDefault($customFields, $defaults);
+            $this->fillBlankFieldsFromSeries($customFields, $defaults);
 
             $reel = PortalReel::create([
                 'title'            => $request->title,
@@ -99,7 +99,7 @@ class SocialRepository
         $existingCustomFields = $reel->custom_fields ?: [];
         $defaults = $this->resolveSeriesDefaults($request->series_name);
         $customFields = $this->collectCustomFieldValues($request, $existingCustomFields);
-        $this->applyCharacterDefault($customFields, $defaults);
+        $this->fillBlankFieldsFromSeries($customFields, $defaults);
 
         $reel->title        = $request->title;
         $reel->format       = $request->format ?: ($defaults['format'] ?? $reel->format);
@@ -140,6 +140,15 @@ class SocialRepository
                 }
                 continue;
             }
+            // The Characters field can hold more than one - a series (and
+            // so a reel) can feature several recurring characters at once.
+            if ($field->list_key === PortalReelCustomField::SOURCE_REEL_CHARACTERS) {
+                $arr = array_values(array_filter((array) ($submitted[$field->key] ?? [])));
+                if ($arr) {
+                    $values[$field->key] = $arr;
+                }
+                continue;
+            }
             $v = trim((string) ($submitted[$field->key] ?? ''));
             if ($v !== '') {
                 $values[$field->key] = $v;
@@ -148,15 +157,42 @@ class SocialRepository
         return $values;
     }
 
-    // ---- Series — Format/Pillar/Characters defaults for a series -----
+    /** Fills in any custom field the submitter left blank with the
+     *  series' default for that field - never overwrites something
+     *  already provided. */
+    private function fillBlankFieldsFromSeries(array &$customFields, array $seriesDefaults): void
+    {
+        foreach (($seriesDefaults['custom_fields'] ?? []) as $key => $value) {
+            if (empty($customFields[$key])) {
+                $customFields[$key] = $value;
+            }
+        }
+    }
+
+    // ---- Series — every Reel form field can default per-series -------
 
     public function reelSeries()
     {
         return PortalReelSeries::orderBy('sort_order')->get();
     }
 
-    /** Same add/rename/delete-in-one-submit pattern as updateSocialSettings()
-     *  and updateReelCustomFields(). */
+    /** [] if no series picked, or the series was renamed/deleted since -
+     *  callers already treat a missing default as "leave that field as
+     *  the submitter set it". Shape: {category, format, custom_fields:
+     *  {field_key: value}}. */
+    private function resolveSeriesDefaults(?string $seriesName): array
+    {
+        if (!$seriesName) {
+            return [];
+        }
+        $series = PortalReelSeries::where('name', $seriesName)->first();
+        return $series ? ($series->defaults ?: []) : [];
+    }
+
+    /** One JSON `defaults` column per series holds Pillar, Format, and
+     *  every current Reel form custom field - same add/rename/delete-in-
+     *  one-submit pattern as updateSocialSettings() and
+     *  updateReelCustomFields(). */
     public function updateReelSeries($request): array
     {
         $rows = (array) $request->input('series', []);
@@ -173,10 +209,8 @@ class SocialRepository
             if ($name === '') {
                 continue;
             }
-            $series->name              = $name;
-            $series->default_category  = $data['default_category'] ?: null;
-            $series->default_format    = $data['default_format'] ?: null;
-            $series->default_character = $data['default_character'] ?: null;
+            $series->name      = $name;
+            $series->defaults  = $this->buildSeriesDefaults($data);
             $series->save();
         }
 
@@ -188,51 +222,40 @@ class SocialRepository
                 continue;
             }
             PortalReelSeries::create([
-                'name'              => $name,
-                'default_category'  => $data['default_category'] ?: null,
-                'default_format'    => $data['default_format'] ?: null,
-                'default_character' => $data['default_character'] ?: null,
-                'sort_order'        => $nextOrder++,
+                'name'       => $name,
+                'defaults'   => $this->buildSeriesDefaults($data),
+                'sort_order' => $nextOrder++,
             ]);
         }
 
         return $this->responseWithSuccess('Saved.', []);
     }
 
-    /** [] if no series picked, or the series was renamed/deleted since -
-     *  callers already treat a missing default as "leave that field as
-     *  the submitter set it". */
-    private function resolveSeriesDefaults(?string $seriesName): array
+    /** $data: the submitted series[...]/new_series[...] row - category,
+     *  format, and custom_fields[field_key] (an array for the Characters
+     *  field, a plain value for everything else). */
+    private function buildSeriesDefaults(array $data): array
     {
-        if (!$seriesName) {
-            return [];
+        $customFields = [];
+        foreach ((array) ($data['custom_fields'] ?? []) as $key => $value) {
+            if (is_array($value)) {
+                $value = array_values(array_filter($value));
+                if ($value) {
+                    $customFields[$key] = $value;
+                }
+                continue;
+            }
+            $value = trim((string) $value);
+            if ($value !== '') {
+                $customFields[$key] = $value;
+            }
         }
-        $series = PortalReelSeries::where('name', $seriesName)->first();
-        if (!$series) {
-            return [];
-        }
-        return [
-            'category'  => $series->default_category,
-            'format'    => $series->default_format,
-            'character' => $series->default_character,
-        ];
-    }
 
-    /** The one custom field (if any) sourced from the live Reel Characters
-     *  roster gets the series' default character, same "only if blank"
-     *  rule as category/format - found by source type, not by a
-     *  hardcoded key, so renaming that field never breaks this. */
-    private function applyCharacterDefault(array &$customFields, array $defaults): void
-    {
-        if (empty($defaults['character'])) {
-            return;
-        }
-        $field = $this->reelCustomFields()->first(
-            fn (PortalReelCustomField $f) => $f->list_key === PortalReelCustomField::SOURCE_REEL_CHARACTERS
-        );
-        if ($field && empty($customFields[$field->key])) {
-            $customFields[$field->key] = $defaults['character'];
-        }
+        return [
+            'category'      => $data['category'] ?: null,
+            'format'        => $data['format'] ?: null,
+            'custom_fields' => $customFields,
+        ];
     }
 
     // ---- Reel workflow: assign, prompt/video stages, schedule --------

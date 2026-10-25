@@ -14,9 +14,7 @@
             <option value="">—</option>
             @foreach ($seriesList as $s)
                 <option value="{{ $s->name }}"
-                        data-pillar="{{ $s->default_category }}"
-                        data-format="{{ $s->default_format }}"
-                        data-character="{{ $s->default_character }}"
+                        data-defaults="{{ json_encode($s->defaults ?: []) }}"
                         {{ old('series_name', $reel->series_name ?? '') === $s->name ? 'selected' : '' }}>{{ $s->name }}</option>
             @endforeach
         </select>
@@ -92,9 +90,16 @@
                     </div>
                 @else
                     <label class="form-label">{{ $field->label }}</label>
-                    @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT)
-                        <select name="custom_fields[{{ $field->key }}]" class="nice-select niceSelect bordered_style wide"
-                                @if ($isCharacterField) data-source="reel_characters" @endif>
+                    @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT && $isCharacterField)
+                        @php($currentArr = (array) ($current ?? []))
+                        <select name="custom_fields[{{ $field->key }}][]" class="form-control ot-input" multiple size="4" data-source="reel_characters">
+                            @foreach ($field->options() as $opt)
+                                <option value="{{ $opt }}" {{ in_array((string) $opt, array_map('strval', $currentArr), true) ? 'selected' : '' }}>{{ $opt }}</option>
+                            @endforeach
+                        </select>
+                        <p class="text-secondary mb-0 mt-1">Hold Ctrl (Cmd on Mac) to pick more than one.</p>
+                    @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT)
+                        <select name="custom_fields[{{ $field->key }}]" class="nice-select niceSelect bordered_style wide">
                             <option value="">—</option>
                             @foreach ($field->options() as $opt)
                                 <option value="{{ $opt }}" {{ (string) $current === (string) $opt ? 'selected' : '' }}>{{ $opt }}</option>
@@ -126,18 +131,56 @@
         var pillarSelect = document.getElementById('reelPillarSelect');
         var charactersSelect = document.querySelector('select[data-source="reel_characters"]');
 
-        function setIfBlank(select, value) {
+        function setSelectIfBlank(select, value) {
             if (!select || !value || select.value) return;
             select.value = value;
             if (window.jQuery) { jQuery(select).niceSelect('update'); }
         }
 
+        function setMultiIfBlank(select, values) {
+            if (!select || !values || !values.length) return;
+            var hasSelection = Array.prototype.some.call(select.options, function (o) { return o.selected; });
+            if (hasSelection) return;
+            values = Array.isArray(values) ? values : [values];
+            Array.prototype.forEach.call(select.options, function (o) {
+                o.selected = values.indexOf(o.value) !== -1;
+            });
+        }
+
+        function setFieldIfBlank(key, value) {
+            var el = document.querySelector('[name="custom_fields[' + key + ']"]');
+            if (!el) return;
+            if (el.type === 'checkbox') {
+                if (el.checked) return;
+                el.checked = !!value;
+                return;
+            }
+            if (el.value) return;
+            el.value = Array.isArray(value) ? value.join(', ') : value;
+            if (el.classList.contains('niceSelect') && window.jQuery) { jQuery(el).niceSelect('update'); }
+        }
+
+        // Each <option> carries the whole series' defaults as JSON -
+        // {category, format, custom_fields: {field_key: value}} - so
+        // picking a series fills in everything it has a default for,
+        // without overwriting anything already typed in.
         function applySeriesDefaults() {
             var opt = seriesSelect.options[seriesSelect.selectedIndex];
             if (!opt) return;
-            setIfBlank(pillarSelect, opt.getAttribute('data-pillar'));
-            setIfBlank(formatSelect, opt.getAttribute('data-format'));
-            setIfBlank(charactersSelect, opt.getAttribute('data-character'));
+            var defaults = {};
+            try { defaults = JSON.parse(opt.getAttribute('data-defaults') || '{}'); } catch (e) { /* ignore */ }
+
+            setSelectIfBlank(pillarSelect, defaults.category);
+            setSelectIfBlank(formatSelect, defaults.format);
+
+            var customFields = defaults.custom_fields || {};
+            Object.keys(customFields).forEach(function (key) {
+                if (charactersSelect && charactersSelect.name === 'custom_fields[' + key + '][]') {
+                    setMultiIfBlank(charactersSelect, customFields[key]);
+                } else {
+                    setFieldIfBlank(key, customFields[key]);
+                }
+            });
         }
 
         // nice-select only fires its change event through jQuery's own
