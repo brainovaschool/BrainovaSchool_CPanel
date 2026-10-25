@@ -75,7 +75,6 @@
                         <tbody class="tbody">
                             @forelse ($data['reels'] as $reel)
                                 @php($staff = optional($reel->suggestedBy)->staff)
-                                @php($isUnassigned = !$reel->assigned_to && !$reel->is_open_paid)
                                 <tr>
                                     <td>
                                         <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="bn-reel-title">{{ $reel->title }}</a>
@@ -111,20 +110,16 @@
                                                 <button class="btn btn-sm btn-outline-danger">{{ ___('common.delete') }}</button>
                                             </form>
                                         @endif
-                                        @if ($isUnassigned && $data['canAssign'])
-                                            <form action="{{ route('portal-social-reels.assign', $reel->id) }}" method="post" class="bn-assign-form">
+                                        @if ($reel->status === \App\Models\Portal\PortalReel::SUGGESTED && $data['canApprove'])
+                                            <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" class="d-inline">
                                                 @csrf
-                                                <select name="assigned_to" class="nice-select niceSelect bordered_style">
-                                                    <option value="">Assign to...</option>
-                                                    @foreach ($data['contentTeam'] as $member)
-                                                        <option value="{{ $member->id }}">{{ $member->first_name }} {{ $member->last_name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <label class="bn-open-paid">
-                                                    <input type="checkbox" name="open_paid" value="1" class="open-paid-check"> Open (Paid Task)
-                                                </label>
-                                                <input type="date" name="deadline" class="form-control ot-input">
-                                                <button type="submit" class="btn btn-sm ot-btn-primary">Approve &amp; Assign</button>
+                                                <input type="hidden" name="status" value="accepted">
+                                                <button type="submit" class="btn btn-sm ot-btn-primary">Approve</button>
+                                            </form>
+                                            <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" class="d-inline" onsubmit="return confirm('Discard this suggestion?');">
+                                                @csrf
+                                                <input type="hidden" name="status" value="rejected">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Discard</button>
                                             </form>
                                         @endif
                                     </td>
@@ -150,26 +145,7 @@
         .bn-reel-sub { color: var(--bn-muted, #8a8fa3); font-size: .78rem; margin-top: .15rem; }
         .bn-progress-dot { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: .72rem; font-weight: 700; margin-right: .35rem; }
         .bn-reel-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem; min-width: 220px; }
-        .bn-assign-form { display: flex; flex-direction: column; gap: .35rem; width: 100%; max-width: 220px; margin-top: .5rem; padding-top: .5rem; border-top: 1px dashed rgba(127,127,127,.3); }
-        .bn-assign-form .form-control { padding: .25rem .5rem; height: auto; }
-        .bn-open-paid { display: flex; align-items: center; gap: .35rem; font-size: .8rem; color: var(--bn-muted, #8a8fa3); margin: 0; }
         .bn-reels-table td { vertical-align: top; }
     </style>
-    @endpush
-
-    @push('script')
-    <script>
-        // Event delegation, since every "needs assignment" row has its own
-        // copy of this checkbox + select (same issue as the Leave Request
-        // role toggle elsewhere in this app - nice-select needs the real
-        // <select> disabled, a plain checkbox change is a native DOM event).
-        document.addEventListener('change', function (e) {
-            if (!e.target.classList.contains('open-paid-check')) return;
-            var select = e.target.closest('form').querySelector('select[name="assigned_to"]');
-            if (!select) return;
-            select.disabled = e.target.checked;
-            if (window.jQuery) { jQuery(select).niceSelect('update'); }
-        });
-    </script>
     @endpush
 @endsection

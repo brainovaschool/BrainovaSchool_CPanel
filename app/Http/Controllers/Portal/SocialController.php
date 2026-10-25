@@ -73,11 +73,10 @@ class SocialController extends Controller
     public function reels(Request $request)
     {
         $data['canManage']   = $this->canManageContent();
-        $data['canAssign']   = $this->canAssignReels();
+        $data['canApprove']  = $this->canApproveReels();
         $data['reels']       = $this->repo->reels($request->only(['status', 'category', 'format', 'series_name']));
         $data['settings']    = PortalSetting::current();
         $data['series']      = $this->repo->reelSeries();
-        $data['contentTeam'] = $this->repo->assignableStaff();
         $data['filters']     = $request->only(['status', 'category', 'format', 'series_name']);
         $data['title']       = 'Social Board — Reels';
         return view('portal.social.reels.index', compact('data'));

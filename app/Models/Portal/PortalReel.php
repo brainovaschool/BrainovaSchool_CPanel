@@ -94,6 +94,9 @@ class PortalReel extends Model
         if ($this->assigned_to) {
             return 'Assigned to ' . trim(optional($this->assignee)->first_name . ' ' . optional($this->assignee)->last_name);
         }
+        if ($this->status !== self::SUGGESTED) {
+            return 'Approved — awaiting assignment';
+        }
         return 'Suggested';
     }
 
@@ -118,6 +121,9 @@ class PortalReel extends Model
         }
         if ($this->is_open_paid || $this->assigned_to) {
             return 'badge-basic-primary-text';
+        }
+        if ($this->status !== self::SUGGESTED) {
+            return 'badge-basic-info-text';
         }
         return 'badge-basic-secondary-text';
     }

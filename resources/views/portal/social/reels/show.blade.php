@@ -94,7 +94,26 @@
             </div>
 
             <div class="col-lg-4">
-                @if ($canAssign)
+                @if ($reel->status === \App\Models\Portal\PortalReel::SUGGESTED && $canApprove)
+                    <div class="card ot-card">
+                        <div class="card-header"><h4 class="mb-0">Review suggestion</h4></div>
+                        <div class="card-body">
+                            <p class="text-secondary mb-3">Approve to move this forward, or discard it.</p>
+                            <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" class="mb-2">
+                                @csrf
+                                <input type="hidden" name="status" value="accepted">
+                                <button type="submit" class="btn ot-btn-primary w-100">Approve</button>
+                            </form>
+                            <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" onsubmit="return confirm('Discard this suggestion?');">
+                                @csrf
+                                <input type="hidden" name="status" value="rejected">
+                                <button type="submit" class="btn btn-outline-danger w-100">Discard</button>
+                            </form>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($canAssign && $reel->status !== \App\Models\Portal\PortalReel::SUGGESTED)
                     <div class="card ot-card">
                         <div class="card-header"><h4 class="mb-0">Assign</h4></div>
                         <div class="card-body">
