@@ -109,8 +109,6 @@ class SocialController extends Controller
         }
         $data['canManage'] = hasPermission('portal_manage');
         $data['fixes']     = $this->repo->pageFixes();
-        $data['staffList'] = Staff::orderBy('first_name')->get();
-        $data['myStaffId'] = $this->actingStaffId();
         $data['title']     = 'Suggest';
         return view('portal.social.suggest-reel.index', compact('data'));
     }
@@ -399,15 +397,12 @@ class SocialController extends Controller
 
     public function updatePageFixStatus(Request $request, $id)
     {
-        $request->validate(['status' => 'required|in:open,in_progress,fixed']);
-
-        $isManager = hasPermission('portal_manage');
-        $staffId   = $this->actingStaffId();
-        if (!$isManager && $staffId === null) {
+        if (!hasPermission('portal_manage')) {
             abort(403);
         }
+        $request->validate(['status' => 'required|in:open,in_progress,fixed']);
 
-        $result = $this->repo->updatePageFixStatus((int) $id, $request->status, $isManager ? null : $staffId);
+        $result = $this->repo->updatePageFixStatus((int) $id, $request->status);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

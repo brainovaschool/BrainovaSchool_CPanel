@@ -26,25 +26,33 @@
             </div>
         </div>
 
+        @php($pageCategories = [
+            'Dashboard', 'Online Admission', 'Subscriptions', 'Student Info', 'Id Cards', 'Certificates',
+            'Academic', 'Routines', 'Attendance', 'Leave', 'Fees', 'Examination', 'Online Examination',
+            'Staff Workspace', 'Teacher Tools', 'Communication', 'Transportation', 'Live Class', 'Library',
+            'Accounts', 'Report', 'Language', 'Staff Manage', 'Subscribers', 'Contact Message',
+            'Course Catalogue', 'Learning Engine', 'Website Setup', 'Gallery', 'App Settings',
+            'Manage School Features', 'Settings',
+        ])
         <div class="card ot-card mb-24">
             <div class="card-header"><h4 class="mb-0">Page Fixes</h4></div>
             <div class="card-body">
                 <div class="table-responsive mb-24">
                     <table class="ot-basic-table ot-table-bg">
-                        <thead class="thead"><tr><th>Title</th><th>Description</th><th>Owner</th><th>Status</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
+                        <thead class="thead"><tr><th>Title</th><th>Description</th><th>Page</th><th>Status</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                         <tbody class="tbody">
                             @forelse ($data['fixes'] as $fix)
                                 <tr>
                                     <td>{{ $fix->title }}</td>
                                     <td>{{ $fix->description }}</td>
-                                    <td>{{ $fix->owner ? trim($fix->owner->first_name . ' ' . $fix->owner->last_name) : '—' }}</td>
+                                    <td>{{ $fix->page_category ?: '—' }}</td>
                                     <td>
                                         @if ($fix->status === 'fixed')<span class="badge-basic-success-text">Fixed</span>
                                         @elseif ($fix->status === 'in_progress')<span class="badge-basic-warning-text">In progress</span>
                                         @else <span class="badge-basic-danger-text">Open</span>@endif
                                     </td>
                                     <td class="action">
-                                        @if ($data['canManage'] || ($data['myStaffId'] && $data['myStaffId'] === $fix->owner_staff_id))
+                                        @if ($data['canManage'])
                                             <form action="{{ route('portal-social-page-fixes.status', $fix->id) }}" method="post" class="d-flex gap-1">
                                                 @csrf
                                                 <select name="status" class="nice-select niceSelect bordered_style" style="min-width:120px" onchange="this.form.submit()">
@@ -77,11 +85,11 @@
                                 <input type="text" name="description" class="form-control ot-input">
                             </div>
                             <div class="col-md-2">
-                                <label class="form-label">Owner</label>
-                                <select name="owner_staff_id" class="nice-select niceSelect bordered_style wide">
-                                    <option value="">— unassigned —</option>
-                                    @foreach ($data['staffList'] as $s)
-                                        <option value="{{ $s->id }}">{{ trim($s->first_name . ' ' . $s->last_name) }}</option>
+                                <label class="form-label">Page</label>
+                                <select name="page_category" class="nice-select niceSelect bordered_style wide">
+                                    <option value="">— pick a page —</option>
+                                    @foreach ($pageCategories as $cat)
+                                        <option value="{{ $cat }}">{{ $cat }}</option>
                                     @endforeach
                                 </select>
                             </div>

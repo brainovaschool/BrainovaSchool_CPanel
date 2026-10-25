@@ -647,21 +647,21 @@ class SocialRepository
 
     public function pageFixes()
     {
-        return PortalPageFix::with('owner')->orderByRaw("status = 'fixed'")->orderByDesc('id')->get();
+        return PortalPageFix::orderByRaw("status = 'fixed'")->orderByDesc('id')->get();
     }
 
     public function storePageFix($request, int $userId): array
     {
         PortalPageFix::create([
-            'title'          => $request->title,
-            'description'    => $request->description,
-            'owner_staff_id' => $request->owner_staff_id ?: null,
-            'created_by'     => $userId,
+            'title'         => $request->title,
+            'description'   => $request->description,
+            'page_category' => $request->page_category ?: null,
+            'created_by'    => $userId,
         ]);
         return $this->responseWithSuccess('Added.', []);
     }
 
-    public function updatePageFixStatus(int $id, string $status, ?int $restrictToStaffId = null): array
+    public function updatePageFixStatus(int $id, string $status): array
     {
         if (!in_array($status, ['open', 'in_progress', 'fixed'], true)) {
             return $this->responseWithError('Not a valid status.', []);
@@ -670,9 +670,6 @@ class SocialRepository
         $fix = PortalPageFix::find($id);
         if (!$fix) {
             return $this->responseWithError(___('alert.not_found'), []);
-        }
-        if ($restrictToStaffId !== null && (int) $fix->owner_staff_id !== $restrictToStaffId) {
-            return $this->responseWithError("This isn't assigned to you.", []);
         }
 
         $fix->status = $status;
