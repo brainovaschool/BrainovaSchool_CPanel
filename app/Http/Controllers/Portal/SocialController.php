@@ -101,8 +101,17 @@ class SocialController extends Controller
 
     public function suggestReelIndex()
     {
-        $this->requireContentAccess();
-        $data['title'] = 'Suggest Content';
+        // Page Fixes lived behind its own, separate permission - now that
+        // it's a block on this page, anyone who only had that keeps
+        // access, same as anyone who could already reach Suggest Content.
+        if (!$this->canManageContent() && !hasPermission('portal_social_page_fixes_read')) {
+            abort(403, 'Only admin or whoever holds the Content responsibility can do this.');
+        }
+        $data['canManage'] = hasPermission('portal_manage');
+        $data['fixes']     = $this->repo->pageFixes();
+        $data['staffList'] = Staff::orderBy('first_name')->get();
+        $data['myStaffId'] = $this->actingStaffId();
+        $data['title']     = 'Suggest';
         return view('portal.social.suggest-reel.index', compact('data'));
     }
 
@@ -110,7 +119,7 @@ class SocialController extends Controller
     {
         $this->requireContentAccess();
         $data['series'] = $this->repo->reelSeries();
-        $data['title']  = 'Suggest Content';
+        $data['title']  = 'Suggest';
         return view('portal.social.suggest-reel.create', compact('data'));
     }
 
@@ -352,14 +361,12 @@ class SocialController extends Controller
 
     // ---- Page fixes ------------------------------------------------------
 
+    /** Page Fixes used to be its own page - it's now a block on the
+     *  Suggest page, so the old URL redirects there instead of 404ing
+     *  for anyone with it bookmarked. */
     public function pageFixes()
     {
-        $data['canManage'] = hasPermission('portal_manage');
-        $data['fixes']     = $this->repo->pageFixes();
-        $data['staffList'] = Staff::orderBy('first_name')->get();
-        $data['myStaffId'] = $this->actingStaffId();
-        $data['title']     = 'Social Board — Page Fixes';
-        return view('portal.social.page-fixes', compact('data'));
+        return redirect()->route('portal-social-suggest-reel.index');
     }
 
     public function storePageFix(Request $request)

@@ -10,7 +10,7 @@
                     <h4 class="bradecrumb-title mb-1">Suggest Content</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('portal-social-suggest-reel.index') }}">Suggest Content</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('portal-social-suggest-reel.index') }}">Suggest</a></li>
                         <li class="breadcrumb-item">Add</li>
                     </ol>
                 </div>

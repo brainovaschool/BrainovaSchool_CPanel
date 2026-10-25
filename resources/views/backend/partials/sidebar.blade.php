@@ -586,9 +586,9 @@
                                                 <a href="{{ route('portal-social-reels.index') }}">Reels</a>
                                             </li>
                                         @endif
-                                        @if (portalOwnsResponsibility('content') || hasPermission('portal_social_suggest_reel_read'))
+                                        @if (portalOwnsResponsibility('content') || hasPermission('portal_social_suggest_reel_read') || hasPermission('portal_social_page_fixes_read'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/suggest-reel*']) }}">
-                                                <a href="{{ route('portal-social-suggest-reel.index') }}">Suggest Content</a>
+                                                <a href="{{ route('portal-social-suggest-reel.index') }}">Suggest</a>
                                             </li>
                                         @endif
                                         @if (hasPermission('portal_social_month_plan_read'))
@@ -604,11 +604,6 @@
                                         @if (portalOwnsResponsibility('content'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">
                                                 <a href="{{ route('portal-social-daily-plan.index') }}">Daily Plan &amp; Goals</a>
-                                            </li>
-                                        @endif
-                                        @if (hasPermission('portal_social_page_fixes_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/page-fixes']) }}">
-                                                <a href="{{ route('portal-social-page-fixes.index') }}">Page Fixes</a>
                                             </li>
                                         @endif
                                         @if (hasPermission('portal_manage') || hasPermission('portal_social_settings_read'))

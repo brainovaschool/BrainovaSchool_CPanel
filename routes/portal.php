@@ -111,7 +111,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/portal/social/audience', [SocialController::class, 'audience'])->name('portal-social-audience.index')->middleware('PermissionCheck:portal_access');
                 Route::post('/portal/social/audience/store', [SocialController::class, 'storeMetric'])->name('portal-social-audience.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
 
-                Route::get('/portal/social/page-fixes', [SocialController::class, 'pageFixes'])->name('portal-social-page-fixes.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_social_page_fixes_read']);
+                Route::get('/portal/social/page-fixes', [SocialController::class, 'pageFixes'])->name('portal-social-page-fixes.index')->middleware('PermissionCheck:portal_access');
                 Route::post('/portal/social/page-fixes/store', [SocialController::class, 'storePageFix'])->name('portal-social-page-fixes.store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 Route::post('/portal/social/page-fixes/{id}/status', [SocialController::class, 'updatePageFixStatus'])->name('portal-social-page-fixes.status')->middleware('PermissionCheck:portal_access', 'DemoCheck');
 
