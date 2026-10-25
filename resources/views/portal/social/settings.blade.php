@@ -174,7 +174,7 @@
                                                 <label class="form-label">Default {{ $field->label }}</label>
                                                 @if ($isCharacterField)
                                                     @php($currentArr = (array) ($current ?? []))
-                                                    <select name="series[{{ $s->id }}][custom_fields][{{ $field->key }}][]" class="form-control ot-input" multiple size="4">
+                                                    <select name="series[{{ $s->id }}][custom_fields][{{ $field->key }}][]" class="form-control select2_multy wide" multiple>
                                                         @foreach ($field->options() as $opt)
                                                             <option value="{{ $opt }}" {{ in_array((string) $opt, array_map('strval', $currentArr), true) ? 'selected' : '' }}>{{ $opt }}</option>
                                                         @endforeach
@@ -221,12 +221,11 @@
 
                 <form action="{{ route('portal-social-settings.content-assignees') }}" method="post">
                     @csrf
-                    <select name="content_assignee_role_ids[]" class="form-control ot-input" multiple size="8">
+                    <select name="content_assignee_role_ids[]" class="form-control select2_multy wide" multiple>
                         @foreach ($data['roles'] as $role)
                             <option value="{{ $role->id }}" {{ in_array($role->id, $data['assigneeRoleIds'] ?? [], true) ? 'selected' : '' }}>{{ $role->name }}</option>
                         @endforeach
                     </select>
-                    <p class="text-secondary mb-0 mt-1">Hold Ctrl (Cmd on Mac) to pick more than one.</p>
                     <button type="submit" class="btn btn-lg ot-btn-primary mt-3">Save</button>
                 </form>
             </div>
@@ -270,7 +269,7 @@
                         @else
                             <label class="form-label">Default {{ $field->label }}</label>
                             @if ($isCharacterField)
-                                <select name="new_series[__INDEX__][custom_fields][{{ $field->key }}][]" class="form-control ot-input" multiple size="4">
+                                <select name="new_series[__INDEX__][custom_fields][{{ $field->key }}][]" class="form-control select2_multy wide" multiple>
                                     @foreach ($field->options() as $opt)
                                         <option value="{{ $opt }}">{{ $opt }}</option>
                                     @endforeach
@@ -453,9 +452,10 @@
                 var row = wrapper.firstElementChild;
                 document.getElementById('newSeriesContainer').appendChild(row);
                 // Newly inserted <select> elements aren't styled by
-                // nice-select until explicitly (re)initialised - the
-                // global init on page load only ever saw the original set.
+                // nice-select/select2 until explicitly (re)initialised -
+                // the global init on page load only ever saw the original set.
                 jQuery(row).find('.niceSelect').niceSelect();
+                jQuery(row).find('.select2_multy').select2();
                 newSeriesIndex++;
             });
         })();

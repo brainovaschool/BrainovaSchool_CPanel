@@ -92,12 +92,11 @@
                     <label class="form-label">{{ $field->label }}</label>
                     @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT && $isCharacterField)
                         @php($currentArr = (array) ($current ?? []))
-                        <select name="custom_fields[{{ $field->key }}][]" class="form-control ot-input" multiple size="4" data-source="reel_characters">
+                        <select name="custom_fields[{{ $field->key }}][]" class="form-control select2_multy wide" multiple data-source="reel_characters">
                             @foreach ($field->options() as $opt)
                                 <option value="{{ $opt }}" {{ in_array((string) $opt, array_map('strval', $currentArr), true) ? 'selected' : '' }}>{{ $opt }}</option>
                             @endforeach
                         </select>
-                        <p class="text-secondary mb-0 mt-1">Hold Ctrl (Cmd on Mac) to pick more than one.</p>
                     @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT)
                         <select name="custom_fields[{{ $field->key }}]" class="nice-select niceSelect bordered_style wide">
                             <option value="">—</option>
@@ -145,6 +144,10 @@
             Array.prototype.forEach.call(select.options, function (o) {
                 o.selected = values.indexOf(o.value) !== -1;
             });
+            // select2 renders its own UI on top of the real <select> - it
+            // only redraws that UI when told the value changed underneath
+            // it, since setting .selected directly bypasses its own API.
+            if (window.jQuery) { jQuery(select).trigger('change'); }
         }
 
         function setFieldIfBlank(key, value) {
