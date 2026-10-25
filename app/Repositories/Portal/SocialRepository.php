@@ -519,14 +519,14 @@ class SocialRepository
         return PortalCategoryTarget::orderBy('category')->get();
     }
 
-    /** This month's actual reel/carousel counts per category against the
-     *  configured targets — business rule 10: counts from accepted
-     *  onward, by planned_date falling in the current month. */
-    public function monthPlan(): array
+    /** The selected month's actual reel/carousel counts per category
+     *  against the configured targets — business rule 10: counts from
+     *  accepted onward, by planned_date falling in that month. */
+    public function monthPlan(string $month): array
     {
         $targets = $this->categoryTargets();
-        $start = now()->startOfMonth();
-        $end   = now()->endOfMonth();
+        $start = Carbon::parse($month . '-01')->startOfMonth();
+        $end   = $start->copy()->endOfMonth();
 
         $thisMonth = PortalReel::whereIn('status', PortalReel::COUNTS_TOWARD_MONTH)
             ->whereBetween('planned_date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
@@ -542,6 +542,53 @@ class SocialRepository
                 'carousel_actual' => $forCategory->where('format', 'Carousel')->count(),
             ];
         })->values()->all();
+    }
+
+    /** One row per calendar day of the selected month - the admin picks
+     *  a Series then a ready-to-schedule reel from it per day; Format /
+     *  Created by / Drive link are read straight off that reel, never
+     *  entered separately. "Ready to schedule" = its video is approved
+     *  and it's either not yet scheduled anywhere, or already scheduled
+     *  within this same month (so it still shows on its day here). */
+    public function monthCalendar(string $month): array
+    {
+        $start = Carbon::parse($month . '-01')->startOfMonth();
+        $end   = $start->copy()->endOfMonth();
+
+        $reels = PortalReel::with('assignee')
+            ->whereNotNull('video_approved_at')
+            ->where(function ($q) use ($start, $end) {
+                $q->whereNull('planned_date')
+                    ->orWhereBetween('planned_date', [$start->format('Y-m-d'), $end->format('Y-m-d')]);
+            })
+            ->orderBy('series_name')
+            ->orderBy('title')
+            ->get();
+
+        $byDate = $reels->filter(fn (PortalReel $r) => $r->planned_date)
+            ->keyBy(fn (PortalReel $r) => $r->planned_date->format('Y-m-d'));
+
+        $days = [];
+        for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
+            $days[] = ['date' => $d->copy(), 'reel' => $byDate->get($d->format('Y-m-d'))];
+        }
+
+        return ['days' => $days, 'reels' => $reels];
+    }
+
+    /** One PortalReel::scheduleUpload() per day that got a reel picked -
+     *  a day left blank is simply skipped, not unscheduled. */
+    public function updateMonthCalendar($request): array
+    {
+        $assignments = (array) $request->input('assignments', []);
+        foreach ($assignments as $date => $reelId) {
+            if (!$reelId) {
+                continue;
+            }
+            $this->scheduleUpload((int) $reelId, $date);
+        }
+
+        return $this->responseWithSuccess('Calendar saved.', []);
     }
 
     public function updateCategoryTargets($request): array

@@ -310,10 +310,16 @@ class SocialController extends Controller
 
     // ---- Month plan ----------------------------------------------------
 
-    public function monthPlan()
+    public function monthPlan(Request $request)
     {
+        $month = $request->filled('month') ? $request->month : now()->format('Y-m');
+
         $data['canManage'] = $this->canManageContent();
-        $data['plan']      = $this->repo->monthPlan();
+        $data['month']     = $month;
+        $data['plan']      = $this->repo->monthPlan($month);
+        $data['calendar']  = $this->repo->monthCalendar($month);
+        $data['series']    = $data['calendar']['reels']->pluck('series_name')->filter()
+            ->merge($this->repo->reelSeries()->pluck('name'))->unique()->values();
         $data['title']     = 'Social Board — Month Plan';
         return view('portal.social.month-plan', compact('data'));
     }
@@ -325,6 +331,17 @@ class SocialController extends Controller
         }
         $result = $this->repo->updateCategoryTargets($request);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function updateMonthCalendar(Request $request)
+    {
+        if (!hasPermission('portal_manage')) {
+            abort(403);
+        }
+        $result = $this->repo->updateMonthCalendar($request);
+        $month  = $request->filled('month') ? $request->month : now()->format('Y-m');
+        return redirect()->route('portal-social-month-plan.index', ['month' => $month])
+            ->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
     // ---- Audience numbers ----------------------------------------------
