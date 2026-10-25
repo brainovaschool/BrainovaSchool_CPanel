@@ -28,7 +28,7 @@
                                 <th>Action</th><th>Deadline</th>
                                 <th>Prompt link</th><th>Prompt feedback</th>
                                 <th>Video link</th><th>Video feedback</th>
-                                <th>Upload date</th>
+                                <th>Upload date</th><th class="action">{{ ___('common.action') }}</th>
                             </tr>
                         </thead>
                         <tbody class="tbody">
@@ -74,6 +74,14 @@
                                     </td>
                                     <td>{{ $reel->video_feedback ?: '—' }}</td>
                                     <td>{{ $reel->planned_date?->format('d M Y') ?: '—' }}</td>
+                                    <td class="action">
+                                        <a href="{{ route('portal-social-reels.edit', $reel->id) }}" class="btn btn-sm ot-btn-primary">{{ ___('common.edit') }}</a>
+                                        <form action="{{ route('portal-social-reels.destroy', $reel->id) }}" method="post" class="d-inline" onsubmit="return confirm('Remove this reel/topic?');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="btn btn-sm btn-outline-danger">{{ ___('common.delete') }}</button>
+                                        </form>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr><td colspan="100%" class="text-center gray-color">{{ ___('common.no_data_available') }}</td></tr>

@@ -44,6 +44,12 @@ class PortalTask extends Model
         return $this->belongsTo(Staff::class, 'assigned_to');
     }
 
+    /** Set only for tasks created from a Content Pool reel assignment. */
+    public function reel()
+    {
+        return $this->belongsTo(PortalReel::class, 'reel_id');
+    }
+
     public function assignedBy()
     {
         return $this->belongsTo(User::class, 'assigned_by');

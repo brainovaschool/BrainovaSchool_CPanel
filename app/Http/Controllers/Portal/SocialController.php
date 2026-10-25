@@ -222,7 +222,7 @@ class SocialController extends Controller
             'deadline'    => 'nullable|date',
         ]);
 
-        $result = $this->repo->assignReel((int) $id, $openPaid ? null : (int) $request->assigned_to, $openPaid, $request->deadline);
+        $result = $this->repo->assignReel((int) $id, $openPaid ? null : (int) $request->assigned_to, $openPaid, $request->deadline, Auth::id());
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

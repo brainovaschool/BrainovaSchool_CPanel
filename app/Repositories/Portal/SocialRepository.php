@@ -12,8 +12,10 @@ use App\Models\Portal\PortalReelSeries;
 use App\Models\Portal\PortalResponsibility;
 use App\Models\Portal\PortalSetting;
 use App\Models\Portal\PortalSettingList;
+use App\Models\Portal\PortalTask;
 use App\Models\Portal\PortalWeeklyGoal;
 use App\Models\Staff\Staff;
+use App\Services\Portal\PortalNotifier;
 use App\Traits\CommonHelperTrait;
 use App\Traits\ReturnFormatTrait;
 use Carbon\Carbon;
@@ -260,7 +262,7 @@ class SocialRepository
 
     // ---- Reel workflow: assign, prompt/video stages, schedule --------
 
-    public function assignReel(int $id, ?int $staffId, bool $openPaid, ?string $deadline): array
+    public function assignReel(int $id, ?int $staffId, bool $openPaid, ?string $deadline, int $assignedByUserId): array
     {
         $reel = PortalReel::find($id);
         if (!$reel) {
@@ -274,7 +276,47 @@ class SocialRepository
         }
         $reel->save();
 
+        $this->syncReelTask($reel, $openPaid ? null : $staffId, $openPaid, $deadline, $assignedByUserId);
+
         return $this->responseWithSuccess('Assigned.', []);
+    }
+
+    /** Keeps one Team Portal task in step with a reel's assignment -
+     *  created the first time it's assigned, updated (never duplicated)
+     *  on every re-assign - so "as soon as the task is assigned the
+     *  content creator will see the task in her task list" holds true
+     *  the same way it would for any other task. */
+    private function syncReelTask(PortalReel $reel, ?int $staffId, bool $openPaid, ?string $deadline, int $assignedByUserId): void
+    {
+        $task = PortalTask::where('reel_id', $reel->id)->first();
+
+        $attributes = [
+            'reel_id'     => $reel->id,
+            'title'       => 'Content: ' . $reel->title,
+            'category'    => 'Content',
+            'assigned_to' => $openPaid ? null : $staffId,
+            'assigned_by' => $assignedByUserId,
+            // due_date has no DB default and isn't nullable - the reel's
+            // own deadline is optional, so a week out stands in when
+            // it's left blank rather than failing to sync at all.
+            'due_date'    => $deadline ?: now()->addDays(7)->format('Y-m-d'),
+            'paid'        => $openPaid,
+            'status'      => $openPaid ? PortalTask::OPEN : PortalTask::ASSIGNED,
+        ];
+
+        if ($task) {
+            $task->update($attributes);
+        } else {
+            $task = PortalTask::create($attributes + ['assigned_date' => now()->format('Y-m-d')]);
+        }
+
+        if ($openPaid) {
+            Staff::active()->whereNotNull('user_id')->get()->each(function (Staff $staff) use ($task) {
+                PortalNotifier::send($staff->user_id, 'Paid task available', $task->title, route('portal-tasks.show', $task->id));
+            });
+        } elseif ($task->assignee && $task->assignee->user_id) {
+            PortalNotifier::send($task->assignee->user_id, 'New task assigned', $task->title, route('portal-tasks.show', $task->id));
+        }
     }
 
     /** The assignee submits a link for whichever stage is next - the
