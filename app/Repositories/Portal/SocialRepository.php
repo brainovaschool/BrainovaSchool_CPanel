@@ -9,11 +9,13 @@ use App\Models\Portal\PortalPageFix;
 use App\Models\Portal\PortalReel;
 use App\Models\Portal\PortalResponsibility;
 use App\Models\Portal\PortalSetting;
+use App\Models\Portal\PortalSettingList;
 use App\Models\Portal\PortalWeeklyGoal;
 use App\Models\Staff\Staff;
 use App\Traits\CommonHelperTrait;
 use App\Traits\ReturnFormatTrait;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
 
 /** Social board — handoff spec phase 8 (reel pipeline, month plan,
  *  audience numbers, page fixes). Storage-only against the rest of the
@@ -257,26 +259,90 @@ class SocialRepository
         return $this->responseWithSuccess('Updated.', []);
     }
 
+    // ---- Social Board Settings — freely add/rename/delete-able blocks ---
+
+    /** All blocks, in display order. Auto-seeds the original 5 defaults
+     *  on a tenant that's never had any (brand new site, nothing to carry
+     *  over) so the page never starts out completely blank. */
+    public function settingLists()
+    {
+        if (!PortalSettingList::query()->exists()) {
+            $this->seedDefaultSettingLists();
+        }
+        return PortalSettingList::orderBy('sort_order')->get();
+    }
+
+    private function seedDefaultSettingLists(): void
+    {
+        $defaults = [
+            ['key' => 'social_platforms', 'label' => 'Platforms', 'values' => PortalSetting::DEFAULT_PLATFORMS],
+            ['key' => 'social_metrics', 'label' => 'Tracked numbers', 'values' => PortalSetting::DEFAULT_SOCIAL_METRICS],
+            ['key' => 'reel_formats', 'label' => 'Formats', 'values' => PortalSetting::DEFAULT_REEL_FORMATS],
+            ['key' => 'reel_categories', 'label' => 'Reel/topic pillars', 'values' => PortalSetting::DEFAULT_REEL_CATEGORIES],
+            ['key' => 'series_names', 'label' => 'Series names', 'values' => PortalSetting::DEFAULT_SERIES_NAMES],
+        ];
+        foreach ($defaults as $i => $d) {
+            PortalSettingList::create([
+                'key'        => $d['key'],
+                'label'      => $d['label'],
+                'values'     => $d['values'],
+                'sort_order' => $i + 1,
+            ]);
+        }
+    }
+
+    /** $request->lists: [id => ['label' => ..., 'values' => [...], 'delete' => '1'?]]
+     *  for every existing block (edit in place, or delete if flagged).
+     *  $request->new_lists: the same shape, keyed 0..n, for blocks added
+     *  on this submit - each becomes a new row with a fresh unique key. */
     public function updateSocialSettings($request): array
     {
-        $platforms = array_values(array_filter(array_map('trim', (array) $request->social_platforms)));
-        $metrics   = array_values(array_filter(array_map('trim', (array) $request->social_metrics)));
-        $reelCategories = array_values(array_filter(array_map('trim', (array) $request->reel_categories)));
-        $reelFormats    = array_values(array_filter(array_map('trim', (array) $request->reel_formats)));
-        $seriesNames    = array_values(array_filter(array_map('trim', (array) $request->series_names)));
+        $lists = (array) $request->input('lists', []);
+        foreach ($lists as $id => $block) {
+            $list = PortalSettingList::find($id);
+            if (!$list) {
+                continue;
+            }
+            if (!empty($block['delete'])) {
+                $list->delete();
+                continue;
+            }
+            $label = trim($block['label'] ?? '');
+            if ($label === '') {
+                continue; // never save a block with no name
+            }
+            $list->label  = $label;
+            $list->values = array_values(array_filter(array_map('trim', (array) ($block['values'] ?? []))));
+            $list->save();
+        }
 
-        $settings = PortalSetting::current();
-        $settings->social_platforms = $platforms ?: PortalSetting::DEFAULT_PLATFORMS;
-        $settings->social_metrics   = $metrics ?: PortalSetting::DEFAULT_SOCIAL_METRICS;
-        $settings->reel_categories  = $reelCategories ?: PortalSetting::DEFAULT_REEL_CATEGORIES;
-        $settings->reel_formats     = $reelFormats ?: PortalSetting::DEFAULT_REEL_FORMATS;
-        // No fallback default here - an empty list is a valid "no series
-        // defined yet" state, unlike the other lists which always have a
-        // sensible non-empty default to fall back to.
-        $settings->series_names     = $seriesNames;
-        $settings->save();
+        $newBlocks = (array) $request->input('new_lists', []);
+        $nextOrder = ((int) PortalSettingList::max('sort_order')) + 1;
+        foreach ($newBlocks as $block) {
+            $label = trim($block['label'] ?? '');
+            if ($label === '') {
+                continue;
+            }
+            PortalSettingList::create([
+                'key'        => $this->uniqueListKey($label),
+                'label'      => $label,
+                'values'     => array_values(array_filter(array_map('trim', (array) ($block['values'] ?? [])))),
+                'sort_order' => $nextOrder++,
+            ]);
+        }
 
         return $this->responseWithSuccess('Saved.', []);
+    }
+
+    private function uniqueListKey(string $label): string
+    {
+        $base = Str::slug($label, '_') ?: 'list';
+        $key  = $base;
+        $i    = 1;
+        while (PortalSettingList::where('key', $key)->exists()) {
+            $key = $base . '_' . (++$i);
+        }
+        return $key;
     }
 
     // ---- Daily plan / weekly goals --------------------------------------

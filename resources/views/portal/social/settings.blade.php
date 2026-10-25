@@ -3,7 +3,6 @@
     {{ $data['title'] }}
 @endsection
 @section('content')
-    @php($settings = $data['settings'])
     <div class="page-content">
 
         <div class="page-header">
@@ -20,74 +19,100 @@
 
         <div class="card ot-card">
             <div class="card-body">
+                <p class="text-secondary">Each block below is a named list — add as many as you want, rename any of
+                    them, or delete ones you don't need. Blocks used elsewhere (e.g. "Formats" feeds the Reel form's
+                    Format picker) keep working by this block's name, so renaming is safe — deleting one that's in
+                    active use just leaves that picker with no options until you add a replacement block.</p>
+
                 <form action="{{ route('portal-social-settings.update') }}" method="post">
                     @csrf
 
-                    <h4>Platforms</h4>
-                    <p class="text-secondary">One per line.</p>
-                    <textarea data-list-for="social_platforms" class="form-control ot-input mb-2" rows="4">{{ implode("\n", $settings->social_platforms ?: \App\Models\Portal\PortalSetting::DEFAULT_PLATFORMS) }}</textarea>
-                    <div id="social_platformsInputs">
-                        @foreach ($settings->social_platforms ?: \App\Models\Portal\PortalSetting::DEFAULT_PLATFORMS as $v)
-                            <input type="hidden" name="social_platforms[]" value="{{ $v }}">
+                    <div id="blocksContainer">
+                        @foreach ($data['lists'] as $list)
+                            <div class="settings-block mb-4 pb-4 border-bottom">
+                                <input type="text" name="lists[{{ $list->id }}][label]" value="{{ $list->label }}"
+                                       class="form-control ot-input mb-2 fw-bold" style="max-width:320px" required>
+                                <p class="text-secondary mb-1">One per line.</p>
+                                <textarea data-list-for="lists_{{ $list->id }}"
+                                          data-field-name="lists[{{ $list->id }}][values][]"
+                                          class="form-control ot-input mb-2" rows="4">{{ implode("\n", $list->values ?: []) }}</textarea>
+                                <div id="lists_{{ $list->id }}Inputs">
+                                    @foreach ($list->values ?: [] as $v)
+                                        <input type="hidden" name="lists[{{ $list->id }}][values][]" value="{{ $v }}">
+                                    @endforeach
+                                </div>
+                                <label class="d-inline-flex align-items-center gap-2 mt-1">
+                                    <input type="checkbox" name="lists[{{ $list->id }}][delete]" value="1" class="delete-block-checkbox">
+                                    <span class="text-danger">Delete this block</span>
+                                </label>
+                            </div>
                         @endforeach
                     </div>
 
-                    <h4 class="mt-4">Tracked numbers</h4>
-                    <p class="text-secondary">One per line — e.g. Views, Followers, Likes.</p>
-                    <textarea data-list-for="social_metrics" class="form-control ot-input mb-2" rows="4">{{ implode("\n", $settings->social_metrics ?: \App\Models\Portal\PortalSetting::DEFAULT_SOCIAL_METRICS) }}</textarea>
-                    <div id="social_metricsInputs">
-                        @foreach ($settings->social_metrics ?: \App\Models\Portal\PortalSetting::DEFAULT_SOCIAL_METRICS as $v)
-                            <input type="hidden" name="social_metrics[]" value="{{ $v }}">
-                        @endforeach
-                    </div>
+                    <div id="newBlocksContainer"></div>
 
-                    <h4 class="mt-4">Formats</h4>
-                    <p class="text-secondary">One per line — e.g. Reel, Carousel, Post.</p>
-                    <textarea data-list-for="reel_formats" class="form-control ot-input mb-2" rows="4">{{ implode("\n", $settings->reel_formats ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_FORMATS) }}</textarea>
-                    <div id="reel_formatsInputs">
-                        @foreach ($settings->reel_formats ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_FORMATS as $v)
-                            <input type="hidden" name="reel_formats[]" value="{{ $v }}">
-                        @endforeach
-                    </div>
-
-                    <h4 class="mt-4">Reel/topic pillars</h4>
-                    <p class="text-secondary">One per line.</p>
-                    <textarea data-list-for="reel_categories" class="form-control ot-input mb-2" rows="4">{{ implode("\n", $settings->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES) }}</textarea>
-                    <div id="reel_categoriesInputs">
-                        @foreach ($settings->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES as $v)
-                            <input type="hidden" name="reel_categories[]" value="{{ $v }}">
-                        @endforeach
-                    </div>
-
-                    <h4 class="mt-4">Series names</h4>
-                    <p class="text-secondary">One per line. Optional — leave blank if you don't group reels/topics into series.</p>
-                    <textarea data-list-for="series_names" class="form-control ot-input mb-2" rows="4">{{ implode("\n", $settings->series_names ?: []) }}</textarea>
-                    <div id="series_namesInputs">
-                        @foreach ($settings->series_names ?: [] as $v)
-                            <input type="hidden" name="series_names[]" value="{{ $v }}">
-                        @endforeach
-                    </div>
-
-                    <button type="submit" class="btn btn-lg ot-btn-primary mt-3">Save Settings</button>
+                    <button type="button" id="addBlockBtn" class="btn btn-outline-secondary mb-3">+ Add a block</button>
+                    <br>
+                    <button type="submit" class="btn btn-lg ot-btn-primary">Save Settings</button>
                 </form>
             </div>
         </div>
     </div>
 
+    <template id="newBlockTemplate">
+        <div class="settings-block mb-4 pb-4 border-bottom">
+            <input type="text" name="new_lists[__INDEX__][label]" value=""
+                   class="form-control ot-input mb-2 fw-bold" style="max-width:320px" placeholder="Block name" required>
+            <p class="text-secondary mb-1">One per line.</p>
+            <textarea data-list-for="new_lists___INDEX__"
+                      data-field-name="new_lists[__INDEX__][values][]"
+                      class="form-control ot-input mb-2" rows="4"></textarea>
+            <div id="new_lists___INDEX__Inputs"></div>
+            <button type="button" class="btn btn-outline-danger btn-sm remove-new-block">Remove this block</button>
+        </div>
+    </template>
+
     <script>
-        document.querySelectorAll('textarea[data-list-for]').forEach(function (textarea) {
-            var name = textarea.getAttribute('data-list-for');
-            var container = document.getElementById(name + 'Inputs');
-            textarea.addEventListener('input', function () {
+        (function () {
+            // Event delegation (not a per-element listener) so this also
+            // covers textareas added later via "+ Add a block" with no
+            // extra wiring needed.
+            document.addEventListener('input', function (e) {
+                if (!e.target.matches('textarea[data-list-for]')) return;
+                var textarea = e.target;
+                var container = document.getElementById(textarea.getAttribute('data-list-for') + 'Inputs');
+                var fieldName = textarea.getAttribute('data-field-name');
+                if (!container || !fieldName) return;
                 container.innerHTML = '';
-                this.value.split("\n").map(function (v) { return v.trim(); }).filter(Boolean).forEach(function (v) {
+                textarea.value.split("\n").map(function (v) { return v.trim(); }).filter(Boolean).forEach(function (v) {
                     var input = document.createElement('input');
                     input.type = 'hidden';
-                    input.name = name + '[]';
+                    input.name = fieldName;
                     input.value = v;
                     container.appendChild(input);
                 });
             });
-        });
+
+            document.addEventListener('change', function (e) {
+                if (e.target.classList.contains('delete-block-checkbox')) {
+                    e.target.closest('.settings-block').style.opacity = e.target.checked ? '0.4' : '1';
+                }
+            });
+
+            var newBlockIndex = 0;
+            document.getElementById('addBlockBtn').addEventListener('click', function () {
+                var html = document.getElementById('newBlockTemplate').innerHTML.split('__INDEX__').join(newBlockIndex);
+                var wrapper = document.createElement('div');
+                wrapper.innerHTML = html;
+                document.getElementById('newBlocksContainer').appendChild(wrapper.firstElementChild);
+                newBlockIndex++;
+            });
+
+            document.addEventListener('click', function (e) {
+                if (e.target.classList.contains('remove-new-block')) {
+                    e.target.closest('.settings-block').remove();
+                }
+            });
+        })();
     </script>
 @endsection

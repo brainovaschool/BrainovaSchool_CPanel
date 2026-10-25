@@ -244,8 +244,8 @@ class SocialController extends Controller
         if (!hasPermission('portal_manage')) {
             abort(403);
         }
-        $data['settings'] = PortalSetting::current();
-        $data['title']    = 'Social Board Settings';
+        $data['lists'] = $this->repo->settingLists();
+        $data['title'] = 'Social Board Settings';
         return view('portal.social.settings', compact('data'));
     }
 

@@ -13,11 +13,6 @@ class PortalSetting extends Model
         'revision_scores'  => 'array',
         'categories'       => 'array',
         'activities'       => 'array',
-        'social_platforms' => 'array',
-        'social_metrics'   => 'array',
-        'reel_categories'  => 'array',
-        'reel_formats'     => 'array',
-        'series_names'     => 'array',
     ];
 
     public const DEFAULT_REVISION_SCORES = [5, 4, 3, 2, 1, 0];
@@ -34,6 +29,22 @@ class PortalSetting extends Model
     // admin defines their own from a blank list.
     public const DEFAULT_SERIES_NAMES    = [];
 
+    /** These 5 used to be fixed JSON columns on this row. Social Board
+     *  Settings is now a freely add/rename/delete-able set of blocks
+     *  (portal_setting_lists) instead, so reading e.g. $settings->reel_formats
+     *  transparently routes to the live block with that key in that table -
+     *  every existing caller (_form.blade.php, index.blade.php,
+     *  audience.blade.php, ...) keeps working completely unchanged. */
+    private const LIST_KEYS = ['social_platforms', 'social_metrics', 'reel_categories', 'reel_formats', 'series_names'];
+
+    public function getAttribute($key)
+    {
+        if (in_array($key, self::LIST_KEYS, true)) {
+            return PortalSettingList::valuesFor($key);
+        }
+        return parent::getAttribute($key);
+    }
+
     /** Always exactly one row — created with sensible defaults the first
      *  time anything asks for it. */
     public static function current(): self
@@ -47,11 +58,6 @@ class PortalSetting extends Model
                 'day_start'          => '09:00',
                 'lunch_after_hours'  => 4,
                 'activities'         => self::DEFAULT_ACTIVITIES,
-                'social_platforms'   => self::DEFAULT_PLATFORMS,
-                'social_metrics'     => self::DEFAULT_SOCIAL_METRICS,
-                'reel_categories'    => self::DEFAULT_REEL_CATEGORIES,
-                'reel_formats'       => self::DEFAULT_REEL_FORMATS,
-                'series_names'       => self::DEFAULT_SERIES_NAMES,
             ]);
         }
         return $row;
