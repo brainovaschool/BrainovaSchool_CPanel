@@ -61,6 +61,7 @@ class SocialController extends Controller
         $data['canManage'] = $this->canManageContent();
         $data['reels']     = $this->repo->reels($request->only(['status', 'category', 'format', 'series_name']));
         $data['settings']  = PortalSetting::current();
+        $data['series']    = $this->repo->reelSeries();
         $data['filters']   = $request->only(['status', 'category', 'format', 'series_name']);
         $data['title']     = 'Social Board — Reels';
         return view('portal.social.reels.index', compact('data'));
@@ -69,8 +70,14 @@ class SocialController extends Controller
     public function createReel()
     {
         $this->requireContentAccess();
+        // "Admin or coordinator" (portal_manage) gets the full form; a
+        // content-team member raising their own suggestion gets the
+        // short one - series, topic, hook, nothing else (everything
+        // else comes from the series' defaults).
+        $data['isManager']    = hasPermission('portal_manage');
         $data['settings']     = PortalSetting::current();
         $data['customFields'] = $this->repo->reelCustomFields();
+        $data['series']       = $this->repo->reelSeries();
         $data['title']        = 'Add a Reel/Topic';
         return view('portal.social.reels.create', compact('data'));
     }
@@ -80,9 +87,10 @@ class SocialController extends Controller
         $this->requireContentAccess();
         $request->validate([
             'title'  => 'required|string|max:150',
-            // Formats are admin-configurable (Social Board Settings) now,
-            // not a fixed enum - matches how 'category'/pillar is validated.
-            'format' => 'required|string|max:20',
+            // Left blank on the simplified Suggest form (format comes
+            // from the series' default instead) - the repository falls
+            // back to 'Reel' if even that's missing.
+            'format' => 'nullable|string|max:20',
         ]);
 
         $result = $this->repo->storeReel($request, Auth::id());
@@ -101,6 +109,9 @@ class SocialController extends Controller
 
         $data['reel']         = $reel;
         $data['canManage']    = $this->canManageContent();
+        $data['isManager']    = hasPermission('portal_manage');
+        $data['contentTeam']  = $this->repo->contentTeam();
+        $data['myStaffId']    = $this->actingStaffId();
         $data['customFields'] = $this->repo->reelCustomFields();
         $data['title']        = $reel->title;
         return view('portal.social.reels.show', compact('data'));
@@ -115,8 +126,10 @@ class SocialController extends Controller
         }
 
         $data['reel']         = $reel;
+        $data['isManager']    = hasPermission('portal_manage');
         $data['settings']     = PortalSetting::current();
         $data['customFields'] = $this->repo->reelCustomFields();
+        $data['series']       = $this->repo->reelSeries();
         $data['title']        = 'Edit Reel/Topic';
         return view('portal.social.reels.edit', compact('data'));
     }
@@ -126,7 +139,7 @@ class SocialController extends Controller
         $this->requireContentAccess();
         $request->validate([
             'title'  => 'required|string|max:150',
-            'format' => 'required|string|max:20',
+            'format' => 'nullable|string|max:20',
         ]);
 
         $result = $this->repo->updateReel($request, (int) $id);
@@ -150,6 +163,65 @@ class SocialController extends Controller
         $this->requireContentAccess();
         $result = $this->repo->destroyReel((int) $id);
         return redirect()->route('portal-social-reels.index')->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    /** "Admin or coordinator" specifically (not just any content-team
+     *  member) picks who's doing this reel/topic, or leaves it open as a
+     *  paid task for anyone to pick up, plus the work deadline. */
+    public function assignReel(Request $request, $id)
+    {
+        if (!hasPermission('portal_manage')) {
+            abort(403, 'Only admin/coordinator can assign a reel/topic.');
+        }
+        $openPaid = $request->boolean('open_paid');
+        $request->validate([
+            'assigned_to' => $openPaid ? 'nullable' : 'required|exists:staff,id',
+            'deadline'    => 'nullable|date',
+        ]);
+
+        $result = $this->repo->assignReel((int) $id, $openPaid ? null : (int) $request->assigned_to, $openPaid, $request->deadline);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    /** The assignee shares a prompt link first, then (once that's
+     *  approved) a video link - same route, $request->stage picks which. */
+    public function submitReelLink(Request $request, $id)
+    {
+        $staffId = $this->actingStaffId();
+        if ($staffId === null) {
+            abort(403);
+        }
+        $request->validate([
+            'stage' => 'required|in:prompt,video',
+            'link'  => 'required|string|max:500',
+        ]);
+
+        $result = $this->repo->submitStageLink((int) $id, $request->stage, $request->link, $staffId);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function approveReelStage(Request $request, $id)
+    {
+        if (!hasPermission('portal_manage')) {
+            abort(403, 'Only admin/coordinator can approve.');
+        }
+        $request->validate(['stage' => 'required|in:prompt,video']);
+
+        $result = $this->repo->approveStage((int) $id, $request->stage, Auth::id());
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    /** The final step, once the video's approved: pick the date it
+     *  actually goes live. */
+    public function scheduleReel(Request $request, $id)
+    {
+        if (!hasPermission('portal_manage')) {
+            abort(403, 'Only admin/coordinator can schedule an upload date.');
+        }
+        $request->validate(['planned_date' => 'required|date']);
+
+        $result = $this->repo->scheduleUpload((int) $id, $request->planned_date);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
     // ---- Month plan ----------------------------------------------------
@@ -250,6 +322,7 @@ class SocialController extends Controller
         $data['lists']        = $this->repo->settingLists();
         $data['customFields'] = $this->repo->reelCustomFields();
         $data['fieldTypes']   = \App\Models\Portal\PortalReelCustomField::TYPES;
+        $data['series']       = $this->repo->reelSeries();
         $data['title']        = 'Social Board Settings';
         return view('portal.social.settings', compact('data'));
     }
@@ -269,6 +342,15 @@ class SocialController extends Controller
             abort(403);
         }
         $result = $this->repo->updateReelCustomFields($request);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function updateReelSeries(Request $request)
+    {
+        if (!hasPermission('portal_manage')) {
+            abort(403);
+        }
+        $result = $this->repo->updateReelSeries($request);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

@@ -90,6 +90,10 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',     'editReel')->name('edit')->middleware('PermissionCheck:portal_access');
                     Route::put('/update/{id}',   'updateReel')->name('update')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/{id}/review',  'reviewReel')->name('review')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                    Route::post('/{id}/assign',  'assignReel')->name('assign')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::post('/{id}/submit-link', 'submitReelLink')->name('submit-link')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                    Route::post('/{id}/approve-stage', 'approveReelStage')->name('approve-stage')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::post('/{id}/schedule', 'scheduleReel')->name('schedule')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::delete('/{id}',       'destroyReel')->name('destroy')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                 });
 
@@ -106,6 +110,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/portal/social/settings', [SocialController::class, 'settings'])->name('portal-social-settings.edit')->middleware('PermissionCheck:portal_manage,portal_social_settings_read');
                 Route::post('/portal/social/settings', [SocialController::class, 'updateSettings'])->name('portal-social-settings.update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 Route::post('/portal/social/settings/reel-fields', [SocialController::class, 'updateReelFields'])->name('portal-social-settings.reel-fields')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                Route::post('/portal/social/settings/series', [SocialController::class, 'updateReelSeries'])->name('portal-social-settings.series')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
 
                 Route::get('/portal/social/daily-plan', [SocialController::class, 'dailyPlan'])->name('portal-social-daily-plan.index')->middleware('PermissionCheck:portal_access');
                 Route::post('/portal/social/daily-plan', [SocialController::class, 'storeDailyPlan'])->name('portal-social-daily-plan.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');

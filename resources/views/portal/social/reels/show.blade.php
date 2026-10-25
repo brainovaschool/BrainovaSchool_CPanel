@@ -4,6 +4,9 @@
 @endsection
 @section('content')
     @php($reel = $data['reel'])
+    @php($isManager = $data['isManager'])
+    @php($myStaffId = $data['myStaffId'])
+    @php($isAssignee = $myStaffId !== null && (int) $reel->assigned_to === (int) $myStaffId)
     <div class="page-content">
         <div class="page-header">
             <div class="row">
@@ -28,22 +31,35 @@
                 <div class="card ot-card">
                     <div class="card-header d-flex justify-content-between align-items-center">
                         <h4 class="mb-0">Details</h4>
-                        <span class="badge-basic-info-text">{{ ucfirst($reel->status) }}</span>
+                        <span class="badge-basic-info-text">{{ $reel->statusLabel() }}</span>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6"><strong>Format:</strong> {{ $reel->format }}</div>
                             <div class="col-md-6"><strong>Pillar:</strong> {{ $reel->category ?: '—' }}</div>
                             <div class="col-md-6"><strong>Series:</strong> {{ $reel->series_name ?: '—' }}</div>
-                            <div class="col-md-6"><strong>Planned date:</strong> {{ $reel->planned_date?->format('d M Y') ?: '—' }}</div>
                             <div class="col-md-6"><strong>Suggested by:</strong> {{ optional($reel->suggestedBy)->name }}</div>
+                            <div class="col-md-6">
+                                <strong>Assigned to:</strong>
+                                {{ $reel->is_open_paid ? 'Open — Paid Task' : (optional($reel->assignee)->first_name ? trim($reel->assignee->first_name . ' ' . $reel->assignee->last_name) : '—') }}
+                            </div>
+                            <div class="col-md-6"><strong>Deadline:</strong> {{ $reel->deadline?->format('d M Y') ?: '—' }}</div>
+                            <div class="col-md-6"><strong>Uploaded date:</strong> {{ $reel->planned_date?->format('d M Y') ?: '—' }}</div>
                         </div>
                         @if ($reel->hook)<p class="mt-3"><strong>Hook:</strong> {{ $reel->hook }}</p>@endif
-                        @if ($reel->drive_link)<p><strong>Drive link:</strong> <a href="{{ $reel->drive_link }}" target="_blank">{{ $reel->drive_link }}</a></p>@endif
                         @if ($reel->prompt_text)<p><strong>Prompt:</strong><br>{{ $reel->prompt_text }}</p>@endif
-                        @if ($reel->prompt_link)<p><strong>Prompt link:</strong> <a href="{{ $reel->prompt_link }}" target="_blank">{{ $reel->prompt_link }}</a></p>@endif
+                        @if ($reel->prompt_link)
+                            <p class="mb-1"><strong>Prompt link:</strong> <a href="{{ $reel->prompt_link }}" target="_blank">{{ $reel->prompt_link }}</a>
+                                @if ($reel->prompt_approved_at) <span class="text-success">— approved</span> @else <span class="text-secondary">— pending approval</span> @endif
+                            </p>
+                        @endif
                         @if ($reel->promptUpload)<p><strong>Prompt file:</strong> <a href="{{ globalAsset($reel->promptUpload->path) }}" target="_blank">Download</a></p>@endif
                         @if ($reel->thumbUpload)<p><strong>Thumbnail:</strong><br><img src="{{ globalAsset($reel->thumbUpload->path) }}" alt="Thumbnail for {{ $reel->title }}" style="max-width:200px;border-radius:8px"></p>@endif
+                        @if ($reel->drive_link)
+                            <p class="mb-1"><strong>Video link:</strong> <a href="{{ $reel->drive_link }}" target="_blank">{{ $reel->drive_link }}</a>
+                                @if ($reel->video_approved_at) <span class="text-success">— approved</span> @else <span class="text-secondary">— pending approval</span> @endif
+                            </p>
+                        @endif
                         @if ($reel->note)<p class="mt-3"><strong>Note:</strong> {{ $reel->note }}</p>@endif
                         @foreach ($data['customFields'] ?? [] as $field)
                             @php($value = ($reel->custom_fields ?? [])[$field->key] ?? null)
@@ -66,9 +82,114 @@
                 </div>
             </div>
 
-            @if ($data['canManage'])
-                <div class="col-lg-4">
+            <div class="col-lg-4">
+                @if ($isManager)
                     <div class="card ot-card">
+                        <div class="card-header"><h4 class="mb-0">Assign</h4></div>
+                        <div class="card-body">
+                            <form action="{{ route('portal-social-reels.assign', $reel->id) }}" method="post">
+                                @csrf
+                                <label class="form-label">Assign to</label>
+                                <select name="assigned_to" id="assignStaffSelect" class="nice-select niceSelect bordered_style wide mb-2" {{ $reel->is_open_paid ? 'disabled' : '' }}>
+                                    <option value="">— Select —</option>
+                                    @foreach ($data['contentTeam'] as $staff)
+                                        <option value="{{ $staff->id }}" {{ (int) $reel->assigned_to === $staff->id ? 'selected' : '' }}>{{ $staff->first_name }} {{ $staff->last_name }}</option>
+                                    @endforeach
+                                </select>
+                                <div class="form-check mb-2">
+                                    <input type="checkbox" class="form-check-input" id="openPaidCheck" name="open_paid" value="1" {{ $reel->is_open_paid ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="openPaidCheck">Open — Paid Task (anyone can pick this up)</label>
+                                </div>
+                                <label class="form-label">Deadline</label>
+                                <input type="date" name="deadline" class="form-control ot-input mb-2" value="{{ $reel->deadline?->format('Y-m-d') }}">
+                                <button type="submit" class="btn ot-btn-primary w-100">Save</button>
+                            </form>
+                        </div>
+                    </div>
+                @endif
+
+                @if ($isAssignee && !$isManager)
+                    <div class="card ot-card mt-3">
+                        <div class="card-header"><h4 class="mb-0">Submit prompt</h4></div>
+                        <div class="card-body">
+                            @if ($reel->prompt_approved_at)
+                                <p class="text-success mb-0">Prompt approved — you can submit the video once it's ready.</p>
+                            @else
+                                <form action="{{ route('portal-social-reels.submit-link', $reel->id) }}" method="post">
+                                    @csrf
+                                    <input type="hidden" name="stage" value="prompt">
+                                    <label class="form-label">Prompt link</label>
+                                    <input type="url" name="link" class="form-control ot-input mb-2" value="{{ $reel->prompt_link }}" required placeholder="https://...">
+                                    <button type="submit" class="btn ot-btn-primary w-100">Submit for approval</button>
+                                </form>
+                            @endif
+                        </div>
+                    </div>
+
+                    @if ($reel->prompt_approved_at)
+                        <div class="card ot-card mt-3">
+                            <div class="card-header"><h4 class="mb-0">Submit video</h4></div>
+                            <div class="card-body">
+                                @if ($reel->video_approved_at)
+                                    <p class="text-success mb-0">Video approved.</p>
+                                @else
+                                    <form action="{{ route('portal-social-reels.submit-link', $reel->id) }}" method="post">
+                                        @csrf
+                                        <input type="hidden" name="stage" value="video">
+                                        <label class="form-label">Video link</label>
+                                        <input type="url" name="link" class="form-control ot-input mb-2" value="{{ $reel->drive_link }}" required placeholder="https://...">
+                                        <button type="submit" class="btn ot-btn-primary w-100">Submit for approval</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+                @endif
+
+                @if ($isManager)
+                    @if ($reel->prompt_link && !$reel->prompt_approved_at)
+                        <div class="card ot-card mt-3">
+                            <div class="card-header"><h4 class="mb-0">Approve prompt</h4></div>
+                            <div class="card-body">
+                                <p class="mb-2"><a href="{{ $reel->prompt_link }}" target="_blank">{{ $reel->prompt_link }}</a></p>
+                                <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post">
+                                    @csrf
+                                    <input type="hidden" name="stage" value="prompt">
+                                    <button type="submit" class="btn ot-btn-primary w-100">Approve prompt</button>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($reel->drive_link && !$reel->video_approved_at)
+                        <div class="card ot-card mt-3">
+                            <div class="card-header"><h4 class="mb-0">Approve video</h4></div>
+                            <div class="card-body">
+                                <p class="mb-2"><a href="{{ $reel->drive_link }}" target="_blank">{{ $reel->drive_link }}</a></p>
+                                <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post">
+                                    @csrf
+                                    <input type="hidden" name="stage" value="video">
+                                    <button type="submit" class="btn ot-btn-primary w-100">Approve video</button>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($reel->video_approved_at)
+                        <div class="card ot-card mt-3">
+                            <div class="card-header"><h4 class="mb-0">Schedule upload</h4></div>
+                            <div class="card-body">
+                                <form action="{{ route('portal-social-reels.schedule', $reel->id) }}" method="post">
+                                    @csrf
+                                    <label class="form-label">Upload date</label>
+                                    <input type="date" name="planned_date" class="form-control ot-input mb-2" value="{{ $reel->planned_date?->format('Y-m-d') }}" required>
+                                    <button type="submit" class="btn ot-btn-primary w-100">Save date</button>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="card ot-card mt-3">
                         <div class="card-header"><h4 class="mb-0">Review</h4></div>
                         <div class="card-body">
                             <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post">
@@ -90,8 +211,28 @@
                         @csrf @method('DELETE')
                         <button type="submit" class="btn btn-outline-secondary w-100">Remove</button>
                     </form>
-                </div>
-            @endif
+                @endif
+            </div>
         </div>
     </div>
+
+    @push('script')
+    <script>
+        (function () {
+            var openPaid = document.getElementById('openPaidCheck');
+            var staffSelect = document.getElementById('assignStaffSelect');
+            if (!openPaid || !staffSelect) return;
+
+            function syncDisabled() {
+                staffSelect.disabled = openPaid.checked;
+                if (window.jQuery) { jQuery(staffSelect).niceSelect('update'); }
+            }
+
+            // nice-select only surfaces its change event through jQuery's
+            // own trigger (same issue fixed elsewhere in this app for the
+            // Leave Request role toggle), but a plain checkbox is native.
+            openPaid.addEventListener('change', syncDisabled);
+        })();
+    </script>
+    @endpush
 @endsection

@@ -22,7 +22,7 @@
                 <form action="{{ route('portal-social-reels.update', $data['reel']->id) }}" method="post" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
-                    @include('portal.social.reels._form', ['settings' => $data['settings'], 'reel' => $data['reel'], 'customFields' => $data['customFields']])
+                    @include('portal.social.reels._form', ['settings' => $data['settings'], 'reel' => $data['reel'], 'customFields' => $data['customFields'], 'isManager' => $data['isManager'], 'series' => $data['series']])
                     <div class="mt-3">
                         <button type="submit" class="btn btn-lg ot-btn-primary">Save</button>
                         <a href="{{ route('portal-social-reels.show', $data['reel']->id) }}" class="btn btn-lg btn-outline-secondary">Cancel</a>

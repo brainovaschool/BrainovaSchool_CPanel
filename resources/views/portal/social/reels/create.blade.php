@@ -21,7 +21,7 @@
             <div class="card-body">
                 <form action="{{ route('portal-social-reels.store') }}" method="post" enctype="multipart/form-data">
                     @csrf
-                    @include('portal.social.reels._form', ['settings' => $data['settings'], 'customFields' => $data['customFields']])
+                    @include('portal.social.reels._form', ['settings' => $data['settings'], 'customFields' => $data['customFields'], 'isManager' => $data['isManager'], 'series' => $data['series']])
                     <div class="mt-3">
                         <button type="submit" class="btn btn-lg ot-btn-primary">Add</button>
                         <a href="{{ route('portal-social-reels.index') }}" class="btn btn-lg btn-outline-secondary">Cancel</a>

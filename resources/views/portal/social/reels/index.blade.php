@@ -43,11 +43,11 @@
                             <option value="{{ $f }}" {{ ($data['filters']['format'] ?? '') === $f ? 'selected' : '' }}>{{ $f }}</option>
                         @endforeach
                     </select>
-                    @if ($data['settings']->series_names ?? [])
+                    @if ($data['series']->count())
                         <select name="series_name" class="nice-select niceSelect bordered_style">
                             <option value="">All series</option>
-                            @foreach ($data['settings']->series_names as $s)
-                                <option value="{{ $s }}" {{ ($data['filters']['series_name'] ?? '') === $s ? 'selected' : '' }}>{{ $s }}</option>
+                            @foreach ($data['series'] as $s)
+                                <option value="{{ $s->name }}" {{ ($data['filters']['series_name'] ?? '') === $s->name ? 'selected' : '' }}>{{ $s->name }}</option>
                             @endforeach
                         </select>
                     @endif
@@ -61,16 +61,39 @@
                 <div class="card-body">
                     <div class="table-responsive">
                     <table class="ot-basic-table ot-table-bg">
-                        <thead class="thead"><tr><th>Title</th><th>Format</th><th>Pillar</th><th>Series</th><th>Planned date</th><th>Status</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
+                        <thead class="thead">
+                            <tr>
+                                <th>Series</th><th>Topic</th><th>Hook</th><th>Suggested by</th><th>Status</th>
+                                <th>Deadline</th><th>Prompt link</th><th>Video link</th><th>Uploaded date</th>
+                                <th class="action">{{ ___('common.action') }}</th>
+                            </tr>
+                        </thead>
                         <tbody class="tbody">
                             @forelse ($data['reels'] as $reel)
                                 <tr>
-                                    <td>{{ $reel->title }}</td>
-                                    <td>{{ $reel->format }}</td>
-                                    <td>{{ $reel->category ?: '—' }}</td>
                                     <td>{{ $reel->series_name ?: '—' }}</td>
+                                    <td>{{ $reel->title }}</td>
+                                    <td>{{ $reel->hook ?: '—' }}</td>
+                                    <td>{{ optional($reel->suggestedBy)->name ?: '—' }}</td>
+                                    <td><span class="badge-basic-info-text">{{ $reel->statusLabel() }}</span></td>
+                                    <td>{{ $reel->deadline?->format('d M Y') ?: '—' }}</td>
+                                    <td>
+                                        @if ($reel->prompt_link)
+                                            <a href="{{ $reel->prompt_link }}" target="_blank">Link</a>
+                                            {{ $reel->prompt_approved_at ? '✓' : '(pending)' }}
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($reel->drive_link)
+                                            <a href="{{ $reel->drive_link }}" target="_blank">Link</a>
+                                            {{ $reel->video_approved_at ? '✓' : '(pending)' }}
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
                                     <td>{{ $reel->planned_date?->format('d M Y') ?: '—' }}</td>
-                                    <td><span class="badge-basic-info-text">{{ ucfirst($reel->status) }}</span></td>
                                     <td class="action"><a href="{{ route('portal-social-reels.show', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a></td>
                                 </tr>
                             @empty

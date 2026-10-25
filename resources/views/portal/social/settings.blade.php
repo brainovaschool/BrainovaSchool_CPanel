@@ -111,7 +111,107 @@
                 </form>
             </div>
         </div>
+        <div class="card ot-card mt-24">
+            <div class="card-body">
+                <h4>Series</h4>
+                <p class="text-secondary">Each series can carry its own default Pillar, Format and Character — pick
+                    the series on the Reel form and those defaults fill themselves in automatically.</p>
+
+                <form action="{{ route('portal-social-settings.series') }}" method="post">
+                    @csrf
+
+                    <div id="seriesContainer">
+                        @foreach ($data['series'] as $s)
+                            <div class="series-row mb-4 pb-4 border-bottom">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-3">
+                                        <label class="form-label">Name</label>
+                                        <input type="text" name="series[{{ $s->id }}][name]" value="{{ $s->name }}" class="form-control ot-input" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Default Pillar</label>
+                                        <select name="series[{{ $s->id }}][default_category]" class="nice-select niceSelect bordered_style wide">
+                                            <option value="">—</option>
+                                            @foreach (optional($data['lists']->firstWhere('key', 'reel_categories'))->values ?? [] as $cat)
+                                                <option value="{{ $cat }}" {{ $s->default_category === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Default Format</label>
+                                        <select name="series[{{ $s->id }}][default_format]" class="nice-select niceSelect bordered_style wide">
+                                            <option value="">—</option>
+                                            @foreach (optional($data['lists']->firstWhere('key', 'reel_formats'))->values ?? [] as $f)
+                                                <option value="{{ $f }}" {{ $s->default_format === $f ? 'selected' : '' }}>{{ $f }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Default Characters</label>
+                                        <select name="series[{{ $s->id }}][default_character]" class="nice-select niceSelect bordered_style wide">
+                                            <option value="">—</option>
+                                            @foreach (\App\Models\Portal\ReelCharacter::active()->orderBy('sort_order')->pluck('name') as $char)
+                                                <option value="{{ $char }}" {{ $s->default_character === $char ? 'selected' : '' }}>{{ $char }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <label class="d-inline-flex align-items-center gap-2 mt-2">
+                                    <input type="checkbox" name="series[{{ $s->id }}][delete]" value="1" class="delete-series-checkbox">
+                                    <span class="text-danger">Delete this series</span>
+                                </label>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div id="newSeriesContainer"></div>
+
+                    <button type="button" id="addSeriesBtn" class="btn btn-outline-secondary mb-3">+ Add a series</button>
+                    <br>
+                    <button type="submit" class="btn btn-lg ot-btn-primary">Save Series</button>
+                </form>
+            </div>
+        </div>
     </div>
+
+    <template id="newSeriesTemplate">
+        <div class="series-row mb-4 pb-4 border-bottom">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Name</label>
+                    <input type="text" name="new_series[__INDEX__][name]" value="" class="form-control ot-input" placeholder="Series name" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Default Pillar</label>
+                    <select name="new_series[__INDEX__][default_category]" class="nice-select niceSelect bordered_style wide">
+                        <option value="">—</option>
+                        @foreach (optional($data['lists']->firstWhere('key', 'reel_categories'))->values ?? [] as $cat)
+                            <option value="{{ $cat }}">{{ $cat }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Default Format</label>
+                    <select name="new_series[__INDEX__][default_format]" class="nice-select niceSelect bordered_style wide">
+                        <option value="">—</option>
+                        @foreach (optional($data['lists']->firstWhere('key', 'reel_formats'))->values ?? [] as $f)
+                            <option value="{{ $f }}">{{ $f }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Default Characters</label>
+                    <select name="new_series[__INDEX__][default_character]" class="nice-select niceSelect bordered_style wide">
+                        <option value="">—</option>
+                        @foreach (\App\Models\Portal\ReelCharacter::active()->orderBy('sort_order')->pluck('name') as $char)
+                            <option value="{{ $char }}">{{ $char }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <button type="button" class="btn btn-outline-danger btn-sm mt-2 remove-new-series">Remove this series</button>
+        </div>
+    </template>
 
     <template id="newFieldTemplate">
         <div class="field-row mb-4 pb-4 border-bottom">
@@ -247,6 +347,34 @@
                 jQuery(row).find('.niceSelect').niceSelect();
                 syncFieldRow(jQuery(row));
                 newFieldIndex++;
+            });
+        })();
+
+        (function () {
+            document.addEventListener('change', function (e) {
+                if (e.target.classList.contains('delete-series-checkbox')) {
+                    e.target.closest('.series-row').style.opacity = e.target.checked ? '0.4' : '1';
+                }
+            });
+
+            document.addEventListener('click', function (e) {
+                if (e.target.classList.contains('remove-new-series')) {
+                    e.target.closest('.series-row').remove();
+                }
+            });
+
+            var newSeriesIndex = 0;
+            document.getElementById('addSeriesBtn').addEventListener('click', function () {
+                var html = document.getElementById('newSeriesTemplate').innerHTML.split('__INDEX__').join(newSeriesIndex);
+                var wrapper = document.createElement('div');
+                wrapper.innerHTML = html;
+                var row = wrapper.firstElementChild;
+                document.getElementById('newSeriesContainer').appendChild(row);
+                // Newly inserted <select> elements aren't styled by
+                // nice-select until explicitly (re)initialised - the
+                // global init on page load only ever saw the original set.
+                jQuery(row).find('.niceSelect').niceSelect();
+                newSeriesIndex++;
             });
         })();
     </script>

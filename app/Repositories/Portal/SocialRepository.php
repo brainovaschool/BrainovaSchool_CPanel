@@ -8,6 +8,7 @@ use App\Models\Portal\PortalDailyPlan;
 use App\Models\Portal\PortalPageFix;
 use App\Models\Portal\PortalReel;
 use App\Models\Portal\PortalReelCustomField;
+use App\Models\Portal\PortalReelSeries;
 use App\Models\Portal\PortalResponsibility;
 use App\Models\Portal\PortalSetting;
 use App\Models\Portal\PortalSettingList;
@@ -32,7 +33,7 @@ class SocialRepository
 
     public function reels(array $filters)
     {
-        return PortalReel::with(['suggestedBy', 'creator'])
+        return PortalReel::with(['suggestedBy', 'creator', 'assignee'])
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
             ->when($filters['format'] ?? null, fn ($q, $v) => $q->where('format', $v))
@@ -43,7 +44,7 @@ class SocialRepository
 
     public function showReel(int $id): ?PortalReel
     {
-        return PortalReel::with(['suggestedBy', 'creator', 'reviewedBy', 'promptUpload', 'thumbUpload'])->find($id);
+        return PortalReel::with(['suggestedBy', 'creator', 'reviewedBy', 'assignee', 'promptUpload', 'thumbUpload'])->find($id);
     }
 
     public function storeReel($request, int $userId): array
@@ -52,10 +53,14 @@ class SocialRepository
             $promptUploadId = $request->hasFile('prompt_file') ? $this->UploadImageCreate($request->file('prompt_file'), 'uploads/portal-reels') : null;
             $thumbUploadId  = $request->hasFile('thumb_file') ? $this->UploadImageCreate($request->file('thumb_file'), 'uploads/portal-reels') : null;
 
+            $defaults = $this->resolveSeriesDefaults($request->series_name);
+            $customFields = $this->collectCustomFieldValues($request);
+            $this->applyCharacterDefault($customFields, $defaults);
+
             $reel = PortalReel::create([
                 'title'            => $request->title,
-                'format'           => $request->format ?: 'Reel',
-                'category'         => $request->category,
+                'format'           => $request->format ?: ($defaults['format'] ?? 'Reel'),
+                'category'         => $request->category ?: ($defaults['category'] ?? null),
                 'series_name'      => $request->series_name,
                 'hook'             => $request->hook,
                 'status'           => PortalReel::SUGGESTED,
@@ -68,7 +73,7 @@ class SocialRepository
                 'prompt_link'      => $request->prompt_link,
                 'thumb_upload_id'  => $thumbUploadId,
                 'note'             => $request->note,
-                'custom_fields'    => $this->collectCustomFieldValues($request),
+                'custom_fields'    => $customFields,
             ]);
 
             return $this->responseWithSuccess('Reel added.', ['id' => $reel->id]);
@@ -92,10 +97,13 @@ class SocialRepository
         }
 
         $existingCustomFields = $reel->custom_fields ?: [];
+        $defaults = $this->resolveSeriesDefaults($request->series_name);
+        $customFields = $this->collectCustomFieldValues($request, $existingCustomFields);
+        $this->applyCharacterDefault($customFields, $defaults);
 
         $reel->title        = $request->title;
-        $reel->format       = $request->format ?: $reel->format;
-        $reel->category     = $request->category;
+        $reel->format       = $request->format ?: ($defaults['format'] ?? $reel->format);
+        $reel->category     = $request->category ?: ($defaults['category'] ?? $reel->category);
         $reel->series_name  = $request->series_name;
         $reel->hook          = $request->hook;
         $reel->planned_date = $request->planned_date ?: null;
@@ -103,7 +111,7 @@ class SocialRepository
         $reel->prompt_text  = $request->prompt_text;
         $reel->prompt_link  = $request->prompt_link;
         $reel->note         = $request->note;
-        $reel->custom_fields = $this->collectCustomFieldValues($request, $existingCustomFields);
+        $reel->custom_fields = $customFields;
         $reel->save();
 
         return $this->responseWithSuccess('Saved.', []);
@@ -138,6 +146,193 @@ class SocialRepository
             }
         }
         return $values;
+    }
+
+    // ---- Series — Format/Pillar/Characters defaults for a series -----
+
+    public function reelSeries()
+    {
+        return PortalReelSeries::orderBy('sort_order')->get();
+    }
+
+    /** Same add/rename/delete-in-one-submit pattern as updateSocialSettings()
+     *  and updateReelCustomFields(). */
+    public function updateReelSeries($request): array
+    {
+        $rows = (array) $request->input('series', []);
+        foreach ($rows as $id => $data) {
+            $series = PortalReelSeries::find($id);
+            if (!$series) {
+                continue;
+            }
+            if (!empty($data['delete'])) {
+                $series->delete();
+                continue;
+            }
+            $name = trim($data['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+            $series->name              = $name;
+            $series->default_category  = $data['default_category'] ?: null;
+            $series->default_format    = $data['default_format'] ?: null;
+            $series->default_character = $data['default_character'] ?: null;
+            $series->save();
+        }
+
+        $newRows = (array) $request->input('new_series', []);
+        $nextOrder = ((int) PortalReelSeries::max('sort_order')) + 1;
+        foreach ($newRows as $data) {
+            $name = trim($data['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+            PortalReelSeries::create([
+                'name'              => $name,
+                'default_category'  => $data['default_category'] ?: null,
+                'default_format'    => $data['default_format'] ?: null,
+                'default_character' => $data['default_character'] ?: null,
+                'sort_order'        => $nextOrder++,
+            ]);
+        }
+
+        return $this->responseWithSuccess('Saved.', []);
+    }
+
+    /** [] if no series picked, or the series was renamed/deleted since -
+     *  callers already treat a missing default as "leave that field as
+     *  the submitter set it". */
+    private function resolveSeriesDefaults(?string $seriesName): array
+    {
+        if (!$seriesName) {
+            return [];
+        }
+        $series = PortalReelSeries::where('name', $seriesName)->first();
+        if (!$series) {
+            return [];
+        }
+        return [
+            'category'  => $series->default_category,
+            'format'    => $series->default_format,
+            'character' => $series->default_character,
+        ];
+    }
+
+    /** The one custom field (if any) sourced from the live Reel Characters
+     *  roster gets the series' default character, same "only if blank"
+     *  rule as category/format - found by source type, not by a
+     *  hardcoded key, so renaming that field never breaks this. */
+    private function applyCharacterDefault(array &$customFields, array $defaults): void
+    {
+        if (empty($defaults['character'])) {
+            return;
+        }
+        $field = $this->reelCustomFields()->first(
+            fn (PortalReelCustomField $f) => $f->list_key === PortalReelCustomField::SOURCE_REEL_CHARACTERS
+        );
+        if ($field && empty($customFields[$field->key])) {
+            $customFields[$field->key] = $defaults['character'];
+        }
+    }
+
+    // ---- Reel workflow: assign, prompt/video stages, schedule --------
+
+    public function assignReel(int $id, ?int $staffId, bool $openPaid, ?string $deadline): array
+    {
+        $reel = PortalReel::find($id);
+        if (!$reel) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+        $reel->assigned_to  = $openPaid ? null : $staffId;
+        $reel->is_open_paid = $openPaid;
+        $reel->deadline     = $deadline ?: null;
+        if ($reel->status === PortalReel::SUGGESTED) {
+            $reel->status = PortalReel::ACCEPTED;
+        }
+        $reel->save();
+
+        return $this->responseWithSuccess('Assigned.', []);
+    }
+
+    /** The assignee submits a link for whichever stage is next - the
+     *  video stage is blocked until the prompt is approved, matching
+     *  "share prompt first, it gets approved, then generate and share
+     *  the video". Resubmitting a stage clears its own approval (a new
+     *  link needs a fresh look), never the other stage's. */
+    public function submitStageLink(int $id, string $stage, string $link, int $staffId): array
+    {
+        $reel = PortalReel::find($id);
+        if (!$reel) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+        if ((int) $reel->assigned_to !== $staffId) {
+            return $this->responseWithError("This isn't your reel/topic.", []);
+        }
+
+        if ($stage === 'prompt') {
+            $reel->prompt_link        = $link;
+            $reel->prompt_approved_at = null;
+            if ($reel->status === PortalReel::ACCEPTED) {
+                $reel->status = PortalReel::PRODUCTION;
+            }
+        } elseif ($stage === 'video') {
+            if (!$reel->prompt_approved_at) {
+                return $this->responseWithError('The prompt needs to be approved first.', []);
+            }
+            $reel->drive_link       = $link;
+            $reel->video_approved_at = null;
+        } else {
+            return $this->responseWithError('Not a valid stage.', []);
+        }
+        $reel->save();
+
+        return $this->responseWithSuccess('Submitted for approval.', []);
+    }
+
+    public function approveStage(int $id, string $stage, int $reviewerUserId): array
+    {
+        $reel = PortalReel::find($id);
+        if (!$reel) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+
+        if ($stage === 'prompt') {
+            if (!$reel->prompt_link) {
+                return $this->responseWithError('No prompt link to approve yet.', []);
+            }
+            $reel->prompt_approved_at = now();
+        } elseif ($stage === 'video') {
+            if (!$reel->drive_link) {
+                return $this->responseWithError('No video link to approve yet.', []);
+            }
+            $reel->video_approved_at = now();
+            $reel->status            = PortalReel::READY;
+        } else {
+            return $this->responseWithError('Not a valid stage.', []);
+        }
+        $reel->reviewed_by = $reviewerUserId;
+        $reel->reviewed_at = now();
+        $reel->save();
+
+        return $this->responseWithSuccess(ucfirst($stage) . ' approved.', []);
+    }
+
+    /** The last step - picking when it actually goes live. Locked behind
+     *  video approval so a date can't be set before the work is done. */
+    public function scheduleUpload(int $id, string $date): array
+    {
+        $reel = PortalReel::find($id);
+        if (!$reel) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+        if (!$reel->video_approved_at) {
+            return $this->responseWithError('The video needs to be approved before scheduling an upload date.', []);
+        }
+        $reel->planned_date = $date;
+        $reel->status        = PortalReel::PUBLISHED;
+        $reel->save();
+
+        return $this->responseWithSuccess('Upload date set.', []);
     }
 
     /** Accept, reject, or move to the next pipeline status — always with
