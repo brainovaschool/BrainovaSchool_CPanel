@@ -515,11 +515,6 @@
                                 <li class="sidebar-menu-item {{ set_menu(['portal*']) }}">
                                     <a class="has-arrow">Team Portal</a>
                                     <ul class="child-menu-list">
-                                        @if (hasPermission('portal_employees_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['portal/employees*']) }}">
-                                                <a href="{{ route('portal-employees.index') }}">Employees</a>
-                                            </li>
-                                        @endif
                                         @if (hasPermission('portal_manage') || hasPermission('portal_manager_tasks_read'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/tasks', 'portal/tasks/create', 'portal/tasks/show*']) }}">
                                                 <a href="{{ route('portal-tasks.index') }}">Tasks</a>
