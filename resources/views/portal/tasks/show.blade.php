@@ -176,7 +176,7 @@
                     </div>
                 @endif
 
-                @if ($data['isManager'])
+                @if ($data['isManager'] && !$data['isAssignee'])
                     <div class="card ot-card mt-4">
                         <div class="card-header"><h4 class="mb-0">Review</h4></div>
                         <div class="card-body">

@@ -28,6 +28,17 @@ class TaskController extends Controller
         return $staff ? (int) $staff->id : null;
     }
 
+    /** portal_manage alone isn't enough to review a task you're also the
+     *  assignee of - a coordinator who holds portal_manage to review her
+     *  content creators must not be able to approve her own submitted
+     *  work, even though she technically has the permission. */
+    private function isReviewingOwnTask(int $id): bool
+    {
+        $task = $this->repo->show($id);
+        $staffId = $this->actingStaffId();
+        return $task && $staffId !== null && (int) $task->assigned_to === $staffId;
+    }
+
     public function index(Request $request)
     {
         $filters = $request->only(['status', 'category', 'assigned_to', 'search', 'show']);
@@ -250,12 +261,18 @@ class TaskController extends Controller
 
     public function startReview($id)
     {
+        if ($this->isReviewingOwnTask((int) $id)) {
+            abort(403, "You can't review your own task.");
+        }
         $result = $this->repo->startReview((int) $id);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
     public function requestRevision(Request $request, $id)
     {
+        if ($this->isReviewingOwnTask((int) $id)) {
+            abort(403, "You can't review your own task.");
+        }
         $request->validate(['comment' => 'required|string|max:3000']);
         $result = $this->repo->requestRevision((int) $id, Auth::id(), $request->comment);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
@@ -263,6 +280,9 @@ class TaskController extends Controller
 
     public function approve(Request $request, $id)
     {
+        if ($this->isReviewingOwnTask((int) $id)) {
+            abort(403, "You can't review your own task.");
+        }
         $request->validate([
             'quality_score' => 'required|integer|min:0|max:5',
             'comment'       => 'nullable|string|max:3000',
