@@ -136,6 +136,12 @@ class SocialController extends Controller
 
         $result = $this->repo->storeReel($request, Auth::id());
         if ($result['status']) {
+            // The simplified Suggest Content form marks itself so its
+            // submitter lands back on that screen, not a reel detail page
+            // built for the full admin form.
+            if ($request->input('return_to') === 'suggest') {
+                return redirect()->route('portal-social-suggest-reel.index')->with('success', $result['message']);
+            }
             return redirect()->route('portal-social-reels.show', $result['data']['id'])->with('success', $result['message']);
         }
         return back()->withInput()->with('danger', $result['message']);

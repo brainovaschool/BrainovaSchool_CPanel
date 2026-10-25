@@ -21,7 +21,7 @@
 
         <div class="card ot-card">
             <div class="card-body">
-                <p class="text-secondary mb-0">Got an idea for content? Click "+ Add", pick the series, and give the topic and hook — everything else is filled in for you. An admin or coordinator will review it in Content Pool.</p>
+                <p class="text-secondary mb-0">Got an idea for content? Click "+ Add", pick the series, and give the topic and hook — everything else is filled in for you. An admin or coordinator will review it on the Reels page.</p>
             </div>
         </div>
     </div>

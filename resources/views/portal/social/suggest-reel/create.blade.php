@@ -21,6 +21,7 @@
             <div class="card-body">
                 <form action="{{ route('portal-social-reels.store') }}" method="post">
                     @csrf
+                    <input type="hidden" name="return_to" value="suggest">
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label">Series Name</label>
