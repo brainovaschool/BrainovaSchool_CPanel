@@ -58,7 +58,9 @@
                     <table class="ot-basic-table ot-table-bg bn-reels-table">
                         <thead class="thead">
                             <tr>
-                                <th>Content</th>
+                                <th>Series</th>
+                                <th>Topic</th>
+                                <th>Hook</th>
                                 <th>Suggested by</th>
                                 <th>Status</th>
                                 <th>Deadline</th>
@@ -72,15 +74,21 @@
                                 @php($staff = optional($reel->suggestedBy)->staff)
                                 <tr>
                                     <td>
+                                        @if ($reel->series_name)
+                                            <span class="bn-series-tag">{{ $reel->series_name }}</span>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td>
                                         <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="bn-reel-title">{{ $reel->title }}</a>
-                                        <div class="bn-reel-meta">
-                                            @if ($reel->series_name)
-                                                <span class="bn-series-tag">{{ $reel->series_name }}</span>
-                                            @endif
-                                            @if ($reel->hook)
-                                                <span class="bn-reel-hook" title="{{ $reel->hook }}">{{ \Illuminate\Support\Str::limit($reel->hook, 60) }}</span>
-                                            @endif
-                                        </div>
+                                    </td>
+                                    <td>
+                                        @if ($reel->hook)
+                                            <span class="bn-reel-hook" title="{{ $reel->hook }}">{{ \Illuminate\Support\Str::limit($reel->hook, 60) }}</span>
+                                        @else
+                                            —
+                                        @endif
                                     </td>
                                     <td>
                                         {{ optional($reel->suggestedBy)->name ?: '—' }}
@@ -126,7 +134,6 @@
         .bn-reel-title { font-weight: 600; display: block; }
         .bn-series-tag { font-family: "Lexend", sans-serif; font-weight: 600; font-size: 11px; border-radius: 50px; padding: 3px 10px; background: rgba(var(--bn-turquoise-rgb), .14); color: var(--bn-turquoise-text, #007585); white-space: nowrap; }
         .dark-theme .bn-series-tag { background: rgba(0, 151, 178, .22); color: var(--bn-turquoise-light); }
-        .bn-reel-meta { display: flex; align-items: center; gap: .5rem; margin-top: .25rem; flex-wrap: wrap; }
         .bn-reel-hook { color: var(--bn-muted, #8a8fa3); font-size: .85rem; font-style: italic; }
         .bn-reel-sub { color: var(--bn-muted, #8a8fa3); font-size: .78rem; margin-top: .15rem; }
         .bn-progress-dot { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: .72rem; font-weight: 700; margin-right: .35rem; }
