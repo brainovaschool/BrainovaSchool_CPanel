@@ -24,8 +24,9 @@ class PortalReel extends Model
     public const COUNTS_TOWARD_MONTH = [self::ACCEPTED, self::PRODUCTION, self::READY, self::PUBLISHED];
 
     protected $casts = [
-        'planned_date' => 'date',
-        'reviewed_at'  => 'datetime',
+        'planned_date'  => 'date',
+        'reviewed_at'   => 'datetime',
+        'custom_fields' => 'array',
     ];
 
     public function suggestedBy()

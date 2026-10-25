@@ -105,6 +105,7 @@ Route::middleware(saasMiddleware())->group(function () {
 
                 Route::get('/portal/social/settings', [SocialController::class, 'settings'])->name('portal-social-settings.edit')->middleware('PermissionCheck:portal_manage,portal_social_settings_read');
                 Route::post('/portal/social/settings', [SocialController::class, 'updateSettings'])->name('portal-social-settings.update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                Route::post('/portal/social/settings/reel-fields', [SocialController::class, 'updateReelFields'])->name('portal-social-settings.reel-fields')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
 
                 Route::get('/portal/social/daily-plan', [SocialController::class, 'dailyPlan'])->name('portal-social-daily-plan.index')->middleware('PermissionCheck:portal_access');
                 Route::post('/portal/social/daily-plan', [SocialController::class, 'storeDailyPlan'])->name('portal-social-daily-plan.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');

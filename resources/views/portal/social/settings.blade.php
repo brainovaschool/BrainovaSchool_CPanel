@@ -57,7 +57,89 @@
                 </form>
             </div>
         </div>
+
+        <div class="card ot-card mt-24">
+            <div class="card-body">
+                <h4>Reel form fields</h4>
+                <p class="text-secondary">Extra fields on the Add/Edit Reel form, beyond the built-in ones. A
+                    Dropdown field's options come from one of the blocks above — add a block there first, then
+                    point a Dropdown field at it here.</p>
+
+                <form action="{{ route('portal-social-settings.reel-fields') }}" method="post">
+                    @csrf
+
+                    <div id="fieldsContainer">
+                        @foreach ($data['customFields'] as $field)
+                            <div class="field-row mb-4 pb-4 border-bottom">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Field name</label>
+                                        <input type="text" name="fields[{{ $field->id }}][label]" value="{{ $field->label }}" class="form-control ot-input" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label">Field type</label>
+                                        <select name="fields[{{ $field->id }}][type]" class="nice-select niceSelect bordered_style wide field-type-select">
+                                            @foreach ($data['fieldTypes'] as $typeKey => $typeLabel)
+                                                <option value="{{ $typeKey }}" {{ $field->type === $typeKey ? 'selected' : '' }}>{{ $typeLabel }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-md-5 field-list-source" style="{{ $field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT ? '' : 'display:none' }}">
+                                        <label class="form-label">Options come from</label>
+                                        <select name="fields[{{ $field->id }}][list_key]" class="nice-select niceSelect bordered_style wide">
+                                            <option value="">—</option>
+                                            @foreach ($data['lists'] as $list)
+                                                <option value="{{ $list->key }}" {{ $field->list_key === $list->key ? 'selected' : '' }}>{{ $list->label }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <label class="d-inline-flex align-items-center gap-2 mt-2">
+                                    <input type="checkbox" name="fields[{{ $field->id }}][delete]" value="1" class="delete-field-checkbox">
+                                    <span class="text-danger">Delete this field</span>
+                                </label>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <div id="newFieldsContainer"></div>
+
+                    <button type="button" id="addFieldBtn" class="btn btn-outline-secondary mb-3">+ Add a field</button>
+                    <br>
+                    <button type="submit" class="btn btn-lg ot-btn-primary">Save Fields</button>
+                </form>
+            </div>
+        </div>
     </div>
+
+    <template id="newFieldTemplate">
+        <div class="field-row mb-4 pb-4 border-bottom">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Field name</label>
+                    <input type="text" name="new_fields[__INDEX__][label]" value="" class="form-control ot-input" placeholder="Field name" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Field type</label>
+                    <select name="new_fields[__INDEX__][type]" class="nice-select niceSelect bordered_style wide field-type-select">
+                        @foreach ($data['fieldTypes'] as $typeKey => $typeLabel)
+                            <option value="{{ $typeKey }}">{{ $typeLabel }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-md-5 field-list-source" style="display:none">
+                    <label class="form-label">Options come from</label>
+                    <select name="new_fields[__INDEX__][list_key]" class="nice-select niceSelect bordered_style wide">
+                        <option value="">—</option>
+                        @foreach ($data['lists'] as $list)
+                            <option value="{{ $list->key }}">{{ $list->label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+            <button type="button" class="btn btn-outline-danger btn-sm mt-2 remove-new-field">Remove this field</button>
+        </div>
+    </template>
 
     <template id="newBlockTemplate">
         <div class="settings-block mb-4 pb-4 border-bottom">
@@ -112,6 +194,56 @@
                 if (e.target.classList.contains('remove-new-block')) {
                     e.target.closest('.settings-block').remove();
                 }
+            });
+
+            document.addEventListener('change', function (e) {
+                if (e.target.classList.contains('delete-field-checkbox')) {
+                    e.target.closest('.field-row').style.opacity = e.target.checked ? '0.4' : '1';
+                }
+            });
+
+            document.addEventListener('click', function (e) {
+                if (e.target.classList.contains('remove-new-field')) {
+                    e.target.closest('.field-row').remove();
+                }
+            });
+        })();
+
+        // nice-select only reacts to a real click through jQuery's own
+        // trigger - a plain addEventListener('change', ...) never sees it
+        // (same issue as the Leave Request role toggle elsewhere in this
+        // app), so the Field type -> "Options come from" show/hide needs
+        // jQuery's delegated .on(), which also automatically covers field
+        // rows added later via "+ Add a field" with no extra wiring.
+        (function () {
+            var SELECT_TYPE = '{{ \App\Models\Portal\PortalReelCustomField::TYPE_SELECT }}';
+
+            function syncFieldRow($row) {
+                var isSelect = $row.find('.field-type-select').val() === SELECT_TYPE;
+                $row.find('.field-list-source').toggle(isSelect);
+            }
+
+            jQuery(document).on('change', '.field-type-select', function () {
+                syncFieldRow(jQuery(this).closest('.field-row'));
+            });
+
+            jQuery(function () {
+                jQuery('.field-row').each(function () { syncFieldRow(jQuery(this)); });
+            });
+
+            var newFieldIndex = 0;
+            document.getElementById('addFieldBtn').addEventListener('click', function () {
+                var html = document.getElementById('newFieldTemplate').innerHTML.split('__INDEX__').join(newFieldIndex);
+                var wrapper = document.createElement('div');
+                wrapper.innerHTML = html;
+                var row = wrapper.firstElementChild;
+                document.getElementById('newFieldsContainer').appendChild(row);
+                // Newly inserted <select> elements aren't styled by
+                // nice-select until explicitly (re)initialised - the
+                // global init on page load only ever saw the original set.
+                jQuery(row).find('.niceSelect').niceSelect();
+                syncFieldRow(jQuery(row));
+                newFieldIndex++;
             });
         })();
     </script>

@@ -69,4 +69,32 @@
         <label class="form-label">Note</label>
         <textarea name="note" class="form-control ot-input" rows="2">{{ old('note', $reel->note ?? '') }}</textarea>
     </div>
+
+    @php($customFields = $customFields ?? [])
+    @foreach ($customFields as $field)
+        @php($current = old('custom_fields.' . $field->key, ($reel->custom_fields ?? [])[$field->key] ?? null))
+        <div class="col-md-6">
+            @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_CHECKBOX)
+                <div class="form-check mt-4">
+                    <input type="checkbox" class="form-check-input" id="cf_{{ $field->key }}"
+                           name="custom_fields[{{ $field->key }}]" value="1" {{ $current ? 'checked' : '' }}>
+                    <label class="form-check-label" for="cf_{{ $field->key }}">{{ $field->label }}</label>
+                </div>
+            @else
+                <label class="form-label">{{ $field->label }}</label>
+                @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT)
+                    <select name="custom_fields[{{ $field->key }}]" class="nice-select niceSelect bordered_style wide">
+                        <option value="">—</option>
+                        @foreach ($field->options() as $opt)
+                            <option value="{{ $opt }}" {{ (string) $current === (string) $opt ? 'selected' : '' }}>{{ $opt }}</option>
+                        @endforeach
+                    </select>
+                @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_TEXTAREA)
+                    <textarea name="custom_fields[{{ $field->key }}]" class="form-control ot-input" rows="2">{{ $current }}</textarea>
+                @else
+                    <input type="{{ $field->type }}" name="custom_fields[{{ $field->key }}]" class="form-control ot-input" value="{{ $current }}">
+                @endif
+            @endif
+        </div>
+    @endforeach
 </div>

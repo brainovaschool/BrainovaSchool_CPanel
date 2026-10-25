@@ -69,8 +69,9 @@ class SocialController extends Controller
     public function createReel()
     {
         $this->requireContentAccess();
-        $data['settings'] = PortalSetting::current();
-        $data['title']    = 'Add a Reel/Topic';
+        $data['settings']     = PortalSetting::current();
+        $data['customFields'] = $this->repo->reelCustomFields();
+        $data['title']        = 'Add a Reel/Topic';
         return view('portal.social.reels.create', compact('data'));
     }
 
@@ -98,9 +99,10 @@ class SocialController extends Controller
             return redirect()->route('portal-social-reels.index')->with('danger', ___('alert.not_found'));
         }
 
-        $data['reel']      = $reel;
-        $data['canManage'] = $this->canManageContent();
-        $data['title']     = $reel->title;
+        $data['reel']         = $reel;
+        $data['canManage']    = $this->canManageContent();
+        $data['customFields'] = $this->repo->reelCustomFields();
+        $data['title']        = $reel->title;
         return view('portal.social.reels.show', compact('data'));
     }
 
@@ -112,9 +114,10 @@ class SocialController extends Controller
             return redirect()->route('portal-social-reels.index')->with('danger', ___('alert.not_found'));
         }
 
-        $data['reel']     = $reel;
-        $data['settings'] = PortalSetting::current();
-        $data['title']    = 'Edit Reel/Topic';
+        $data['reel']         = $reel;
+        $data['settings']     = PortalSetting::current();
+        $data['customFields'] = $this->repo->reelCustomFields();
+        $data['title']        = 'Edit Reel/Topic';
         return view('portal.social.reels.edit', compact('data'));
     }
 
@@ -244,8 +247,10 @@ class SocialController extends Controller
         if (!hasPermission('portal_manage')) {
             abort(403);
         }
-        $data['lists'] = $this->repo->settingLists();
-        $data['title'] = 'Social Board Settings';
+        $data['lists']        = $this->repo->settingLists();
+        $data['customFields'] = $this->repo->reelCustomFields();
+        $data['fieldTypes']   = \App\Models\Portal\PortalReelCustomField::TYPES;
+        $data['title']        = 'Social Board Settings';
         return view('portal.social.settings', compact('data'));
     }
 
@@ -255,6 +260,15 @@ class SocialController extends Controller
             abort(403);
         }
         $result = $this->repo->updateSocialSettings($request);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function updateReelFields(Request $request)
+    {
+        if (!hasPermission('portal_manage')) {
+            abort(403);
+        }
+        $result = $this->repo->updateReelCustomFields($request);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

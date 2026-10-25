@@ -45,6 +45,13 @@
                         @if ($reel->promptUpload)<p><strong>Prompt file:</strong> <a href="{{ globalAsset($reel->promptUpload->path) }}" target="_blank">Download</a></p>@endif
                         @if ($reel->thumbUpload)<p><strong>Thumbnail:</strong><br><img src="{{ globalAsset($reel->thumbUpload->path) }}" alt="Thumbnail for {{ $reel->title }}" style="max-width:200px;border-radius:8px"></p>@endif
                         @if ($reel->note)<p class="mt-3"><strong>Note:</strong> {{ $reel->note }}</p>@endif
+                        @foreach ($data['customFields'] ?? [] as $field)
+                            @php($value = ($reel->custom_fields ?? [])[$field->key] ?? null)
+                            @if ($value !== null && $value !== '')
+                                <p class="mb-1"><strong>{{ $field->label }}:</strong>
+                                    {{ $field->type === \App\Models\Portal\PortalReelCustomField::TYPE_CHECKBOX ? ($value ? 'Yes' : 'No') : $value }}</p>
+                            @endif
+                        @endforeach
                         @if ($reel->reviewedBy)
                             <p class="text-secondary mb-0">Last reviewed by {{ $reel->reviewedBy->name }}, {{ $reel->reviewed_at?->format('d M Y, h:i A') }}</p>
                         @endif

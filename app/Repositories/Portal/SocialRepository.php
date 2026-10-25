@@ -7,6 +7,7 @@ use App\Models\Portal\PortalCategoryTarget;
 use App\Models\Portal\PortalDailyPlan;
 use App\Models\Portal\PortalPageFix;
 use App\Models\Portal\PortalReel;
+use App\Models\Portal\PortalReelCustomField;
 use App\Models\Portal\PortalResponsibility;
 use App\Models\Portal\PortalSetting;
 use App\Models\Portal\PortalSettingList;
@@ -67,6 +68,7 @@ class SocialRepository
                 'prompt_link'      => $request->prompt_link,
                 'thumb_upload_id'  => $thumbUploadId,
                 'note'             => $request->note,
+                'custom_fields'    => $this->collectCustomFieldValues($request),
             ]);
 
             return $this->responseWithSuccess('Reel added.', ['id' => $reel->id]);
@@ -99,9 +101,30 @@ class SocialRepository
         $reel->prompt_text  = $request->prompt_text;
         $reel->prompt_link  = $request->prompt_link;
         $reel->note         = $request->note;
+        $reel->custom_fields = $this->collectCustomFieldValues($request);
         $reel->save();
 
         return $this->responseWithSuccess('Saved.', []);
+    }
+
+    /** $request->custom_fields: [field_key => value] - only for whatever
+     *  fields currently exist (a deleted field's old value in a reel's
+     *  JSON just stays there, unused, rather than being validated away). */
+    private function collectCustomFieldValues($request): array
+    {
+        $submitted = (array) $request->input('custom_fields', []);
+        $values = [];
+        foreach ($this->reelCustomFields() as $field) {
+            if ($field->type === PortalReelCustomField::TYPE_CHECKBOX) {
+                $values[$field->key] = isset($submitted[$field->key]);
+                continue;
+            }
+            $v = trim((string) ($submitted[$field->key] ?? ''));
+            if ($v !== '') {
+                $values[$field->key] = $v;
+            }
+        }
+        return $values;
     }
 
     /** Accept, reject, or move to the next pipeline status — always with
@@ -340,6 +363,72 @@ class SocialRepository
         $key  = $base;
         $i    = 1;
         while (PortalSettingList::where('key', $key)->exists()) {
+            $key = $base . '_' . (++$i);
+        }
+        return $key;
+    }
+
+    // ---- Reel form custom fields -----------------------------------
+
+    public function reelCustomFields()
+    {
+        return PortalReelCustomField::orderBy('sort_order')->get();
+    }
+
+    /** Same shape as updateSocialSettings(): $request->fields keyed by
+     *  existing field id (edit in place, or delete if flagged), plus
+     *  $request->new_fields for ones added on this submit. A 'select'
+     *  field also carries list_key - which Social Board Settings block
+     *  (by its stable key) supplies its options. */
+    public function updateReelCustomFields($request): array
+    {
+        $fields = (array) $request->input('fields', []);
+        foreach ($fields as $id => $data) {
+            $field = PortalReelCustomField::find($id);
+            if (!$field) {
+                continue;
+            }
+            if (!empty($data['delete'])) {
+                $field->delete();
+                continue;
+            }
+            $label = trim($data['label'] ?? '');
+            $type  = $data['type'] ?? '';
+            if ($label === '' || !array_key_exists($type, PortalReelCustomField::TYPES)) {
+                continue;
+            }
+            $field->label    = $label;
+            $field->type     = $type;
+            $field->list_key = $type === PortalReelCustomField::TYPE_SELECT ? ($data['list_key'] ?? null) : null;
+            $field->save();
+        }
+
+        $newFields = (array) $request->input('new_fields', []);
+        $nextOrder = ((int) PortalReelCustomField::max('sort_order')) + 1;
+        foreach ($newFields as $data) {
+            $label = trim($data['label'] ?? '');
+            $type  = $data['type'] ?? '';
+            if ($label === '' || !array_key_exists($type, PortalReelCustomField::TYPES)) {
+                continue;
+            }
+            PortalReelCustomField::create([
+                'key'        => $this->uniqueFieldKey($label),
+                'label'      => $label,
+                'type'       => $type,
+                'list_key'   => $type === PortalReelCustomField::TYPE_SELECT ? ($data['list_key'] ?? null) : null,
+                'sort_order' => $nextOrder++,
+            ]);
+        }
+
+        return $this->responseWithSuccess('Saved.', []);
+    }
+
+    private function uniqueFieldKey(string $label): string
+    {
+        $base = Str::slug($label, '_') ?: 'field';
+        $key  = $base;
+        $i    = 1;
+        while (PortalReelCustomField::where('key', $key)->exists()) {
             $key = $base . '_' . (++$i);
         }
         return $key;
