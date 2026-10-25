@@ -24,7 +24,12 @@
                 <div class="card ot-card">
                     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <h4 class="mb-0">Details</h4>
-                        <span class="badge-basic-info-text">{{ str_replace('_', ' ', ucfirst($task->status)) }}</span>
+                        <div class="d-flex align-items-center gap-2">
+                            @if ($task->reel_id)
+                                <a href="{{ route('portal-social-reels.setup', $task->reel_id) }}" class="btn btn-sm ot-btn-primary">Open Reel Studio</a>
+                            @endif
+                            <span class="badge-basic-info-text">{{ str_replace('_', ' ', ucfirst($task->status)) }}</span>
+                        </div>
                     </div>
                     <div class="card-body">
                         <p class="text-secondary">{!! $task->description ? linkify($task->description) : 'No description given.' !!}</p>
@@ -140,7 +145,7 @@
                                     <label class="form-label">Link (optional)</label>
                                     <input type="text" name="link" class="form-control ot-input mb-2">
                                     <label class="form-label">File (optional)</label>
-                                    <input type="file" name="file" class="form-control ot-input mb-2">
+                                    <input type="file" name="file" class="form-control ot-input mb-2" style="display:block;width:100%;height:auto;padding:8px 10px;">
                                     <label class="form-label">Comment</label>
                                     <textarea name="comment" class="form-control ot-input mb-2" rows="2"></textarea>
                                     <button type="submit" class="btn ot-btn-primary w-100">Submit Work</button>
