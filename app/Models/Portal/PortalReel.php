@@ -96,4 +96,53 @@ class PortalReel extends Model
         }
         return 'Suggested';
     }
+
+    /** Which badge-basic-*-text colour matches statusLabel() - same
+     *  branching, just a colour instead of a sentence. */
+    public function statusBadgeClass(): string
+    {
+        if ($this->status === self::REJECTED) {
+            return 'badge-basic-danger-text';
+        }
+        if ($this->status === self::PUBLISHED) {
+            return 'badge-basic-success-text';
+        }
+        if ($this->video_approved_at) {
+            return 'badge-basic-success-text';
+        }
+        if ($this->drive_link || $this->prompt_link) {
+            return 'badge-basic-warning-text';
+        }
+        if ($this->prompt_approved_at) {
+            return 'badge-basic-info-text';
+        }
+        if ($this->is_open_paid || $this->assigned_to) {
+            return 'badge-basic-primary-text';
+        }
+        return 'badge-basic-secondary-text';
+    }
+
+    /** Colour for the small "P" (prompt) progress dot on the Reels table. */
+    public function promptBadgeClass(): string
+    {
+        if ($this->prompt_approved_at) {
+            return 'badge-basic-success-text';
+        }
+        if ($this->prompt_link) {
+            return 'badge-basic-warning-text';
+        }
+        return 'badge-basic-secondary-text';
+    }
+
+    /** Colour for the small "V" (video) progress dot on the Reels table. */
+    public function videoBadgeClass(): string
+    {
+        if ($this->video_approved_at) {
+            return 'badge-basic-success-text';
+        }
+        if ($this->drive_link) {
+            return 'badge-basic-warning-text';
+        }
+        return 'badge-basic-secondary-text';
+    }
 }

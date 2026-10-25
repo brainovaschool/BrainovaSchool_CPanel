@@ -35,7 +35,7 @@ class SocialRepository
 
     public function reels(array $filters)
     {
-        return PortalReel::with(['suggestedBy', 'creator', 'assignee'])
+        return PortalReel::with(['suggestedBy.staff.designation', 'creator', 'assignee'])
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
             ->when($filters['format'] ?? null, fn ($q, $v) => $q->where('format', $v))
@@ -382,16 +382,6 @@ class SocialRepository
         $reel->save();
 
         return $this->responseWithSuccess(ucfirst($stage) . ' approved.', []);
-    }
-
-    /** The approval inbox - every reel not yet published or rejected, for
-     *  whoever admin has given portal_manage to review/assign. */
-    public function contentPool()
-    {
-        return PortalReel::with(['suggestedBy.staff.designation', 'assignee'])
-            ->whereNotIn('status', [PortalReel::PUBLISHED, PortalReel::REJECTED])
-            ->orderByDesc('id')
-            ->get();
     }
 
     /** Who shows up in the "Assign to" dropdown - every staff member

@@ -8,7 +8,7 @@
         <div class="page-header">
             <div class="row">
                 <div class="col-sm-8">
-                    <h4 class="bradecrumb-title mb-1">Social Board</h4>
+                    <h4 class="bradecrumb-title mb-1">Reels</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
                         <li class="breadcrumb-item">Reels</li>
@@ -24,7 +24,7 @@
 
         <div class="col-12 p-0">
             <form action="{{ route('portal-social-reels.index') }}" method="get">
-                <div class="card ot-card mb-24 d-flex flex-row align-items-center gap-3 flex-wrap" style="padding:1rem 1.25rem">
+                <div class="card ot-card bn-reels-filters mb-24 d-flex flex-row align-items-center gap-3 flex-wrap" style="padding:1rem 1.25rem">
                     <select name="status" class="nice-select niceSelect bordered_style">
                         <option value="">All statuses</option>
                         @foreach (['suggested', 'accepted', 'production', 'ready', 'published', 'rejected'] as $s)
@@ -60,41 +60,74 @@
             <div class="card">
                 <div class="card-body">
                     <div class="table-responsive">
-                    <table class="ot-basic-table ot-table-bg">
+                    <table class="ot-basic-table ot-table-bg bn-reels-table">
                         <thead class="thead">
                             <tr>
-                                <th>Series</th><th>Topic</th><th>Hook</th><th>Suggested by</th><th>Status</th>
-                                <th>Deadline</th><th>Prompt link</th><th>Video link</th><th>Uploaded date</th>
+                                <th>Content</th>
+                                <th>Suggested by</th>
+                                <th>Status</th>
+                                <th>Deadline</th>
+                                <th>Progress</th>
+                                <th>Uploaded date</th>
                                 <th class="action">{{ ___('common.action') }}</th>
                             </tr>
                         </thead>
                         <tbody class="tbody">
                             @forelse ($data['reels'] as $reel)
+                                @php($staff = optional($reel->suggestedBy)->staff)
+                                @php($isUnassigned = !$reel->assigned_to && !$reel->is_open_paid)
                                 <tr>
-                                    <td>{{ $reel->series_name ?: '—' }}</td>
-                                    <td>{{ $reel->title }}</td>
-                                    <td>{{ $reel->hook ?: '—' }}</td>
-                                    <td>{{ optional($reel->suggestedBy)->name ?: '—' }}</td>
-                                    <td><span class="badge-basic-info-text">{{ $reel->statusLabel() }}</span></td>
+                                    <td>
+                                        <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="bn-reel-title">{{ $reel->title }}</a>
+                                        <div class="bn-reel-meta">
+                                            @if ($reel->series_name)
+                                                <span class="bn-series-tag">{{ $reel->series_name }}</span>
+                                            @endif
+                                            @if ($reel->hook)
+                                                <span class="bn-reel-hook" title="{{ $reel->hook }}">{{ \Illuminate\Support\Str::limit($reel->hook, 60) }}</span>
+                                            @endif
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {{ optional($reel->suggestedBy)->name ?: '—' }}
+                                        @if (optional($staff?->designation)->name)
+                                            <div class="bn-reel-sub">{{ $staff->designation->name }}</div>
+                                        @endif
+                                    </td>
+                                    <td><span class="{{ $reel->statusBadgeClass() }}">{{ $reel->statusLabel() }}</span></td>
                                     <td>{{ $reel->deadline?->format('d M Y') ?: '—' }}</td>
                                     <td>
-                                        @if ($reel->prompt_link)
-                                            <a href="{{ $reel->prompt_link }}" target="_blank">Link</a>
-                                            {{ $reel->prompt_approved_at ? '✓' : '(pending)' }}
-                                        @else
-                                            —
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if ($reel->drive_link)
-                                            <a href="{{ $reel->drive_link }}" target="_blank">Link</a>
-                                            {{ $reel->video_approved_at ? '✓' : '(pending)' }}
-                                        @else
-                                            —
-                                        @endif
+                                        <span class="{{ $reel->promptBadgeClass() }} bn-progress-dot" title="Prompt: {{ $reel->prompt_approved_at ? 'approved' : ($reel->prompt_link ? 'pending approval' : 'not submitted') }}">P</span>
+                                        <span class="{{ $reel->videoBadgeClass() }} bn-progress-dot" title="Video: {{ $reel->video_approved_at ? 'approved' : ($reel->drive_link ? 'pending approval' : 'not submitted') }}">V</span>
                                     </td>
                                     <td>{{ $reel->planned_date?->format('d M Y') ?: '—' }}</td>
-                                    <td class="action"><a href="{{ route('portal-social-reels.show', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a></td>
+                                    <td class="action bn-reel-actions">
+                                        <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a>
+                                        @if ($data['canManage'])
+                                            <a href="{{ route('portal-social-reels.edit', $reel->id) }}" class="btn btn-sm btn-outline-secondary">{{ ___('common.edit') }}</a>
+                                            <form action="{{ route('portal-social-reels.destroy', $reel->id) }}" method="post" class="d-inline" onsubmit="return confirm('Remove this reel/topic?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button class="btn btn-sm btn-outline-danger">{{ ___('common.delete') }}</button>
+                                            </form>
+                                        @endif
+                                        @if ($isUnassigned && $data['canAssign'])
+                                            <form action="{{ route('portal-social-reels.assign', $reel->id) }}" method="post" class="bn-assign-form">
+                                                @csrf
+                                                <select name="assigned_to" class="nice-select niceSelect bordered_style">
+                                                    <option value="">Assign to...</option>
+                                                    @foreach ($data['contentTeam'] as $member)
+                                                        <option value="{{ $member->id }}">{{ $member->first_name }} {{ $member->last_name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <label class="bn-open-paid">
+                                                    <input type="checkbox" name="open_paid" value="1" class="open-paid-check"> Open (Paid Task)
+                                                </label>
+                                                <input type="date" name="deadline" class="form-control ot-input">
+                                                <button type="submit" class="btn btn-sm ot-btn-primary">Approve &amp; Assign</button>
+                                            </form>
+                                        @endif
+                                    </td>
                                 </tr>
                             @empty
                                 <tr><td colspan="100%" class="text-center gray-color">{{ ___('common.no_data_available') }}</td></tr>
@@ -106,4 +139,37 @@
             </div>
         </div>
     </div>
+
+    @push('css')
+    <style>
+        .bn-reel-title { font-weight: 600; display: block; }
+        .bn-series-tag { font-family: "Lexend", sans-serif; font-weight: 600; font-size: 11px; border-radius: 50px; padding: 3px 10px; background: rgba(var(--bn-turquoise-rgb), .14); color: var(--bn-turquoise-text, #007585); white-space: nowrap; }
+        .dark-theme .bn-series-tag { background: rgba(0, 151, 178, .22); color: var(--bn-turquoise-light); }
+        .bn-reel-meta { display: flex; align-items: center; gap: .5rem; margin-top: .25rem; flex-wrap: wrap; }
+        .bn-reel-hook { color: var(--bn-muted, #8a8fa3); font-size: .85rem; font-style: italic; }
+        .bn-reel-sub { color: var(--bn-muted, #8a8fa3); font-size: .78rem; margin-top: .15rem; }
+        .bn-progress-dot { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: .72rem; font-weight: 700; margin-right: .35rem; }
+        .bn-reel-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem; min-width: 220px; }
+        .bn-assign-form { display: flex; flex-direction: column; gap: .35rem; width: 100%; max-width: 220px; margin-top: .5rem; padding-top: .5rem; border-top: 1px dashed rgba(127,127,127,.3); }
+        .bn-assign-form .form-control { padding: .25rem .5rem; height: auto; }
+        .bn-open-paid { display: flex; align-items: center; gap: .35rem; font-size: .8rem; color: var(--bn-muted, #8a8fa3); margin: 0; }
+        .bn-reels-table td { vertical-align: top; }
+    </style>
+    @endpush
+
+    @push('script')
+    <script>
+        // Event delegation, since every "needs assignment" row has its own
+        // copy of this checkbox + select (same issue as the Leave Request
+        // role toggle elsewhere in this app - nice-select needs the real
+        // <select> disabled, a plain checkbox change is a native DOM event).
+        document.addEventListener('change', function (e) {
+            if (!e.target.classList.contains('open-paid-check')) return;
+            var select = e.target.closest('form').querySelector('select[name="assigned_to"]');
+            if (!select) return;
+            select.disabled = e.target.checked;
+            if (window.jQuery) { jQuery(select).niceSelect('update'); }
+        });
+    </script>
+    @endpush
 @endsection

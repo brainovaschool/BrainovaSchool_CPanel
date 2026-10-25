@@ -40,7 +40,11 @@ class SocialController extends Controller
 
     private function canAssignReels(): bool
     {
-        return hasPermission('portal_manage') || hasPermission('portal_reel_assign');
+        // portal_social_content_pool_read is the old standalone Content
+        // Pool page's permission - that page is now just the Reels page,
+        // but the permission still means the same thing (can see/use the
+        // assign control), so anyone already granted it keeps it working.
+        return hasPermission('portal_manage') || hasPermission('portal_reel_assign') || hasPermission('portal_social_content_pool_read');
     }
 
     private function canApproveReels(): bool
@@ -68,12 +72,14 @@ class SocialController extends Controller
 
     public function reels(Request $request)
     {
-        $data['canManage'] = $this->canManageContent();
-        $data['reels']     = $this->repo->reels($request->only(['status', 'category', 'format', 'series_name']));
-        $data['settings']  = PortalSetting::current();
-        $data['series']    = $this->repo->reelSeries();
-        $data['filters']   = $request->only(['status', 'category', 'format', 'series_name']);
-        $data['title']     = 'Social Board — Reels';
+        $data['canManage']   = $this->canManageContent();
+        $data['canAssign']   = $this->canAssignReels();
+        $data['reels']       = $this->repo->reels($request->only(['status', 'category', 'format', 'series_name']));
+        $data['settings']    = PortalSetting::current();
+        $data['series']      = $this->repo->reelSeries();
+        $data['contentTeam'] = $this->repo->assignableStaff();
+        $data['filters']     = $request->only(['status', 'category', 'format', 'series_name']);
+        $data['title']       = 'Social Board — Reels';
         return view('portal.social.reels.index', compact('data'));
     }
 
@@ -109,18 +115,12 @@ class SocialController extends Controller
         return view('portal.social.suggest-reel.create', compact('data'));
     }
 
-    // ---- Content Pool (approval inbox for admin/coordinator) ---------
-
+    /** Content Pool used to be its own page - it's now just the Reels
+     *  page (same table, assign control included), so the old URL
+     *  redirects there instead of 404ing for anyone with it bookmarked. */
     public function contentPool()
     {
-        if (!hasPermission('portal_manage') && !hasPermission('portal_social_content_pool_read')) {
-            abort(403, 'Only admin/coordinator can see the Content Pool.');
-        }
-        $data['reels']       = $this->repo->contentPool();
-        $data['contentTeam'] = $this->repo->assignableStaff();
-        $data['canAssign']   = $this->canAssignReels();
-        $data['title']       = 'Content Pool';
-        return view('portal.social.content-pool.index', compact('data'));
+        return redirect()->route('portal-social-reels.index');
     }
 
     public function storeReel(Request $request)
