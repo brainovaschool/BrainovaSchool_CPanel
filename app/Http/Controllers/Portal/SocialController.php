@@ -82,6 +82,23 @@ class SocialController extends Controller
         return view('portal.social.reels.create', compact('data'));
     }
 
+    // ---- Suggest a Reel (dedicated, always-simplified entry point) ---
+
+    public function suggestReelIndex()
+    {
+        $this->requireContentAccess();
+        $data['title'] = 'Suggest a Reel';
+        return view('portal.social.suggest-reel.index', compact('data'));
+    }
+
+    public function suggestReelCreate()
+    {
+        $this->requireContentAccess();
+        $data['series'] = $this->repo->reelSeries();
+        $data['title']  = 'Suggest a Reel';
+        return view('portal.social.suggest-reel.create', compact('data'));
+    }
+
     public function storeReel(Request $request)
     {
         $this->requireContentAccess();

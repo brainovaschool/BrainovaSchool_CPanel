@@ -97,6 +97,11 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::delete('/{id}',       'destroyReel')->name('destroy')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                 });
 
+                Route::controller(SocialController::class)->prefix('portal/social/suggest-reel')->name('portal-social-suggest-reel.')->group(function () {
+                    Route::get('/',        'suggestReelIndex')->name('index')->middleware('PermissionCheck:portal_access');
+                    Route::get('/create',  'suggestReelCreate')->name('create')->middleware('PermissionCheck:portal_access');
+                });
+
                 Route::get('/portal/social/month-plan', [SocialController::class, 'monthPlan'])->name('portal-social-month-plan.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_social_month_plan_read']);
                 Route::post('/portal/social/month-plan/targets', [SocialController::class, 'updateCategoryTargets'])->name('portal-social-month-plan.targets')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
 

@@ -586,6 +586,11 @@
                                                 <a href="{{ route('portal-social-reels.index') }}">Reels</a>
                                             </li>
                                         @endif
+                                        @if (portalOwnsResponsibility('content'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/suggest-reel*']) }}">
+                                                <a href="{{ route('portal-social-suggest-reel.index') }}">Suggest a Reel</a>
+                                            </li>
+                                        @endif
                                         @if (hasPermission('portal_social_month_plan_read'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/month-plan']) }}">
                                                 <a href="{{ route('portal-social-month-plan.index') }}">Month Plan</a>
