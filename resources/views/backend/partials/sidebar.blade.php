@@ -601,11 +601,6 @@
                                                 <a href="{{ route('portal-social-audience.index') }}">Audience Numbers</a>
                                             </li>
                                         @endif
-                                        @if (portalOwnsResponsibility('content'))
-                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">
-                                                <a href="{{ route('portal-social-daily-plan.index') }}">Daily Plan &amp; Goals</a>
-                                            </li>
-                                        @endif
                                         @if (hasPermission('portal_manage') || hasPermission('portal_social_settings_read'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/settings']) }}">
                                                 <a href="{{ route('portal-social-settings.edit') }}">Social Settings</a>
@@ -625,6 +620,17 @@
                                         @if (hasPermission('portal_manage') || hasPermission('portal_growth_pay_read'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/growth-pay']) }}">
                                                 <a href="{{ route('portal-growth-pay.index') }}">Outflow</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
+
+                                <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">
+                                    <a class="has-arrow">Planning</a>
+                                    <ul class="child-menu-list">
+                                        @if (portalOwnsResponsibility('content'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">
+                                                <a href="{{ route('portal-social-daily-plan.index') }}">Daily Plan &amp; Goals</a>
                                             </li>
                                         @endif
                                     </ul>
