@@ -258,29 +258,8 @@
                 @endif
                 {{-- End routines --}}
 
-                {{-- Start Attendance --}}
-                @if ((hasPermission('attendance_read') || hasPermission('attendance_teacher_read')) && hasFeature('attendance'))
-                    <li class="sidebar-menu-item {{ set_menu(['attendance*']) }}">
-                        <a class="parent-item-content has-arrow">
-                            <i class="las la-calendar-plus"></i>
-                            <span class="on-half-expanded">{{ ___('settings.Attendance') }}</span>
-                        </a>
-                        <ul class="child-menu-list">
-                            @if (hasPermission('attendance_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['attendance/report*']) }}">
-                                    <a href="{{ route('attendance.report') }}">{{ ___('settings.Student') }}</a>
-                                </li>
-                            @endif
-
-                            @if (hasPermission('attendance_teacher_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['attendance/teacher*']) }}">
-                                    <a href="{{ route('attendance.teacher') }}">{{ ___('settings.Teacher') }}</a>
-                                </li>
-                            @endif
-                        </ul>
-                    </li>
-                @endif
-                {{-- End Attendance --}}
+                {{-- Attendance moved into Staff Workspace as a sub-category,
+                     alongside Social Board/Finance/Planning - see below. --}}
 
 
                 {{-- Start Leave --}}
@@ -400,117 +379,151 @@
 
 
 
-                {{-- Start exam --}}
+                {{-- Start Exam: Examination and Online Examination share almost
+                     the same kind of setup (types, question/marks sources,
+                     assignment) so they live under one "Exam" heading, each
+                     keeping its own permission/feature gate as a sub-category. --}}
                 @if (
-                    (hasPermission('exam_type_read') ||
+                    ((hasPermission('exam_type_read') ||
                         hasPermission('marks_grade_read') ||
                         hasPermission('exam_assign_read') ||
                         hasPermission('marks_register_read') ||
                         hasPermission('exam_setting_read')) &&
-                        hasFeature('examination'))
-                    <li
-                        class="sidebar-menu-item {{ set_menu(['exam-type*', 'marks-grade*', 'exam-assign*', 'marks-register*', 'examination-settings*']) }}">
-                        <a class="parent-item-content has-arrow">
-                            <i class="las la-book-reader"></i>
-                            <span class="on-half-expanded">{{ ___('settings.examination') }}</span>
-                        </a>
-                        <ul class="child-menu-list">
-                            @if (hasPermission('exam_type_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['exam-type*']) }}">
-                                    <a href="{{ route('exam-type.index') }}">{{ ___('settings.type') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('marks_grade_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['marks-grade*']) }}">
-                                    <a
-                                        href="{{ route('marks-grade.index') }}">{{ ___('examination.marks_grade') }}</a>
-                                </li>
-                            @endif
-
-                            @if (hasPermission('exam_assign_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['exam-assign*']) }}">
-                                    <a
-                                        href="{{ route('exam-assign.index') }}">{{ ___('examination.exam_assign') }}</a>
-                                </li>
-                            @endif
-
-                            @if (hasPermission('marks_register_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['marks-register*']) }}">
-                                    <a
-                                        href="{{ route('marks-register.index') }}">{{ ___('examination.marks_register') }}</a>
-                                </li>
-                            @endif
-
-                            @if (hasPermission('exam_setting_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['examination-settings*']) }}">
-                                    <a
-                                        href="{{ route('examination-settings.index') }}">{{ ___('settings.Settings') }}</a>
-                                </li>
-                            @endif
-
-                        </ul>
-                    </li>
-                @endif
-                {{-- End exam --}}
-
-                <!-- Online Examination start -->
-                @if (
-                    (hasPermission('question_group_read') ||
+                        hasFeature('examination')) ||
+                    ((hasPermission('question_group_read') ||
                         hasPermission('question_bank_read') ||
                         hasPermission('online_exam_read') ||
                         hasPermission('online_exam_type_read')) &&
-                        hasFeature('online_examination'))
+                        hasFeature('online_examination')))
                     <li
-                        class="sidebar-menu-item {{ set_menu(['question-group*', 'question-bank*', 'online-exam*', 'online-exam-type*']) }}">
+                        class="sidebar-menu-item {{ set_menu(['exam-type*', 'marks-grade*', 'exam-assign*', 'marks-register*', 'examination-settings*', 'question-group*', 'question-bank*', 'online-exam*', 'online-exam-type*']) }}">
                         <a class="parent-item-content has-arrow">
-                            <i class="las la-swatchbook"></i>
-                            <span class="on-half-expanded">{{ ___('online-examination.online_examination') }}</span>
+                            <i class="las la-book-reader"></i>
+                            <span class="on-half-expanded">Exam</span>
                         </a>
-
-                        <!-- second layer child menu list start  -->
-
                         <ul class="child-menu-list">
-                            @if (hasPermission('online_exam_type_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['online-exam-type*']) }}">
-                                    <a href="{{ route('online-exam-type.index') }}">{{ ___('settings.type') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('question_group_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['question-group*']) }}">
-                                    <a
-                                        href="{{ route('question-group.index') }}">{{ ___('online-examination.question_group') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('question_bank_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['question-bank*']) }}">
-                                    <a
-                                        href="{{ route('question-bank.index') }}">{{ ___('online-examination.question_bank') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('online_exam_read'))
+                            @if (
+                                (hasPermission('exam_type_read') ||
+                                    hasPermission('marks_grade_read') ||
+                                    hasPermission('exam_assign_read') ||
+                                    hasPermission('marks_register_read') ||
+                                    hasPermission('exam_setting_read')) &&
+                                    hasFeature('examination'))
                                 <li
-                                    class="sidebar-menu-item {{ set_menu(['online-exam', 'online-exam/create', 'online-exam/edit*']) }}">
-                                    <a
-                                        href="{{ route('online-exam.index') }}">{{ ___('online-examination.online_exam') }}</a>
+                                    class="sidebar-menu-item {{ set_menu(['exam-type*', 'marks-grade*', 'exam-assign*', 'marks-register*', 'examination-settings*']) }}">
+                                    <a class="has-arrow">{{ ___('settings.examination') }}</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('exam_type_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['exam-type*']) }}">
+                                                <a href="{{ route('exam-type.index') }}">{{ ___('settings.type') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('marks_grade_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['marks-grade*']) }}">
+                                                <a
+                                                    href="{{ route('marks-grade.index') }}">{{ ___('examination.marks_grade') }}</a>
+                                            </li>
+                                        @endif
+
+                                        @if (hasPermission('exam_assign_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['exam-assign*']) }}">
+                                                <a
+                                                    href="{{ route('exam-assign.index') }}">{{ ___('examination.exam_assign') }}</a>
+                                            </li>
+                                        @endif
+
+                                        @if (hasPermission('marks_register_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['marks-register*']) }}">
+                                                <a
+                                                    href="{{ route('marks-register.index') }}">{{ ___('examination.marks_register') }}</a>
+                                            </li>
+                                        @endif
+
+                                        @if (hasPermission('exam_setting_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['examination-settings*']) }}">
+                                                <a
+                                                    href="{{ route('examination-settings.index') }}">{{ ___('settings.Settings') }}</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
+                            @endif
+
+                            @if (
+                                (hasPermission('question_group_read') ||
+                                    hasPermission('question_bank_read') ||
+                                    hasPermission('online_exam_read') ||
+                                    hasPermission('online_exam_type_read')) &&
+                                    hasFeature('online_examination'))
+                                <li
+                                    class="sidebar-menu-item {{ set_menu(['question-group*', 'question-bank*', 'online-exam*', 'online-exam-type*']) }}">
+                                    <a class="has-arrow">{{ ___('online-examination.online_examination') }}</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('online_exam_type_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['online-exam-type*']) }}">
+                                                <a href="{{ route('online-exam-type.index') }}">{{ ___('settings.type') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('question_group_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['question-group*']) }}">
+                                                <a
+                                                    href="{{ route('question-group.index') }}">{{ ___('online-examination.question_group') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('question_bank_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['question-bank*']) }}">
+                                                <a
+                                                    href="{{ route('question-bank.index') }}">{{ ___('online-examination.question_bank') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('online_exam_read'))
+                                            <li
+                                                class="sidebar-menu-item {{ set_menu(['online-exam', 'online-exam/create', 'online-exam/edit*']) }}">
+                                                <a
+                                                    href="{{ route('online-exam.index') }}">{{ ___('online-examination.online_exam') }}</a>
+                                            </li>
+                                        @endif
+                                    </ul>
                                 </li>
                             @endif
                         </ul>
                     </li>
                 @endif
-                <!-- Online Examination end -->
+                {{-- End Exam --}}
                 {{-- Staff Workspace: the internal team portal, the social-media
                      board and Reel Studio — Brainova's own internal staff/social
                      tooling, kept apart from the classroom-facing Teacher Tools
                      group below. Deliberately never gated by hasFeature(), so
                      it's not a toggle a school package could ever accidentally
-                     grant or remove. --}}
-                @if (hasPermission('portal_access') || hasPermission('reel_studio_access') || hasPermission('portal_manage'))
-                    <li class="sidebar-menu-item {{ set_menu(['portal*']) }}">
+                     grant or remove. Attendance (student/teacher) also lives
+                     here now as its own sub-category, same as Finance/Planning -
+                     it keeps its own attendance_* permissions and hasFeature()
+                     gate, independent of portal_access. --}}
+                @if (hasPermission('portal_access') || hasPermission('reel_studio_access') || hasPermission('portal_manage') || ((hasPermission('attendance_read') || hasPermission('attendance_teacher_read')) && hasFeature('attendance')))
+                    <li class="sidebar-menu-item {{ set_menu(['portal*', 'attendance*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-users-cog"></i>
                             <span class="on-half-expanded">Staff Workspace</span>
                         </a>
                         <ul class="child-menu-list">
+                            @if ((hasPermission('attendance_read') || hasPermission('attendance_teacher_read')) && hasFeature('attendance'))
+                                <li class="sidebar-menu-item {{ set_menu(['attendance*']) }}">
+                                    <a class="has-arrow">{{ ___('settings.Attendance') }}</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('attendance_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['attendance/report*']) }}">
+                                                <a href="{{ route('attendance.report') }}">{{ ___('settings.Student') }}</a>
+                                            </li>
+                                        @endif
+
+                                        @if (hasPermission('attendance_teacher_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['attendance/teacher*']) }}">
+                                                <a href="{{ route('attendance.teacher') }}">{{ ___('settings.Teacher') }}</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
+                            @endif
                             @if (hasPermission('portal_access'))
                                 <li class="sidebar-menu-item {{ set_menu(['portal*']) }}">
                                     <a class="has-arrow">Team Portal</a>
