@@ -351,6 +351,21 @@
     <style>
         .bn-cal-table td { vertical-align: middle; }
         .bn-cal-table .bn-cal-drive-link { word-wrap: break-word; max-width: 160px; }
+        /* Columns with short, fixed-shape content (a day number, a 3-letter
+           day, a code like "SS1", "Reel"/"Carousel") don't need to compete
+           for room with the ones that actually hold longer text - those get
+           enough min-width to read on one line instead, and the table's own
+           .table-responsive wrapper scrolls sideways rather than wrapping
+           any of it to a second line. */
+        .bn-cal-table .bn-prod-date-cell,
+        .bn-cal-table .bn-prod-day-cell,
+        .bn-cal-table .bn-cal-code,
+        .bn-cal-table .bn-cal-format { white-space: nowrap; width: 1%; }
+        .bn-cal-table .bn-cal-pillar { min-width: 120px; }
+        .bn-cal-table .bn-cal-series { min-width: 140px; }
+        .bn-cal-table .bn-cal-content { min-width: 190px; }
+        .bn-cal-table .bn-cal-assignee { white-space: nowrap; }
+        .bn-cal-table .bn-cal-status { white-space: nowrap; }
     </style>
     @endpush
 
