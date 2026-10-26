@@ -22,36 +22,7 @@
                     @include('behaviourrecord::layouts.admin_sidebar_menu')
                 @endif
 
-                <!-- Admission start -->
-                @if (hasPermission('admission_read') && hasFeature('online_admission'))
-                    <li class="sidebar-menu-item {{ set_menu(['online-admissions*']) }}">
-                        <a class="parent-item-content has-arrow">
-                            <i class="las la-users"></i>
-                            <span class="on-half-expanded">{{ ___('settings.online_admission') }}</span>
-                        </a>
-                        <ul class="child-menu-list">
-                            @if (hasPermission('admission_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['online-admissions']) }}">
-                                    <a
-                                        href="{{ route('online-admissions.index') }}">{{ ___('settings.online_admission') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('admission_setting_update'))
-                                <li class="sidebar-menu-item {{ set_menu(['online-admissions.setting.fees']) }}">
-                                    <a
-                                        href="{{ route('online-admissions.setting.fees') }}">{{ ___('common.admission_fees') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('admission_setting_update'))
-                                <li class="sidebar-menu-item {{ set_menu(['online-admissions.setting.index']) }}">
-                                    <a
-                                        href="{{ route('online-admissions.setting.index') }}">{{ ___('common.Setting') }}</a>
-                                </li>
-                            @endif
-                        </ul>
-                    </li>
-                @endif
-                <!-- Admission end -->
+                {{-- Online Admission moved into Admin Zone - see below. --}}
 
 
                 <!-- Subscription of schools start -->
@@ -121,7 +92,7 @@
 
 
 
-                {{-- Id Cards and Certificates moved into Admin Workspace - see below. --}}
+                {{-- Id Cards and Certificates moved into Admin Zone - see below. --}}
 
 
                 {{-- Start Academic --}}
@@ -215,8 +186,7 @@
                 @endif
                 {{-- End routines --}}
 
-                {{-- Attendance moved into Staff Workspace as a sub-category,
-                     alongside Social Board/Finance/Planning - see below. --}}
+                {{-- Attendance moved into Admin Zone as a sub-category - see below. --}}
 
 
                 {{-- Start Leave --}}
@@ -260,25 +230,25 @@
                 @endif
                 {{-- End Leave --}}
 
-                {{-- Fees moved into Admin Workspace - see below. --}}
+                {{-- Fees moved into Admin Zone - see below. --}}
 
 
 
-                {{-- Exam moved into Teacher Workspace - see below. --}}
+                {{-- Exam moved into Teacher Zone - see below. --}}
 
-                {{-- Staff Workspace: the internal team portal, the social-media
+                {{-- Staff Zone: the internal team portal, the social-media
                      board and Reel Studio — Brainova's own internal staff/social
-                     tooling, kept apart from the classroom-facing Teacher Tools
+                     tooling, kept apart from the classroom-facing Teacher Zone
                      group below. Deliberately never gated by hasFeature(), so
                      it's not a toggle a school package could ever accidentally
-                     grant or remove. Attendance moved to Admin Workspace and
-                     Finance's one item (Outflow) moved into Admin Workspace's
+                     grant or remove. Attendance moved to Admin Zone and
+                     Finance's one item (Outflow) moved into Admin Zone's
                      Accounts, renamed Bonus - see below. --}}
                 @if (hasPermission('portal_access') || hasPermission('reel_studio_access') || hasPermission('portal_manage'))
                     <li class="sidebar-menu-item {{ set_menu(['portal*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-users-cog"></i>
-                            <span class="on-half-expanded">Staff Workspace</span>
+                            <span class="on-half-expanded">Staff Zone</span>
                         </a>
                         <ul class="child-menu-list">
                             @if (hasPermission('portal_access'))
@@ -393,11 +363,11 @@
                         </ul>
                     </li>
                 @endif
-                <!-- Staff Workspace end -->
-                {{-- Teacher Workspace: everything classroom-facing in one place —
+                <!-- Staff Zone end -->
+                {{-- Teacher Zone: everything classroom-facing in one place —
                      Class Content (curriculum), Homework, Exam (Examination +
                      Online Examination), and the AI/analytics tools — kept
-                     apart from Staff Workspace above, which is internal
+                     apart from Staff Zone above, which is internal
                      team/social tooling, not classroom work. --}}
                 @if (((hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve')) && hasFeature('class_content'))
                         || (hasPermission('homework_read') && hasFeature('homework'))
@@ -407,7 +377,7 @@
                     <li class="sidebar-menu-item {{ set_menu(['class-content*', 'homework*', 'ai-help-teacher*', 'skill-mastery-report*', 'exam-type*', 'marks-grade*', 'exam-assign*', 'marks-register*', 'examination-settings*', 'question-group*', 'question-bank*', 'online-exam*', 'online-exam-type*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-chalkboard-teacher"></i>
-                            <span class="on-half-expanded">Teacher Workspace</span>
+                            <span class="on-half-expanded">Teacher Zone</span>
                         </a>
                         <ul class="child-menu-list">
                             @if ((hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve')) && hasFeature('class_content'))
@@ -571,13 +541,15 @@
                     </li>
                 @endif
 
-                {{-- Admin Workspace: Attendance, Fees, Id Cards, Certificates,
-                     Language, Report and Accounts (which now also carries
-                     Bonus, formerly Finance > Outflow) - the school-admin
-                     side tasks, each keeping its own permission/feature gate
-                     as a sub-category, same pattern as Staff/Teacher Workspace. --}}
+                {{-- Admin Zone: Online Admission, Attendance, Fees, Id Cards,
+                     Certificates, Language, Report and Accounts (which now
+                     also carries Bonus, formerly Finance > Outflow) - the
+                     school-admin side tasks, each keeping its own
+                     permission/feature gate as a sub-category, same pattern
+                     as Staff/Teacher Zone. --}}
                 @if (
-                    ((hasPermission('attendance_read') || hasPermission('attendance_teacher_read')) && hasFeature('attendance'))
+                    (hasPermission('admission_read') && hasFeature('online_admission'))
+                    || ((hasPermission('attendance_read') || hasPermission('attendance_teacher_read')) && hasFeature('attendance'))
                     || ((hasPermission('fees_group_read') || hasPermission('fees_type_read') || hasPermission('fees_master_read') || hasPermission('fees_assign_read') || hasPermission('discount_setup') || hasPermission('fees_collect_read') || hasPermission('fees_payment_proof_review')) && hasFeature('fees'))
                     || ((hasPermission('id_card_read') || hasPermission('id_card_generate_read')) && hasFeature('id_card'))
                     || ((hasPermission('certificate_read') || hasPermission('certificate_generate_read')) && hasFeature('certificate'))
@@ -585,12 +557,37 @@
                     || ((hasPermission('report_marksheet_read') || hasPermission('report_merit_list_read') || hasPermission('report_progress_card_read') || hasPermission('report_due_fees_read') || hasPermission('report_fees_collection_read') || hasPermission('report_account_read') || hasPermission('class_routine_read') || hasPermission('exam_routine_read') || hasPermission('report_attendance_read')) && hasFeature('report'))
                     || ((hasPermission('account_head_read') || hasPermission('income_read') || hasPermission('expense_read')) && hasFeature('account'))
                     || hasPermission('portal_manage') || hasPermission('portal_growth_pay_read'))
-                    <li class="sidebar-menu-item {{ set_menu(['attendance*', 'fees*', 'idcard*', 'certificate*', 'languages*', 'report-*', 'account_head.index', 'account_head.create', 'account_head.edit', 'income*', 'expense*', 'portal/growth-pay*']) }}">
+                    <li class="sidebar-menu-item {{ set_menu(['online-admissions*', 'attendance*', 'fees*', 'idcard*', 'certificate*', 'languages*', 'report-*', 'account_head.index', 'account_head.create', 'account_head.edit', 'income*', 'expense*', 'portal/growth-pay*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-user-tie"></i>
-                            <span class="on-half-expanded">Admin Workspace</span>
+                            <span class="on-half-expanded">Admin Zone</span>
                         </a>
                         <ul class="child-menu-list">
+                            @if (hasPermission('admission_read') && hasFeature('online_admission'))
+                                <li class="sidebar-menu-item {{ set_menu(['online-admissions*']) }}">
+                                    <a class="has-arrow">{{ ___('settings.online_admission') }}</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('admission_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['online-admissions']) }}">
+                                                <a
+                                                    href="{{ route('online-admissions.index') }}">{{ ___('settings.online_admission') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('admission_setting_update'))
+                                            <li class="sidebar-menu-item {{ set_menu(['online-admissions.setting.fees']) }}">
+                                                <a
+                                                    href="{{ route('online-admissions.setting.fees') }}">{{ ___('common.admission_fees') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('admission_setting_update'))
+                                            <li class="sidebar-menu-item {{ set_menu(['online-admissions.setting.index']) }}">
+                                                <a
+                                                    href="{{ route('online-admissions.setting.index') }}">{{ ___('common.Setting') }}</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
+                            @endif
                             @if ((hasPermission('attendance_read') || hasPermission('attendance_teacher_read')) && hasFeature('attendance'))
                                 <li class="sidebar-menu-item {{ set_menu(['attendance*']) }}">
                                     <a class="has-arrow">{{ ___('settings.Attendance') }}</a>
@@ -831,7 +828,7 @@
                         </ul>
                     </li>
                 @endif
-                {{-- End Admin Workspace --}}
+                {{-- End Admin Zone --}}
 
                 @if(hasModule('StudyMaterial'))
                     @include('studymaterial::admin_sidebar_menu')
@@ -995,7 +992,7 @@
                 @endif
                 <!-- Library end -->
 
-                {{-- Accounts, Report, and Language moved into Admin Workspace - see above. --}}
+                {{-- Accounts, Report, and Language moved into Admin Zone - see above. --}}
 
                 <!-- Homework layout end -->
 
