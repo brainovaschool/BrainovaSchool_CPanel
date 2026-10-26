@@ -74,9 +74,12 @@ class SocialController extends Controller
     public function reels(Request $request)
     {
         $data['canManage']   = $this->canManageContent();
+        $data['canApprove']  = $this->canApproveReels();
+        $data['canAssign']   = $this->canAssignReels();
         $data['reels']       = $this->repo->reels($request->only(['status', 'category', 'format', 'series_name']));
         $data['settings']    = PortalSetting::current();
         $data['series']      = $this->repo->reelSeries();
+        $data['contentTeam'] = $this->repo->assignableStaff();
         $data['filters']     = $request->only(['status', 'category', 'format', 'series_name']);
         $data['title']       = 'Social Board — Reels';
         return view('portal.social.reels.index', compact('data'));
@@ -244,6 +247,21 @@ class SocialController extends Controller
         return redirect()->route('portal-social-reels.index')->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    /** Same gate as the single-reel review() - approve or discard a
+     *  whole batch of ticked reels at once from the list. */
+    public function bulkReviewReels(Request $request)
+    {
+        $this->requireContentAccess();
+        $request->validate([
+            'ids'    => 'required|array|min:1',
+            'ids.*'  => 'integer|exists:portal_reels,id',
+            'status' => 'required|in:accepted,rejected',
+        ]);
+
+        $result = $this->repo->bulkReviewReels($request->ids, $request->status, Auth::id());
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
     /** "Admin or coordinator" specifically (not just any content-team
      *  member) picks who's doing this reel/topic, or leaves it open as a
      *  paid task for anyone to pick up, plus the work deadline. */
@@ -259,6 +277,25 @@ class SocialController extends Controller
         ]);
 
         $result = $this->repo->assignReel((int) $id, $openPaid ? null : (int) $request->assigned_to, $openPaid, $request->deadline, Auth::id());
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    /** Same gate as the single-reel assign() - one staff member for a
+     *  whole batch of ticked reels at once; no open-paid option here,
+     *  that stays a per-reel decision. */
+    public function bulkAssignReels(Request $request)
+    {
+        if (!$this->canAssignReels()) {
+            abort(403, 'Only admin/coordinator can assign a reel/topic.');
+        }
+        $request->validate([
+            'ids'         => 'required|array|min:1',
+            'ids.*'       => 'integer|exists:portal_reels,id',
+            'assigned_to' => 'required|exists:staff,id',
+            'deadline'    => 'nullable|date',
+        ]);
+
+        $result = $this->repo->bulkAssignReels($request->ids, (int) $request->assigned_to, $request->deadline, Auth::id());
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

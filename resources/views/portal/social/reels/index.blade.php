@@ -3,6 +3,7 @@
     {{ $data['title'] }}
 @endsection
 @section('content')
+    @php($showBulk = $data['canApprove'] || $data['canAssign'])
     <div class="page-content">
 
         <div class="page-header">
@@ -51,25 +52,62 @@
             </form>
         </div>
 
+        @if ($showBulk)
+            <div class="col-12 p-0">
+                <div class="card ot-card bn-reels-filters mb-24 d-flex flex-row align-items-center gap-3 flex-wrap" style="padding:1rem 1.25rem" id="bulkActionsBar" hidden>
+                    <strong><span id="bulkSelectedCount">0</span> selected</strong>
+                    @if ($data['canApprove'])
+                        <form id="bulkApproveForm" action="{{ route('portal-social-reels.bulk-review') }}" method="post" class="d-inline">
+                            @csrf
+                            <input type="hidden" name="status" value="accepted">
+                            <button type="submit" class="btn btn-sm ot-btn-primary">Approve selected</button>
+                        </form>
+                        <form id="bulkDiscardForm" action="{{ route('portal-social-reels.bulk-review') }}" method="post" class="d-inline" onsubmit="return confirm('Discard all selected suggestions?');">
+                            @csrf
+                            <input type="hidden" name="status" value="rejected">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Discard selected</button>
+                        </form>
+                    @endif
+                    @if ($data['canAssign'])
+                        <form id="bulkAssignForm" action="{{ route('portal-social-reels.bulk-assign') }}" method="post" class="d-flex align-items-center gap-2">
+                            @csrf
+                            <select name="assigned_to" class="form-control ot-input" required style="min-width:160px">
+                                <option value="">Assign to…</option>
+                                @foreach ($data['contentTeam'] as $staff)
+                                    <option value="{{ $staff->id }}">{{ $staff->first_name }} {{ $staff->last_name }}</option>
+                                @endforeach
+                            </select>
+                            <input type="date" name="deadline" class="form-control ot-input" style="width:150px">
+                            <button type="submit" class="btn btn-sm ot-btn-primary">Assign selected</button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        @endif
+
         <div class="table-content table-basic">
             <div class="card">
                 <div class="card-body">
                     <div class="table-responsive">
                     <table class="ot-basic-table ot-table-bg bn-reels-table">
                         <colgroup>
-                            <col style="width:7%">
+                            @if ($showBulk)<col style="width:4%">@endif
+                            <col style="width:{{ $showBulk ? 7 : 8 }}%">
                             <col style="width:6%">
-                            <col style="width:14%">
-                            <col style="width:15%">
+                            <col style="width:{{ $showBulk ? 13 : 14 }}%">
+                            <col style="width:{{ $showBulk ? 14 : 15 }}%">
                             <col style="width:9%">
                             <col style="width:11%">
                             <col style="width:8%">
                             <col style="width:7%">
                             <col style="width:7%">
-                            <col style="width:16%">
+                            <col style="width:{{ $showBulk ? 14 : 15 }}%">
                         </colgroup>
                         <thead class="thead">
                             <tr>
+                                @if ($showBulk)
+                                    <th><input type="checkbox" id="bnSelectAll"></th>
+                                @endif
                                 <th>Series</th>
                                 <th>Code</th>
                                 <th>Topic</th>
@@ -86,6 +124,9 @@
                             @forelse ($data['reels'] as $reel)
                                 @php($staff = optional($reel->suggestedBy)->staff)
                                 <tr>
+                                    @if ($showBulk)
+                                        <td><input type="checkbox" class="bn-reel-check" value="{{ $reel->id }}"></td>
+                                    @endif
                                     <td>
                                         @if ($reel->series_name)
                                             <span class="bn-series-tag">{{ $reel->series_name }}</span>
@@ -155,6 +196,70 @@
         .bn-reel-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem; }
         .bn-reels-table { table-layout: fixed; width: 100%; }
         .bn-reels-table td { vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
+        /* Bootstrap's d-flex utility sets display:flex with !important,
+           which would otherwise beat the plain [hidden] rule and leave
+           this bar visible even while "hidden" is set. */
+        #bulkActionsBar[hidden] { display: none !important; }
     </style>
     @endpush
+
+    @if ($showBulk)
+        @push('script')
+        <script>
+            (function () {
+                var selectAll = document.getElementById('bnSelectAll');
+                var bar = document.getElementById('bulkActionsBar');
+                var countEl = document.getElementById('bulkSelectedCount');
+
+                function checks() {
+                    return document.querySelectorAll('.bn-reel-check');
+                }
+
+                function updateBar() {
+                    var checked = document.querySelectorAll('.bn-reel-check:checked');
+                    if (countEl) { countEl.textContent = checked.length; }
+                    if (bar) { bar.hidden = checked.length === 0; }
+                    if (selectAll) {
+                        selectAll.checked = checked.length > 0 && checked.length === checks().length;
+                    }
+                }
+
+                document.addEventListener('change', function (e) {
+                    if (e.target === selectAll) {
+                        Array.prototype.forEach.call(checks(), function (cb) { cb.checked = selectAll.checked; });
+                        updateBar();
+                        return;
+                    }
+                    if (e.target.classList.contains('bn-reel-check')) {
+                        updateBar();
+                    }
+                });
+
+                // Each bulk form starts with no ids[] of its own - the
+                // checked rows are only known at submit time, so they're
+                // added as hidden inputs right before the form actually posts.
+                ['bulkApproveForm', 'bulkDiscardForm', 'bulkAssignForm'].forEach(function (formId) {
+                    var form = document.getElementById(formId);
+                    if (!form) return;
+                    form.addEventListener('submit', function (e) {
+                        var checked = document.querySelectorAll('.bn-reel-check:checked');
+                        if (!checked.length) {
+                            e.preventDefault();
+                            alert('Select at least one reel first.');
+                            return;
+                        }
+                        form.querySelectorAll('input[name="ids[]"]').forEach(function (i) { i.remove(); });
+                        Array.prototype.forEach.call(checked, function (cb) {
+                            var input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'ids[]';
+                            input.value = cb.value;
+                            form.appendChild(input);
+                        });
+                    });
+                });
+            })();
+        </script>
+        @endpush
+    @endif
 @endsection

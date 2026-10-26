@@ -358,6 +358,18 @@ class SocialRepository
         return $this->responseWithSuccess('Assigned.', []);
     }
 
+    /** Bulk version of assignReel() - one staff member (never open-paid)
+     *  and one deadline applied to a whole batch of ticked ids, each
+     *  still going through the same task-sync/notification as normal. */
+    public function bulkAssignReels(array $ids, int $staffId, ?string $deadline, int $assignedByUserId): array
+    {
+        foreach ($ids as $id) {
+            $this->assignReel((int) $id, $staffId, false, $deadline, $assignedByUserId);
+        }
+
+        return $this->responseWithSuccess(count($ids) . ' reel(s) assigned.', []);
+    }
+
     /** Keeps one Team Portal task in step with a reel's assignment -
      *  created the first time it's assigned, updated (never duplicated)
      *  on every re-assign - so "as soon as the task is assigned the
@@ -522,6 +534,18 @@ class SocialRepository
         $reel->save();
 
         return $this->responseWithSuccess('Updated.', []);
+    }
+
+    /** Bulk version of reviewReel() - same per-reel behaviour (status,
+     *  reviewed_by/at, and the model's own code-on-approval hook), just
+     *  looped over a batch of ticked ids. */
+    public function bulkReviewReels(array $ids, string $status, int $reviewerUserId): array
+    {
+        foreach ($ids as $id) {
+            $this->reviewReel((int) $id, $status, null, $reviewerUserId);
+        }
+
+        return $this->responseWithSuccess(count($ids) . ' reel(s) ' . ($status === PortalReel::REJECTED ? 'discarded.' : 'approved.'), []);
     }
 
     public function destroyReel(int $id): array
