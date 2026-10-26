@@ -5,6 +5,8 @@
 @section('content')
     @php($monthLabel = \Carbon\Carbon::parse($data['month'] . '-01')->format('F Y'))
     @php($formats = $data['settings']->reel_formats ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_FORMATS)
+    @php($calPillars = $data['settings']->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES)
+    @php($seriesPillars = $data['seriesList']->mapWithKeys(fn ($s) => [$s->name => $s->defaults['category'] ?? '']))
     <div class="page-content">
 
         <div class="page-header">
@@ -142,8 +144,8 @@
                                 <table class="ot-basic-table ot-table-bg bn-cal-table" id="productionTable">
                                     <thead class="thead">
                                         <tr>
-                                            <th>Date</th><th>Day</th><th>Series</th><th>Topic</th><th>Code</th>
-                                            <th>Format</th><th>Assigned to</th><th>Drive link</th>
+                                            <th>Date</th><th>Day</th><th>Pillar</th><th>Series</th><th>Topic</th><th>Code</th>
+                                            <th>Format</th><th>Assigned to</th><th>Status</th><th>Drive link</th>
                                             @if ($data['canManage'])<th></th>@endif
                                         </tr>
                                     </thead>
@@ -158,14 +160,22 @@
                                                     @php($reel = $slot['reel'] ?? null)
                                                     <tr class="bn-prod-row" data-date="{{ $dateKey }}">
                                                         @if ($i === 0)
-                                                            <td class="bn-prod-date-cell" rowspan="{{ $rowCount }}">{{ $day['date']->format('d M Y') }}</td>
-                                                            <td class="bn-prod-day-cell" rowspan="{{ $rowCount }}">{{ $day['date']->format('l') }}</td>
+                                                            <td class="bn-prod-date-cell" rowspan="{{ $rowCount }}">{{ $day['date']->format('d') }}</td>
+                                                            <td class="bn-prod-day-cell" rowspan="{{ $rowCount }}">{{ $day['date']->format('D') }}</td>
                                                         @endif
+                                                        <td>
+                                                            <select class="form-control ot-input bn-cal-pillar">
+                                                                <option value="">—</option>
+                                                                @foreach ($calPillars as $p)
+                                                                    <option value="{{ $p }}">{{ $p }}</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </td>
                                                         <td>
                                                             <select name="assignments[{{ $dateKey }}][series][]" class="form-control ot-input bn-cal-series">
                                                                 <option value="">—</option>
                                                                 @foreach ($data['series'] as $s)
-                                                                    <option value="{{ $s }}" {{ ($slot['series_name'] ?? null) === $s ? 'selected' : '' }}>{{ $s }}</option>
+                                                                    <option value="{{ $s }}" data-pillar="{{ $seriesPillars[$s] ?? '' }}" {{ ($slot['series_name'] ?? null) === $s ? 'selected' : '' }}>{{ $s }}</option>
                                                                 @endforeach
                                                             </select>
                                                         </td>
@@ -180,6 +190,8 @@
                                                                             data-assignee="{{ optional($r->assignee)->first_name ? trim($r->assignee->first_name . ' ' . $r->assignee->last_name) : '—' }}"
                                                                             data-drive-link="{{ $r->drive_link }}"
                                                                             data-scheduled="{{ $r->deadline ? '1' : '0' }}"
+                                                                            data-status="{{ $r->statusLabel() }}"
+                                                                            data-status-class="{{ $r->statusBadgeClass() }}"
                                                                             {{ optional($reel)->id === $r->id ? 'selected' : '' }}>{{ $r->title }}</option>
                                                                 @endforeach
                                                             </select>
@@ -187,6 +199,13 @@
                                                         <td class="bn-cal-code">{{ optional($reel)->code ?: '—' }}</td>
                                                         <td class="bn-cal-format">{{ optional($reel)->format ?: '—' }}</td>
                                                         <td class="bn-cal-assignee">{{ optional($reel)->assignee?->first_name ? trim($reel->assignee->first_name . ' ' . $reel->assignee->last_name) : '—' }}</td>
+                                                        <td class="bn-cal-status">
+                                                            @if ($reel)
+                                                                <span class="{{ $reel->statusBadgeClass() }}">{{ $reel->statusLabel() }}</span>
+                                                            @else
+                                                                —
+                                                            @endif
+                                                        </td>
                                                         <td class="bn-cal-drive-link">
                                                             @if (optional($reel)->drive_link)
                                                                 <a href="{{ $reel->drive_link }}" target="_blank">{{ $reel->drive_link }}</a>
@@ -206,14 +225,22 @@
                                                     @php($reel = $slot['reel'] ?? null)
                                                     <tr>
                                                         @if ($i === 0)
-                                                            <td rowspan="{{ $existing->count() }}">{{ $day['date']->format('d M Y') }}</td>
-                                                            <td rowspan="{{ $existing->count() }}">{{ $day['date']->format('l') }}</td>
+                                                            <td rowspan="{{ $existing->count() }}">{{ $day['date']->format('d') }}</td>
+                                                            <td rowspan="{{ $existing->count() }}">{{ $day['date']->format('D') }}</td>
                                                         @endif
+                                                        <td>{{ $slot['series_name'] ? ($seriesPillars[$slot['series_name']] ?? '—') : '—' }}</td>
                                                         <td>{{ $slot['series_name'] ?: '—' }}</td>
                                                         <td>{{ optional($reel)->title ?: '—' }}</td>
                                                         <td>{{ optional($reel)->code ?: '—' }}</td>
                                                         <td>{{ optional($reel)->format ?: '—' }}</td>
                                                         <td>{{ optional($reel)->assignee?->first_name ? trim($reel->assignee->first_name . ' ' . $reel->assignee->last_name) : '—' }}</td>
+                                                        <td>
+                                                            @if ($reel)
+                                                                <span class="{{ $reel->statusBadgeClass() }}">{{ $reel->statusLabel() }}</span>
+                                                            @else
+                                                                —
+                                                            @endif
+                                                        </td>
                                                         <td>
                                                             @if (optional($reel)->drive_link)
                                                                 <a href="{{ $reel->drive_link }}" target="_blank">{{ $reel->drive_link }}</a>
@@ -224,9 +251,9 @@
                                                     </tr>
                                                 @empty
                                                     <tr>
-                                                        <td>{{ $day['date']->format('d M Y') }}</td>
-                                                        <td>{{ $day['date']->format('l') }}</td>
-                                                        <td colspan="6" class="text-center gray-color">—</td>
+                                                        <td>{{ $day['date']->format('d') }}</td>
+                                                        <td>{{ $day['date']->format('D') }}</td>
+                                                        <td colspan="8" class="text-center gray-color">—</td>
                                                     </tr>
                                                 @endforelse
                                             @endif
@@ -262,8 +289,8 @@
                                         @foreach ($data['calendar']['days'] as $day)
                                             @php($reel = $day['reel'])
                                             <tr>
-                                                <td>{{ $day['date']->format('d M Y') }}</td>
-                                                <td>{{ $day['date']->format('l') }}</td>
+                                                <td>{{ $day['date']->format('d') }}</td>
+                                                <td>{{ $day['date']->format('D') }}</td>
                                                 <td>
                                                     @if ($data['canManage'])
                                                         <select class="form-control ot-input bn-cal-series">
@@ -336,9 +363,24 @@
             // off the selected <option>'s data-* attributes, never typed in.
             // Shared by both the Production Plan and Upload Plan tables.
             function syncRow(tr) {
+                var pillarSelect = tr.querySelector('.bn-cal-pillar');
                 var seriesSelect = tr.querySelector('.bn-cal-series');
                 var contentSelect = tr.querySelector('.bn-cal-content');
                 if (!contentSelect) return;
+
+                // Production Plan only (no Pillar column on Upload Plan):
+                // picking a Pillar narrows the Series options to that
+                // pillar's own series, same hide/deselect pattern as
+                // Series -> Topic below.
+                if (pillarSelect && seriesSelect) {
+                    var pillar = pillarSelect.value;
+                    Array.prototype.forEach.call(seriesSelect.options, function (o) {
+                        if (!o.value) return;
+                        var matches = !pillar || o.getAttribute('data-pillar') === pillar;
+                        o.hidden = !matches;
+                        if (!matches && o.selected) { o.selected = false; seriesSelect.value = ''; }
+                    });
+                }
 
                 if (seriesSelect) {
                     var series = seriesSelect.value;
@@ -364,6 +406,12 @@
                 if (codeCell) { codeCell.textContent = hasSelection ? opt.getAttribute('data-code') : '—'; }
                 tr.querySelector('.bn-cal-format').textContent = hasSelection ? opt.getAttribute('data-format') : '—';
                 tr.querySelector('.bn-cal-assignee').textContent = hasSelection ? opt.getAttribute('data-assignee') : '—';
+                var statusCell = tr.querySelector('.bn-cal-status');
+                if (statusCell) {
+                    statusCell.innerHTML = hasSelection
+                        ? '<span class="' + opt.getAttribute('data-status-class') + '">' + opt.getAttribute('data-status') + '</span>'
+                        : '—';
+                }
                 var driveCell = tr.querySelector('.bn-cal-drive-link');
                 var link = hasSelection ? opt.getAttribute('data-drive-link') : '';
                 driveCell.innerHTML = link ? '<a href="' + link + '" target="_blank">' + link + '</a>' : '—';
@@ -372,11 +420,11 @@
             document.querySelectorAll('.bn-cal-table tbody tr').forEach(function (tr) {
                 // Rows with no series dropdown have nothing to sync -
                 // they're just the read-only view for non-managers.
-                if (tr.querySelector('.bn-cal-series') || tr.querySelector('.bn-cal-content')) { syncRow(tr); }
+                if (tr.querySelector('.bn-cal-pillar') || tr.querySelector('.bn-cal-series') || tr.querySelector('.bn-cal-content')) { syncRow(tr); }
             });
 
             document.addEventListener('change', function (e) {
-                if (!e.target.classList.contains('bn-cal-series') && !e.target.classList.contains('bn-cal-content')) return;
+                if (!e.target.classList.contains('bn-cal-pillar') && !e.target.classList.contains('bn-cal-series') && !e.target.classList.contains('bn-cal-content')) return;
                 syncRow(e.target.closest('tr'));
             });
 
@@ -407,6 +455,8 @@
                     if (codeCell) { codeCell.textContent = '—'; }
                     clone.querySelector('.bn-cal-format').textContent = '—';
                     clone.querySelector('.bn-cal-assignee').textContent = '—';
+                    var statusCell = clone.querySelector('.bn-cal-status');
+                    if (statusCell) { statusCell.textContent = '—'; }
                     clone.querySelector('.bn-cal-drive-link').innerHTML = '—';
 
                     var oldBtnCell = row.querySelector('.bn-prod-add');
