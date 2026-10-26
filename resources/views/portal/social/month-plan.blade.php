@@ -67,7 +67,7 @@
                                 @forelse ($data['plan'] as $row)
                                     <tr>
                                         <td>
-                                            <select name="series_name[]" class="nice-select niceSelect bordered_style wide">
+                                            <select name="series_name[]" class="form-control ot-input">
                                                 <option value="">—</option>
                                                 @foreach ($data['seriesList'] as $s)
                                                     <option value="{{ $s->name }}" {{ $row['series'] === $s->name ? 'selected' : '' }}>{{ $s->name }}</option>
@@ -75,7 +75,7 @@
                                             </select>
                                         </td>
                                         <td>
-                                            <select name="format[]" class="nice-select niceSelect bordered_style wide">
+                                            <select name="format[]" class="form-control ot-input">
                                                 <option value="">—</option>
                                                 @foreach ($formats as $f)
                                                     <option value="{{ $f }}" {{ $row['format'] === $f ? 'selected' : '' }}>{{ $f }}</option>
@@ -88,7 +88,7 @@
                                 @endforelse
                                 <tr>
                                     <td>
-                                        <select name="series_name[]" class="nice-select niceSelect bordered_style wide">
+                                        <select name="series_name[]" class="form-control ot-input">
                                             <option value="">—</option>
                                             @foreach ($data['seriesList'] as $s)
                                                 <option value="{{ $s->name }}">{{ $s->name }}</option>
@@ -96,7 +96,7 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <select name="format[]" class="nice-select niceSelect bordered_style wide">
+                                        <select name="format[]" class="form-control ot-input">
                                             <option value="">—</option>
                                             @foreach ($formats as $f)
                                                 <option value="{{ $f }}">{{ $f }}</option>
@@ -378,6 +378,15 @@
                     var date = btn.getAttribute('data-date');
                     var row = btn.closest('tr');
                     var clone = row.cloneNode(true);
+
+                    // The day's FIRST row is the only one that ever carries
+                    // the rowspan'd Date/Day cells - cloning THAT row (a day
+                    // with only one reel so far) would otherwise duplicate
+                    // them into the new row and shift every column after.
+                    var cloneDateCell = clone.querySelector('.bn-prod-date-cell');
+                    if (cloneDateCell) { cloneDateCell.remove(); }
+                    var cloneDayCell = clone.querySelector('.bn-prod-day-cell');
+                    if (cloneDayCell) { cloneDayCell.remove(); }
 
                     clone.querySelectorAll('select').forEach(function (s) {
                         s.selectedIndex = 0;
