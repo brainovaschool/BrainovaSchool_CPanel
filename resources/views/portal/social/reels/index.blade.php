@@ -56,6 +56,17 @@
                 <div class="card-body">
                     <div class="table-responsive">
                     <table class="ot-basic-table ot-table-bg bn-reels-table">
+                        <colgroup>
+                            <col style="width:8%">
+                            <col style="width:15%">
+                            <col style="width:17%">
+                            <col style="width:10%">
+                            <col style="width:12%">
+                            <col style="width:8%">
+                            <col style="width:8%">
+                            <col style="width:8%">
+                            <col style="width:14%">
+                        </colgroup>
                         <thead class="thead">
                             <tr>
                                 <th>Series</th>
@@ -131,14 +142,15 @@
 
     @push('css')
     <style>
-        .bn-reel-title { font-weight: 600; display: block; }
-        .bn-series-tag { font-family: "Lexend", sans-serif; font-weight: 600; font-size: 11px; border-radius: 50px; padding: 3px 10px; background: rgba(var(--bn-turquoise-rgb), .14); color: var(--bn-turquoise-text, #007585); white-space: nowrap; }
+        .bn-reel-title { font-weight: 600; display: block; word-break: break-word; }
+        .bn-series-tag { font-family: "Lexend", sans-serif; font-weight: 600; font-size: 11px; border-radius: 14px; padding: 3px 10px; background: rgba(var(--bn-turquoise-rgb), .14); color: var(--bn-turquoise-text, #007585); white-space: normal; display: inline-block; line-height: 1.3; }
         .dark-theme .bn-series-tag { background: rgba(0, 151, 178, .22); color: var(--bn-turquoise-light); }
-        .bn-reel-hook { color: var(--bn-muted, #8a8fa3); font-size: .85rem; font-style: italic; }
+        .bn-reel-hook { color: var(--bn-muted, #8a8fa3); font-size: .85rem; font-style: italic; word-break: break-word; }
         .bn-reel-sub { color: var(--bn-muted, #8a8fa3); font-size: .78rem; margin-top: .15rem; }
         .bn-progress-dot { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: .72rem; font-weight: 700; margin-right: .35rem; }
-        .bn-reel-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem; min-width: 220px; }
-        .bn-reels-table td { vertical-align: top; }
+        .bn-reel-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem; }
+        .bn-reels-table { table-layout: fixed; width: 100%; }
+        .bn-reels-table td { vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
     </style>
     @endpush
 @endsection
