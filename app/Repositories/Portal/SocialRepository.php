@@ -672,10 +672,10 @@ class SocialRepository
         for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
             $dateKey = $d->format('Y-m-d');
             $slots = $reelsByDate->get($dateKey, collect())
-                ->map(fn (PortalReel $r) => ['reel' => $r, 'series_name' => $r->series_name])
+                ->map(fn (PortalReel $r) => ['reel' => $r, 'series_name' => $r->series_name, 'pillar' => $r->category])
                 ->concat(
                     $placeholdersByDate->get($dateKey, collect())
-                        ->map(fn (PortalProductionPlaceholder $p) => ['reel' => null, 'series_name' => $p->series_name])
+                        ->map(fn (PortalProductionPlaceholder $p) => ['reel' => null, 'series_name' => $p->series_name ?: null, 'pillar' => $p->pillar])
                 )
                 ->values();
             $days[] = ['date' => $d->copy(), 'slots' => $slots];
@@ -684,20 +684,23 @@ class SocialRepository
         return ['days' => $days, 'reels' => $reels];
     }
 
-    /** assignments[date][topic][] = reelId (or '' for a blank slot) and
-     *  assignments[date][series][] = the series picked for that SAME
-     *  position - a topic picked wins (sets that reel's deadline); a
-     *  series with no topic yet becomes a placeholder instead. Each day's
-     *  placeholders are replaced wholesale from what's submitted, since
-     *  the whole day's slots are always resubmitted together. Unlike the
-     *  Upload Plan this never touches status or requires video approval,
-     *  since it's only "which day is this due". */
+    /** assignments[date][topic][] = reelId (or '' for a blank slot),
+     *  assignments[date][series][] and [pillar][] = whatever's picked for
+     *  that SAME position - a topic picked wins (sets that reel's
+     *  deadline); with no topic yet, either a series or just a pillar
+     *  alone becomes a placeholder, so a day can be reserved before even
+     *  the series is decided. Each day's placeholders are replaced
+     *  wholesale from what's submitted, since the whole day's slots are
+     *  always resubmitted together. Unlike the Upload Plan this never
+     *  touches status or requires video approval, since it's only "which
+     *  day is this due". */
     public function updateProductionCalendar($request): array
     {
         $assignments = (array) $request->input('assignments', []);
         foreach ($assignments as $date => $row) {
             $topics  = (array) ($row['topic'] ?? []);
             $series  = (array) ($row['series'] ?? []);
+            $pillars = (array) ($row['pillar'] ?? []);
 
             PortalProductionPlaceholder::where('date', $date)->delete();
 
@@ -712,8 +715,13 @@ class SocialRepository
                 }
 
                 $seriesName = trim($series[$i] ?? '');
-                if ($seriesName !== '') {
-                    PortalProductionPlaceholder::create(['date' => $date, 'series_name' => $seriesName]);
+                $pillar     = trim($pillars[$i] ?? '');
+                if ($seriesName !== '' || $pillar !== '') {
+                    PortalProductionPlaceholder::create([
+                        'date'        => $date,
+                        'series_name' => $seriesName,
+                        'pillar'      => $pillar ?: null,
+                    ]);
                 }
             }
         }

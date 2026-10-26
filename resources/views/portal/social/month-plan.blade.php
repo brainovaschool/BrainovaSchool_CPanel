@@ -164,11 +164,10 @@
                                                             <td class="bn-prod-day-cell" rowspan="{{ $rowCount }}">{{ $day['date']->format('D') }}</td>
                                                         @endif
                                                         <td>
-                                                            @php($slotPillar = $seriesPillars[$slot['series_name'] ?? ''] ?? '')
-                                                            <select class="form-control ot-input bn-cal-pillar">
+                                                            <select name="assignments[{{ $dateKey }}][pillar][]" class="form-control ot-input bn-cal-pillar">
                                                                 <option value="">—</option>
                                                                 @foreach ($calPillars as $p)
-                                                                    <option value="{{ $p }}" {{ $slotPillar === $p ? 'selected' : '' }}>{{ $p }}</option>
+                                                                    <option value="{{ $p }}" {{ ($slot['pillar'] ?? '') === $p ? 'selected' : '' }}>{{ $p }}</option>
                                                                 @endforeach
                                                             </select>
                                                         </td>
@@ -229,7 +228,7 @@
                                                             <td rowspan="{{ $existing->count() }}">{{ $day['date']->format('d') }}</td>
                                                             <td rowspan="{{ $existing->count() }}">{{ $day['date']->format('D') }}</td>
                                                         @endif
-                                                        <td>{{ $slot['series_name'] ? ($seriesPillars[$slot['series_name']] ?? '—') : '—' }}</td>
+                                                        <td>{{ $slot['pillar'] ?: '—' }}</td>
                                                         <td>{{ $slot['series_name'] ?: '—' }}</td>
                                                         <td>{{ optional($reel)->title ?: '—' }}</td>
                                                         <td>{{ optional($reel)->code ?: '—' }}</td>
