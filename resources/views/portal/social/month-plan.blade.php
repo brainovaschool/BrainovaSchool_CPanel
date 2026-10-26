@@ -7,6 +7,7 @@
     @php($formats = $data['settings']->reel_formats ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_FORMATS)
     @php($calPillars = $data['settings']->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES)
     @php($seriesPillars = $data['seriesList']->mapWithKeys(fn ($s) => [$s->name => $s->defaults['category'] ?? '']))
+    @php($seriesColors = $data['seriesList']->pluck('color', 'name'))
     <div class="page-content">
 
         <div class="page-header">
@@ -175,7 +176,7 @@
                                                             <select name="assignments[{{ $dateKey }}][series][]" class="form-control ot-input bn-cal-series">
                                                                 <option value="">—</option>
                                                                 @foreach ($data['series'] as $s)
-                                                                    <option value="{{ $s }}" data-pillar="{{ $seriesPillars[$s] ?? '' }}" {{ ($slot['series_name'] ?? null) === $s ? 'selected' : '' }}>{{ $s }}</option>
+                                                                    <option value="{{ $s }}" data-pillar="{{ $seriesPillars[$s] ?? '' }}" {{ ($slot['series_name'] ?? null) === $s ? 'selected' : '' }} @if ($seriesColors[$s] ?? null) style="color:{{ $seriesColors[$s] }}" @endif>{{ $s }}</option>
                                                                 @endforeach
                                                             </select>
                                                         </td>
@@ -229,7 +230,13 @@
                                                             <td rowspan="{{ $existing->count() }}">{{ $day['date']->format('D') }}</td>
                                                         @endif
                                                         <td>{{ $slot['pillar'] ?: '—' }}</td>
-                                                        <td>{{ $slot['series_name'] ?: '—' }}</td>
+                                                        <td>
+                                                            @if ($slot['series_name'])
+                                                                <span @if ($seriesColors[$slot['series_name']] ?? null) style="color:{{ $seriesColors[$slot['series_name']] }};font-weight:600" @endif>{{ $slot['series_name'] }}</span>
+                                                            @else
+                                                                —
+                                                            @endif
+                                                        </td>
                                                         <td>{{ optional($reel)->title ?: '—' }}</td>
                                                         <td>{{ optional($reel)->code ?: '—' }}</td>
                                                         <td>{{ optional($reel)->format ?: '—' }}</td>
@@ -296,11 +303,13 @@
                                                         <select class="form-control ot-input bn-cal-series">
                                                             <option value="">—</option>
                                                             @foreach ($data['series'] as $s)
-                                                                <option value="{{ $s }}" {{ optional($reel)->series_name === $s ? 'selected' : '' }}>{{ $s }}</option>
+                                                                <option value="{{ $s }}" {{ optional($reel)->series_name === $s ? 'selected' : '' }} @if ($seriesColors[$s] ?? null) style="color:{{ $seriesColors[$s] }}" @endif>{{ $s }}</option>
                                                             @endforeach
                                                         </select>
+                                                    @elseif (optional($reel)->series_name)
+                                                        <span @if ($seriesColors[$reel->series_name] ?? null) style="color:{{ $seriesColors[$reel->series_name] }};font-weight:600" @endif>{{ $reel->series_name }}</span>
                                                     @else
-                                                        {{ optional($reel)->series_name ?: '—' }}
+                                                        —
                                                     @endif
                                                 </td>
                                                 <td>

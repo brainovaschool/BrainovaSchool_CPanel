@@ -48,7 +48,13 @@
                             <div class="col-md-6"><strong>Code:</strong> {{ $reel->code ?: '—' }}</div>
                             <div class="col-md-6"><strong>Format:</strong> {{ $reel->format }}</div>
                             <div class="col-md-6"><strong>Pillar:</strong> {{ $reel->category ?: '—' }}</div>
-                            <div class="col-md-6"><strong>Series:</strong> {{ $reel->series_name ?: '—' }}</div>
+                            <div class="col-md-6"><strong>Series:</strong>
+                                @if ($reel->series_name)
+                                    <span @if (optional($reel->seriesModel)->color) style="color:{{ $reel->seriesModel->color }};font-weight:600" @endif>{{ $reel->series_name }}</span>
+                                @else
+                                    —
+                                @endif
+                            </div>
                             <div class="col-md-6"><strong>Suggested by:</strong> {{ optional($reel->suggestedBy)->name }}</div>
                             <div class="col-md-6">
                                 <strong>Assigned to:</strong>

@@ -65,6 +65,15 @@ class PortalReel extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /** series_name is a plain string copy, not a foreign key, but
+     *  PortalReelSeries.name is unique - this matches against it so a
+     *  loaded reel can still reach its series' own colour/code without a
+     *  separate lookup everywhere series_name is displayed. */
+    public function seriesModel()
+    {
+        return $this->belongsTo(PortalReelSeries::class, 'series_name', 'name');
+    }
+
     public function reviewedBy()
     {
         return $this->belongsTo(User::class, 'reviewed_by');

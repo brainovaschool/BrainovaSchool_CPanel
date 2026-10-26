@@ -37,7 +37,7 @@ class SocialRepository
 
     public function reels(array $filters)
     {
-        return PortalReel::with(['suggestedBy.staff.designation', 'creator', 'assignee'])
+        return PortalReel::with(['suggestedBy.staff.designation', 'creator', 'assignee', 'seriesModel'])
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
             ->when($filters['format'] ?? null, fn ($q, $v) => $q->where('format', $v))
@@ -48,7 +48,7 @@ class SocialRepository
 
     public function showReel(int $id): ?PortalReel
     {
-        return PortalReel::with(['suggestedBy', 'creator', 'reviewedBy', 'assignee', 'promptUpload', 'thumbUpload'])->find($id);
+        return PortalReel::with(['suggestedBy', 'creator', 'reviewedBy', 'assignee', 'promptUpload', 'thumbUpload', 'seriesModel'])->find($id);
     }
 
     public function storeReel($request, int $userId): array
@@ -215,6 +215,7 @@ class SocialRepository
             }
             $series->name      = $name;
             $series->code      = trim($data['code'] ?? '') ?: null;
+            $series->color     = trim($data['color'] ?? '') ?: null;
             $series->defaults  = $this->buildSeriesDefaults($data, $request, "series.{$id}.custom_fields", $series->defaults ?: []);
             $series->save();
         }
@@ -229,6 +230,7 @@ class SocialRepository
             PortalReelSeries::create([
                 'name'       => $name,
                 'code'       => trim($data['code'] ?? '') ?: null,
+                'color'      => trim($data['color'] ?? '') ?: null,
                 'defaults'   => $this->buildSeriesDefaults($data, $request, "new_series.{$index}.custom_fields", []),
                 'sort_order' => $nextOrder++,
             ]);

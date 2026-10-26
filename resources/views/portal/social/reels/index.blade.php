@@ -129,7 +129,8 @@
                                     @endif
                                     <td>
                                         @if ($reel->series_name)
-                                            <span class="bn-series-tag">{{ $reel->series_name }}</span>
+                                            @php($seriesColor = optional($reel->seriesModel)->color)
+                                            <span class="bn-series-tag" @if ($seriesColor) style="background:{{ $seriesColor }}22;color:{{ $seriesColor }}" @endif>{{ $reel->series_name }}</span>
                                         @else
                                             —
                                         @endif

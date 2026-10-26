@@ -15,6 +15,7 @@
             @foreach ($seriesList as $s)
                 <option value="{{ $s->name }}"
                         data-defaults="{{ json_encode($s->defaults ?: []) }}"
+                        data-color="{{ $s->color }}"
                         {{ old('series_name', $reel->series_name ?? '') === $s->name ? 'selected' : '' }}>{{ $s->name }}</option>
             @endforeach
         </select>
@@ -150,6 +151,24 @@
             if (el.classList.contains('niceSelect') && window.jQuery) { jQuery(el).niceSelect('update'); }
         }
 
+        // nice-select builds its own <li data-value="..."> dropdown and
+        // never copies an <option>'s other attributes into it, so each
+        // series' colour (carried as data-color on the real <option>) has
+        // to be re-applied to nice-select's own rendered list and current-
+        // value display by matching on that shared data-value.
+        function colorizeSeriesSelect() {
+            if (!window.jQuery) return;
+            var $dropdown = jQuery(seriesSelect).next('.nice-select');
+            if (!$dropdown.length) return;
+            $dropdown.find('.option').each(function () {
+                var opt = seriesSelect.querySelector('option[value="' + jQuery(this).attr('data-value').replace(/"/g, '\\"') + '"]');
+                var color = opt ? opt.getAttribute('data-color') : null;
+                jQuery(this).css('color', color || '');
+            });
+            var selected = seriesSelect.options[seriesSelect.selectedIndex];
+            $dropdown.find('.current').css('color', (selected && selected.getAttribute('data-color')) || '');
+        }
+
         // Each <option> carries the whole series' defaults as JSON -
         // {category, format, custom_fields: {field_key: value}} - so
         // picking a series fills in everything it has a default for,
@@ -178,9 +197,11 @@
         // elsewhere in this app for the Leave Request role toggle).
         if (window.jQuery) {
             jQuery(seriesSelect).on('change', applySeriesDefaults);
+            jQuery(seriesSelect).on('change', colorizeSeriesSelect);
         } else {
             seriesSelect.addEventListener('change', applySeriesDefaults);
         }
+        colorizeSeriesSelect();
     })();
 
     // main.js hides every input[type=file] on every page - clicking the

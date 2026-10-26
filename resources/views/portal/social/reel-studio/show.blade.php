@@ -29,7 +29,13 @@
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-4"><strong>Code:</strong> {{ $linkedReel->code ?: '—' }}</div>
-                        <div class="col-md-4"><strong>Series:</strong> {{ $linkedReel->series_name ?: '—' }}</div>
+                        <div class="col-md-4"><strong>Series:</strong>
+                            @if ($linkedReel->series_name)
+                                <span @if (optional($linkedReel->seriesModel)->color) style="color:{{ $linkedReel->seriesModel->color }};font-weight:600" @endif>{{ $linkedReel->series_name }}</span>
+                            @else
+                                —
+                            @endif
+                        </div>
                         <div class="col-md-4"><strong>Pillar:</strong> {{ $linkedReel->category ?: '—' }}</div>
                         <div class="col-md-4"><strong>Deadline:</strong> {{ $linkedReel->deadline?->format('d M Y') ?: '—' }}</div>
                         <div class="col-md-4"><strong>Suggested by:</strong> {{ optional($linkedReel->suggestedBy)->name ?: '—' }}</div>
