@@ -179,6 +179,7 @@
                                                                             data-format="{{ $r->format }}"
                                                                             data-assignee="{{ optional($r->assignee)->first_name ? trim($r->assignee->first_name . ' ' . $r->assignee->last_name) : '—' }}"
                                                                             data-drive-link="{{ $r->drive_link }}"
+                                                                            data-scheduled="{{ $r->deadline ? '1' : '0' }}"
                                                                             {{ optional($reel)->id === $r->id ? 'selected' : '' }}>{{ $r->title }}</option>
                                                                 @endforeach
                                                             </select>
@@ -341,9 +342,17 @@
 
                 if (seriesSelect) {
                     var series = seriesSelect.value;
+                    var currentValue = contentSelect.value;
                     Array.prototype.forEach.call(contentSelect.options, function (o) {
                         if (!o.value) return;
-                        var matches = !series || o.getAttribute('data-series') === series;
+                        var matchesSeries = !series || o.getAttribute('data-series') === series;
+                        // Production Plan only (data-scheduled isn't set on
+                        // Upload Plan's options): a topic already assigned to
+                        // some other day this month stays pickable on ITS OWN
+                        // row only, so the list elsewhere shows just what's
+                        // left to schedule.
+                        var scheduledElsewhere = o.getAttribute('data-scheduled') === '1' && o.value !== currentValue;
+                        var matches = matchesSeries && !scheduledElsewhere;
                         o.hidden = !matches;
                         if (!matches && o.selected) { o.selected = false; contentSelect.value = ''; }
                     });
