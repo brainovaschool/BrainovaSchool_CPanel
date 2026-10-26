@@ -54,25 +54,6 @@
 
     @if ($isManager)
         <div class="col-md-6">
-            <label class="form-label">Prompt text (AI/edit prompt)</label>
-            <textarea name="prompt_text" class="form-control ot-input" rows="3">{{ old('prompt_text', $reel->prompt_text ?? '') }}</textarea>
-        </div>
-        <div class="col-md-6">
-            <label class="form-label">Prompt file (e.g. a Word doc)</label>
-            <input type="file" name="prompt_file" class="form-control ot-input">
-            @if (($reel->promptUpload ?? null))
-                <p class="text-secondary mt-1 mb-0"><a href="{{ globalAsset($reel->promptUpload->path) }}" target="_blank">Current file</a></p>
-            @endif
-        </div>
-
-        <div class="col-md-6">
-            <label class="form-label">Thumbnail (optional)</label>
-            <input type="file" name="thumb_file" class="form-control ot-input">
-            @if (($reel->thumbUpload ?? null))
-                <p class="text-secondary mt-1 mb-0"><a href="{{ globalAsset($reel->thumbUpload->path) }}" target="_blank">Current thumbnail</a></p>
-            @endif
-        </div>
-        <div class="col-md-6">
             <label class="form-label">Note</label>
             <textarea name="note" class="form-control ot-input" rows="2">{{ old('note', $reel->note ?? '') }}</textarea>
         </div>
