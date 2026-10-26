@@ -8,10 +8,10 @@
         <div class="page-header">
             <div class="row">
                 <div class="col-sm-8">
-                    <h4 class="bradecrumb-title mb-1">Finance</h4>
+                    <h4 class="bradecrumb-title mb-1">Accounts</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
-                        <li class="breadcrumb-item">Outflow</li>
+                        <li class="breadcrumb-item">Bonus</li>
                     </ol>
                 </div>
             </div>

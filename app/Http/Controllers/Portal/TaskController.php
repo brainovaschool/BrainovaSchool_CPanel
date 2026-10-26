@@ -102,7 +102,7 @@ class TaskController extends Controller
     {
         $staffId = $this->actingStaffId();
         if ($staffId === null) {
-            return redirect()->route('portal-employees.index')->with('danger', 'No staff record is linked to your account, so there are no tasks to show here.');
+            return redirect()->route('dashboard')->with('danger', 'No staff record is linked to your account, so there are no tasks to show here.');
         }
 
         $data['tasks'] = $this->repo->forEmployee($staffId);

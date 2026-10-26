@@ -30,7 +30,7 @@ class WorkLogController extends Controller
     {
         $staffId = $this->actingStaffId();
         if ($staffId === null) {
-            return redirect()->route('portal-employees.index')->with('danger', 'No staff record is linked to your account, so there\'s no work log here.');
+            return redirect()->route('dashboard')->with('danger', 'No staff record is linked to your account, so there\'s no work log here.');
         }
 
         $date = $request->filled('date') ? $request->date : now()->format('Y-m-d');

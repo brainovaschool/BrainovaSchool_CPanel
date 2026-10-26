@@ -2,7 +2,6 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Portal\PortalController;
-use App\Http\Controllers\Portal\EmployeeController;
 use App\Http\Controllers\Portal\TaskController;
 use App\Http\Controllers\Portal\SettingsController;
 use App\Http\Controllers\Portal\AttendanceController;
@@ -20,11 +19,6 @@ Route::middleware(saasMiddleware())->group(function () {
             Route::group(['middleware' => ['auth.routes', 'AdminPanel']], function () {
 
                 Route::get('/portal', [PortalController::class, 'index'])->name('portal.index')->middleware('PermissionCheck:portal_access');
-
-                Route::controller(EmployeeController::class)->prefix('portal/employees')->name('portal-employees.')->group(function () {
-                    Route::get('/',          'index')->name('index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_employees_read']);
-                    Route::get('/show/{id}', 'show')->name('show')->middleware('PermissionCheck:portal_access');
-                });
 
                 Route::controller(TaskController::class)->prefix('portal/tasks')->name('portal-tasks.')->group(function () {
                     Route::get('/',                    'index')->name('index')->middleware('PermissionCheck:portal_manage,portal_manager_tasks_read');

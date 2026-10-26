@@ -271,35 +271,16 @@
                      tooling, kept apart from the classroom-facing Teacher Tools
                      group below. Deliberately never gated by hasFeature(), so
                      it's not a toggle a school package could ever accidentally
-                     grant or remove. Attendance (student/teacher) also lives
-                     here now as its own sub-category, same as Finance/Planning -
-                     it keeps its own attendance_* permissions and hasFeature()
-                     gate, independent of portal_access. --}}
-                @if (hasPermission('portal_access') || hasPermission('reel_studio_access') || hasPermission('portal_manage') || ((hasPermission('attendance_read') || hasPermission('attendance_teacher_read')) && hasFeature('attendance')))
-                    <li class="sidebar-menu-item {{ set_menu(['portal*', 'attendance*']) }}">
+                     grant or remove. Attendance moved to Admin Workspace and
+                     Finance's one item (Outflow) moved into Admin Workspace's
+                     Accounts, renamed Bonus - see below. --}}
+                @if (hasPermission('portal_access') || hasPermission('reel_studio_access') || hasPermission('portal_manage'))
+                    <li class="sidebar-menu-item {{ set_menu(['portal*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-users-cog"></i>
                             <span class="on-half-expanded">Staff Workspace</span>
                         </a>
                         <ul class="child-menu-list">
-                            @if ((hasPermission('attendance_read') || hasPermission('attendance_teacher_read')) && hasFeature('attendance'))
-                                <li class="sidebar-menu-item {{ set_menu(['attendance*']) }}">
-                                    <a class="has-arrow">{{ ___('settings.Attendance') }}</a>
-                                    <ul class="child-menu-list">
-                                        @if (hasPermission('attendance_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['attendance/report*']) }}">
-                                                <a href="{{ route('attendance.report') }}">{{ ___('settings.Student') }}</a>
-                                            </li>
-                                        @endif
-
-                                        @if (hasPermission('attendance_teacher_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['attendance/teacher*']) }}">
-                                                <a href="{{ route('attendance.teacher') }}">{{ ___('settings.Teacher') }}</a>
-                                            </li>
-                                        @endif
-                                    </ul>
-                                </li>
-                            @endif
                             @if (hasPermission('portal_access'))
                                 <li class="sidebar-menu-item {{ set_menu(['portal*']) }}">
                                     <a class="has-arrow">Team Portal</a>
@@ -393,17 +374,6 @@
                                         @if (hasPermission('reel_studio_access') || hasPermission('portal_manage'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-studio*']) }}">
                                                 <a href="{{ route('portal-social-reel-studio.index') }}">Reel Studio</a>
-                                            </li>
-                                        @endif
-                                    </ul>
-                                </li>
-
-                                <li class="sidebar-menu-item {{ set_menu(['portal/growth-pay*']) }}">
-                                    <a class="has-arrow">Finance</a>
-                                    <ul class="child-menu-list">
-                                        @if (hasPermission('portal_manage') || hasPermission('portal_growth_pay_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['portal/growth-pay']) }}">
-                                                <a href="{{ route('portal-growth-pay.index') }}">Outflow</a>
                                             </li>
                                         @endif
                                     </ul>
@@ -601,23 +571,44 @@
                     </li>
                 @endif
 
-                {{-- Admin Workspace: Fees, Id Cards, Certificates, Language,
-                     Report and Accounts - the school-admin side tasks, each
-                     keeping its own permission/feature gate as a
-                     sub-category, same pattern as Staff/Teacher Workspace. --}}
+                {{-- Admin Workspace: Attendance, Fees, Id Cards, Certificates,
+                     Language, Report and Accounts (which now also carries
+                     Bonus, formerly Finance > Outflow) - the school-admin
+                     side tasks, each keeping its own permission/feature gate
+                     as a sub-category, same pattern as Staff/Teacher Workspace. --}}
                 @if (
-                    ((hasPermission('fees_group_read') || hasPermission('fees_type_read') || hasPermission('fees_master_read') || hasPermission('fees_assign_read') || hasPermission('discount_setup') || hasPermission('fees_collect_read') || hasPermission('fees_payment_proof_review')) && hasFeature('fees'))
+                    ((hasPermission('attendance_read') || hasPermission('attendance_teacher_read')) && hasFeature('attendance'))
+                    || ((hasPermission('fees_group_read') || hasPermission('fees_type_read') || hasPermission('fees_master_read') || hasPermission('fees_assign_read') || hasPermission('discount_setup') || hasPermission('fees_collect_read') || hasPermission('fees_payment_proof_review')) && hasFeature('fees'))
                     || ((hasPermission('id_card_read') || hasPermission('id_card_generate_read')) && hasFeature('id_card'))
                     || ((hasPermission('certificate_read') || hasPermission('certificate_generate_read')) && hasFeature('certificate'))
                     || (!cannotAccessSchoolSettings() && hasPermission('language_read') && hasFeature('language'))
                     || ((hasPermission('report_marksheet_read') || hasPermission('report_merit_list_read') || hasPermission('report_progress_card_read') || hasPermission('report_due_fees_read') || hasPermission('report_fees_collection_read') || hasPermission('report_account_read') || hasPermission('class_routine_read') || hasPermission('exam_routine_read') || hasPermission('report_attendance_read')) && hasFeature('report'))
-                    || ((hasPermission('account_head_read') || hasPermission('income_read') || hasPermission('expense_read')) && hasFeature('account')))
-                    <li class="sidebar-menu-item {{ set_menu(['fees*', 'idcard*', 'certificate*', 'languages*', 'report-*', 'account_head.index', 'account_head.create', 'account_head.edit', 'income*', 'expense*']) }}">
+                    || ((hasPermission('account_head_read') || hasPermission('income_read') || hasPermission('expense_read')) && hasFeature('account'))
+                    || hasPermission('portal_manage') || hasPermission('portal_growth_pay_read'))
+                    <li class="sidebar-menu-item {{ set_menu(['attendance*', 'fees*', 'idcard*', 'certificate*', 'languages*', 'report-*', 'account_head.index', 'account_head.create', 'account_head.edit', 'income*', 'expense*', 'portal/growth-pay*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-user-tie"></i>
                             <span class="on-half-expanded">Admin Workspace</span>
                         </a>
                         <ul class="child-menu-list">
+                            @if ((hasPermission('attendance_read') || hasPermission('attendance_teacher_read')) && hasFeature('attendance'))
+                                <li class="sidebar-menu-item {{ set_menu(['attendance*']) }}">
+                                    <a class="has-arrow">{{ ___('settings.Attendance') }}</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('attendance_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['attendance/report*']) }}">
+                                                <a href="{{ route('attendance.report') }}">{{ ___('settings.Student') }}</a>
+                                            </li>
+                                        @endif
+
+                                        @if (hasPermission('attendance_teacher_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['attendance/teacher*']) }}">
+                                                <a href="{{ route('attendance.teacher') }}">{{ ___('settings.Teacher') }}</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
+                            @endif
                             @if (
                                 (hasPermission('fees_group_read') ||
                                     hasPermission('fees_type_read') ||
@@ -805,10 +796,11 @@
                             @endif
 
                             @if (
-                                (hasPermission('account_head_read') || hasPermission('income_read') || hasPermission('expense_read')) &&
+                                ((hasPermission('account_head_read') || hasPermission('income_read') || hasPermission('expense_read')) &&
                                     hasFeature('account'))
+                                || hasPermission('portal_manage') || hasPermission('portal_growth_pay_read'))
                                 <li
-                                    class="sidebar-menu-item {{ set_menu(['account_head.index', 'account_head.create', 'account_head.edit']) }}">
+                                    class="sidebar-menu-item {{ set_menu(['account_head.index', 'account_head.create', 'account_head.edit', 'portal/growth-pay*']) }}">
                                     <a class="has-arrow">{{ ___('account.Accounts') }}</a>
                                     <ul class="child-menu-list">
                                         @if (hasPermission('account_head_read'))
@@ -826,6 +818,11 @@
                                         @if (hasPermission('expense_read'))
                                             <li class="sidebar-menu-item {{ set_menu(['expense*']) }}">
                                                 <a href="{{ route('expense.index') }}">{{ ___('account.expense') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('portal_manage') || hasPermission('portal_growth_pay_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/growth-pay']) }}">
+                                                <a href="{{ route('portal-growth-pay.index') }}">Bonus</a>
                                             </li>
                                         @endif
                                     </ul>

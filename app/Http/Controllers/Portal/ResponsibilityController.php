@@ -63,7 +63,7 @@ class ResponsibilityController extends Controller
     {
         $staffId = $this->actingStaffId();
         if ($staffId === null) {
-            return redirect()->route('portal-employees.index')->with('danger', 'No staff record is linked to your account.');
+            return redirect()->route('dashboard')->with('danger', 'No staff record is linked to your account.');
         }
 
         $data['duties'] = $this->repo->forStaff($staffId);

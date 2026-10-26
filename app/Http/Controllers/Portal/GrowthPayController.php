@@ -25,7 +25,7 @@ class GrowthPayController extends Controller
 
         $data['month'] = $month;
         $data['rows']  = $this->repo->rowsForMonth($month);
-        $data['title'] = 'Finance — Outflow';
+        $data['title'] = 'Accounts — Bonus';
         return view('portal.growth-pay.index', compact('data'));
     }
 
