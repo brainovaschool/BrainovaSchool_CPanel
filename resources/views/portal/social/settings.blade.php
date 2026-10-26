@@ -62,170 +62,137 @@
             </div>
         </div>
 
-        <div class="card ot-card mt-24">
-            <div class="card-body">
-                <h4>Reel form fields</h4>
-                <p class="text-secondary">Extra fields on the Add/Edit Reel form, beyond the built-in ones. A
-                    Dropdown field's options come from one of the blocks above — add a block there first, then
-                    point a Dropdown field at it here.</p>
-
-                <form action="{{ route('portal-social-settings.reel-fields') }}" method="post">
-                    @csrf
-
-                    <div id="fieldsContainer">
-                        @foreach ($data['customFields'] as $field)
-                            <div class="field-row mb-4 pb-4 border-bottom">
-                                <div class="row g-2 align-items-end">
-                                    <div class="col-md-4">
-                                        <label class="form-label">Field name</label>
-                                        <input type="text" name="fields[{{ $field->id }}][label]" value="{{ $field->label }}" class="form-control ot-input" required>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Field type</label>
-                                        <select name="fields[{{ $field->id }}][type]" class="nice-select niceSelect bordered_style wide field-type-select">
-                                            @foreach ($data['fieldTypes'] as $typeKey => $typeLabel)
-                                                <option value="{{ $typeKey }}" {{ $field->type === $typeKey ? 'selected' : '' }}>{{ $typeLabel }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-5 field-list-source" style="{{ $field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT ? '' : 'display:none' }}">
-                                        <label class="form-label">Options come from</label>
-                                        <select name="fields[{{ $field->id }}][list_key]" class="nice-select niceSelect bordered_style wide">
-                                            <option value="">—</option>
-                                            <option value="{{ \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS }}" {{ $field->list_key === \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS ? 'selected' : '' }}>Reel Characters</option>
-                                            @foreach ($data['lists'] as $list)
-                                                <option value="{{ $list->key }}" {{ $field->list_key === $list->key ? 'selected' : '' }}>{{ $list->label }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                </div>
-                                <label class="d-inline-flex align-items-center gap-2 mt-2">
-                                    <input type="checkbox" name="fields[{{ $field->id }}][delete]" value="1" class="delete-field-checkbox">
-                                    <span class="text-danger">Delete this field</span>
-                                </label>
-                            </div>
-                        @endforeach
-                    </div>
-
-                    <div id="newFieldsContainer"></div>
-
-                    <button type="button" id="addFieldBtn" class="btn btn-outline-secondary mb-3">+ Add a field</button>
-                    <br>
-                    <button type="submit" class="btn btn-lg ot-btn-primary">Save Fields</button>
-                </form>
-            </div>
-        </div>
         @php
             // The Pillar/Format/Series pickers are built in; a custom
             // field sourced from the exact same list would just be a
             // second, redundant dropdown for the same thing, so it's
             // left out of this list (the field itself is untouched -
-            // still usable anywhere else it's wired up).
+            // still usable anywhere else it's wired up). The "Reel form
+            // fields" management block (add/edit/remove field *types*)
+            // was removed from this page once the field set was finalized -
+            // the fields themselves, and editing their per-series values
+            // below, still work exactly as before.
             $seriesEditableFields = $data['customFields']->filter(fn ($f) =>
                 !in_array($f->list_key, ['reel_categories', 'reel_formats', 'series_names'], true)
             );
+            $pillarOptions = optional($data['lists']->firstWhere('key', 'reel_categories'))->values ?? [];
+            $formatOptions = optional($data['lists']->firstWhere('key', 'reel_formats'))->values ?? [];
+
+            // Grouped by Pillar (in the Pillar list's own order) so it
+            // reads as "what's covered in each pillar" at a glance - a
+            // series with no pillar set, or one whose pillar value isn't
+            // (or no longer is) in the Pillar list, still shows up under
+            // its own group at the end rather than silently disappearing.
+            $seriesByPillar = $data['series']->groupBy(fn ($s) => ($s->defaults['category'] ?? '') ?: '');
+            $knownPillars = collect($pillarOptions)->push('')->unique();
+            $orderedPillars = $knownPillars->merge($seriesByPillar->keys()->diff($knownPillars));
+            $pillarGroups = $orderedPillars
+                ->mapWithKeys(fn ($cat) => [$cat => $seriesByPillar->get($cat, collect())])
+                ->filter(fn ($rows) => $rows->isNotEmpty());
+            $seriesColspan = 5 + $seriesEditableFields->count();
         @endphp
         <div class="card ot-card mt-24">
             <div class="card-body">
                 <h4>Series</h4>
-                <p class="text-secondary">Each series can carry its own defaults — Pillar, Format, and every field
-                    below from "Reel form fields". Pick the series on the Reel form and all of it fills itself in
-                    automatically. Characters can take more than one.</p>
+                <p class="text-secondary">Grouped by Pillar so it's easy to see what's already covered. Each series
+                    can carry its own defaults — Pillar, Format, and every field below. Pick the series on the Reel
+                    form and all of it fills itself in automatically. Characters can take more than one.</p>
 
                 <form action="{{ route('portal-social-settings.series') }}" method="post" enctype="multipart/form-data">
                     @csrf
 
-                    <div id="seriesContainer">
-                        @foreach ($data['series'] as $s)
-                            @php($d = $s->defaults ?: [])
-                            @php($dc = $d['custom_fields'] ?? [])
-                            <div class="series-row mb-4 pb-4 border-bottom">
-                                <div class="row g-2 align-items-end">
-                                    <div class="col-md-3">
-                                        <label class="form-label">Name</label>
-                                        <input type="text" name="series[{{ $s->id }}][name]" value="{{ $s->name }}" class="form-control ot-input" required>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Code</label>
-                                        <input type="text" name="series[{{ $s->id }}][code]" value="{{ $s->code }}" class="form-control ot-input" placeholder="e.g. SS" maxlength="20">
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Default Pillar</label>
-                                        <select name="series[{{ $s->id }}][category]" class="nice-select niceSelect bordered_style wide">
-                                            <option value="">—</option>
-                                            @foreach (optional($data['lists']->firstWhere('key', 'reel_categories'))->values ?? [] as $cat)
-                                                <option value="{{ $cat }}" {{ ($d['category'] ?? null) === $cat ? 'selected' : '' }}>{{ $cat }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label class="form-label">Default Format</label>
-                                        <select name="series[{{ $s->id }}][format]" class="nice-select niceSelect bordered_style wide">
-                                            <option value="">—</option>
-                                            @foreach (optional($data['lists']->firstWhere('key', 'reel_formats'))->values ?? [] as $f)
-                                                <option value="{{ $f }}" {{ ($d['format'] ?? null) === $f ? 'selected' : '' }}>{{ $f }}</option>
-                                            @endforeach
-                                        </select>
-                                    </div>
-                                    @foreach ($seriesEditableFields as $field)
-                                        @php($current = $dc[$field->key] ?? null)
-                                        @php($isCharacterField = $field->list_key === \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS)
-                                        <div class="col-md-3">
-                                            @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_CHECKBOX)
-                                                <div class="form-check mt-4">
-                                                    <input type="checkbox" class="form-check-input" id="series_{{ $s->id }}_{{ $field->key }}"
-                                                           name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" value="1" {{ $current ? 'checked' : '' }}>
-                                                    <label class="form-check-label" for="series_{{ $s->id }}_{{ $field->key }}">{{ $field->label }}</label>
-                                                </div>
-                                            @else
-                                                <label class="form-label">Default {{ $field->label }}</label>
-                                                @if ($isCharacterField)
+                    <div class="table-responsive">
+                    <table class="ot-basic-table ot-table-bg" id="seriesTable">
+                        <thead class="thead">
+                            <tr>
+                                <th>Name</th>
+                                <th>Code</th>
+                                <th>Pillar</th>
+                                <th>Format</th>
+                                @foreach ($seriesEditableFields as $field)
+                                    <th>{{ $field->label }}</th>
+                                @endforeach
+                                <th>Delete</th>
+                            </tr>
+                        </thead>
+                        <tbody id="seriesTableBody">
+                            @foreach ($pillarGroups as $pillar => $rows)
+                                <tr class="bn-pillar-group-row">
+                                    <td colspan="{{ $seriesColspan }}"><strong>{{ $pillar ?: 'No pillar set' }}</strong></td>
+                                </tr>
+                                @foreach ($rows as $s)
+                                    @php($d = $s->defaults ?: [])
+                                    @php($dc = $d['custom_fields'] ?? [])
+                                    <tr class="series-row">
+                                        <td><input type="text" name="series[{{ $s->id }}][name]" value="{{ $s->name }}" class="form-control ot-input" style="min-width:140px" required></td>
+                                        <td><input type="text" name="series[{{ $s->id }}][code]" value="{{ $s->code }}" class="form-control ot-input" placeholder="e.g. SS" maxlength="20" style="min-width:80px"></td>
+                                        <td>
+                                            <select name="series[{{ $s->id }}][category]" class="form-control ot-input" style="min-width:140px">
+                                                <option value="">—</option>
+                                                @foreach ($pillarOptions as $cat)
+                                                    <option value="{{ $cat }}" {{ ($d['category'] ?? null) === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select name="series[{{ $s->id }}][format]" class="form-control ot-input" style="min-width:110px">
+                                                <option value="">—</option>
+                                                @foreach ($formatOptions as $f)
+                                                    <option value="{{ $f }}" {{ ($d['format'] ?? null) === $f ? 'selected' : '' }}>{{ $f }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        @foreach ($seriesEditableFields as $field)
+                                            @php($current = $dc[$field->key] ?? null)
+                                            @php($isCharacterField = $field->list_key === \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS)
+                                            <td>
+                                                @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_CHECKBOX)
+                                                    <input type="checkbox" class="form-check-input" name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" value="1" {{ $current ? 'checked' : '' }}>
+                                                @elseif ($isCharacterField)
                                                     @php($currentArr = (array) ($current ?? []))
-                                                    <select name="series[{{ $s->id }}][custom_fields][{{ $field->key }}][]" class="form-control select2_multy wide" multiple>
+                                                    <select name="series[{{ $s->id }}][custom_fields][{{ $field->key }}][]" class="form-control select2_multy" multiple style="min-width:160px">
                                                         @foreach ($field->options() as $opt)
                                                             <option value="{{ $opt }}" {{ in_array((string) $opt, array_map('strval', $currentArr), true) ? 'selected' : '' }}>{{ $opt }}</option>
                                                         @endforeach
                                                     </select>
                                                 @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT)
-                                                    <select name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="nice-select niceSelect bordered_style wide">
+                                                    <select name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="form-control ot-input" style="min-width:140px">
                                                         <option value="">—</option>
                                                         @foreach ($field->options() as $opt)
                                                             <option value="{{ $opt }}" {{ (string) $current === (string) $opt ? 'selected' : '' }}>{{ $opt }}</option>
                                                         @endforeach
                                                     </select>
                                                 @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_TEXTAREA)
-                                                    <textarea name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="form-control ot-input" rows="2">{{ $current }}</textarea>
+                                                    <textarea name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="form-control ot-input" rows="2" style="min-width:160px">{{ $current }}</textarea>
                                                 @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_FILE)
                                                     @php($fileInputId = 'series_' . $s->id . '_' . $field->key . '_file')
                                                     <div class="ot_fileUploader left-side mb-1">
-                                                        <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file chosen" readonly>
+                                                        <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file" readonly style="min-width:100px">
                                                         <button class="primary-btn-small-input" type="button">
-                                                            <label class="btn btn-lg ot-btn-primary" for="{{ $fileInputId }}">Browse</label>
+                                                            <label class="btn btn-sm ot-btn-primary" for="{{ $fileInputId }}">Browse</label>
                                                             <input type="file" class="d-none bn-file-input" id="{{ $fileInputId }}" name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]">
                                                         </button>
                                                     </div>
                                                     @php($currentUpload = $current ? \App\Models\Upload::find($current) : null)
                                                     @if ($currentUpload)
-                                                        <p class="text-secondary mt-1 mb-0"><a href="{{ globalAsset($currentUpload->path) }}" target="_blank">Current file</a></p>
+                                                        <a href="{{ globalAsset($currentUpload->path) }}" target="_blank" class="d-block mt-1">Current file</a>
                                                     @endif
                                                 @else
-                                                    <input type="{{ $field->type }}" name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="form-control ot-input" value="{{ $current }}">
+                                                    <input type="{{ $field->type }}" name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="form-control ot-input" value="{{ $current }}" style="min-width:120px">
                                                 @endif
-                                            @endif
-                                        </div>
-                                    @endforeach
-                                </div>
-                                <label class="d-inline-flex align-items-center gap-2 mt-2">
-                                    <input type="checkbox" name="series[{{ $s->id }}][delete]" value="1" class="delete-series-checkbox">
-                                    <span class="text-danger">Delete this series</span>
-                                </label>
-                            </div>
-                        @endforeach
+                                            </td>
+                                        @endforeach
+                                        <td class="text-center">
+                                            <input type="checkbox" name="series[{{ $s->id }}][delete]" value="1" class="delete-series-checkbox" title="Delete this series">
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
                     </div>
 
-                    <div id="newSeriesContainer"></div>
-
-                    <button type="button" id="addSeriesBtn" class="btn btn-outline-secondary mb-3">+ Add a series</button>
+                    <button type="button" id="addSeriesBtn" class="btn btn-outline-secondary mb-3 mt-2">+ Add a series</button>
                     <br>
                     <button type="submit" class="btn btn-lg ot-btn-primary">Save Series</button>
                 </form>
@@ -253,107 +220,62 @@
     </div>
 
     <template id="newSeriesTemplate">
-        <div class="series-row mb-4 pb-4 border-bottom">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-3">
-                    <label class="form-label">Name</label>
-                    <input type="text" name="new_series[__INDEX__][name]" value="" class="form-control ot-input" placeholder="Series name" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Code</label>
-                    <input type="text" name="new_series[__INDEX__][code]" value="" class="form-control ot-input" placeholder="e.g. SS" maxlength="20">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Default Pillar</label>
-                    <select name="new_series[__INDEX__][category]" class="nice-select niceSelect bordered_style wide">
-                        <option value="">—</option>
-                        @foreach (optional($data['lists']->firstWhere('key', 'reel_categories'))->values ?? [] as $cat)
-                            <option value="{{ $cat }}">{{ $cat }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Default Format</label>
-                    <select name="new_series[__INDEX__][format]" class="nice-select niceSelect bordered_style wide">
-                        <option value="">—</option>
-                        @foreach (optional($data['lists']->firstWhere('key', 'reel_formats'))->values ?? [] as $f)
-                            <option value="{{ $f }}">{{ $f }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                @foreach ($seriesEditableFields as $field)
-                    @php($isCharacterField = $field->list_key === \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS)
-                    <div class="col-md-3">
-                        @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_CHECKBOX)
-                            <div class="form-check mt-4">
-                                <input type="checkbox" class="form-check-input" id="new_series___INDEX___{{ $field->key }}"
-                                       name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" value="1">
-                                <label class="form-check-label" for="new_series___INDEX___{{ $field->key }}">{{ $field->label }}</label>
-                            </div>
-                        @else
-                            <label class="form-label">Default {{ $field->label }}</label>
-                            @if ($isCharacterField)
-                                <select name="new_series[__INDEX__][custom_fields][{{ $field->key }}][]" class="form-control select2_multy wide" multiple>
-                                    @foreach ($field->options() as $opt)
-                                        <option value="{{ $opt }}">{{ $opt }}</option>
-                                    @endforeach
-                                </select>
-                            @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT)
-                                <select name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="nice-select niceSelect bordered_style wide">
-                                    <option value="">—</option>
-                                    @foreach ($field->options() as $opt)
-                                        <option value="{{ $opt }}">{{ $opt }}</option>
-                                    @endforeach
-                                </select>
-                            @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_TEXTAREA)
-                                <textarea name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input" rows="2"></textarea>
-                            @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_FILE)
-                                <div class="ot_fileUploader left-side mb-1">
-                                    <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file chosen" readonly>
-                                    <button class="primary-btn-small-input" type="button">
-                                        <label class="btn btn-lg ot-btn-primary" for="new_series___INDEX___{{ $field->key }}_file">Browse</label>
-                                        <input type="file" class="d-none bn-file-input" id="new_series___INDEX___{{ $field->key }}_file" name="new_series[__INDEX__][custom_fields][{{ $field->key }}]">
-                                    </button>
-                                </div>
-                            @else
-                                <input type="{{ $field->type }}" name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input" value="">
-                            @endif
-                        @endif
-                    </div>
-                @endforeach
-            </div>
-            <button type="button" class="btn btn-outline-danger btn-sm mt-2 remove-new-series">Remove this series</button>
-        </div>
-    </template>
-
-    <template id="newFieldTemplate">
-        <div class="field-row mb-4 pb-4 border-bottom">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label">Field name</label>
-                    <input type="text" name="new_fields[__INDEX__][label]" value="" class="form-control ot-input" placeholder="Field name" required>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Field type</label>
-                    <select name="new_fields[__INDEX__][type]" class="nice-select niceSelect bordered_style wide field-type-select">
-                        @foreach ($data['fieldTypes'] as $typeKey => $typeLabel)
-                            <option value="{{ $typeKey }}">{{ $typeLabel }}</option>
-                        @endforeach
-                    </select>
-                </div>
-                <div class="col-md-5 field-list-source" style="display:none">
-                    <label class="form-label">Options come from</label>
-                    <select name="new_fields[__INDEX__][list_key]" class="nice-select niceSelect bordered_style wide">
-                        <option value="">—</option>
-                        <option value="{{ \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS }}">Reel Characters</option>
-                        @foreach ($data['lists'] as $list)
-                            <option value="{{ $list->key }}">{{ $list->label }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-            <button type="button" class="btn btn-outline-danger btn-sm mt-2 remove-new-field">Remove this field</button>
-        </div>
+        <tr class="series-row">
+            <td><input type="text" name="new_series[__INDEX__][name]" value="" class="form-control ot-input" placeholder="Series name" style="min-width:140px" required></td>
+            <td><input type="text" name="new_series[__INDEX__][code]" value="" class="form-control ot-input" placeholder="e.g. SS" maxlength="20" style="min-width:80px"></td>
+            <td>
+                <select name="new_series[__INDEX__][category]" class="form-control ot-input" style="min-width:140px">
+                    <option value="">—</option>
+                    @foreach ($pillarOptions as $cat)
+                        <option value="{{ $cat }}">{{ $cat }}</option>
+                    @endforeach
+                </select>
+            </td>
+            <td>
+                <select name="new_series[__INDEX__][format]" class="form-control ot-input" style="min-width:110px">
+                    <option value="">—</option>
+                    @foreach ($formatOptions as $f)
+                        <option value="{{ $f }}">{{ $f }}</option>
+                    @endforeach
+                </select>
+            </td>
+            @foreach ($seriesEditableFields as $field)
+                @php($isCharacterField = $field->list_key === \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS)
+                <td>
+                    @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_CHECKBOX)
+                        <input type="checkbox" class="form-check-input" name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" value="1">
+                    @elseif ($isCharacterField)
+                        <select name="new_series[__INDEX__][custom_fields][{{ $field->key }}][]" class="form-control select2_multy" multiple style="min-width:160px">
+                            @foreach ($field->options() as $opt)
+                                <option value="{{ $opt }}">{{ $opt }}</option>
+                            @endforeach
+                        </select>
+                    @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT)
+                        <select name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input" style="min-width:140px">
+                            <option value="">—</option>
+                            @foreach ($field->options() as $opt)
+                                <option value="{{ $opt }}">{{ $opt }}</option>
+                            @endforeach
+                        </select>
+                    @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_TEXTAREA)
+                        <textarea name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input" rows="2" style="min-width:160px"></textarea>
+                    @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_FILE)
+                        <div class="ot_fileUploader left-side mb-1">
+                            <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file" readonly style="min-width:100px">
+                            <button class="primary-btn-small-input" type="button">
+                                <label class="btn btn-sm ot-btn-primary" for="new_series___INDEX___{{ $field->key }}_file">Browse</label>
+                                <input type="file" class="d-none bn-file-input" id="new_series___INDEX___{{ $field->key }}_file" name="new_series[__INDEX__][custom_fields][{{ $field->key }}]">
+                            </button>
+                        </div>
+                    @else
+                        <input type="{{ $field->type }}" name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input" value="" style="min-width:120px">
+                    @endif
+                </td>
+            @endforeach
+            <td class="text-center">
+                <button type="button" class="btn btn-outline-danger btn-sm remove-new-series">Remove</button>
+            </td>
+        </tr>
     </template>
 
     <template id="newBlockTemplate">
@@ -368,6 +290,13 @@
             <button type="button" class="btn btn-outline-danger btn-sm remove-new-block">Remove this block</button>
         </div>
     </template>
+
+    @push('css')
+    <style>
+        .bn-pillar-group-row td { background: rgba(var(--bn-turquoise-rgb, 0,117,133), .08); padding-top: .6rem; padding-bottom: .6rem; }
+        #seriesTable td { vertical-align: middle; }
+    </style>
+    @endpush
 
     @push('script')
     <script>
@@ -411,56 +340,6 @@
                     e.target.closest('.settings-block').remove();
                 }
             });
-
-            document.addEventListener('change', function (e) {
-                if (e.target.classList.contains('delete-field-checkbox')) {
-                    e.target.closest('.field-row').style.opacity = e.target.checked ? '0.4' : '1';
-                }
-            });
-
-            document.addEventListener('click', function (e) {
-                if (e.target.classList.contains('remove-new-field')) {
-                    e.target.closest('.field-row').remove();
-                }
-            });
-        })();
-
-        // nice-select only reacts to a real click through jQuery's own
-        // trigger - a plain addEventListener('change', ...) never sees it
-        // (same issue as the Leave Request role toggle elsewhere in this
-        // app), so the Field type -> "Options come from" show/hide needs
-        // jQuery's delegated .on(), which also automatically covers field
-        // rows added later via "+ Add a field" with no extra wiring.
-        (function () {
-            var SELECT_TYPE = '{{ \App\Models\Portal\PortalReelCustomField::TYPE_SELECT }}';
-
-            function syncFieldRow($row) {
-                var isSelect = $row.find('.field-type-select').val() === SELECT_TYPE;
-                $row.find('.field-list-source').toggle(isSelect);
-            }
-
-            jQuery(document).on('change', '.field-type-select', function () {
-                syncFieldRow(jQuery(this).closest('.field-row'));
-            });
-
-            jQuery(function () {
-                jQuery('.field-row').each(function () { syncFieldRow(jQuery(this)); });
-            });
-
-            var newFieldIndex = 0;
-            document.getElementById('addFieldBtn').addEventListener('click', function () {
-                var html = document.getElementById('newFieldTemplate').innerHTML.split('__INDEX__').join(newFieldIndex);
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = html;
-                var row = wrapper.firstElementChild;
-                document.getElementById('newFieldsContainer').appendChild(row);
-                // Newly inserted <select> elements aren't styled by
-                // nice-select until explicitly (re)initialised - the
-                // global init on page load only ever saw the original set.
-                jQuery(row).find('.niceSelect').niceSelect();
-                syncFieldRow(jQuery(row));
-                newFieldIndex++;
-            });
         })();
 
         (function () {
@@ -476,17 +355,20 @@
                 }
             });
 
+            // A <tr> string only parses correctly when the element it's
+            // injected into is itself a valid table-row container (a bare
+            // <div> silently drops stray <tr> tags) - a throwaway <tbody>
+            // does the parsing, then its one child row gets moved into the
+            // real table body.
             var newSeriesIndex = 0;
             document.getElementById('addSeriesBtn').addEventListener('click', function () {
                 var html = document.getElementById('newSeriesTemplate').innerHTML.split('__INDEX__').join(newSeriesIndex);
-                var wrapper = document.createElement('div');
+                var wrapper = document.createElement('tbody');
                 wrapper.innerHTML = html;
                 var row = wrapper.firstElementChild;
-                document.getElementById('newSeriesContainer').appendChild(row);
-                // Newly inserted <select> elements aren't styled by
-                // nice-select/select2 until explicitly (re)initialised -
-                // the global init on page load only ever saw the original set.
-                jQuery(row).find('.niceSelect').niceSelect();
+                document.getElementById('seriesTableBody').appendChild(row);
+                // select2 needs explicit init for rows added after page load -
+                // the global init on load only ever saw the original set.
                 jQuery(row).find('.select2_multy').select2();
                 newSeriesIndex++;
             });
