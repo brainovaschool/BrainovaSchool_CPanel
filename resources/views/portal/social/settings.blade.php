@@ -125,7 +125,7 @@
                                     @php($dc = $d['custom_fields'] ?? [])
                                     <tr class="series-row">
                                         <td><input type="text" name="series[{{ $s->id }}][name]" value="{{ $s->name }}" class="form-control ot-input" style="min-width:140px" required></td>
-                                        <td><input type="text" name="series[{{ $s->id }}][code]" value="{{ $s->code }}" class="form-control ot-input" placeholder="e.g. SS" maxlength="20" style="min-width:80px"></td>
+                                        <td><input type="text" name="series[{{ $s->id }}][code]" value="{{ $s->code }}" class="form-control ot-input" placeholder="e.g. SS" maxlength="20" style="width:60px"></td>
                                         <td>
                                             <select name="series[{{ $s->id }}][category]" class="form-control ot-input" style="min-width:140px">
                                                 <option value="">—</option>
@@ -178,7 +178,7 @@
                                                         <a href="{{ globalAsset($currentUpload->path) }}" target="_blank" class="d-block mt-1">Current file</a>
                                                     @endif
                                                 @else
-                                                    <input type="{{ $field->type }}" name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="form-control ot-input" value="{{ $current }}" style="min-width:120px">
+                                                    <input type="{{ $field->type }}" name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="form-control ot-input" value="{{ $current }}" style="{{ trim($field->label) === 'Time (sec)' ? 'width:60px' : 'min-width:120px' }}">
                                                 @endif
                                             </td>
                                         @endforeach
@@ -222,7 +222,7 @@
     <template id="newSeriesTemplate">
         <tr class="series-row">
             <td><input type="text" name="new_series[__INDEX__][name]" value="" class="form-control ot-input" placeholder="Series name" style="min-width:140px" required></td>
-            <td><input type="text" name="new_series[__INDEX__][code]" value="" class="form-control ot-input" placeholder="e.g. SS" maxlength="20" style="min-width:80px"></td>
+            <td><input type="text" name="new_series[__INDEX__][code]" value="" class="form-control ot-input" placeholder="e.g. SS" maxlength="20" style="width:60px"></td>
             <td>
                 <select name="new_series[__INDEX__][category]" class="form-control ot-input" style="min-width:140px">
                     <option value="">—</option>
@@ -268,7 +268,7 @@
                             </button>
                         </div>
                     @else
-                        <input type="{{ $field->type }}" name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input" value="" style="min-width:120px">
+                        <input type="{{ $field->type }}" name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input" value="" style="{{ trim($field->label) === 'Time (sec)' ? 'width:60px' : 'min-width:120px' }}">
                     @endif
                 </td>
             @endforeach
