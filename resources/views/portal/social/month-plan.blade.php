@@ -164,10 +164,11 @@
                                                             <td class="bn-prod-day-cell" rowspan="{{ $rowCount }}">{{ $day['date']->format('D') }}</td>
                                                         @endif
                                                         <td>
+                                                            @php($slotPillar = $seriesPillars[$slot['series_name'] ?? ''] ?? '')
                                                             <select class="form-control ot-input bn-cal-pillar">
                                                                 <option value="">—</option>
                                                                 @foreach ($calPillars as $p)
-                                                                    <option value="{{ $p }}">{{ $p }}</option>
+                                                                    <option value="{{ $p }}" {{ $slotPillar === $p ? 'selected' : '' }}>{{ $p }}</option>
                                                                 @endforeach
                                                             </select>
                                                         </td>
