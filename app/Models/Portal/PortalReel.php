@@ -157,6 +157,34 @@ class PortalReel extends Model
         return 'badge-basic-secondary-text';
     }
 
+    /** Background tint for the whole row on the Reels table - same
+     *  cascade as statusLabel()/statusBadgeClass(), but its own colours
+     *  since "uploaded" specifically needed to read as blue, not the
+     *  green already used for the Status badge. Empty string (no tint)
+     *  for a still-suggested reel, so a plain new row stays plain. */
+    public function rowStateClass(): string
+    {
+        if ($this->status === self::REJECTED) {
+            return 'bn-row-rejected';
+        }
+        if ($this->status === self::PUBLISHED) {
+            return 'bn-row-uploaded';
+        }
+        if ($this->video_approved_at) {
+            return 'bn-row-complete';
+        }
+        if ($this->drive_link || $this->prompt_link) {
+            return 'bn-row-in-progress';
+        }
+        if ($this->deadline || $this->is_open_paid || $this->assigned_to) {
+            return 'bn-row-assigned';
+        }
+        if ($this->status !== self::SUGGESTED) {
+            return 'bn-row-approved';
+        }
+        return '';
+    }
+
     /** Colour for the small "P" (prompt) progress dot on the Reels table. */
     public function promptBadgeClass(): string
     {

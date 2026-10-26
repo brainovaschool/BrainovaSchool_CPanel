@@ -116,14 +116,14 @@
                                 <th>Status</th>
                                 <th>Deadline</th>
                                 <th>Progress</th>
-                                <th>Uploaded date</th>
+                                <th>Upload</th>
                                 <th class="action">{{ ___('common.action') }}</th>
                             </tr>
                         </thead>
                         <tbody class="tbody">
                             @forelse ($data['reels'] as $reel)
                                 @php($staff = optional($reel->suggestedBy)->staff)
-                                <tr>
+                                <tr class="{{ $reel->rowStateClass() }}">
                                     @if ($showBulk)
                                         <td><input type="checkbox" class="bn-reel-check" value="{{ $reel->id }}"></td>
                                     @endif
@@ -157,7 +157,15 @@
                                         <span class="{{ $reel->promptBadgeClass() }} bn-progress-dot" title="Prompt: {{ $reel->prompt_approved_at ? 'approved' : ($reel->prompt_link ? 'pending approval' : 'not submitted') }}">P</span>
                                         <span class="{{ $reel->videoBadgeClass() }} bn-progress-dot" title="Video: {{ $reel->video_approved_at ? 'approved' : ($reel->drive_link ? 'pending approval' : 'not submitted') }}">V</span>
                                     </td>
-                                    <td>{{ $reel->planned_date?->format('d M Y') ?: '—' }}</td>
+                                    <td>
+                                        @if ($reel->planned_date)
+                                            {{ $reel->planned_date->format('d M Y') }}
+                                        @elseif ($reel->deadline)
+                                            <span class="text-secondary" title="Provisional - from Production Plan's deadline, not yet confirmed on Upload Plan">{{ $reel->deadline->format('d M Y') }} (planned)</span>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
                                     <td class="action bn-reel-actions">
                                         @php($needsAssignment = $reel->status !== \App\Models\Portal\PortalReel::SUGGESTED && !$reel->is_open_paid && !$reel->assigned_to)
                                         @if ($reel->status === \App\Models\Portal\PortalReel::SUGGESTED || $needsAssignment)
@@ -196,6 +204,20 @@
         .bn-reel-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem; }
         .bn-reels-table { table-layout: fixed; width: 100%; }
         .bn-reels-table td { vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
+        /* Row tint by where a reel actually stands - same cascade as the
+           Status badge, just also readable at a glance down the whole list. */
+        .bn-row-rejected    { background: rgba(220, 53, 69, .08); }
+        .bn-row-uploaded     { background: rgba(13, 110, 253, .10); }
+        .bn-row-complete     { background: rgba(25, 135, 84, .08); }
+        .bn-row-in-progress  { background: rgba(255, 193, 7, .14); }
+        .bn-row-assigned     { background: rgba(111, 66, 193, .10); }
+        .bn-row-approved     { background: rgba(var(--bn-turquoise-rgb), .08); }
+        .dark-theme .bn-row-rejected    { background: rgba(220, 53, 69, .18); }
+        .dark-theme .bn-row-uploaded     { background: rgba(13, 110, 253, .20); }
+        .dark-theme .bn-row-complete     { background: rgba(25, 135, 84, .18); }
+        .dark-theme .bn-row-in-progress  { background: rgba(255, 193, 7, .22); }
+        .dark-theme .bn-row-assigned     { background: rgba(111, 66, 193, .22); }
+        .dark-theme .bn-row-approved     { background: rgba(0, 151, 178, .20); }
         /* Bootstrap's d-flex utility sets display:flex with !important,
            which would otherwise beat the plain [hidden] rule and leave
            this bar visible even while "hidden" is set. */
