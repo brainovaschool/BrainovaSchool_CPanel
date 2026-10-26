@@ -122,8 +122,7 @@
             // left out of this list (the field itself is untouched -
             // still usable anywhere else it's wired up).
             $seriesEditableFields = $data['customFields']->filter(fn ($f) =>
-                $f->type !== \App\Models\Portal\PortalReelCustomField::TYPE_FILE
-                && !in_array($f->list_key, ['reel_categories', 'reel_formats', 'series_names'], true)
+                !in_array($f->list_key, ['reel_categories', 'reel_formats', 'series_names'], true)
             );
         @endphp
         <div class="card ot-card mt-24">
@@ -133,7 +132,7 @@
                     below from "Reel form fields". Pick the series on the Reel form and all of it fills itself in
                     automatically. Characters can take more than one.</p>
 
-                <form action="{{ route('portal-social-settings.series') }}" method="post">
+                <form action="{{ route('portal-social-settings.series') }}" method="post" enctype="multipart/form-data">
                     @csrf
 
                     <div id="seriesContainer">
@@ -192,6 +191,12 @@
                                                     </select>
                                                 @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_TEXTAREA)
                                                     <textarea name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="form-control ot-input" rows="2">{{ $current }}</textarea>
+                                                @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_FILE)
+                                                    <input type="file" name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="form-control ot-input">
+                                                    @php($currentUpload = $current ? \App\Models\Upload::find($current) : null)
+                                                    @if ($currentUpload)
+                                                        <p class="text-secondary mt-1 mb-0"><a href="{{ globalAsset($currentUpload->path) }}" target="_blank">Current file</a></p>
+                                                    @endif
                                                 @else
                                                     <input type="{{ $field->type }}" name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="form-control ot-input" value="{{ $current }}">
                                                 @endif
@@ -287,6 +292,8 @@
                                 </select>
                             @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_TEXTAREA)
                                 <textarea name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input" rows="2"></textarea>
+                            @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_FILE)
+                                <input type="file" name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input">
                             @else
                                 <input type="{{ $field->type }}" name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input" value="">
                             @endif

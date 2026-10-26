@@ -213,20 +213,20 @@ class SocialRepository
                 continue;
             }
             $series->name      = $name;
-            $series->defaults  = $this->buildSeriesDefaults($data);
+            $series->defaults  = $this->buildSeriesDefaults($data, $request, "series.{$id}.custom_fields", $series->defaults ?: []);
             $series->save();
         }
 
         $newRows = (array) $request->input('new_series', []);
         $nextOrder = ((int) PortalReelSeries::max('sort_order')) + 1;
-        foreach ($newRows as $data) {
+        foreach ($newRows as $index => $data) {
             $name = trim($data['name'] ?? '');
             if ($name === '') {
                 continue;
             }
             PortalReelSeries::create([
                 'name'       => $name,
-                'defaults'   => $this->buildSeriesDefaults($data),
+                'defaults'   => $this->buildSeriesDefaults($data, $request, "new_series.{$index}.custom_fields", []),
                 'sort_order' => $nextOrder++,
             ]);
         }
@@ -236,11 +236,30 @@ class SocialRepository
 
     /** $data: the submitted series[...]/new_series[...] row - category,
      *  format, and custom_fields[field_key] (an array for the Characters
-     *  field, a plain value for everything else). */
-    private function buildSeriesDefaults(array $data): array
+     *  field, a plain value for everything else, an uploaded file for a
+     *  File/Image field - read via $request directly using
+     *  $fileFieldPrefix since an upload never comes through $data). A
+     *  File field with no new upload this submit keeps whatever Upload
+     *  id $existingDefaults already had, same rule as a reel's own
+     *  Prompt file/Thumbnail/Cover. */
+    private function buildSeriesDefaults(array $data, $request, string $fileFieldPrefix, array $existingDefaults): array
     {
+        $existingCustomFields = $existingDefaults['custom_fields'] ?? [];
+        $submitted = (array) ($data['custom_fields'] ?? []);
+
         $customFields = [];
-        foreach ((array) ($data['custom_fields'] ?? []) as $key => $value) {
+        foreach ($this->reelCustomFields() as $field) {
+            $key = $field->key;
+            if ($field->type === PortalReelCustomField::TYPE_FILE) {
+                if ($request->hasFile("{$fileFieldPrefix}.{$key}")) {
+                    $customFields[$key] = $this->UploadImageCreate($request->file("{$fileFieldPrefix}.{$key}"), 'uploads/portal-reels');
+                } elseif (!empty($existingCustomFields[$key])) {
+                    $customFields[$key] = $existingCustomFields[$key];
+                }
+                continue;
+            }
+
+            $value = $submitted[$key] ?? null;
             if (is_array($value)) {
                 $value = array_values(array_filter($value));
                 if ($value) {
