@@ -121,50 +121,7 @@
 
 
 
-                @if ((hasPermission('id_card_read') || hasPermission('id_card_generate_read')) && hasFeature('id_card'))
-                    <li class="sidebar-menu-item {{ set_menu(['idcard*']) }}">
-                        <a class="parent-item-content has-arrow">
-                            <i class="las la-id-badge"></i>
-                            <span class="on-half-expanded">{{ ___('common.id_cards') }}</span>
-                        </a>
-                        <ul class="child-menu-list">
-                            @if (hasPermission('id_card_read'))
-                                <li
-                                    class="sidebar-menu-item {{ set_menu(['idcard', 'idcard/create', 'idcard/edit*']) }}">
-                                    <a href="{{ route('idcard.index') }}">{{ ___('common.id_cards') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('id_card_generate_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['idcard/generate*']) }}">
-                                    <a href="{{ route('idcard.generate') }}">{{ ___('common.generate_id_cards') }}</a>
-                                </li>
-                            @endif
-                        </ul>
-                    </li>
-                @endif
-
-                @if ((hasPermission('certificate_read') || hasPermission('certificate_generate_read')) && hasFeature('certificate'))
-                    <li class="sidebar-menu-item {{ set_menu(['certificate*']) }}">
-                        <a class="parent-item-content has-arrow">
-                            <i class="las la-graduation-cap"></i>
-                            <span class="on-half-expanded">{{ ___('common.certificates') }}</span>
-                        </a>
-                        <ul class="child-menu-list">
-                            @if (hasPermission('certificate_read'))
-                                <li
-                                    class="sidebar-menu-item {{ set_menu(['certificate', 'certificate/create', 'certificate/edit*']) }}">
-                                    <a href="{{ route('certificate.index') }}">{{ ___('common.certificates') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('certificate_generate_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['certificate/generate*']) }}">
-                                    <a
-                                        href="{{ route('certificate.generate') }}">{{ ___('common.generate_certificates') }}</a>
-                                </li>
-                            @endif
-                        </ul>
-                    </li>
-                @endif
+                {{-- Id Cards and Certificates moved into Admin Workspace - see below. --}}
 
 
                 {{-- Start Academic --}}
@@ -303,193 +260,12 @@
                 @endif
                 {{-- End Leave --}}
 
-                {{-- Start Fees --}}
-                @if (
-                    (hasPermission('fees_group_read') ||
-                        hasPermission('fees_type_read') ||
-                        hasPermission('fees_master_read') ||
-                        hasPermission('fees_assign_read') ||
-                        hasPermission('discount_setup') ||
-                        hasPermission('fees_collect_read') ||
-                        hasPermission('fees_payment_proof_review')) &&
-                        hasFeature('fees'))
-                    <li class="sidebar-menu-item {{ set_menu(['fees*']) }}">
-                        <a class="parent-item-content has-arrow">
-                            <i class="las la-hand-holding-usd"></i>
-                            <span class="on-half-expanded">{{ ___('settings.fees') }}</span>
-                        </a>
-                        <ul class="child-menu-list">
-                            @if (hasPermission('fees_group_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['fees-group*']) }}">
-                                    <a href="{{ route('fees-group.index') }}">{{ ___('settings.group') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('fees_type_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['fees-type*']) }}">
-                                    <a href="{{ route('fees-type.index') }}">{{ ___('settings.type') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('fees_master_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['fees-master*']) }}">
-                                    <a href="{{ route('fees-master.index') }}">{{ ___('settings.master') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('fees_assign_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['fees-assign*']) }}">
-                                    <a href="{{ route('fees-assign.index') }}">{{ ___('settings.assign') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('fees_collect_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['fees-collect*']) }}">
-                                    <a href="{{ route('fees-collect.index') }}">{{ ___('settings.collect') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('fees_payment_proof_review'))
-                                <li class="sidebar-menu-item {{ set_menu(['fees-payment-proof*']) }}">
-                                    <a href="{{ route('fees-payment-proof.index') }}">Payment Proof Review</a>
-                                </li>
-                            @endif
-                                  @if(config('app.app_ver') > 2.0)
-                                    @if(hasPermission('siblings_discount') || hasPermission('early_payment_discount'))
-                                        <li class="sidebar-menu-item {{ set_menu(['fees-discount*']) }}">
-                                            <a href="{{route('fees-discount.index')}}">{{ ___('fees.Discount Setup') }}</a>
-                                        </li>
-                                    @endif
-                                @endif
-
-                                @if(config('app.app_ver') > 2.0)
-                                    @if(hasPermission('special_discount'))
-                                        <li class="sidebar-menu-item {{ set_menu(['special-fees-discount*']) }}">
-                                            <a href="{{route('special-fees-discount.index')}}">{{ ___('fees.Special Discount') }}</a>
-                                        </li>
-                                    @endif
-                                @endif
-
-                                @if(config('app.app_ver') > 2.0)
-                                    @if(hasPermission('discount_report') && hasFeature('report'))
-                                        <li class="sidebar-menu-item {{ set_menu(['discount-report*']) }}">
-                                            <a href="{{route('report-discount.index')}}">{{ ___('fees.Discount Report') }}</a>
-                                        </li>
-                                    @endif
-                                @endif
-                        </ul>
-                    </li>
-                @endif
-                {{-- End Fees --}}
+                {{-- Fees moved into Admin Workspace - see below. --}}
 
 
 
-                {{-- Start Exam: Examination and Online Examination share almost
-                     the same kind of setup (types, question/marks sources,
-                     assignment) so they live under one "Exam" heading, each
-                     keeping its own permission/feature gate as a sub-category. --}}
-                @if (
-                    ((hasPermission('exam_type_read') ||
-                        hasPermission('marks_grade_read') ||
-                        hasPermission('exam_assign_read') ||
-                        hasPermission('marks_register_read') ||
-                        hasPermission('exam_setting_read')) &&
-                        hasFeature('examination')) ||
-                    ((hasPermission('question_group_read') ||
-                        hasPermission('question_bank_read') ||
-                        hasPermission('online_exam_read') ||
-                        hasPermission('online_exam_type_read')) &&
-                        hasFeature('online_examination')))
-                    <li
-                        class="sidebar-menu-item {{ set_menu(['exam-type*', 'marks-grade*', 'exam-assign*', 'marks-register*', 'examination-settings*', 'question-group*', 'question-bank*', 'online-exam*', 'online-exam-type*']) }}">
-                        <a class="parent-item-content has-arrow">
-                            <i class="las la-book-reader"></i>
-                            <span class="on-half-expanded">Exam</span>
-                        </a>
-                        <ul class="child-menu-list">
-                            @if (
-                                (hasPermission('exam_type_read') ||
-                                    hasPermission('marks_grade_read') ||
-                                    hasPermission('exam_assign_read') ||
-                                    hasPermission('marks_register_read') ||
-                                    hasPermission('exam_setting_read')) &&
-                                    hasFeature('examination'))
-                                <li
-                                    class="sidebar-menu-item {{ set_menu(['exam-type*', 'marks-grade*', 'exam-assign*', 'marks-register*', 'examination-settings*']) }}">
-                                    <a class="has-arrow">{{ ___('settings.examination') }}</a>
-                                    <ul class="child-menu-list">
-                                        @if (hasPermission('exam_type_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['exam-type*']) }}">
-                                                <a href="{{ route('exam-type.index') }}">{{ ___('settings.type') }}</a>
-                                            </li>
-                                        @endif
-                                        @if (hasPermission('marks_grade_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['marks-grade*']) }}">
-                                                <a
-                                                    href="{{ route('marks-grade.index') }}">{{ ___('examination.marks_grade') }}</a>
-                                            </li>
-                                        @endif
+                {{-- Exam moved into Teacher Workspace - see below. --}}
 
-                                        @if (hasPermission('exam_assign_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['exam-assign*']) }}">
-                                                <a
-                                                    href="{{ route('exam-assign.index') }}">{{ ___('examination.exam_assign') }}</a>
-                                            </li>
-                                        @endif
-
-                                        @if (hasPermission('marks_register_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['marks-register*']) }}">
-                                                <a
-                                                    href="{{ route('marks-register.index') }}">{{ ___('examination.marks_register') }}</a>
-                                            </li>
-                                        @endif
-
-                                        @if (hasPermission('exam_setting_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['examination-settings*']) }}">
-                                                <a
-                                                    href="{{ route('examination-settings.index') }}">{{ ___('settings.Settings') }}</a>
-                                            </li>
-                                        @endif
-                                    </ul>
-                                </li>
-                            @endif
-
-                            @if (
-                                (hasPermission('question_group_read') ||
-                                    hasPermission('question_bank_read') ||
-                                    hasPermission('online_exam_read') ||
-                                    hasPermission('online_exam_type_read')) &&
-                                    hasFeature('online_examination'))
-                                <li
-                                    class="sidebar-menu-item {{ set_menu(['question-group*', 'question-bank*', 'online-exam*', 'online-exam-type*']) }}">
-                                    <a class="has-arrow">{{ ___('online-examination.online_examination') }}</a>
-                                    <ul class="child-menu-list">
-                                        @if (hasPermission('online_exam_type_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['online-exam-type*']) }}">
-                                                <a href="{{ route('online-exam-type.index') }}">{{ ___('settings.type') }}</a>
-                                            </li>
-                                        @endif
-                                        @if (hasPermission('question_group_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['question-group*']) }}">
-                                                <a
-                                                    href="{{ route('question-group.index') }}">{{ ___('online-examination.question_group') }}</a>
-                                            </li>
-                                        @endif
-                                        @if (hasPermission('question_bank_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['question-bank*']) }}">
-                                                <a
-                                                    href="{{ route('question-bank.index') }}">{{ ___('online-examination.question_bank') }}</a>
-                                            </li>
-                                        @endif
-                                        @if (hasPermission('online_exam_read'))
-                                            <li
-                                                class="sidebar-menu-item {{ set_menu(['online-exam', 'online-exam/create', 'online-exam/edit*']) }}">
-                                                <a
-                                                    href="{{ route('online-exam.index') }}">{{ ___('online-examination.online_exam') }}</a>
-                                            </li>
-                                        @endif
-                                    </ul>
-                                </li>
-                            @endif
-                        </ul>
-                    </li>
-                @endif
-                {{-- End Exam --}}
                 {{-- Staff Workspace: the internal team portal, the social-media
                      board and Reel Studio — Brainova's own internal staff/social
                      tooling, kept apart from the classroom-facing Teacher Tools
@@ -648,17 +424,20 @@
                     </li>
                 @endif
                 <!-- Staff Workspace end -->
-                {{-- Teacher Tools: everything classroom-facing in one place —
-                     Class Content (curriculum), Homework, and the AI/analytics
-                     tools — kept apart from Staff Workspace above, which is
-                     internal team/social tooling, not classroom work. --}}
+                {{-- Teacher Workspace: everything classroom-facing in one place —
+                     Class Content (curriculum), Homework, Exam (Examination +
+                     Online Examination), and the AI/analytics tools — kept
+                     apart from Staff Workspace above, which is internal
+                     team/social tooling, not classroom work. --}}
                 @if (((hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve')) && hasFeature('class_content'))
                         || (hasPermission('homework_read') && hasFeature('homework'))
-                        || ((hasPermission('ai_help_teacher_read') || hasPermission('skill_mastery_report_read')) && hasFeature('teacher_tools')))
-                    <li class="sidebar-menu-item {{ set_menu(['class-content*', 'homework*', 'ai-help-teacher*', 'skill-mastery-report*']) }}">
+                        || ((hasPermission('ai_help_teacher_read') || hasPermission('skill_mastery_report_read')) && hasFeature('teacher_tools'))
+                        || ((hasPermission('exam_type_read') || hasPermission('marks_grade_read') || hasPermission('exam_assign_read') || hasPermission('marks_register_read') || hasPermission('exam_setting_read')) && hasFeature('examination'))
+                        || ((hasPermission('question_group_read') || hasPermission('question_bank_read') || hasPermission('online_exam_read') || hasPermission('online_exam_type_read')) && hasFeature('online_examination')))
+                    <li class="sidebar-menu-item {{ set_menu(['class-content*', 'homework*', 'ai-help-teacher*', 'skill-mastery-report*', 'exam-type*', 'marks-grade*', 'exam-assign*', 'marks-register*', 'examination-settings*', 'question-group*', 'question-bank*', 'online-exam*', 'online-exam-type*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-chalkboard-teacher"></i>
-                            <span class="on-half-expanded">Teacher Tools</span>
+                            <span class="on-half-expanded">Teacher Workspace</span>
                         </a>
                         <ul class="child-menu-list">
                             @if ((hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve')) && hasFeature('class_content'))
@@ -703,6 +482,109 @@
                                     </ul>
                                 </li>
                             @endif
+                            @if (
+                                ((hasPermission('exam_type_read') ||
+                                    hasPermission('marks_grade_read') ||
+                                    hasPermission('exam_assign_read') ||
+                                    hasPermission('marks_register_read') ||
+                                    hasPermission('exam_setting_read')) &&
+                                    hasFeature('examination')) ||
+                                ((hasPermission('question_group_read') ||
+                                    hasPermission('question_bank_read') ||
+                                    hasPermission('online_exam_read') ||
+                                    hasPermission('online_exam_type_read')) &&
+                                    hasFeature('online_examination')))
+                                <li
+                                    class="sidebar-menu-item {{ set_menu(['exam-type*', 'marks-grade*', 'exam-assign*', 'marks-register*', 'examination-settings*', 'question-group*', 'question-bank*', 'online-exam*', 'online-exam-type*']) }}">
+                                    <a class="has-arrow">Exam</a>
+                                    <ul class="child-menu-list">
+                                        @if (
+                                            (hasPermission('exam_type_read') ||
+                                                hasPermission('marks_grade_read') ||
+                                                hasPermission('exam_assign_read') ||
+                                                hasPermission('marks_register_read') ||
+                                                hasPermission('exam_setting_read')) &&
+                                                hasFeature('examination'))
+                                            <li
+                                                class="sidebar-menu-item {{ set_menu(['exam-type*', 'marks-grade*', 'exam-assign*', 'marks-register*', 'examination-settings*']) }}">
+                                                <a class="has-arrow">{{ ___('settings.examination') }}</a>
+                                                <ul class="child-menu-list">
+                                                    @if (hasPermission('exam_type_read'))
+                                                        <li class="sidebar-menu-item {{ set_menu(['exam-type*']) }}">
+                                                            <a href="{{ route('exam-type.index') }}">{{ ___('settings.type') }}</a>
+                                                        </li>
+                                                    @endif
+                                                    @if (hasPermission('marks_grade_read'))
+                                                        <li class="sidebar-menu-item {{ set_menu(['marks-grade*']) }}">
+                                                            <a
+                                                                href="{{ route('marks-grade.index') }}">{{ ___('examination.marks_grade') }}</a>
+                                                        </li>
+                                                    @endif
+
+                                                    @if (hasPermission('exam_assign_read'))
+                                                        <li class="sidebar-menu-item {{ set_menu(['exam-assign*']) }}">
+                                                            <a
+                                                                href="{{ route('exam-assign.index') }}">{{ ___('examination.exam_assign') }}</a>
+                                                        </li>
+                                                    @endif
+
+                                                    @if (hasPermission('marks_register_read'))
+                                                        <li class="sidebar-menu-item {{ set_menu(['marks-register*']) }}">
+                                                            <a
+                                                                href="{{ route('marks-register.index') }}">{{ ___('examination.marks_register') }}</a>
+                                                        </li>
+                                                    @endif
+
+                                                    @if (hasPermission('exam_setting_read'))
+                                                        <li class="sidebar-menu-item {{ set_menu(['examination-settings*']) }}">
+                                                            <a
+                                                                href="{{ route('examination-settings.index') }}">{{ ___('settings.Settings') }}</a>
+                                                        </li>
+                                                    @endif
+                                                </ul>
+                                            </li>
+                                        @endif
+
+                                        @if (
+                                            (hasPermission('question_group_read') ||
+                                                hasPermission('question_bank_read') ||
+                                                hasPermission('online_exam_read') ||
+                                                hasPermission('online_exam_type_read')) &&
+                                                hasFeature('online_examination'))
+                                            <li
+                                                class="sidebar-menu-item {{ set_menu(['question-group*', 'question-bank*', 'online-exam*', 'online-exam-type*']) }}">
+                                                <a class="has-arrow">{{ ___('online-examination.online_examination') }}</a>
+                                                <ul class="child-menu-list">
+                                                    @if (hasPermission('online_exam_type_read'))
+                                                        <li class="sidebar-menu-item {{ set_menu(['online-exam-type*']) }}">
+                                                            <a href="{{ route('online-exam-type.index') }}">{{ ___('settings.type') }}</a>
+                                                        </li>
+                                                    @endif
+                                                    @if (hasPermission('question_group_read'))
+                                                        <li class="sidebar-menu-item {{ set_menu(['question-group*']) }}">
+                                                            <a
+                                                                href="{{ route('question-group.index') }}">{{ ___('online-examination.question_group') }}</a>
+                                                        </li>
+                                                    @endif
+                                                    @if (hasPermission('question_bank_read'))
+                                                        <li class="sidebar-menu-item {{ set_menu(['question-bank*']) }}">
+                                                            <a
+                                                                href="{{ route('question-bank.index') }}">{{ ___('online-examination.question_bank') }}</a>
+                                                        </li>
+                                                    @endif
+                                                    @if (hasPermission('online_exam_read'))
+                                                        <li
+                                                            class="sidebar-menu-item {{ set_menu(['online-exam', 'online-exam/create', 'online-exam/edit*']) }}">
+                                                            <a
+                                                                href="{{ route('online-exam.index') }}">{{ ___('online-examination.online_exam') }}</a>
+                                                        </li>
+                                                    @endif
+                                                </ul>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
+                            @endif
                             @if ((hasPermission('ai_help_teacher_read') || hasPermission('skill_mastery_report_read')) && hasFeature('teacher_tools'))
                                 @if (hasPermission('ai_help_teacher_read'))
                                     <li class="sidebar-menu-item {{ set_menu(['ai-help-teacher*']) }}">
@@ -718,6 +600,241 @@
                         </ul>
                     </li>
                 @endif
+
+                {{-- Admin Workspace: Fees, Id Cards, Certificates, Language,
+                     Report and Accounts - the school-admin side tasks, each
+                     keeping its own permission/feature gate as a
+                     sub-category, same pattern as Staff/Teacher Workspace. --}}
+                @if (
+                    ((hasPermission('fees_group_read') || hasPermission('fees_type_read') || hasPermission('fees_master_read') || hasPermission('fees_assign_read') || hasPermission('discount_setup') || hasPermission('fees_collect_read') || hasPermission('fees_payment_proof_review')) && hasFeature('fees'))
+                    || ((hasPermission('id_card_read') || hasPermission('id_card_generate_read')) && hasFeature('id_card'))
+                    || ((hasPermission('certificate_read') || hasPermission('certificate_generate_read')) && hasFeature('certificate'))
+                    || (!cannotAccessSchoolSettings() && hasPermission('language_read') && hasFeature('language'))
+                    || ((hasPermission('report_marksheet_read') || hasPermission('report_merit_list_read') || hasPermission('report_progress_card_read') || hasPermission('report_due_fees_read') || hasPermission('report_fees_collection_read') || hasPermission('report_account_read') || hasPermission('class_routine_read') || hasPermission('exam_routine_read') || hasPermission('report_attendance_read')) && hasFeature('report'))
+                    || ((hasPermission('account_head_read') || hasPermission('income_read') || hasPermission('expense_read')) && hasFeature('account')))
+                    <li class="sidebar-menu-item {{ set_menu(['fees*', 'idcard*', 'certificate*', 'languages*', 'report-*', 'account_head.index', 'account_head.create', 'account_head.edit', 'income*', 'expense*']) }}">
+                        <a class="parent-item-content has-arrow">
+                            <i class="las la-user-tie"></i>
+                            <span class="on-half-expanded">Admin Workspace</span>
+                        </a>
+                        <ul class="child-menu-list">
+                            @if (
+                                (hasPermission('fees_group_read') ||
+                                    hasPermission('fees_type_read') ||
+                                    hasPermission('fees_master_read') ||
+                                    hasPermission('fees_assign_read') ||
+                                    hasPermission('discount_setup') ||
+                                    hasPermission('fees_collect_read') ||
+                                    hasPermission('fees_payment_proof_review')) &&
+                                    hasFeature('fees'))
+                                <li class="sidebar-menu-item {{ set_menu(['fees*']) }}">
+                                    <a class="has-arrow">{{ ___('settings.fees') }}</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('fees_group_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['fees-group*']) }}">
+                                                <a href="{{ route('fees-group.index') }}">{{ ___('settings.group') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('fees_type_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['fees-type*']) }}">
+                                                <a href="{{ route('fees-type.index') }}">{{ ___('settings.type') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('fees_master_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['fees-master*']) }}">
+                                                <a href="{{ route('fees-master.index') }}">{{ ___('settings.master') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('fees_assign_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['fees-assign*']) }}">
+                                                <a href="{{ route('fees-assign.index') }}">{{ ___('settings.assign') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('fees_collect_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['fees-collect*']) }}">
+                                                <a href="{{ route('fees-collect.index') }}">{{ ___('settings.collect') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('fees_payment_proof_review'))
+                                            <li class="sidebar-menu-item {{ set_menu(['fees-payment-proof*']) }}">
+                                                <a href="{{ route('fees-payment-proof.index') }}">Payment Proof Review</a>
+                                            </li>
+                                        @endif
+                                        @if(config('app.app_ver') > 2.0)
+                                            @if(hasPermission('siblings_discount') || hasPermission('early_payment_discount'))
+                                                <li class="sidebar-menu-item {{ set_menu(['fees-discount*']) }}">
+                                                    <a href="{{route('fees-discount.index')}}">{{ ___('fees.Discount Setup') }}</a>
+                                                </li>
+                                            @endif
+                                        @endif
+
+                                        @if(config('app.app_ver') > 2.0)
+                                            @if(hasPermission('special_discount'))
+                                                <li class="sidebar-menu-item {{ set_menu(['special-fees-discount*']) }}">
+                                                    <a href="{{route('special-fees-discount.index')}}">{{ ___('fees.Special Discount') }}</a>
+                                                </li>
+                                            @endif
+                                        @endif
+
+                                        @if(config('app.app_ver') > 2.0)
+                                            @if(hasPermission('discount_report') && hasFeature('report'))
+                                                <li class="sidebar-menu-item {{ set_menu(['discount-report*']) }}">
+                                                    <a href="{{route('report-discount.index')}}">{{ ___('fees.Discount Report') }}</a>
+                                                </li>
+                                            @endif
+                                        @endif
+                                    </ul>
+                                </li>
+                            @endif
+
+                            @if ((hasPermission('id_card_read') || hasPermission('id_card_generate_read')) && hasFeature('id_card'))
+                                <li class="sidebar-menu-item {{ set_menu(['idcard*']) }}">
+                                    <a class="has-arrow">{{ ___('common.id_cards') }}</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('id_card_read'))
+                                            <li
+                                                class="sidebar-menu-item {{ set_menu(['idcard', 'idcard/create', 'idcard/edit*']) }}">
+                                                <a href="{{ route('idcard.index') }}">{{ ___('common.id_cards') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('id_card_generate_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['idcard/generate*']) }}">
+                                                <a href="{{ route('idcard.generate') }}">{{ ___('common.generate_id_cards') }}</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
+                            @endif
+
+                            @if ((hasPermission('certificate_read') || hasPermission('certificate_generate_read')) && hasFeature('certificate'))
+                                <li class="sidebar-menu-item {{ set_menu(['certificate*']) }}">
+                                    <a class="has-arrow">{{ ___('common.certificates') }}</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('certificate_read'))
+                                            <li
+                                                class="sidebar-menu-item {{ set_menu(['certificate', 'certificate/create', 'certificate/edit*']) }}">
+                                                <a href="{{ route('certificate.index') }}">{{ ___('common.certificates') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('certificate_generate_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['certificate/generate*']) }}">
+                                                <a
+                                                    href="{{ route('certificate.generate') }}">{{ ___('common.generate_certificates') }}</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
+                            @endif
+
+                            @if (!cannotAccessSchoolSettings() && hasPermission('language_read') && hasFeature('language'))
+                                <li class="sidebar-menu-item {{ set_menu(['languages*']) }}">
+                                    <a href="{{ route('languages.index') }}">{{ ___('common.language') }}</a>
+                                </li>
+                            @endif
+
+                            @if (
+                                (hasPermission('report_marksheet_read') ||
+                                    hasPermission('report_merit_list_read') ||
+                                    hasPermission('report_progress_card_read') ||
+                                    hasPermission('report_due_fees_read') ||
+                                    hasPermission('report_fees_collection_read') ||
+                                    hasPermission('report_account_read') ||
+                                    hasPermission('class_routine_read') ||
+                                    hasPermission('exam_routine_read') ||
+                                    hasPermission('report_attendance_read')) &&
+                                    hasFeature('report'))
+                                <li class="sidebar-menu-item {{ set_menu(['report-*']) }}">
+                                    <a class="has-arrow">{{ ___('settings.Report') }}</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('report_marksheet_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['report-marksheet*']) }}">
+                                                <a
+                                                    href="{{ route('report-marksheet.index') }}">{{ ___('settings.marksheet') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('report_merit_list_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['report-merit-list*']) }}">
+                                                <a
+                                                    href="{{ route('report-merit-list.index') }}">{{ ___('settings.merit_list') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('report_progress_card_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['report-progress-card*']) }}">
+                                                <a
+                                                    href="{{ route('report-progress-card.index') }}">{{ ___('settings.progress_card') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('report_due_fees_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['report-due-fees*']) }}">
+                                                <a
+                                                    href="{{ route('report-due-fees.index') }}">{{ ___('settings.due_fees') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('report_fees_collection_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['report-fees-collection*']) }}">
+                                                <a
+                                                    href="{{ route('report-fees-collection.index') }}">{{ ___('settings.fees_collection') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('report_account_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['report-account*']) }}">
+                                                <a
+                                                    href="{{ route('report-account.index') }}">{{ ___('settings.Accounts') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('class_routine_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['report-class-routine*']) }}">
+                                                <a
+                                                    href="{{ route('report-class-routine.index') }}">{{ ___('settings.class_routine') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('exam_routine_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['report-exam-routine*']) }}">
+                                                <a
+                                                    href="{{ route('report-exam-routine.index') }}">{{ ___('settings.exam_routine') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('report_attendance_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['report-attendance/report*']) }}">
+                                                <a
+                                                    href="{{ route('report-attendance.report') }}">{{ ___('settings.Attendance') }}</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
+                            @endif
+
+                            @if (
+                                (hasPermission('account_head_read') || hasPermission('income_read') || hasPermission('expense_read')) &&
+                                    hasFeature('account'))
+                                <li
+                                    class="sidebar-menu-item {{ set_menu(['account_head.index', 'account_head.create', 'account_head.edit']) }}">
+                                    <a class="has-arrow">{{ ___('account.Accounts') }}</a>
+                                    <ul class="child-menu-list">
+                                        @if (hasPermission('account_head_read'))
+                                            <li
+                                                class="sidebar-menu-item {{ set_menu(['account_head.index', 'account_head.create', 'account_head.edit']) }}">
+                                                <a
+                                                    href="{{ route('account_head.index') }}">{{ ___('account.account_head') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('income_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['income*']) }}">
+                                                <a href="{{ route('income.index') }}">{{ ___('account.income') }}</a>
+                                            </li>
+                                        @endif
+                                        @if (hasPermission('expense_read'))
+                                            <li class="sidebar-menu-item {{ set_menu(['expense*']) }}">
+                                                <a href="{{ route('expense.index') }}">{{ ___('account.expense') }}</a>
+                                            </li>
+                                        @endif
+                                    </ul>
+                                </li>
+                            @endif
+                        </ul>
+                    </li>
+                @endif
+                {{-- End Admin Workspace --}}
 
                 @if(hasModule('StudyMaterial'))
                     @include('studymaterial::admin_sidebar_menu')
@@ -881,129 +998,7 @@
                 @endif
                 <!-- Library end -->
 
-                {{-- Start Accounts --}}
-                @if (
-                    (hasPermission('account_head_read') || hasPermission('income_read') || hasPermission('expense_read')) &&
-                        hasFeature('account'))
-                    <li
-                        class="sidebar-menu-item {{ set_menu(['account_head.index', 'account_head.create', 'account_head.edit']) }}">
-                        <a class="parent-item-content has-arrow">
-                            <i class="las la-money-bill-wave"></i>
-                            <span class="on-half-expanded">{{ ___('account.Accounts') }}</span>
-                        </a>
-                        <ul class="child-menu-list">
-                            @if (hasPermission('account_head_read'))
-                                <li
-                                    class="sidebar-menu-item {{ set_menu(['account_head.index', 'account_head.create', 'account_head.edit']) }}">
-                                    <a
-                                        href="{{ route('account_head.index') }}">{{ ___('account.account_head') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('income_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['income*']) }}">
-                                    <a href="{{ route('income.index') }}">{{ ___('account.income') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('expense_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['expense*']) }}">
-                                    <a href="{{ route('expense.index') }}">{{ ___('account.expense') }}</a>
-                                </li>
-                            @endif
-                        </ul>
-                    </li>
-                @endif
-                {{-- End Transactions --}}
-
-
-
-                {{-- Report start --}}
-                @if (
-                    (hasPermission('report_marksheet_read') ||
-                        hasPermission('report_merit_list_read') ||
-                        hasPermission('report_progress_card_read') ||
-                        hasPermission('report_due_fees_read') ||
-                        hasPermission('report_fees_collection_read') ||
-                        hasPermission('report_account_read') ||
-                        hasPermission('class_routine_read') ||
-                        hasPermission('exam_routine_read') ||
-                        hasPermission('report_attendance_read')) &&
-                        hasFeature('report'))
-                    <li class="sidebar-menu-item {{ set_menu(['report-*']) }}">
-                        <a class="parent-item-content has-arrow">
-                            <i class="las la-file-invoice"></i>
-                            <span class="on-half-expanded">{{ ___('settings.Report') }}</span>
-                        </a>
-                        <ul class="child-menu-list">
-                            @if (hasPermission('report_marksheet_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['report-marksheet*']) }}">
-                                    <a
-                                        href="{{ route('report-marksheet.index') }}">{{ ___('settings.marksheet') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('report_merit_list_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['report-merit-list*']) }}">
-                                    <a
-                                        href="{{ route('report-merit-list.index') }}">{{ ___('settings.merit_list') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('report_progress_card_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['report-progress-card*']) }}">
-                                    <a
-                                        href="{{ route('report-progress-card.index') }}">{{ ___('settings.progress_card') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('report_due_fees_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['report-due-fees*']) }}">
-                                    <a
-                                        href="{{ route('report-due-fees.index') }}">{{ ___('settings.due_fees') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('report_fees_collection_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['report-fees-collection*']) }}">
-                                    <a
-                                        href="{{ route('report-fees-collection.index') }}">{{ ___('settings.fees_collection') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('report_account_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['report-account*']) }}">
-                                    <a
-                                        href="{{ route('report-account.index') }}">{{ ___('settings.Accounts') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('class_routine_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['report-class-routine*']) }}">
-                                    <a
-                                        href="{{ route('report-class-routine.index') }}">{{ ___('settings.class_routine') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('exam_routine_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['report-exam-routine*']) }}">
-                                    <a
-                                        href="{{ route('report-exam-routine.index') }}">{{ ___('settings.exam_routine') }}</a>
-                                </li>
-                            @endif
-                            @if (hasPermission('report_attendance_read'))
-                                <li class="sidebar-menu-item {{ set_menu(['report-attendance/report*']) }}">
-                                    <a
-                                        href="{{ route('report-attendance.report') }}">{{ ___('settings.Attendance') }}</a>
-                                </li>
-                            @endif
-                        </ul>
-                    </li>
-                @endif
-                {{-- Report end --}}
-
-
-                <!-- Language layout start -->
-                @if (!cannotAccessSchoolSettings() && hasPermission('language_read') && hasFeature('language'))
-                    <li class="sidebar-menu-item {{ set_menu(['languages*']) }}">
-                        <a href="{{ route('languages.index') }}" class="parent-item-content">
-                            <i class="las la-language"></i>
-                            <span class="on-half-expanded">{{ ___('common.language') }}</span>
-                        </a>
-                    </li>
-                @endif
-                <!-- Language layout end -->
+                {{-- Accounts, Report, and Language moved into Admin Workspace - see above. --}}
 
                 <!-- Homework layout end -->
 
