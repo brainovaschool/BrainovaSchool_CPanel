@@ -196,7 +196,14 @@
                                                 @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_TEXTAREA)
                                                     <textarea name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="form-control ot-input" rows="2">{{ $current }}</textarea>
                                                 @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_FILE)
-                                                    <input type="file" name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]" class="form-control ot-input">
+                                                    @php($fileInputId = 'series_' . $s->id . '_' . $field->key . '_file')
+                                                    <div class="ot_fileUploader left-side mb-1">
+                                                        <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file chosen" readonly>
+                                                        <button class="primary-btn-small-input" type="button">
+                                                            <label class="btn btn-lg ot-btn-primary" for="{{ $fileInputId }}">Browse</label>
+                                                            <input type="file" class="d-none bn-file-input" id="{{ $fileInputId }}" name="series[{{ $s->id }}][custom_fields][{{ $field->key }}]">
+                                                        </button>
+                                                    </div>
                                                     @php($currentUpload = $current ? \App\Models\Upload::find($current) : null)
                                                     @if ($currentUpload)
                                                         <p class="text-secondary mt-1 mb-0"><a href="{{ globalAsset($currentUpload->path) }}" target="_blank">Current file</a></p>
@@ -301,7 +308,13 @@
                             @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_TEXTAREA)
                                 <textarea name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input" rows="2"></textarea>
                             @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_FILE)
-                                <input type="file" name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input">
+                                <div class="ot_fileUploader left-side mb-1">
+                                    <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file chosen" readonly>
+                                    <button class="primary-btn-small-input" type="button">
+                                        <label class="btn btn-lg ot-btn-primary" for="new_series___INDEX___{{ $field->key }}_file">Browse</label>
+                                        <input type="file" class="d-none bn-file-input" id="new_series___INDEX___{{ $field->key }}_file" name="new_series[__INDEX__][custom_fields][{{ $field->key }}]">
+                                    </button>
+                                </div>
                             @else
                                 <input type="{{ $field->type }}" name="new_series[__INDEX__][custom_fields][{{ $field->key }}]" class="form-control ot-input" value="">
                             @endif
@@ -476,6 +489,20 @@
                 jQuery(row).find('.niceSelect').niceSelect();
                 jQuery(row).find('.select2_multy').select2();
                 newSeriesIndex++;
+            });
+
+            // main.js hides every input[type=file] on every page - clicking
+            // the visible "Browse" <label> still opens the picker natively
+            // via its for="", so this only needs to mirror the chosen
+            // filename into the readonly text box next to it. Delegated so
+            // it also covers File fields added later via "+ Add a series".
+            document.addEventListener('change', function (e) {
+                if (!e.target.classList.contains('bn-file-input')) return;
+                var wrapper = e.target.closest('.ot_fileUploader');
+                var placeholder = wrapper ? wrapper.querySelector('.bn-file-placeholder') : null;
+                if (placeholder) {
+                    placeholder.value = e.target.files.length ? e.target.files[0].name : '';
+                }
             });
         })();
     </script>

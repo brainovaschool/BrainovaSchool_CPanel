@@ -115,7 +115,8 @@
                                     </td>
                                     <td>{{ $reel->planned_date?->format('d M Y') ?: '—' }}</td>
                                     <td class="action bn-reel-actions">
-                                        @if ($reel->status === \App\Models\Portal\PortalReel::SUGGESTED)
+                                        @php($needsAssignment = $reel->status !== \App\Models\Portal\PortalReel::SUGGESTED && !$reel->is_open_paid && !$reel->assigned_to)
+                                        @if ($reel->status === \App\Models\Portal\PortalReel::SUGGESTED || $needsAssignment)
                                             <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a>
                                         @else
                                             <a href="{{ route('portal-social-reels.setup', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a>

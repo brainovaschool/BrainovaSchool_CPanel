@@ -88,7 +88,13 @@
                     @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_TEXTAREA)
                         <textarea name="custom_fields[{{ $field->key }}]" class="form-control ot-input" rows="2">{{ $current }}</textarea>
                     @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_FILE)
-                        <input type="file" name="custom_fields[{{ $field->key }}]" class="form-control ot-input">
+                        <div class="ot_fileUploader left-side mb-1">
+                            <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file chosen" readonly>
+                            <button class="primary-btn-small-input" type="button">
+                                <label class="btn btn-lg ot-btn-primary" for="cf_{{ $field->key }}_file">Browse</label>
+                                <input type="file" class="d-none bn-file-input" id="cf_{{ $field->key }}_file" name="custom_fields[{{ $field->key }}]">
+                            </button>
+                        </div>
                         @php($currentUpload = $current ? \App\Models\Upload::find($current) : null)
                         @if ($currentUpload)
                             <p class="text-secondary mt-1 mb-0"><a href="{{ globalAsset($currentUpload->path) }}" target="_blank">Current file</a></p>
@@ -176,5 +182,18 @@
             seriesSelect.addEventListener('change', applySeriesDefaults);
         }
     })();
+
+    // main.js hides every input[type=file] on every page - clicking the
+    // visible "Browse" <label> still opens the picker natively via its
+    // for="", so this only needs to mirror the chosen filename into the
+    // readonly text box next to it.
+    document.addEventListener('change', function (e) {
+        if (!e.target.classList.contains('bn-file-input')) return;
+        var wrapper = e.target.closest('.ot_fileUploader');
+        var placeholder = wrapper ? wrapper.querySelector('.bn-file-placeholder') : null;
+        if (placeholder) {
+            placeholder.value = e.target.files.length ? e.target.files[0].name : '';
+        }
+    });
 </script>
 @endpush
