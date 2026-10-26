@@ -57,19 +57,21 @@
                     <div class="table-responsive">
                     <table class="ot-basic-table ot-table-bg bn-reels-table">
                         <colgroup>
-                            <col style="width:8%">
-                            <col style="width:15%">
-                            <col style="width:17%">
-                            <col style="width:10%">
-                            <col style="width:12%">
-                            <col style="width:8%">
-                            <col style="width:8%">
-                            <col style="width:8%">
+                            <col style="width:7%">
+                            <col style="width:6%">
                             <col style="width:14%">
+                            <col style="width:15%">
+                            <col style="width:9%">
+                            <col style="width:11%">
+                            <col style="width:8%">
+                            <col style="width:7%">
+                            <col style="width:7%">
+                            <col style="width:16%">
                         </colgroup>
                         <thead class="thead">
                             <tr>
                                 <th>Series</th>
+                                <th>Code</th>
                                 <th>Topic</th>
                                 <th>Hook</th>
                                 <th>Suggested by</th>
@@ -91,6 +93,7 @@
                                             —
                                         @endif
                                     </td>
+                                    <td>{{ $reel->code ?: '—' }}</td>
                                     <td>
                                         <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="bn-reel-title">{{ $reel->title }}</a>
                                     </td>

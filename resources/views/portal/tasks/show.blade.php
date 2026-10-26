@@ -9,7 +9,12 @@
         <div class="page-header">
             <div class="row">
                 <div class="col-sm-8">
-                    <h4 class="bradecrumb-title mb-1">{{ $task->title }}</h4>
+                    <h4 class="bradecrumb-title mb-1">
+                        {{ $task->title }}
+                        @if (optional($task->reel)->code)
+                            <span class="badge-basic-info-text">{{ $task->reel->code }}</span>
+                        @endif
+                    </h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
                         <li class="breadcrumb-item"><a href="{{ $data['isManager'] ? route('portal-tasks.index') : route('portal-my-tasks.index') }}">Tasks</a></li>

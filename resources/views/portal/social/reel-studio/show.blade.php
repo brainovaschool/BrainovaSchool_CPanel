@@ -7,7 +7,12 @@
         <div class="page-header">
             <div class="row">
                 <div class="col-sm-8">
-                    <h4 class="bradecrumb-title mb-1">{{ $data['project']->title }}</h4>
+                    <h4 class="bradecrumb-title mb-1">
+                        {{ $data['project']->title }}
+                        @if (optional($data['project']->portalReel)->code)
+                            <span class="badge-basic-info-text">{{ $data['project']->portalReel->code }}</span>
+                        @endif
+                    </h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
                         <li class="breadcrumb-item"><a href="{{ route('portal-social-reel-studio.index') }}">Reel Studio</a></li>
@@ -23,6 +28,7 @@
                 <div class="card-header"><h4 class="mb-0">From suggestion</h4></div>
                 <div class="card-body">
                     <div class="row">
+                        <div class="col-md-4"><strong>Code:</strong> {{ $linkedReel->code ?: '—' }}</div>
                         <div class="col-md-4"><strong>Series:</strong> {{ $linkedReel->series_name ?: '—' }}</div>
                         <div class="col-md-4"><strong>Pillar:</strong> {{ $linkedReel->category ?: '—' }}</div>
                         <div class="col-md-4"><strong>Deadline:</strong> {{ $linkedReel->deadline?->format('d M Y') ?: '—' }}</div>
