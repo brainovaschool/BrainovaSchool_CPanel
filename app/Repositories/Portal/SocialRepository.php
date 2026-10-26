@@ -213,6 +213,7 @@ class SocialRepository
                 continue;
             }
             $series->name      = $name;
+            $series->code      = trim($data['code'] ?? '') ?: null;
             $series->defaults  = $this->buildSeriesDefaults($data, $request, "series.{$id}.custom_fields", $series->defaults ?: []);
             $series->save();
         }
@@ -226,6 +227,7 @@ class SocialRepository
             }
             PortalReelSeries::create([
                 'name'       => $name,
+                'code'       => trim($data['code'] ?? '') ?: null,
                 'defaults'   => $this->buildSeriesDefaults($data, $request, "new_series.{$index}.custom_fields", []),
                 'sort_order' => $nextOrder++,
             ]);
@@ -531,16 +533,16 @@ class SocialRepository
         return $this->responseWithSuccess('Removed.', []);
     }
 
-    // ---- Month plan / category targets ------------------------------
+    // ---- Month plan / targets -----------------------------------------
 
     public function categoryTargets()
     {
-        return PortalCategoryTarget::orderBy('category')->get();
+        return PortalCategoryTarget::orderBy('series_name')->orderBy('format')->get();
     }
 
-    /** The selected month's actual reel/carousel counts per category
-     *  against the configured targets — business rule 10: counts from
-     *  accepted onward, by planned_date falling in that month. */
+    /** The selected month's actual count per Series + Format against the
+     *  configured targets — business rule 10: counts from accepted onward,
+     *  by planned_date falling in that month. */
     public function monthPlan(string $month): array
     {
         $targets = $this->categoryTargets();
@@ -552,23 +554,23 @@ class SocialRepository
             ->get();
 
         return $targets->map(function (PortalCategoryTarget $t) use ($thisMonth) {
-            $forCategory = $thisMonth->where('category', $t->category);
             return [
-                'category'        => $t->category,
-                'reel_target'     => $t->reel_target,
-                'reel_actual'     => $forCategory->where('format', 'Reel')->count(),
-                'carousel_target' => $t->carousel_target,
-                'carousel_actual' => $forCategory->where('format', 'Carousel')->count(),
+                'id'     => $t->id,
+                'series' => $t->series_name,
+                'format' => $t->format,
+                'target' => $t->reel_target,
+                'actual' => $thisMonth->where('series_name', $t->series_name)->where('format', $t->format)->count(),
             ];
         })->values()->all();
     }
 
     /** One row per calendar day of the selected month - the admin picks
-     *  a Series then a ready-to-schedule reel from it per day; Format /
+     *  a Series then a ready-to-upload reel from it per day; Format /
      *  Created by / Drive link are read straight off that reel, never
-     *  entered separately. "Ready to schedule" = its video is approved
-     *  and it's either not yet scheduled anywhere, or already scheduled
-     *  within this same month (so it still shows on its day here). */
+     *  entered separately. "Ready to upload" = its video is approved and
+     *  it's either not yet scheduled anywhere, or already scheduled within
+     *  this same month (so it still shows on its day here). One reel per
+     *  day, keyed by `planned_date` - the actual go-live date. */
     public function monthCalendar(string $month): array
     {
         $start = Carbon::parse($month . '-01')->startOfMonth();
@@ -607,23 +609,81 @@ class SocialRepository
             $this->scheduleUpload((int) $reelId, $date);
         }
 
-        return $this->responseWithSuccess('Calendar saved.', []);
+        return $this->responseWithSuccess('Upload plan saved.', []);
     }
 
+    /** Like monthCalendar(), but for deciding WHO works on WHAT and BY
+     *  WHEN rather than when it goes live - every approved reel regardless
+     *  of video status, keyed by `deadline` instead of `planned_date`, and
+     *  more than one reel can share a day (several people can have work
+     *  due the same day). */
+    public function productionCalendar(string $month): array
+    {
+        $start = Carbon::parse($month . '-01')->startOfMonth();
+        $end   = $start->copy()->endOfMonth();
+
+        $reels = PortalReel::with('assignee')
+            ->whereIn('status', PortalReel::COUNTS_TOWARD_MONTH)
+            ->where(function ($q) use ($start, $end) {
+                $q->whereNull('deadline')
+                    ->orWhereBetween('deadline', [$start->format('Y-m-d'), $end->format('Y-m-d')]);
+            })
+            ->orderBy('series_name')
+            ->orderBy('title')
+            ->get();
+
+        $byDate = $reels->filter(fn (PortalReel $r) => $r->deadline)
+            ->groupBy(fn (PortalReel $r) => $r->deadline->format('Y-m-d'));
+
+        $days = [];
+        for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
+            $days[] = ['date' => $d->copy(), 'reels' => $byDate->get($d->format('Y-m-d'), collect())];
+        }
+
+        return ['days' => $days, 'reels' => $reels];
+    }
+
+    /** assignments[date][] = reelId, any number of slots per day - a blank
+     *  slot is skipped. Unlike the Upload Plan this never touches status or
+     *  requires video approval, since it's only "which day is this due". */
+    public function updateProductionCalendar($request): array
+    {
+        $assignments = (array) $request->input('assignments', []);
+        foreach ($assignments as $date => $reelIds) {
+            foreach ((array) $reelIds as $reelId) {
+                if (!$reelId) {
+                    continue;
+                }
+                $reel = PortalReel::find((int) $reelId);
+                if ($reel) {
+                    $reel->deadline = $date;
+                    $reel->save();
+                }
+            }
+        }
+
+        return $this->responseWithSuccess('Production plan saved.', []);
+    }
+
+    /** `category` keeps the old NOT NULL + unique constraint it can't be
+     *  freed of without the doctrine/dbal package (see the migration) - a
+     *  harmless "Series — Format" value satisfies it without being read
+     *  anywhere. */
     public function updateCategoryTargets($request): array
     {
-        $categories = (array) $request->category;
-        $reelTargets = (array) $request->reel_target;
-        $carouselTargets = (array) $request->carousel_target;
+        $seriesNames = (array) $request->series_name;
+        $formats     = (array) $request->format;
+        $targets     = (array) $request->target;
 
-        foreach ($categories as $i => $category) {
-            $category = trim($category);
-            if ($category === '') {
+        foreach ($seriesNames as $i => $series) {
+            $series = trim($series);
+            $format = trim($formats[$i] ?? '');
+            if ($series === '' || $format === '') {
                 continue;
             }
             PortalCategoryTarget::updateOrCreate(
-                ['category' => $category],
-                ['reel_target' => (int) ($reelTargets[$i] ?? 0), 'carousel_target' => (int) ($carouselTargets[$i] ?? 0)]
+                ['series_name' => $series, 'format' => $format],
+                ['category' => $series . ' — ' . $format, 'reel_target' => (int) ($targets[$i] ?? 0)]
             );
         }
 

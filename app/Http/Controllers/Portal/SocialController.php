@@ -312,13 +312,17 @@ class SocialController extends Controller
     {
         $month = $request->filled('month') ? $request->month : now()->format('Y-m');
 
-        $data['canManage'] = $this->canManageContent();
-        $data['month']     = $month;
-        $data['plan']      = $this->repo->monthPlan($month);
-        $data['calendar']  = $this->repo->monthCalendar($month);
-        $data['series']    = $data['calendar']['reels']->pluck('series_name')->filter()
-            ->merge($this->repo->reelSeries()->pluck('name'))->unique()->values();
-        $data['title']     = 'Social Board — Month Plan';
+        $data['canManage']  = $this->canManageContent();
+        $data['month']      = $month;
+        $data['settings']   = PortalSetting::current();
+        $data['plan']       = $this->repo->monthPlan($month);
+        $data['calendar']   = $this->repo->monthCalendar($month);
+        $data['production'] = $this->repo->productionCalendar($month);
+        $data['seriesList'] = $this->repo->reelSeries();
+        $data['series']     = $data['calendar']['reels']->pluck('series_name')
+            ->merge($data['production']['reels']->pluck('series_name'))
+            ->filter()->merge($data['seriesList']->pluck('name'))->unique()->values();
+        $data['title']      = 'Social Board — Month Plan';
         return view('portal.social.month-plan', compact('data'));
     }
 
@@ -337,6 +341,17 @@ class SocialController extends Controller
             abort(403);
         }
         $result = $this->repo->updateMonthCalendar($request);
+        $month  = $request->filled('month') ? $request->month : now()->format('Y-m');
+        return redirect()->route('portal-social-month-plan.index', ['month' => $month])
+            ->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function updateProductionCalendar(Request $request)
+    {
+        if (!hasPermission('portal_manage')) {
+            abort(403);
+        }
+        $result = $this->repo->updateProductionCalendar($request);
         $month  = $request->filled('month') ? $request->month : now()->format('Y-m');
         return redirect()->route('portal-social-month-plan.index', ['month' => $month])
             ->with($result['status'] ? 'success' : 'danger', $result['message']);

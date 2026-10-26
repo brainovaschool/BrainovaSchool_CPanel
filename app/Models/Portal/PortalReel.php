@@ -34,6 +34,27 @@ class PortalReel extends Model
         'custom_fields'      => 'array',
     ];
 
+    /** The moment a reel first leaves "suggested" (however that happens -
+     *  reviewReel(), or assignReel()'s own suggested-to-accepted bump) it
+     *  gets a code: its series' own code plus the next running number in
+     *  that series, e.g. "SS1". Left blank if the series has no code set,
+     *  and never reassigned once it has one - a single model hook instead
+     *  of repeating this at every place status can change. */
+    protected static function booted()
+    {
+        static::saving(function (PortalReel $reel) {
+            if ($reel->code || !$reel->series_name || $reel->status === self::SUGGESTED || $reel->status === self::REJECTED) {
+                return;
+            }
+            $series = PortalReelSeries::where('name', $reel->series_name)->first();
+            if (!$series || !$series->code) {
+                return;
+            }
+            $next = static::where('series_name', $reel->series_name)->whereNotNull('code')->count() + 1;
+            $reel->code = $series->code . $next;
+        });
+    }
+
     public function suggestedBy()
     {
         return $this->belongsTo(User::class, 'suggested_by');

@@ -108,6 +108,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/portal/social/month-plan', [SocialController::class, 'monthPlan'])->name('portal-social-month-plan.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_social_month_plan_read']);
                 Route::post('/portal/social/month-plan/targets', [SocialController::class, 'updateCategoryTargets'])->name('portal-social-month-plan.targets')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 Route::post('/portal/social/month-plan/calendar', [SocialController::class, 'updateMonthCalendar'])->name('portal-social-month-plan.calendar')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                Route::post('/portal/social/month-plan/production', [SocialController::class, 'updateProductionCalendar'])->name('portal-social-month-plan.production')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
 
                 Route::get('/portal/social/audience', [SocialController::class, 'audience'])->name('portal-social-audience.index')->middleware('PermissionCheck:portal_access');
                 Route::post('/portal/social/audience/store', [SocialController::class, 'storeMetric'])->name('portal-social-audience.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');

@@ -146,6 +146,10 @@
                                         <input type="text" name="series[{{ $s->id }}][name]" value="{{ $s->name }}" class="form-control ot-input" required>
                                     </div>
                                     <div class="col-md-3">
+                                        <label class="form-label">Code</label>
+                                        <input type="text" name="series[{{ $s->id }}][code]" value="{{ $s->code }}" class="form-control ot-input" placeholder="e.g. SS" maxlength="20">
+                                    </div>
+                                    <div class="col-md-3">
                                         <label class="form-label">Default Pillar</label>
                                         <select name="series[{{ $s->id }}][category]" class="nice-select niceSelect bordered_style wide">
                                             <option value="">—</option>
@@ -247,6 +251,10 @@
                 <div class="col-md-3">
                     <label class="form-label">Name</label>
                     <input type="text" name="new_series[__INDEX__][name]" value="" class="form-control ot-input" placeholder="Series name" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Code</label>
+                    <input type="text" name="new_series[__INDEX__][code]" value="" class="form-control ot-input" placeholder="e.g. SS" maxlength="20">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Default Pillar</label>
