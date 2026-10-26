@@ -6,6 +6,7 @@ use App\Models\Portal\PortalAudienceMetric;
 use App\Models\Portal\PortalCategoryTarget;
 use App\Models\Portal\PortalDailyPlan;
 use App\Models\Portal\PortalPageFix;
+use App\Models\Portal\PortalProductionPlaceholder;
 use App\Models\Portal\PortalReel;
 use App\Models\Portal\PortalReelCustomField;
 use App\Models\Portal\PortalReelSeries;
@@ -616,7 +617,10 @@ class SocialRepository
      *  WHEN rather than when it goes live - every approved reel regardless
      *  of video status, keyed by `deadline` instead of `planned_date`, and
      *  more than one reel can share a day (several people can have work
-     *  due the same day). */
+     *  due the same day). Each day's slots mix two kinds: a real reel
+     *  (deadline already set) and a placeholder (series picked, no topic
+     *  yet) - the view doesn't care which, it just reads slot.reel (null
+     *  for a placeholder) and slot.series_name. */
     public function productionCalendar(string $month): array
     {
         $start = Carbon::parse($month . '-01')->startOfMonth();
@@ -632,32 +636,60 @@ class SocialRepository
             ->orderBy('title')
             ->get();
 
-        $byDate = $reels->filter(fn (PortalReel $r) => $r->deadline)
+        $reelsByDate = $reels->filter(fn (PortalReel $r) => $r->deadline)
             ->groupBy(fn (PortalReel $r) => $r->deadline->format('Y-m-d'));
+
+        $placeholdersByDate = PortalProductionPlaceholder::whereBetween('date', [$start->format('Y-m-d'), $end->format('Y-m-d')])
+            ->orderBy('id')
+            ->get()
+            ->groupBy(fn (PortalProductionPlaceholder $p) => $p->date->format('Y-m-d'));
 
         $days = [];
         for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
-            $days[] = ['date' => $d->copy(), 'reels' => $byDate->get($d->format('Y-m-d'), collect())];
+            $dateKey = $d->format('Y-m-d');
+            $slots = $reelsByDate->get($dateKey, collect())
+                ->map(fn (PortalReel $r) => ['reel' => $r, 'series_name' => $r->series_name])
+                ->concat(
+                    $placeholdersByDate->get($dateKey, collect())
+                        ->map(fn (PortalProductionPlaceholder $p) => ['reel' => null, 'series_name' => $p->series_name])
+                )
+                ->values();
+            $days[] = ['date' => $d->copy(), 'slots' => $slots];
         }
 
         return ['days' => $days, 'reels' => $reels];
     }
 
-    /** assignments[date][] = reelId, any number of slots per day - a blank
-     *  slot is skipped. Unlike the Upload Plan this never touches status or
-     *  requires video approval, since it's only "which day is this due". */
+    /** assignments[date][topic][] = reelId (or '' for a blank slot) and
+     *  assignments[date][series][] = the series picked for that SAME
+     *  position - a topic picked wins (sets that reel's deadline); a
+     *  series with no topic yet becomes a placeholder instead. Each day's
+     *  placeholders are replaced wholesale from what's submitted, since
+     *  the whole day's slots are always resubmitted together. Unlike the
+     *  Upload Plan this never touches status or requires video approval,
+     *  since it's only "which day is this due". */
     public function updateProductionCalendar($request): array
     {
         $assignments = (array) $request->input('assignments', []);
-        foreach ($assignments as $date => $reelIds) {
-            foreach ((array) $reelIds as $reelId) {
-                if (!$reelId) {
+        foreach ($assignments as $date => $row) {
+            $topics  = (array) ($row['topic'] ?? []);
+            $series  = (array) ($row['series'] ?? []);
+
+            PortalProductionPlaceholder::where('date', $date)->delete();
+
+            foreach ($topics as $i => $reelId) {
+                if ($reelId) {
+                    $reel = PortalReel::find((int) $reelId);
+                    if ($reel) {
+                        $reel->deadline = $date;
+                        $reel->save();
+                    }
                     continue;
                 }
-                $reel = PortalReel::find((int) $reelId);
-                if ($reel) {
-                    $reel->deadline = $date;
-                    $reel->save();
+
+                $seriesName = trim($series[$i] ?? '');
+                if ($seriesName !== '') {
+                    PortalProductionPlaceholder::create(['date' => $date, 'series_name' => $seriesName]);
                 }
             }
         }

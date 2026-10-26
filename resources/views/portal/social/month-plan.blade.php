@@ -150,26 +150,27 @@
                                     <tbody>
                                         @foreach ($data['production']['days'] as $day)
                                             @php($dateKey = $day['date']->format('Y-m-d'))
-                                            @php($existing = $day['reels'])
+                                            @php($existing = $day['slots'])
                                             @if ($data['canManage'])
                                                 @php($rowCount = max($existing->count(), 1))
                                                 @for ($i = 0; $i < $rowCount; $i++)
-                                                    @php($reel = $existing->get($i))
+                                                    @php($slot = $existing->get($i))
+                                                    @php($reel = $slot['reel'] ?? null)
                                                     <tr class="bn-prod-row" data-date="{{ $dateKey }}">
                                                         @if ($i === 0)
                                                             <td class="bn-prod-date-cell" rowspan="{{ $rowCount }}">{{ $day['date']->format('d M Y') }}</td>
                                                             <td class="bn-prod-day-cell" rowspan="{{ $rowCount }}">{{ $day['date']->format('l') }}</td>
                                                         @endif
                                                         <td>
-                                                            <select class="form-control ot-input bn-cal-series">
+                                                            <select name="assignments[{{ $dateKey }}][series][]" class="form-control ot-input bn-cal-series">
                                                                 <option value="">—</option>
                                                                 @foreach ($data['series'] as $s)
-                                                                    <option value="{{ $s }}" {{ optional($reel)->series_name === $s ? 'selected' : '' }}>{{ $s }}</option>
+                                                                    <option value="{{ $s }}" {{ ($slot['series_name'] ?? null) === $s ? 'selected' : '' }}>{{ $s }}</option>
                                                                 @endforeach
                                                             </select>
                                                         </td>
                                                         <td>
-                                                            <select name="assignments[{{ $dateKey }}][]" class="form-control ot-input bn-cal-content">
+                                                            <select name="assignments[{{ $dateKey }}][topic][]" class="form-control ot-input bn-cal-content">
                                                                 <option value="">—</option>
                                                                 @foreach ($data['production']['reels'] as $r)
                                                                     <option value="{{ $r->id }}"
@@ -200,19 +201,20 @@
                                                     </tr>
                                                 @endfor
                                             @else
-                                                @forelse ($existing as $i => $reel)
+                                                @forelse ($existing as $i => $slot)
+                                                    @php($reel = $slot['reel'] ?? null)
                                                     <tr>
                                                         @if ($i === 0)
                                                             <td rowspan="{{ $existing->count() }}">{{ $day['date']->format('d M Y') }}</td>
                                                             <td rowspan="{{ $existing->count() }}">{{ $day['date']->format('l') }}</td>
                                                         @endif
-                                                        <td>{{ $reel->series_name ?: '—' }}</td>
-                                                        <td>{{ $reel->title }}</td>
-                                                        <td>{{ $reel->code ?: '—' }}</td>
-                                                        <td>{{ $reel->format ?: '—' }}</td>
-                                                        <td>{{ optional($reel->assignee)->first_name ? trim($reel->assignee->first_name . ' ' . $reel->assignee->last_name) : '—' }}</td>
+                                                        <td>{{ $slot['series_name'] ?: '—' }}</td>
+                                                        <td>{{ optional($reel)->title ?: '—' }}</td>
+                                                        <td>{{ optional($reel)->code ?: '—' }}</td>
+                                                        <td>{{ optional($reel)->format ?: '—' }}</td>
+                                                        <td>{{ optional($reel)->assignee?->first_name ? trim($reel->assignee->first_name . ' ' . $reel->assignee->last_name) : '—' }}</td>
                                                         <td>
-                                                            @if ($reel->drive_link)
+                                                            @if (optional($reel)->drive_link)
                                                                 <a href="{{ $reel->drive_link }}" target="_blank">{{ $reel->drive_link }}</a>
                                                             @else
                                                                 —
