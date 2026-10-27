@@ -280,8 +280,11 @@ class TaskController extends Controller
         if ($this->isReviewingOwnTask((int) $id)) {
             abort(403, "You can't review your own task.");
         }
-        $request->validate(['comment' => 'required|string|max:3000']);
-        $result = $this->repo->requestRevision((int) $id, Auth::id(), $request->comment);
+        $request->validate([
+            'comment'      => 'required|string|max:3000',
+            'comment_file' => 'nullable|file|max:10240',
+        ]);
+        $result = $this->repo->requestRevision((int) $id, Auth::id(), $request->comment, $request->file('comment_file'));
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
@@ -293,8 +296,9 @@ class TaskController extends Controller
         $request->validate([
             'quality_score' => 'required|integer|min:0|max:5',
             'comment'       => 'nullable|string|max:3000',
+            'comment_file'  => 'nullable|file|max:10240',
         ]);
-        $result = $this->repo->approve((int) $id, Auth::id(), (int) $request->quality_score, $request->comment);
+        $result = $this->repo->approve((int) $id, Auth::id(), (int) $request->quality_score, $request->comment, $request->file('comment_file'));
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

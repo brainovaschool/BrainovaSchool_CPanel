@@ -37,4 +37,11 @@ class PortalTaskSubmission extends Model
     {
         return $this->belongsTo(Upload::class, 'upload_id');
     }
+
+    /** The reviewer's own attached file (e.g. a marked-up copy), separate
+     *  from the employee's own submitted upload() above. */
+    public function adminUpload()
+    {
+        return $this->belongsTo(Upload::class, 'admin_upload_id');
+    }
 }

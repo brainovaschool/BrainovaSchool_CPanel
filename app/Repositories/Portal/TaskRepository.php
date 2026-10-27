@@ -372,7 +372,7 @@ class TaskRepository
 
     /** Marks the latest submission as sent back for revision — that row,
      *  and every row before it, stays exactly as submitted forever. */
-    public function requestRevision(int $id, int $reviewerUserId, string $comment): array
+    public function requestRevision(int $id, int $reviewerUserId, string $comment, $commentFile = null): array
     {
         $task = PortalTask::with('submissions')->find($id);
         if (!$task) {
@@ -387,11 +387,14 @@ class TaskRepository
             return $this->responseWithError('No submission to review yet.', []);
         }
 
-        DB::transaction(function () use ($task, $latest, $reviewerUserId, $comment) {
-            $latest->admin_comment = $comment;
-            $latest->result        = PortalTaskSubmission::REVISION;
-            $latest->reviewed_by   = $reviewerUserId;
-            $latest->reviewed_at   = now();
+        $adminUploadId = $commentFile ? $this->UploadImageCreate($commentFile, 'uploads/portal-tasks') : null;
+
+        DB::transaction(function () use ($task, $latest, $reviewerUserId, $comment, $adminUploadId) {
+            $latest->admin_comment   = $comment;
+            $latest->admin_upload_id = $adminUploadId;
+            $latest->result          = PortalTaskSubmission::REVISION;
+            $latest->reviewed_by     = $reviewerUserId;
+            $latest->reviewed_at     = now();
             $latest->save();
 
             $task->status = PortalTask::REVISION;
@@ -408,7 +411,7 @@ class TaskRepository
     /** Approves and completes in one step, computing both score halves —
      *  revision score from the (immutable) submission history against the
      *  current scoring table, quality score as entered right now. */
-    public function approve(int $id, int $reviewerUserId, int $qualityScore, ?string $comment = null): array
+    public function approve(int $id, int $reviewerUserId, int $qualityScore, ?string $comment = null, $commentFile = null): array
     {
         if ($qualityScore < 0 || $qualityScore > 5) {
             return $this->responseWithError('Quality score must be between 0 and 5.', []);
@@ -423,13 +426,15 @@ class TaskRepository
         }
 
         $latest = $task->submissions->last();
+        $adminUploadId = $commentFile ? $this->UploadImageCreate($commentFile, 'uploads/portal-tasks') : null;
 
-        DB::transaction(function () use ($task, $latest, $reviewerUserId, $qualityScore, $comment) {
+        DB::transaction(function () use ($task, $latest, $reviewerUserId, $qualityScore, $comment, $adminUploadId) {
             if ($latest) {
-                $latest->admin_comment = $comment;
-                $latest->result        = PortalTaskSubmission::APPROVED;
-                $latest->reviewed_by   = $reviewerUserId;
-                $latest->reviewed_at   = now();
+                $latest->admin_comment   = $comment;
+                $latest->admin_upload_id = $adminUploadId;
+                $latest->result          = PortalTaskSubmission::APPROVED;
+                $latest->reviewed_by     = $reviewerUserId;
+                $latest->reviewed_at     = now();
                 $latest->save();
             }
 

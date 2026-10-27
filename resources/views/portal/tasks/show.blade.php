@@ -100,6 +100,9 @@
                                 @if ($sub->admin_comment)
                                     <p class="mb-0 text-secondary"><strong>Reviewer note:</strong> {!! linkify($sub->admin_comment) !!} — {{ optional($sub->reviewedBy)->name }}, {{ $sub->reviewed_at?->format('d M Y, h:i A') }}</p>
                                 @endif
+                                @if ($sub->adminUpload)
+                                    <p class="mb-0"><a href="{{ globalAsset($sub->adminUpload->path) }}" target="_blank">Download reviewer's attached file</a></p>
+                                @endif
                             </div>
                         @empty
                             <p class="text-secondary mb-0">No work submitted yet.</p>
@@ -207,19 +210,35 @@
                             @endif
 
                             @if (in_array($task->status, ['submitted', 'under_review']))
-                                <form action="{{ route('portal-tasks.request-revision', $task->id) }}" method="post" class="mb-3">
+                                <form action="{{ route('portal-tasks.request-revision', $task->id) }}" method="post" enctype="multipart/form-data" class="mb-3">
                                     @csrf
                                     <label class="form-label">Revision comment (required)</label>
                                     <textarea name="comment" class="form-control ot-input mb-2" rows="2" required></textarea>
+                                    <label class="form-label">Attach a file (optional)</label>
+                                    <div class="ot_fileUploader left-side mb-2">
+                                        <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file chosen" readonly>
+                                        <button class="primary-btn-small-input" type="button">
+                                            <label class="btn btn-lg ot-btn-primary" for="revisionCommentFile">Browse</label>
+                                            <input type="file" class="d-none bn-file-input" id="revisionCommentFile" name="comment_file">
+                                        </button>
+                                    </div>
                                     <button type="submit" class="btn ot-btn-warning w-100">Send Back for Revision</button>
                                 </form>
 
-                                <form action="{{ route('portal-tasks.approve', $task->id) }}" method="post">
+                                <form action="{{ route('portal-tasks.approve', $task->id) }}" method="post" enctype="multipart/form-data">
                                     @csrf
                                     <label class="form-label">Quality score (0–5)</label>
                                     <input type="number" name="quality_score" class="form-control ot-input mb-2" min="0" max="5" required>
                                     <label class="form-label">Note (optional)</label>
                                     <textarea name="comment" class="form-control ot-input mb-2" rows="2"></textarea>
+                                    <label class="form-label">Attach a file (optional)</label>
+                                    <div class="ot_fileUploader left-side mb-2">
+                                        <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file chosen" readonly>
+                                        <button class="primary-btn-small-input" type="button">
+                                            <label class="btn btn-lg ot-btn-primary" for="approveCommentFile">Browse</label>
+                                            <input type="file" class="d-none bn-file-input" id="approveCommentFile" name="comment_file">
+                                        </button>
+                                    </div>
                                     <button type="submit" class="btn ot-btn-success w-100">Approve &amp; Complete</button>
                                 </form>
                             @else
@@ -264,6 +283,18 @@
                 placeholder.value = fileInput.files.length ? fileInput.files[0].name : '';
             });
         })();
+
+        // Same fix, generic version - the reviewer's "Attach a file"
+        // inputs use the shared bn-file-input/bn-file-placeholder pattern
+        // instead of their own ids.
+        document.addEventListener('change', function (e) {
+            if (!e.target.classList.contains('bn-file-input')) return;
+            var wrapper = e.target.closest('.ot_fileUploader');
+            var placeholder = wrapper ? wrapper.querySelector('.bn-file-placeholder') : null;
+            if (placeholder) {
+                placeholder.value = e.target.files.length ? e.target.files[0].name : '';
+            }
+        });
     </script>
     @endpush
 @endsection
