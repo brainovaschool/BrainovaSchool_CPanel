@@ -1276,18 +1276,20 @@ if (!function_exists('permission_category_map')) {
     function permission_category_map(): array
     {
         return [
+            // Dashboard
             'dashboard' => 'Dashboard',
-            'admission' => 'Online Admission',
-            'admission_setting' => 'Online Admission',
+
+            // Subscriptions (standalone top-level item)
+            'subscription' => 'Subscriptions',
+
+            // Student Info
             'student' => 'Student Info',
             'student_category' => 'Student Info',
             'promote_students' => 'Student Info',
             'disabled_students' => 'Student Info',
             'parent' => 'Student Info',
-            'id_card' => 'Id Cards',
-            'id_card_generate' => 'Id Cards',
-            'certificate' => 'Certificates',
-            'certificate_generate' => 'Certificates',
+
+            // Academic
             'classes' => 'Academic',
             'section' => 'Academic',
             'shift' => 'Academic',
@@ -1296,93 +1298,123 @@ if (!function_exists('permission_category_map')) {
             'subject_assign' => 'Academic',
             'time_schedule' => 'Academic',
             'class_room' => 'Academic',
+
+            // Routines
             'class_routine' => 'Routines',
             'exam_routine' => 'Routines',
-            'attendance_student' => 'Attendance',
-            'attendance_teacher' => 'Attendance',
-            'attendance_report' => 'Reports',
+
+            // Leave
             'leave_type' => 'Leave',
             'leave_request' => 'Leave',
             'leave_log' => 'Leave',
             'leave_approval' => 'Leave',
-            'fees_group' => 'Fees',
-            'fees_type' => 'Fees',
-            'fees_master' => 'Fees',
-            'fees_assign' => 'Fees',
-            'fees_collect' => 'Fees',
-            'discount_setup' => 'Fees',
-            'fees_payment_proof' => 'Fees',
-            'exam_type' => 'Examination',
-            'marks_grade' => 'Examination',
-            'exam_assign' => 'Examination',
-            'marks_register' => 'Examination',
-            'exam_setting' => 'Examination',
-            'online_exam_type' => 'Online Examination',
-            'question_group' => 'Online Examination',
-            'question_bank' => 'Online Examination',
-            'online_exam' => 'Online Examination',
-            'class_content' => 'Teacher Tools',
-            'portal' => 'Staff Workspace',
-            'reel_studio' => 'Staff Workspace',
-            'portal_employees' => 'Staff Workspace',
-            'portal_my_tasks' => 'Staff Workspace',
-            'portal_paid_tasks' => 'Staff Workspace',
-            'portal_work_log' => 'Staff Workspace',
-            'portal_my_responsibilities' => 'Staff Workspace',
-            'portal_my_performance' => 'Staff Workspace',
-            'portal_social_reels' => 'Staff Workspace',
-            'portal_social_suggest_reel' => 'Staff Workspace',
-            'portal_social_content_pool' => 'Staff Workspace',
-            'portal_reel_workflow' => 'Staff Workspace',
-            'portal_social_month_plan' => 'Staff Workspace',
-            'portal_social_page_fixes' => 'Staff Workspace',
-            'portal_manager_tasks' => 'Staff Workspace',
-            'portal_settings' => 'Staff Workspace',
-            'portal_team_attendance' => 'Staff Workspace',
-            'portal_manager_work_logs' => 'Staff Workspace',
-            'portal_responsibilities_manage' => 'Staff Workspace',
-            'portal_analytics' => 'Staff Workspace',
-            'portal_social_settings' => 'Staff Workspace',
-            'portal_growth_pay' => 'Staff Workspace',
-            'portal_reel_characters' => 'Staff Workspace',
-            'portal_reel_settings' => 'Staff Workspace',
-            'ai_help_teacher' => 'Teacher Tools',
-            'skill_mastery_report' => 'Teacher Tools',
-            'homework' => 'Homework',
+
+            // Staff Zone (Team Portal, Social Board, Planning)
+            'portal' => 'Staff Zone',
+            'reel_studio' => 'Staff Zone',
+            'portal_employees' => 'Staff Zone',
+            'portal_my_tasks' => 'Staff Zone',
+            'portal_paid_tasks' => 'Staff Zone',
+            'portal_work_log' => 'Staff Zone',
+            'portal_my_responsibilities' => 'Staff Zone',
+            'portal_my_performance' => 'Staff Zone',
+            'portal_social_reels' => 'Staff Zone',
+            'portal_social_suggest_reel' => 'Staff Zone',
+            'portal_social_content_pool' => 'Staff Zone',
+            'portal_reel_workflow' => 'Staff Zone',
+            'portal_social_month_plan' => 'Staff Zone',
+            'portal_social_page_fixes' => 'Staff Zone',
+            'portal_manager_tasks' => 'Staff Zone',
+            'portal_settings' => 'Staff Zone',
+            'portal_team_attendance' => 'Staff Zone',
+            'portal_manager_work_logs' => 'Staff Zone',
+            'portal_responsibilities_manage' => 'Staff Zone',
+            'portal_analytics' => 'Staff Zone',
+            'portal_social_settings' => 'Staff Zone',
+            'portal_reel_characters' => 'Staff Zone',
+            'portal_reel_settings' => 'Staff Zone',
+
+            // Teacher Zone (Class Content, Homework, Exam, AI/analytics tools)
+            'class_content' => 'Teacher Zone',
+            'homework' => 'Teacher Zone',
+            'ai_help_teacher' => 'Teacher Zone',
+            'skill_mastery_report' => 'Teacher Zone',
+            'exam_type' => 'Teacher Zone',
+            'marks_grade' => 'Teacher Zone',
+            'exam_assign' => 'Teacher Zone',
+            'marks_register' => 'Teacher Zone',
+            'exam_setting' => 'Teacher Zone',
+            'online_exam_type' => 'Teacher Zone',
+            'question_group' => 'Teacher Zone',
+            'question_bank' => 'Teacher Zone',
+            'online_exam' => 'Teacher Zone',
+
+            // Admin Zone (Online Admission, Attendance, Fees, Id Cards,
+            // Certificates, Language, Report, Accounts + Bonus)
+            'admission' => 'Admin Zone',
+            'admission_setting' => 'Admin Zone',
+            'attendance_student' => 'Admin Zone',
+            'attendance_teacher' => 'Admin Zone',
+            'fees_group' => 'Admin Zone',
+            'fees_type' => 'Admin Zone',
+            'fees_master' => 'Admin Zone',
+            'fees_assign' => 'Admin Zone',
+            'fees_collect' => 'Admin Zone',
+            'discount_setup' => 'Admin Zone',
+            'fees_payment_proof' => 'Admin Zone',
+            'id_card' => 'Admin Zone',
+            'id_card_generate' => 'Admin Zone',
+            'certificate' => 'Admin Zone',
+            'certificate_generate' => 'Admin Zone',
+            'language' => 'Admin Zone',
+            'marksheet' => 'Admin Zone',
+            'merit_list' => 'Admin Zone',
+            'progress_card' => 'Admin Zone',
+            'due_fees' => 'Admin Zone',
+            'fees_collection' => 'Admin Zone',
+            'account' => 'Admin Zone',
+            'report_class_routine' => 'Admin Zone',
+            'report_exam_routine' => 'Admin Zone',
+            'attendance_report' => 'Admin Zone',
+            'account_head' => 'Admin Zone',
+            'income' => 'Admin Zone',
+            'expense' => 'Admin Zone',
+            'portal_growth_pay' => 'Admin Zone', // moved here with Accounts > Bonus
+
+            // Communication
             'notice_board' => 'Communication',
             'sms_mail_template' => 'Communication',
             'sms_mail' => 'Communication',
+
+            // Live Class
             'gmeet' => 'Live Class',
+
+            // Library
             'book_category' => 'Library',
             'book' => 'Library',
             'member' => 'Library',
             'member_category' => 'Library',
             'issue_book' => 'Library',
-            'account_head' => 'Accounts',
-            'income' => 'Accounts',
-            'expense' => 'Accounts',
-            'marksheet' => 'Reports',
-            'merit_list' => 'Reports',
-            'progress_card' => 'Reports',
-            'due_fees' => 'Reports',
-            'fees_collection' => 'Reports',
-            'account' => 'Reports',
-            'report_class_routine' => 'Reports',
-            'report_exam_routine' => 'Reports',
-            'language' => 'Language',
+
+            // Staff Manage
             'roles' => 'Staff Manage',
             'users' => 'Staff Manage',
             'department' => 'Staff Manage',
             'designation' => 'Staff Manage',
-            'subscription' => 'Staff Manage',
+
+            // Subscribers & Messages
             'subscribe' => 'Subscribers & Messages',
             'contact_message' => 'Subscribers & Messages',
+
+            // Course Catalogue
             'program_category' => 'Course Catalogue',
             'program_focus' => 'Course Catalogue',
             'program' => 'Course Catalogue',
             'testimonial' => 'Course Catalogue',
             'trial_slot' => 'Course Catalogue',
             'program_waitlist' => 'Course Catalogue',
+
+            // Learning Engine
             'skill' => 'Learning Engine',
             'dashboard_features' => 'Learning Engine',
             'avatar_item' => 'Learning Engine',
@@ -1394,6 +1426,8 @@ if (!function_exists('permission_category_map')) {
             'watch_learn_video' => 'Learning Engine',
             'knowledge_hub_page' => 'Learning Engine',
             'knowledge_hub_topic' => 'Learning Engine',
+
+            // Website Setup
             'page' => 'Website Setup',
             'sections' => 'Website Setup',
             'slider' => 'Website Setup',
@@ -1405,11 +1439,19 @@ if (!function_exists('permission_category_map')) {
             'event' => 'Website Setup',
             'home_video' => 'Website Setup',
             'ai_helper' => 'Website Setup',
+
+            // Gallery
             'gallery_category' => 'Gallery',
             'gallery' => 'Gallery',
+
+            // Forums
             'forums' => 'Forums',
             'forum_comment' => 'Forums',
+
+            // Memories
             'memories' => 'Memories',
+
+            // General Settings
             'general_settings' => 'General Settings',
             'mobile_app_settings' => 'General Settings',
             'storage_settings' => 'General Settings',
@@ -1419,6 +1461,8 @@ if (!function_exists('permission_category_map')) {
             'payment_gateway_settings' => 'General Settings',
             'email_settings' => 'General Settings',
             'sms_settings' => 'General Settings',
+
+            // Basic Data
             'genders' => 'Basic Data',
             'religions' => 'Basic Data',
             'blood_groups' => 'Basic Data',
