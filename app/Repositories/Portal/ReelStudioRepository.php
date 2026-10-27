@@ -24,7 +24,6 @@ class ReelStudioRepository
     use ReturnFormatTrait, CommonHelperTrait;
 
     private const MAX_SCENE_SECONDS = 10; // Google Flow's hard per-scene limit
-    private const MAX_AI_SCENES     = 20; // generous safety cap, well above what a target_duration_seconds up to a few minutes needs at 10s/scene
 
     private $aiHelperRepo;
 
@@ -338,7 +337,7 @@ class ReelStudioRepository
         if (!$project->target_duration_seconds || !$project->scene_length_seconds) {
             return null;
         }
-        return min(self::MAX_AI_SCENES, max(1, (int) ceil($project->target_duration_seconds / $project->scene_length_seconds)));
+        return max(1, (int) ceil($project->target_duration_seconds / $project->scene_length_seconds));
     }
 
     /**

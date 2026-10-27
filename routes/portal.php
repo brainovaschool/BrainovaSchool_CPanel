@@ -120,6 +120,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::post('/portal/social/settings/reel-fields', [SocialController::class, 'updateReelFields'])->name('portal-social-settings.reel-fields')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 Route::post('/portal/social/settings/series', [SocialController::class, 'updateReelSeries'])->name('portal-social-settings.series')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 Route::post('/portal/social/settings/content-assignees', [SocialController::class, 'updateContentAssigneeRoles'])->name('portal-social-settings.content-assignees')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                Route::post('/portal/social/settings/reel-ai-prompt', [SocialController::class, 'updateReelAiPrompt'])->name('portal-social-settings.reel-ai-prompt')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
 
                 Route::get('/portal/social/daily-plan', [SocialController::class, 'dailyPlan'])->name('portal-social-daily-plan.index')->middleware('PermissionCheck:portal_access');
                 Route::post('/portal/social/daily-plan', [SocialController::class, 'storeDailyPlan'])->name('portal-social-daily-plan.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
@@ -141,8 +142,6 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::put('/update/{id}', 'update')->name('update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::delete('/{id}',     'destroy')->name('destroy')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
-                Route::get('/portal/social/reel-settings',  [ReelCharacterController::class, 'settings'])->name('portal-social-reel-settings.edit')->middleware('PermissionCheck:portal_manage,portal_reel_settings_read');
-                Route::post('/portal/social/reel-settings', [ReelCharacterController::class, 'updateSettings'])->name('portal-social-reel-settings.update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
 
                 // Reel Studio — teacher-facing scene builder (reel_studio_access; portal_manage holders get it auto-granted).
                 Route::controller(ReelStudioController::class)->prefix('portal/social/reel-studio')->name('portal-social-reel-studio.')->group(function () {

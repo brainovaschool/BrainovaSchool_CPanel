@@ -961,6 +961,32 @@ class SocialRepository
         return PortalReelCustomField::orderBy('sort_order')->get();
     }
 
+    /** Global Instructions + the AI Scene Generation prompt template used
+     *  by Reel Studio's "AI: Fill In Scenes" - kept here (not its own page)
+     *  so every reel-related AI setting lives in one place. */
+    public function updateReelAiPrompt($request): array
+    {
+        try {
+            $this->setSetting('reel_global_instructions', $request->input('reel_global_instructions'));
+            $this->setSetting('reel_ai_prompt_template', $request->input('reel_ai_prompt_template'));
+
+            return $this->responseWithSuccess('Settings updated.', []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
+    private function setSetting(string $name, ?string $value): void
+    {
+        $setting = \App\Models\Setting::where('name', $name)->first();
+        if (!$setting) {
+            $setting = new \App\Models\Setting();
+            $setting->name = $name;
+        }
+        $setting->value = $value;
+        $setting->save();
+    }
+
     /** Same shape as updateSocialSettings(): $request->fields keyed by
      *  existing field id (edit in place, or delete if flagged), plus
      *  $request->new_fields for ones added on this submit. A 'select'

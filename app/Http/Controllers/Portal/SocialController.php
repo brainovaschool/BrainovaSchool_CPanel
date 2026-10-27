@@ -497,6 +497,8 @@ class SocialController extends Controller
         $data['series']             = $this->repo->reelSeries();
         $data['roles']              = \App\Models\Role::orderBy('name')->get();
         $data['assigneeRoleIds']    = PortalSetting::current()->content_assignee_role_ids ?: [];
+        $data['globalInstructions'] = setting('reel_global_instructions');
+        $data['aiPromptTemplate']   = setting('reel_ai_prompt_template');
         $data['title']              = 'Social Board Settings';
         return view('portal.social.settings', compact('data'));
     }
@@ -534,6 +536,19 @@ class SocialController extends Controller
             abort(403);
         }
         $result = $this->repo->updateReelSeries($request);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function updateReelAiPrompt(Request $request)
+    {
+        if (!hasPermission('portal_manage')) {
+            abort(403);
+        }
+        $request->validate([
+            'reel_global_instructions' => 'nullable|string|max:5000',
+            'reel_ai_prompt_template'  => 'nullable|string|max:20000',
+        ]);
+        $result = $this->repo->updateReelAiPrompt($request);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

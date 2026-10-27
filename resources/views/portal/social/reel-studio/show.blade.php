@@ -10,7 +10,8 @@
         $customFields = $data['customFields'];
         $pillarField  = $customFields->first(fn ($f) => strtolower(trim($f->label)) === 'pillar');
         $seriesField  = $customFields->first(fn ($f) => strtolower(trim($f->label)) === 'series');
-        $otherFields  = $customFields->reject(fn ($f) => $f->is($pillarField) || $f->is($seriesField));
+        // "Time (sec)" duplicates Target total length below - already covered, so hide it here.
+        $otherFields  = $customFields->reject(fn ($f) => $f->is($pillarField) || $f->is($seriesField) || strtolower(trim($f->label)) === 'time (sec)');
         $projectCustomFields = $project->custom_fields ?: [];
     @endphp
 

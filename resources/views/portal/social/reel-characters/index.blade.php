@@ -21,7 +21,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">{{ $data['title'] }}</h4>
                     <div>
-                        <a href="{{ route('portal-social-reel-settings.edit') }}" class="btn btn-outline-secondary me-2">Global Instructions</a>
+                        <a href="{{ route('portal-social-settings.edit') }}" class="btn btn-outline-secondary me-2">Global Instructions</a>
                         <a href="{{ route('portal-social-reel-characters.create') }}" class="btn ot-btn-primary">Add Character</a>
                     </div>
                 </div>
