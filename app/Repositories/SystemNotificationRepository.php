@@ -96,4 +96,21 @@ class SystemNotificationRepository implements SystemNotificationInterface{
         return $notification;
     }
 
+    /** Every notification ever sent to one person, newest first — for the
+     *  admin-only "manage a person's notifications" screen. */
+    public function userNotifications(int $userId)
+    {
+        return $this->model->where('reciver_id', $userId)->orderByDesc('id')->get();
+    }
+
+    public function deleteNotification(int $id): bool
+    {
+        return (bool) $this->model->where('id', $id)->delete();
+    }
+
+    public function deleteAllForUser(int $userId): bool
+    {
+        return (bool) $this->model->where('reciver_id', $userId)->delete();
+    }
+
 }

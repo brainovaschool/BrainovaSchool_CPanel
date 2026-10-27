@@ -20,6 +20,69 @@
         </div>
         {{-- bradecrumb Area E n d --}}
 
+        <div class="card ot-card mb-24">
+            <div class="card-header">
+                <h4>Manage a Person's Notifications</h4>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{{ route('settings.notification-settings') }}" class="d-flex gap-2 align-items-end flex-wrap mb-3">
+                    <div style="min-width:280px">
+                        <label class="form-label">Person</label>
+                        <select name="user_id" class="form-control ot-input" onchange="this.form.submit()">
+                            <option value="">Choose a person…</option>
+                            @foreach ($notifiedUsers as $u)
+                                <option value="{{ $u->id }}" {{ (int) $selectedUserId === $u->id ? 'selected' : '' }}>{{ $u->name }} ({{ $u->email }})</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <noscript><button type="submit" class="btn ot-btn-primary">Load</button></noscript>
+                </form>
+
+                @if ($selectedUserId)
+                    @if ($selectedUserNotifications->isEmpty())
+                        <p class="text-secondary mb-0">This person has no notifications.</p>
+                    @else
+                        <form method="post" action="{{ route('settings.notification-settings.clear', $selectedUserId) }}" class="mb-3"
+                              onsubmit="return confirm('Delete all notifications for this person? This cannot be undone.');">
+                            @csrf
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Clear All for This Person</button>
+                        </form>
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Title</th>
+                                        <th>Message</th>
+                                        <th>Date</th>
+                                        <th>Read</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach ($selectedUserNotifications as $n)
+                                        <tr>
+                                            <td>{{ $n->title }}</td>
+                                            <td>{{ $n->message }}</td>
+                                            <td>{{ \Carbon\Carbon::parse($n->created_at)->format('d M Y, h:i A') }}</td>
+                                            <td>{{ $n->is_read ? 'Yes' : 'No' }}</td>
+                                            <td>
+                                                <form method="post" action="{{ route('settings.notification-settings.delete', $n->id) }}"
+                                                      onsubmit="return confirm('Delete this notification?');">
+                                                    @csrf
+                                                    <input type="hidden" name="user_id" value="{{ $selectedUserId }}">
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    @endif
+                @endif
+            </div>
+        </div>
+
         <div class="card ot-card">
             <div class="card-header">
                 <h4>{{ @$pt  }}</h4>

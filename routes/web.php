@@ -452,6 +452,8 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::get('/notification-settings',             'notificationSettings')->name('settings.notification-settings');
                         Route::post('/notification-settings',            'updateNotificationSetting')->name('settings.notification-settings.update')->middleware('PermissionCheck:general_settings_update', 'DemoCheck');
                         Route::get('/notification_event_modal/{id}/{key}',             'notificationEventModal')->name('settings.notification_event_modal');
+                        Route::post('/notification-settings/delete/{id}', 'deleteUserNotification')->name('settings.notification-settings.delete')->middleware('PermissionCheck:general_settings_update', 'DemoCheck');
+                        Route::post('/notification-settings/clear/{userId}', 'clearUserNotifications')->name('settings.notification-settings.clear')->middleware('PermissionCheck:general_settings_update', 'DemoCheck');
                     });
                 });
             });
