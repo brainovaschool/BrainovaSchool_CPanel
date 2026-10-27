@@ -2,6 +2,7 @@
 
 namespace App\Models\Portal;
 
+use App\Models\Upload;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -12,6 +13,7 @@ class ReelProject extends Model
 
     protected $casts = [
         'character_ids' => 'array',
+        'custom_fields' => 'array',
     ];
 
     // Labelled "Orientation" in the UI (Portrait/Landscape) - the
@@ -37,6 +39,18 @@ class ReelProject extends Model
     public function scenes()
     {
         return $this->hasMany(ReelScene::class)->orderBy('sort_order');
+    }
+
+    public function coverUpload()
+    {
+        return $this->belongsTo(Upload::class, 'cover_upload_id');
+    }
+
+    /** True once a Pillar/Series/custom-fields are the teacher's own to set
+     *  (no suggested Reel to read them from instead). */
+    public function isStandalone(): bool
+    {
+        return !$this->portalReel;
     }
 
     /** The characters marked as "involved in this reel" at project level —

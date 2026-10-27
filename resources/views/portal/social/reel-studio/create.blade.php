@@ -38,7 +38,6 @@
                         <div class="col-12 mb-3">
                             <label class="form-label">Hook <span class="fillable">*</span></label>
                             <textarea name="hook" rows="2" class="form-control ot-textarea" placeholder="The opening line — write it exactly as Kea should say it, e.g. &quot;Brainbot, have you ever wondered why leaves change color?&quot;">{{ old('hook') }}</textarea>
-                            <small class="text-secondary">Kea will always open the first scene with this line, word for word — you don't need to repeat it in any scene's dialogue.</small>
                         </div>
 
                         <div class="col-12 mb-3">
@@ -49,7 +48,7 @@
                         <div class="col-12 col-md-4 mb-3">
                             <label class="form-label">Target total length (seconds)</label>
                             <input type="number" name="target_duration_seconds" min="5" max="600" class="form-control ot-input" value="{{ old('target_duration_seconds', 40) }}">
-                            <small class="text-secondary">Used as a guide for AI scene generation. Each scene is still capped at 10 seconds (Google Flow's limit).</small>
+                            <small class="text-secondary">You'll set a scene length (max 10s) on the next screen — that's what splits this into scene boxes.</small>
                         </div>
 
                         <div class="col-12 mb-3">

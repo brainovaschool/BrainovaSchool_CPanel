@@ -154,10 +154,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::delete('/{id}',     'destroy')->name('destroy')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
 
                     Route::post('/{projectId}/scenes', 'storeScenes')->name('scenes.store')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
+                    Route::get('/{projectId}/scenes/download', 'downloadScript')->name('scenes.download')->middleware('PermissionCheck:reel_studio_access');
                     Route::post('/{projectId}/ai/generate-scenes', 'aiGenerateScenes')->name('ai.generate-scenes')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
-                    Route::post('/{projectId}/scenes/{sceneId}/generate-prompt', 'generatePrompt')->name('scenes.generate-prompt')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
-                    Route::get('/{projectId}/scenes/{sceneId}/download-prompt', 'downloadScenePrompt')->name('scenes.download-prompt')->middleware('PermissionCheck:reel_studio_access');
-                    Route::get('/{projectId}/scenes/{sceneId}/characters/{characterId}/download-portrait', 'downloadCharacterPortrait')->name('scenes.download-portrait')->middleware('PermissionCheck:reel_studio_access');
                 });
 
             });

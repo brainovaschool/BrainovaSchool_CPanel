@@ -6,7 +6,6 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Portal\ReelCharacter;
-use App\Models\Upload;
 use App\Repositories\Portal\ReelStudioRepository;
 
 class ReelStudioController extends Controller
@@ -57,8 +56,11 @@ class ReelStudioController extends Controller
             'description'             => 'nullable|string|max:2000',
             'format'                  => 'required|in:vertical,horizontal',
             'target_duration_seconds' => 'nullable|integer|min:5|max:600',
+            'scene_length_seconds'    => 'nullable|integer|min:1|max:10',
             'character_ids'           => 'nullable|array',
             'character_ids.*'         => 'integer|exists:reel_characters,id',
+            'cover_file'              => 'nullable|file|image|max:10240',
+            'custom_fields'           => 'nullable|array',
         ];
     }
 
@@ -89,11 +91,12 @@ class ReelStudioController extends Controller
 
         $characters = ReelCharacter::active()->orderBy('sort_order')->orderBy('name')->get();
 
-        $data['project']              = $project;
-        $data['characters']           = $characters;
-        $data['initialScenesJson']    = $this->scenesForJs($project);
-        $data['availableCharsJson']   = $this->charactersForJs($characters);
-        $data['title']                = $project->title;
+        $data['project']            = $project;
+        $data['characters']         = $characters;
+        $data['customFields']       = $this->repo->customFields();
+        $data['sceneCount']         = $this->repo->sceneCount($project);
+        $data['initialScenesJson']  = $this->scenesForJs($project);
+        $data['title']              = $project->title;
         return view('portal.social.reel-studio.show', compact('data'));
     }
 
@@ -103,31 +106,13 @@ class ReelStudioController extends Controller
     {
         $scenes = [];
         foreach ($project->scenes as $scene) {
-            $characters = [];
-            foreach ($scene->sceneCharacters as $sc) {
-                $characters[] = [
-                    'character_id'  => $sc->reel_character_id,
-                    'action_points' => $sc->action_points,
-                    'dialogue'      => $sc->dialogue,
-                ];
-            }
             $scenes[] = [
-                'id'               => $scene->id,
-                'duration_seconds' => $scene->duration_seconds,
-                'description'      => $scene->description,
-                'characters'       => $characters,
+                'id'          => $scene->id,
+                'description' => $scene->description,
+                'dialogue'    => $scene->dialogue,
             ];
         }
         return $scenes;
-    }
-
-    private function charactersForJs($characters): array
-    {
-        $out = [];
-        foreach ($characters as $character) {
-            $out[] = ['id' => $character->id, 'name' => $character->name];
-        }
-        return $out;
     }
 
     public function update(Request $request, $id)
@@ -154,6 +139,11 @@ class ReelStudioController extends Controller
         return redirect()->route('portal-social-reel-studio.index')->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    /**
+     * Saves the scene boxes and, on success, streams the compiled script
+     * document straight back as the response — no redirect, so the file
+     * just downloads while the teacher stays on the page.
+     */
     public function storeScenes(Request $request, $projectId)
     {
         $project = $this->repo->find((int) $projectId);
@@ -161,8 +151,37 @@ class ReelStudioController extends Controller
             abort(404);
         }
 
+        $request->validate(['cover_file' => 'nullable|file|image|max:10240']);
+
         $result = $this->repo->saveScenes($request, (int) $projectId);
-        return redirect()->route('portal-social-reel-studio.show', $projectId)->with($result['status'] ? 'success' : 'danger', $result['message']);
+        if (!$result['status']) {
+            return back()->with('danger', $result['message']);
+        }
+
+        $filename = \Illuminate\Support\Str::slug($project->title) . '-script.txt';
+        return response()->streamDownload(function () use ($result) {
+            echo $result['data']['document'];
+        }, $filename, ['Content-Type' => 'text/plain']);
+    }
+
+    /** Re-downloads the already-saved script without resubmitting the
+     *  scene boxes. */
+    public function downloadScript($projectId)
+    {
+        $project = $this->repo->find((int) $projectId);
+        if (!$project || !$this->authorizeProject($project)) {
+            abort(404);
+        }
+
+        $document = $this->repo->scriptDocument((int) $projectId);
+        if (!$document) {
+            abort(404, 'Save scenes first.');
+        }
+
+        $filename = \Illuminate\Support\Str::slug($project->title) . '-script.txt';
+        return response()->streamDownload(function () use ($document) {
+            echo $document;
+        }, $filename, ['Content-Type' => 'text/plain']);
     }
 
     /**
@@ -178,72 +197,9 @@ class ReelStudioController extends Controller
             return response()->json(['status' => false, 'message' => ___('alert.not_found')], 404);
         }
 
-        $request->validate(['scene_count' => 'nullable|integer|min:1|max:20']);
         set_time_limit(120); // the AI gateway can fall back across accounts, which can take longer than the host's default cap
 
-        $sceneCount = $request->filled('scene_count') ? (int) $request->input('scene_count') : null;
-        $result     = $this->repo->aiGenerateScenes((int) $projectId, $sceneCount);
+        $result = $this->repo->aiGenerateScenes((int) $projectId);
         return response()->json($result, $result['status'] ? 200 : 422);
-    }
-
-    public function generatePrompt($projectId, $sceneId)
-    {
-        $project = $this->repo->find((int) $projectId);
-        if (!$project || !$this->authorizeProject($project)) {
-            abort(404);
-        }
-        if (!$project->scenes->contains('id', (int) $sceneId)) {
-            abort(404);
-        }
-
-        $result = $this->repo->generatePrompt((int) $sceneId);
-        return redirect()->route('portal-social-reel-studio.show', $projectId)->with($result['status'] ? 'success' : 'danger', $result['message']);
-    }
-
-    public function downloadScenePrompt($projectId, $sceneId)
-    {
-        $project = $this->repo->find((int) $projectId);
-        if (!$project || !$this->authorizeProject($project)) {
-            abort(404);
-        }
-
-        $scene = $project->scenes->firstWhere('id', (int) $sceneId);
-        if (!$scene || !$scene->generated_prompt) {
-            abort(404, 'Generate the prompt for this scene first.');
-        }
-
-        $filename = \Illuminate\Support\Str::slug($project->title) . '-scene-' . $scene->sort_order . '-prompt.txt';
-
-        return response()->streamDownload(function () use ($scene) {
-            echo $scene->generated_prompt;
-        }, $filename, ['Content-Type' => 'text/plain']);
-    }
-
-    public function downloadCharacterPortrait($projectId, $sceneId, $characterId)
-    {
-        $project = $this->repo->find((int) $projectId);
-        if (!$project || !$this->authorizeProject($project)) {
-            abort(404);
-        }
-        if (!$project->scenes->contains('id', (int) $sceneId)) {
-            abort(404);
-        }
-
-        $character = ReelCharacter::find((int) $characterId);
-        if (!$character || !$character->portrait_upload_id) {
-            abort(404);
-        }
-
-        $upload = Upload::find($character->portrait_upload_id);
-        if (!$upload) {
-            abort(404);
-        }
-
-        $filename = \Illuminate\Support\Str::slug($character->name) . '-portrait.' . pathinfo($upload->path, PATHINFO_EXTENSION);
-
-        if (setting('file_system') == 's3') {
-            return \Illuminate\Support\Facades\Storage::disk('s3')->download($upload->path, $filename);
-        }
-        return response()->download(public_path($upload->path), $filename);
     }
 }
