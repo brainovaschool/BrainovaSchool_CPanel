@@ -138,17 +138,23 @@ class TaskRepository
                 'ref_upload_id'  => $refUploadId,
                 'drive_link'     => $request->drive_link,
                 'notes'          => $request->notes,
-                'paid'           => $isPaid,
-                'amount'         => $isPaid ? $request->amount : null,
-                'pay_status'     => $isPaid ? 'unpaid' : null,
-                'status'         => $isOpen ? PortalTask::OPEN : PortalTask::ASSIGNED,
+                'paid'                 => $isPaid,
+                'amount'               => $isPaid ? $request->amount : null,
+                'pay_status'           => $isPaid ? 'unpaid' : null,
+                'status'               => $isOpen ? PortalTask::OPEN : PortalTask::ASSIGNED,
+                'visible_to_staff_ids' => $isOpen ? (array_values(array_filter((array) $request->input('visible_to_staff_ids', []))) ?: null) : null,
             ]);
 
             if ($isOpen) {
-                // "Paid task available -> All active employees"
-                Staff::active()->whereNotNull('user_id')->get()->each(function (Staff $staff) use ($task) {
-                    PortalNotifier::send($staff->user_id, 'Paid task available', $task->title, route('portal-tasks.show', $task->id));
-                });
+                // "Paid task available -> All active employees" - or just
+                // the ones it's restricted to, if any.
+                $visibleIds = $task->visible_to_staff_ids;
+                Staff::active()->whereNotNull('user_id')
+                    ->when($visibleIds, fn ($q) => $q->whereIn('id', $visibleIds))
+                    ->get()
+                    ->each(function (Staff $staff) use ($task) {
+                        PortalNotifier::send($staff->user_id, 'Paid task available', $task->title, route('portal-tasks.show', $task->id));
+                    });
             } elseif ($task->assignee && $task->assignee->user_id) {
                 PortalNotifier::send(
                     $task->assignee->user_id,
@@ -165,18 +171,16 @@ class TaskRepository
         }
     }
 
-    /** The tasks (per business rule 1) that would block this employee from
-     *  claiming a paid task right now — none overdue, none in revision.
-     *  Returned (not just a bool) so the UI can name them. */
+    /** The tasks that would block this employee from claiming a paid task
+     *  right now - any task still sitting with them, needing their own
+     *  action (Assigned, In Progress, or sent back for Revision). A task
+     *  they've already Submitted and is waiting on review doesn't block
+     *  them - the ball's in the reviewer's court, not theirs. Returned
+     *  (not just a bool) so the UI can name them. */
     public function claimBlockers(int $staffId)
     {
         return PortalTask::where('assigned_to', $staffId)
-            ->where(function ($q) {
-                $q->where('status', PortalTask::REVISION)
-                    ->orWhere(function ($q2) {
-                        $q2->whereIn('status', PortalTask::OVERDUE_STATUSES)->where('due_date', '<', now()->format('Y-m-d'));
-                    });
-            })
+            ->whereIn('status', PortalTask::OVERDUE_STATUSES)
             ->get();
     }
 
@@ -191,10 +195,13 @@ class TaskRepository
         if ($task->status !== PortalTask::OPEN || !$task->paid) {
             return $this->responseWithError('This task is no longer available to claim.', []);
         }
+        if (!$task->isVisibleTo($staffId)) {
+            return $this->responseWithError('This task isn\'t open to you.', []);
+        }
 
         $blockers = $this->claimBlockers($staffId);
         if ($blockers->isNotEmpty()) {
-            return $this->responseWithError('You can\'t claim a paid task while you have an overdue task or one in revision: ' . $blockers->pluck('title')->implode(', '), []);
+            return $this->responseWithError('You can\'t claim a paid task while you have a task of your own still in progress: ' . $blockers->pluck('title')->implode(', '), []);
         }
 
         $task->assigned_to = $staffId;
@@ -506,6 +513,53 @@ class TaskRepository
         $this->rescoreCompletedTasks($settings);
 
         return $this->responseWithSuccess('Settings saved — completed tasks have been re-scored.', []);
+    }
+
+    /** Each category can carry its own SOP - instructions text and/or an
+     *  attached file - matched against a task's plain-string `category`
+     *  by name (same pattern as Series). A File field with no new upload
+     *  this submit keeps whatever Upload id it already had. */
+    public function updateTaskCategories($request): array
+    {
+        $rows = (array) $request->input('categories', []);
+        foreach ($rows as $id => $data) {
+            $category = \App\Models\Portal\PortalTaskCategory::find($id);
+            if (!$category) {
+                continue;
+            }
+            if (!empty($data['delete'])) {
+                $category->delete();
+                continue;
+            }
+            $name = trim($data['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+            $category->name     = $name;
+            $category->sop_text = $data['sop_text'] ?? null;
+            if ($request->hasFile("categories.{$id}.sop_file")) {
+                $category->sop_upload_id = $this->UploadImageCreate($request->file("categories.{$id}.sop_file"), 'uploads/portal-tasks');
+            }
+            $category->save();
+        }
+
+        $newRows = (array) $request->input('new_categories', []);
+        foreach ($newRows as $index => $data) {
+            $name = trim($data['name'] ?? '');
+            if ($name === '') {
+                continue;
+            }
+            $uploadId = $request->hasFile("new_categories.{$index}.sop_file")
+                ? $this->UploadImageCreate($request->file("new_categories.{$index}.sop_file"), 'uploads/portal-tasks')
+                : null;
+            \App\Models\Portal\PortalTaskCategory::create([
+                'name'          => $name,
+                'sop_text'      => $data['sop_text'] ?? null,
+                'sop_upload_id' => $uploadId,
+            ]);
+        }
+
+        return $this->responseWithSuccess('Task categories saved.', []);
     }
 
     /** "Changing the table re-scores completed tasks" (spec rule 5) — the

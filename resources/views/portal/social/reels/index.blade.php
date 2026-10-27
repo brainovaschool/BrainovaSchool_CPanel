@@ -54,22 +54,24 @@
 
         @if ($showBulk)
             <div class="col-12 p-0">
-                <div class="card ot-card bn-reels-filters mb-24 d-flex flex-row align-items-center gap-3 flex-wrap" style="padding:1rem 1.25rem" id="bulkActionsBar" hidden>
+                <div class="card ot-card bn-reels-filters mb-24 d-flex flex-column gap-2" style="padding:1rem 1.25rem" id="bulkActionsBar" hidden>
                     <strong><span id="bulkSelectedCount">0</span> selected</strong>
                     @if ($data['canApprove'])
-                        <form id="bulkApproveForm" action="{{ route('portal-social-reels.bulk-review') }}" method="post" class="d-inline">
-                            @csrf
-                            <input type="hidden" name="status" value="accepted">
-                            <button type="submit" class="btn btn-sm ot-btn-primary">Approve selected</button>
-                        </form>
-                        <form id="bulkDiscardForm" action="{{ route('portal-social-reels.bulk-review') }}" method="post" class="d-inline" onsubmit="return confirm('Discard all selected suggestions?');">
-                            @csrf
-                            <input type="hidden" name="status" value="rejected">
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Discard selected</button>
-                        </form>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <form id="bulkApproveForm" action="{{ route('portal-social-reels.bulk-review') }}" method="post" class="d-inline">
+                                @csrf
+                                <input type="hidden" name="status" value="accepted">
+                                <button type="submit" class="btn btn-sm ot-btn-primary">Approve selected</button>
+                            </form>
+                            <form id="bulkDiscardForm" action="{{ route('portal-social-reels.bulk-review') }}" method="post" class="d-inline" onsubmit="return confirm('Discard all selected suggestions?');">
+                                @csrf
+                                <input type="hidden" name="status" value="rejected">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Discard selected</button>
+                            </form>
+                        </div>
                     @endif
                     @if ($data['canAssign'])
-                        <form id="bulkAssignForm" action="{{ route('portal-social-reels.bulk-assign') }}" method="post" class="d-flex align-items-center gap-2">
+                        <form id="bulkAssignForm" action="{{ route('portal-social-reels.bulk-assign') }}" method="post" class="d-flex align-items-center gap-2 flex-wrap">
                             @csrf
                             <select name="assigned_to" class="form-control ot-input" required style="min-width:160px">
                                 <option value="">Assign to…</option>
@@ -79,6 +81,18 @@
                             </select>
                             <input type="date" name="deadline" class="form-control ot-input" style="width:150px">
                             <button type="submit" class="btn btn-sm ot-btn-primary">Assign selected</button>
+                        </form>
+                        <form id="bulkMarkPaidForm" action="{{ route('portal-social-reels.bulk-mark-paid') }}" method="post" class="d-flex align-items-center gap-2 flex-wrap">
+                            @csrf
+                            <span class="text-secondary" style="font-size:.85rem">Mark as paid task —</span>
+                            <input type="number" step="0.01" min="0" name="amount" class="form-control ot-input" placeholder="Amount" required style="width:110px">
+                            <input type="date" name="deadline" class="form-control ot-input" style="width:150px">
+                            <select name="visible_to_staff_ids[]" class="form-control select2_multy" multiple style="min-width:220px" data-placeholder="Visible to everyone">
+                                @foreach ($data['contentTeam'] as $staff)
+                                    <option value="{{ $staff->id }}">{{ $staff->first_name }} {{ $staff->last_name }}</option>
+                                @endforeach
+                            </select>
+                            <button type="submit" class="btn btn-sm ot-btn-primary">Mark as paid</button>
                         </form>
                     @endif
                 </div>
@@ -261,7 +275,7 @@
                 // Each bulk form starts with no ids[] of its own - the
                 // checked rows are only known at submit time, so they're
                 // added as hidden inputs right before the form actually posts.
-                ['bulkApproveForm', 'bulkDiscardForm', 'bulkAssignForm'].forEach(function (formId) {
+                ['bulkApproveForm', 'bulkDiscardForm', 'bulkAssignForm', 'bulkMarkPaidForm'].forEach(function (formId) {
                     var form = document.getElementById(formId);
                     if (!form) return;
                     form.addEventListener('submit', function (e) {

@@ -112,9 +112,10 @@ class TaskController extends Controller
 
     public function create()
     {
-        $data['employeesList'] = \App\Models\Staff\Staff::with('role')->orderBy('first_name')->get();
-        $data['settings']      = PortalSetting::current();
-        $data['title']         = 'Assign a Task';
+        $data['employeesList']   = \App\Models\Staff\Staff::with('role')->orderBy('first_name')->get();
+        $data['settings']        = PortalSetting::current();
+        $data['taskCategories']  = \App\Models\Portal\PortalTaskCategory::orderBy('name')->get();
+        $data['title']           = 'Assign a Task';
         return view('portal.tasks.create', compact('data'));
     }
 
@@ -125,11 +126,13 @@ class TaskController extends Controller
         $assignedToRule = $request->boolean('paid') ? 'nullable' : 'required';
 
         $request->validate([
-            'title'       => 'required|string|max:150',
-            'assigned_to' => $assignedToRule . '|exists:staff,id',
-            'amount'      => 'required_if:paid,1|nullable|numeric|min:0',
-            'due_date'    => 'required|date',
-            'priority'    => 'nullable|in:Low,Medium,High',
+            'title'                  => 'required|string|max:150',
+            'assigned_to'            => $assignedToRule . '|exists:staff,id',
+            'amount'                 => 'required_if:paid,1|nullable|numeric|min:0',
+            'due_date'               => 'required|date',
+            'priority'               => 'nullable|in:Low,Medium,High',
+            'visible_to_staff_ids'   => 'nullable|array',
+            'visible_to_staff_ids.*' => 'integer|exists:staff,id',
         ]);
 
         $result = $this->repo->store($request, Auth::id());
@@ -149,10 +152,10 @@ class TaskController extends Controller
 
         $isManager = hasPermission('portal_manage');
         $staffId   = $this->actingStaffId();
-        // An Open paid task has no assignee yet — anyone needs to be able
-        // to view it in order to claim it, so that case alone bypasses
-        // the "is this your task" check below.
-        $isOpenForClaim = $task->paid && $task->status === \App\Models\Portal\PortalTask::OPEN;
+        // An Open paid task has no assignee yet — anyone it's visible to
+        // needs to be able to view it in order to claim it, so that case
+        // alone bypasses the "is this your task" check below.
+        $isOpenForClaim = $task->paid && $task->status === \App\Models\Portal\PortalTask::OPEN && $task->isVisibleTo($staffId);
         if (!$isManager && !$isOpenForClaim && (int) $task->assigned_to !== $staffId) {
             abort(403, "This isn't your task.");
         }
@@ -164,7 +167,7 @@ class TaskController extends Controller
         // person who actually created/assigned this task (or the main
         // admin) can hand it to someone else, not any manager.
         $data['isCreator']  = $isManager && ((int) $task->assigned_by === (int) Auth::id() || (int) Auth::user()->role_id === 1);
-        $data['canClaim']   = $task->paid && $task->status === \App\Models\Portal\PortalTask::OPEN && $staffId !== null;
+        $data['canClaim']   = $task->paid && $task->status === \App\Models\Portal\PortalTask::OPEN && $staffId !== null && $task->isVisibleTo($staffId);
         $data['claimBlockers'] = $data['canClaim'] ? $this->repo->claimBlockers($staffId) : collect();
         $data['canMarkPaid'] = $isManager && $task->paid && $task->status === \App\Models\Portal\PortalTask::COMPLETED && $task->pay_status === 'due';
         $data['title']      = $task->title;
@@ -194,7 +197,11 @@ class TaskController extends Controller
         $staffId   = $this->actingStaffId();
 
         $data['isManager'] = $isManager;
-        $data['openTasks'] = \App\Models\Portal\PortalTask::where('paid', true)->where('status', \App\Models\Portal\PortalTask::OPEN)->get();
+        $openTasks = \App\Models\Portal\PortalTask::where('paid', true)->where('status', \App\Models\Portal\PortalTask::OPEN)->get();
+        // Managers see every open paid task regardless of who it's
+        // restricted to, for oversight - an employee only sees the ones
+        // actually open to them.
+        $data['openTasks'] = $isManager ? $openTasks : $openTasks->filter(fn ($t) => $t->isVisibleTo($staffId))->values();
 
         if ($isManager) {
             $data['claimedTasks']   = \App\Models\Portal\PortalTask::where('paid', true)

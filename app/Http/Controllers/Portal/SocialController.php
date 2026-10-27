@@ -299,6 +299,32 @@ class SocialController extends Controller
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    /** Same gate as assign() - marking something a paid task is still an
+     *  assignment decision. */
+    public function bulkMarkReelsPaid(Request $request)
+    {
+        if (!$this->canAssignReels()) {
+            abort(403, 'Only admin/coordinator can mark a reel/topic as a paid task.');
+        }
+        $request->validate([
+            'ids'                    => 'required|array|min:1',
+            'ids.*'                  => 'integer|exists:portal_reels,id',
+            'amount'                 => 'required|numeric|min:0',
+            'deadline'               => 'nullable|date',
+            'visible_to_staff_ids'   => 'nullable|array',
+            'visible_to_staff_ids.*' => 'integer|exists:staff,id',
+        ]);
+
+        $result = $this->repo->bulkMarkReelsPaid(
+            $request->ids,
+            (float) $request->amount,
+            $request->deadline,
+            (array) $request->input('visible_to_staff_ids', []),
+            Auth::id()
+        );
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
     /** The assignee shares a prompt link first, then (once that's
      *  approved) a video link - same route, $request->stage picks which. */
     public function submitReelLink(Request $request, $id)

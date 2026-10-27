@@ -26,7 +26,7 @@
             @if ($data['claimBlockers']->isNotEmpty())
                 <div class="card ot-card mb-24" style="border-left:4px solid #dc3545;">
                     <div class="card-body">
-                        <p class="text-danger mb-2"><strong>You can't claim an open task right now</strong> — you have an overdue task or one in revision:</p>
+                        <p class="text-danger mb-2"><strong>You can't claim an open task right now</strong> — you have a task of your own still in progress:</p>
                         <ul class="mb-0">
                             @foreach ($data['claimBlockers'] as $b)
                                 <li><a href="{{ route('portal-tasks.show', $b->id) }}">{{ $b->title }}</a></li>
@@ -43,7 +43,7 @@
                 <div class="card-body">
                     <div class="table-responsive">
                     <table class="ot-basic-table ot-table-bg">
-                        <thead class="thead"><tr><th>Title</th><th>Category</th><th>Due</th><th>Amount</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
+                        <thead class="thead"><tr><th>Title</th><th>Category</th><th>Due</th><th>Amount</th>@if ($data['isManager'])<th>Visible to</th>@endif<th class="action">{{ ___('common.action') }}</th></tr></thead>
                         <tbody class="tbody">
                             @forelse ($data['openTasks'] as $t)
                                 <tr>
@@ -51,6 +51,15 @@
                                     <td>{{ $t->category ?: '—' }}</td>
                                     <td>{{ $t->due_date?->format('d M Y') }}</td>
                                     <td>{{ Setting('currency_symbol') }} {{ number_format($t->amount, 2) }}</td>
+                                    @if ($data['isManager'])
+                                        <td>
+                                            @if (empty($t->visible_to_staff_ids))
+                                                Everyone
+                                            @else
+                                                {{ \App\Models\Staff\Staff::whereIn('id', $t->visible_to_staff_ids)->get()->map(fn ($s) => trim($s->first_name . ' ' . $s->last_name))->implode(', ') }}
+                                            @endif
+                                        </td>
+                                    @endif
                                     <td class="action"><a href="{{ route('portal-tasks.show', $t->id) }}" class="btn btn-sm ot-btn-primary">{{ $data['isManager'] ? 'Open' : 'View & Claim' }}</a></td>
                                 </tr>
                             @empty

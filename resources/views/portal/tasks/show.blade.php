@@ -38,6 +38,20 @@
                     </div>
                     <div class="card-body">
                         <p class="text-secondary">{!! $task->description ? linkify($task->description) : 'No description given.' !!}</p>
+                        @php($categorySop = optional($task->categoryModel))
+                        @if ($categorySop->sop_text || $categorySop->sopUpload)
+                            <div class="card mb-3" style="border-left:4px solid var(--bn-turquoise-text, #007585); background:rgba(var(--bn-turquoise-rgb, 0,117,133), .06);">
+                                <div class="card-body">
+                                    <h5 class="mb-2">SOP — {{ $task->category }}</h5>
+                                    @if ($categorySop->sop_text)
+                                        <p class="mb-2" style="white-space:pre-line">{{ $categorySop->sop_text }}</p>
+                                    @endif
+                                    @if ($categorySop->sopUpload)
+                                        <a href="{{ globalAsset($categorySop->sopUpload->path) }}" target="_blank">Download SOP file</a>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                         <div class="row gy-2">
                             <div class="col-md-6"><strong>Employee:</strong> {{ optional($task->assignee)->first_name }} {{ optional($task->assignee)->last_name }}</div>
                             <div class="col-md-6"><strong>Assigned by:</strong> {{ optional($task->assignedBy)->name }}</div>

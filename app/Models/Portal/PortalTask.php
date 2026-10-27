@@ -23,13 +23,14 @@ class PortalTask extends Model
     public const OVERDUE_STATUSES = [self::ASSIGNED, self::IN_PROGRESS, self::REVISION];
 
     protected $casts = [
-        'urgent'        => 'boolean',
-        'paid'          => 'boolean',
-        'active_status' => 'boolean',
-        'assigned_date' => 'date',
-        'due_date'      => 'date',
-        'completed_at'  => 'datetime',
-        'claimed_at'    => 'datetime',
+        'urgent'               => 'boolean',
+        'paid'                 => 'boolean',
+        'active_status'        => 'boolean',
+        'assigned_date'        => 'date',
+        'due_date'             => 'date',
+        'completed_at'         => 'datetime',
+        'claimed_at'           => 'datetime',
+        'visible_to_staff_ids' => 'array',
     ];
 
     /** Archived-or-not, independent of the workflow `status` column -
@@ -48,6 +49,22 @@ class PortalTask extends Model
     public function reel()
     {
         return $this->belongsTo(PortalReel::class, 'reel_id');
+    }
+
+    /** category is a plain string copy, not a foreign key (same reasoning
+     *  as PortalReel.series_name) - this matches it against the unique
+     *  category name so a task can still reach its category's own SOP. */
+    public function categoryModel()
+    {
+        return $this->belongsTo(PortalTaskCategory::class, 'category', 'name');
+    }
+
+    /** Null/empty visible_to_staff_ids = open to everyone, same as before
+     *  this field existed. */
+    public function isVisibleTo(?int $staffId): bool
+    {
+        $allowed = $this->visible_to_staff_ids;
+        return empty($allowed) || ($staffId !== null && in_array($staffId, $allowed, false));
     }
 
     public function assignedBy()

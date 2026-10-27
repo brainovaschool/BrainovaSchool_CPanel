@@ -372,12 +372,37 @@ class SocialRepository
         return $this->responseWithSuccess(count($ids) . ' reel(s) assigned.', []);
     }
 
+    /** Marks a batch of reels as open paid tasks - same effect as ticking
+     *  "Open — Paid Task" on a reel's own Assign card, just over several
+     *  at once, with an amount and (optionally) a specific list of staff
+     *  it's restricted to instead of open to everyone. */
+    public function bulkMarkReelsPaid(array $ids, float $amount, ?string $deadline, array $visibleToStaffIds, int $assignedByUserId): array
+    {
+        foreach ($ids as $id) {
+            $reel = PortalReel::find((int) $id);
+            if (!$reel) {
+                continue;
+            }
+            $reel->assigned_to  = null;
+            $reel->is_open_paid = true;
+            $reel->deadline     = $deadline ?: $reel->deadline;
+            if ($reel->status === PortalReel::SUGGESTED) {
+                $reel->status = PortalReel::ACCEPTED;
+            }
+            $reel->save();
+
+            $this->syncReelTask($reel, null, true, $deadline ?: $reel->deadline?->format('Y-m-d'), $assignedByUserId, $amount, $visibleToStaffIds);
+        }
+
+        return $this->responseWithSuccess(count($ids) . ' reel(s) marked as paid tasks.', []);
+    }
+
     /** Keeps one Team Portal task in step with a reel's assignment -
      *  created the first time it's assigned, updated (never duplicated)
      *  on every re-assign - so "as soon as the task is assigned the
      *  content creator will see the task in her task list" holds true
      *  the same way it would for any other task. */
-    private function syncReelTask(PortalReel $reel, ?int $staffId, bool $openPaid, ?string $deadline, int $assignedByUserId): void
+    private function syncReelTask(PortalReel $reel, ?int $staffId, bool $openPaid, ?string $deadline, int $assignedByUserId, ?float $amount = null, array $visibleToStaffIds = []): void
     {
         $task = PortalTask::where('reel_id', $reel->id)->first();
 
@@ -394,17 +419,37 @@ class SocialRepository
             'paid'        => $openPaid,
             'status'      => $openPaid ? PortalTask::OPEN : PortalTask::ASSIGNED,
         ];
+        // Only touch amount/visibility when this call actually carries
+        // them (the bulk-mark-paid path) - a plain re-assign through the
+        // single-reel Assign card passes neither, and must never blank out
+        // an amount or a visibility restriction already set on the task.
+        if ($openPaid && $amount !== null) {
+            $attributes['amount'] = $amount;
+        }
+        if ($openPaid && $visibleToStaffIds) {
+            $attributes['visible_to_staff_ids'] = $visibleToStaffIds;
+        }
 
         if ($task) {
+            // pay_status only gets initialised the moment a task first
+            // becomes paid - never reset on a later re-sync, so it can't
+            // stomp on 'due'/'paid' a completed task has already reached.
+            if ($openPaid && !$task->paid) {
+                $attributes['pay_status'] = 'unpaid';
+            }
             $task->update($attributes);
         } else {
+            $attributes['pay_status'] = $openPaid ? 'unpaid' : null;
             $task = PortalTask::create($attributes + ['assigned_date' => now()->format('Y-m-d')]);
         }
 
         if ($openPaid) {
-            Staff::active()->whereNotNull('user_id')->get()->each(function (Staff $staff) use ($task) {
-                PortalNotifier::send($staff->user_id, 'Paid task available', $task->title, route('portal-tasks.show', $task->id));
-            });
+            Staff::active()->whereNotNull('user_id')
+                ->when($visibleToStaffIds, fn ($q) => $q->whereIn('id', $visibleToStaffIds))
+                ->get()
+                ->each(function (Staff $staff) use ($task) {
+                    PortalNotifier::send($staff->user_id, 'Paid task available', $task->title, route('portal-tasks.show', $task->id));
+                });
         } elseif ($task->assignee && $task->assignee->user_id) {
             PortalNotifier::send($task->assignee->user_id, 'New task assigned', $task->title, route('portal-tasks.show', $task->id));
         }

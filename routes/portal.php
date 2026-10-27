@@ -45,6 +45,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::controller(SettingsController::class)->prefix('portal/settings')->name('portal-settings.')->group(function () {
                     Route::get('/',       'edit')->name('edit')->middleware('PermissionCheck:portal_manage,portal_settings_read');
                     Route::post('/',      'update')->name('update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::post('/task-categories', 'updateTaskCategories')->name('task-categories')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
 
                 Route::get('/portal/attendance', [AttendanceController::class, 'index'])->name('portal-attendance.index')->middleware('PermissionCheck:portal_manage,portal_team_attendance_read');
@@ -88,6 +89,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/bulk-review',  'bulkReviewReels')->name('bulk-review')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/{id}/assign',  'assignReel')->name('assign')->middleware('PermissionCheck:portal_manage,portal_reel_assign', 'DemoCheck');
                     Route::post('/bulk-assign',  'bulkAssignReels')->name('bulk-assign')->middleware('PermissionCheck:portal_manage,portal_reel_assign', 'DemoCheck');
+                    Route::post('/bulk-mark-paid', 'bulkMarkReelsPaid')->name('bulk-mark-paid')->middleware('PermissionCheck:portal_manage,portal_reel_assign', 'DemoCheck');
                     Route::post('/{id}/submit-link', 'submitReelLink')->name('submit-link')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/{id}/approve-stage', 'approveReelStage')->name('approve-stage')->middleware('PermissionCheck:portal_manage,portal_reel_approve', 'DemoCheck');
                     Route::post('/{id}/schedule', 'scheduleReel')->name('schedule')->middleware('PermissionCheck:portal_manage,portal_reel_approve', 'DemoCheck');

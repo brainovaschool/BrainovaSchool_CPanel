@@ -18,7 +18,8 @@ class SettingsController extends Controller
 
     public function edit()
     {
-        $data['settings'] = PortalSetting::current();
+        $data['settings']      = PortalSetting::current();
+        $data['taskCategories'] = \App\Models\Portal\PortalTaskCategory::orderBy('name')->get();
         $data['title']    = 'Team Portal Settings';
         return view('portal.settings.edit', compact('data'));
     }
@@ -26,6 +27,12 @@ class SettingsController extends Controller
     public function update(Request $request)
     {
         $result = $this->repo->updateSettings($request);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function updateTaskCategories(Request $request)
+    {
+        $result = $this->repo->updateTaskCategories($request);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 }
