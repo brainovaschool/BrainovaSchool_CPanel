@@ -20,6 +20,38 @@
             </div>
         </div>
 
+        <div class="card ot-card mb-24">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Reel Characters</h4>
+                <a href="{{ route('portal-social-reel-characters.create') }}" class="btn ot-btn-primary">+ Add Character</a>
+            </div>
+            <div class="card-body">
+                <p class="text-secondary">Add every character your reels use here — name, portrait image, voice/appearance/rules for AI consistency, an optional reference document, and as many costume images as you need. Click a character to manage all of that.</p>
+
+                @if ($data['reelCharacters']->isEmpty())
+                    <p class="text-secondary mb-0">No characters yet — click "+ Add Character" above to create your first one.</p>
+                @else
+                    <div class="d-flex flex-wrap gap-3">
+                        @foreach ($data['reelCharacters'] as $char)
+                            <a href="{{ route('portal-social-reel-characters.edit', $char->id) }}" class="text-decoration-none">
+                                <div class="border rounded p-2 text-center" style="width:120px;">
+                                    @if ($char->portrait)
+                                        <img src="{{ globalAsset($char->portrait->path) }}" style="width:100%;height:110px;object-fit:cover;" class="mb-1 rounded">
+                                    @else
+                                        <div class="d-flex align-items-center justify-content-center bg-light mb-1 rounded" style="width:100%;height:110px;color:#999;font-size:12px;">No image</div>
+                                    @endif
+                                    <p class="mb-0" style="font-size:13px;color:#333;">{{ $char->name }}</p>
+                                    @if ((int) $char->status !== 1)
+                                        <span class="badge-basic-danger-text" style="font-size:10px;">Inactive</span>
+                                    @endif
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+
         <div class="card ot-card">
             <div class="card-body">
                 <p class="text-secondary">Each block below is a named list — add as many as you want, rename any of

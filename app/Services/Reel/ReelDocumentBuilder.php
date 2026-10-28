@@ -4,6 +4,7 @@ namespace App\Services\Reel;
 
 use App\Models\Portal\PortalReelCustomField;
 use App\Models\Portal\ReelProject;
+use App\Models\Portal\ReelScene;
 
 /**
  * Assembles one whole-reel script/prompt document from a project's own
@@ -63,50 +64,9 @@ class ReelDocumentBuilder
 
         $lines[] = str_repeat('-', 40);
 
-        $scenes = $project->scenes;
-        $last   = $scenes->count() - 1;
-
-        foreach ($scenes as $index => $scene) {
+        foreach ($project->scenes as $scene) {
             $lines[] = '';
-            $header = "SCENE {$scene->sort_order} — {$sceneLength}s";
-            if ($index === 0) {
-                $header .= ' (OPENING SCENE)';
-            }
-            if ($index === $last) {
-                $header .= ' (CLOSING SCENE)';
-            }
-            $lines[] = $header;
-            if (trim((string) $scene->title) !== '') {
-                $lines[] = 'TITLE: ' . trim($scene->title);
-            }
-            $lines[] = '';
-            $lines[] = 'DESCRIPTION:';
-            $lines[] = $scene->description ?: '(none provided)';
-            $lines[] = '';
-            $lines[] = 'DIALOGUE:';
-            $lines[] = $scene->dialogue ?: '(none provided)';
-            if ($index === $last) {
-                $lines[] = '';
-                $lines[] = '(This scene must also close with: Brainbot: Think Smart. / Kea: Learn Smarter. — added automatically if not already written above.)';
-            }
-
-            $sceneCharacters = $scene->characters();
-            if ($sceneCharacters->isNotEmpty()) {
-                $lines[] = '';
-                $lines[] = 'CHARACTERS IN THIS SCENE:';
-                foreach ($sceneCharacters as $character) {
-                    $lines[] = "- {$character->name}: appearance: " . ($character->appearance_text ?: '(not set)')
-                        . ' | voice: ' . ($character->voice_profile_text ?: '(not set)')
-                        . ' | rules: ' . ($character->rules_text ?: '(not set)');
-                    if ($character->portrait) {
-                        $lines[] = '  Reference portrait on file — use it for visual consistency.';
-                    }
-                    if ($character->costumes->isNotEmpty()) {
-                        $lines[] = '  Costume references on file: ' . $character->costumes->pluck('label')->map(fn ($l) => $l ?: 'untitled')->implode(', ');
-                    }
-                }
-            }
-
+            $lines = array_merge($lines, $this->sceneLines($scene, $sceneLength));
             $lines[] = '';
             $lines[] = str_repeat('-', 40);
         }
@@ -115,6 +75,87 @@ class ReelDocumentBuilder
         $lines[] = 'CONTINUITY: keep every character\'s identity, appearance, clothing, proportions and visual style exactly consistent with their reference image and with every other scene in this reel.';
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * One scene's own script, standalone and self-contained — the project's
+     * title/pillar/series/length, the Universal Clip Settings (admin's own
+     * Global Instructions, repeated here since this file travels alone),
+     * then that scene's title/number/length/description/dialogue/character
+     * consistency, in that order.
+     */
+    public function buildScene(ReelProject $project, ReelScene $scene): string
+    {
+        $lines = [];
+
+        $lines[] = 'REEL: ' . $project->title;
+        [$pillar, $series] = $this->pillarAndSeries($project);
+        $lines[] = 'PILLAR: ' . ($pillar ?: '—');
+        $lines[] = 'SERIES: ' . ($series ?: '—');
+        $lines[] = '';
+
+        $globalInstructions = trim((string) setting('reel_global_instructions'));
+        $lines[] = 'UNIVERSAL CLIP SETTINGS (applies to every scene in this reel, set in Social Board Settings):';
+        $lines[] = $globalInstructions ?: '(none set)';
+        $lines[] = '';
+        $lines[] = str_repeat('-', 40);
+        $lines[] = '';
+
+        $sceneLength = $project->scene_length_seconds ?: $scene->duration_seconds ?: 8;
+        $lines       = array_merge($lines, $this->sceneLines($scene, $sceneLength));
+
+        return implode("\n", $lines);
+    }
+
+    /** The lines for one scene: header (number/length/opening-closing tag),
+     *  title, description, dialogue, and the consistency details for
+     *  whichever 1-3 characters are checked into it. Shared by the
+     *  whole-reel document and the single-scene download so both describe
+     *  a scene identically. */
+    private function sceneLines(ReelScene $scene, int $sceneLength): array
+    {
+        $lines = [];
+
+        $header = "SCENE {$scene->sort_order} — {$sceneLength}s";
+        if ($scene->is_first_scene) {
+            $header .= ' (OPENING SCENE)';
+        }
+        if ($scene->is_last_scene) {
+            $header .= ' (CLOSING SCENE)';
+        }
+        $lines[] = $header;
+        if (trim((string) $scene->title) !== '') {
+            $lines[] = 'TITLE: ' . trim($scene->title);
+        }
+        $lines[] = '';
+        $lines[] = 'DESCRIPTION:';
+        $lines[] = $scene->description ?: '(none provided)';
+        $lines[] = '';
+        $lines[] = 'DIALOGUE:';
+        $lines[] = $scene->dialogue ?: '(none provided)';
+        if ($scene->is_last_scene) {
+            $lines[] = '';
+            $lines[] = '(This scene must also close with: Brainbot: Think Smart. / Kea: Learn Smarter. — added automatically if not already written above.)';
+        }
+
+        $sceneCharacters = $scene->characters();
+        if ($sceneCharacters->isNotEmpty()) {
+            $lines[] = '';
+            $lines[] = 'CHARACTERS IN THIS SCENE:';
+            foreach ($sceneCharacters as $character) {
+                $lines[] = "- {$character->name}: appearance: " . ($character->appearance_text ?: '(not set)')
+                    . ' | voice: ' . ($character->voice_profile_text ?: '(not set)')
+                    . ' | rules: ' . ($character->rules_text ?: '(not set)');
+                if ($character->portrait) {
+                    $lines[] = '  Reference portrait on file — use it for visual consistency.';
+                }
+                if ($character->costumes->isNotEmpty()) {
+                    $lines[] = '  Costume references on file: ' . $character->costumes->pluck('label')->map(fn ($l) => $l ?: 'untitled')->implode(', ');
+                }
+            }
+        }
+
+        return $lines;
     }
 
     /** Pillar/Series come from the suggested Reel when this project was

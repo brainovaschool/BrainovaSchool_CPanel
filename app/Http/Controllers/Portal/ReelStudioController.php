@@ -186,6 +186,26 @@ class ReelStudioController extends Controller
         }, $filename, ['Content-Type' => 'text/plain']);
     }
 
+    /** One scene's own standalone script. */
+    public function downloadSceneScript($projectId, $sceneId)
+    {
+        $project = $this->repo->find((int) $projectId);
+        if (!$project || !$this->authorizeProject($project)) {
+            abort(404);
+        }
+
+        $document = $this->repo->sceneScriptDocument((int) $projectId, (int) $sceneId);
+        if (!$document) {
+            abort(404);
+        }
+
+        $scene    = $project->scenes->firstWhere('id', (int) $sceneId);
+        $filename = \Illuminate\Support\Str::slug($project->title) . '-scene-' . ($scene->sort_order ?? $sceneId) . '-script.txt';
+        return response()->streamDownload(function () use ($document) {
+            echo $document;
+        }, $filename, ['Content-Type' => 'text/plain']);
+    }
+
     /**
      * AJAX endpoint (not a classic form submit) so the Scene Builder page
      * can show a loading state with a real Cancel button — the client can

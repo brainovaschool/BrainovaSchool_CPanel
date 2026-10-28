@@ -161,7 +161,39 @@ class ReelStudioRepository
         }
         $project->save();
 
-        return $this->responseWithSuccess('Reel project updated.', []);
+        $this->rebuildBlankScenes($project);
+
+        return $this->responseWithSuccess('Reel project updated — scenes have been rebuilt for the new setup.', []);
+    }
+
+    /** Saving Reel Setup always throws away whatever scenes existed and
+     *  starts over with a fresh, blank set sized to the (possibly just
+     *  changed) target/scene length — so the scene list never drifts out
+     *  of sync with those numbers. Deliberately unconditional: any scene
+     *  content already written is lost on every Reel Setup save, by
+     *  design. */
+    private function rebuildBlankScenes(ReelProject $project): void
+    {
+        ReelScene::where('reel_project_id', $project->id)->delete(); // cascades to any reel_scene_characters rows
+
+        $count = $this->sceneCount($project);
+        if (!$count) {
+            return;
+        }
+
+        for ($i = 0; $i < $count; $i++) {
+            ReelScene::create([
+                'reel_project_id'  => $project->id,
+                'sort_order'       => $i + 1,
+                'duration_seconds' => $project->scene_length_seconds ?: 8,
+                'title'            => '',
+                'description'      => '',
+                'dialogue'         => '',
+                'character_ids'    => [],
+                'is_first_scene'   => $i === 0,
+                'is_last_scene'    => $i === $count - 1,
+            ]);
+        }
     }
 
     public function destroyProject(int $id): array
@@ -268,6 +300,18 @@ class ReelStudioRepository
             return null;
         }
         return (new ReelDocumentBuilder())->build($project);
+    }
+
+    /** One saved scene's own standalone script. Null if the scene doesn't
+     *  belong to this project. */
+    public function sceneScriptDocument(int $projectId, int $sceneId): ?string
+    {
+        $project = ReelProject::find($projectId);
+        $scene   = $project ? ReelScene::where('reel_project_id', $projectId)->find($sceneId) : null;
+        if (!$project || !$scene) {
+            return null;
+        }
+        return (new ReelDocumentBuilder())->buildScene($project, $scene);
     }
 
     /** If this project came from a Reels/Content Pool suggestion and

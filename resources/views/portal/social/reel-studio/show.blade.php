@@ -216,6 +216,7 @@
             var sceneCount    = {{ (int) ($data['sceneCount'] ?? 0) }};
             var availableChars = {!! json_encode($data['availableCharsJson']) !!};
             var MAX_CHARS_PER_SCENE = 3;
+            var sceneDownloadUrlTemplate = '{{ route('portal-social-reel-studio.scenes.download-one', [$project->id, '__SCENE_ID__']) }}';
 
             var container = document.getElementById('scenesContainer');
             var addSceneBtn = document.getElementById('addSceneBtn');
@@ -255,7 +256,12 @@
                 card.innerHTML =
                     '<div class="d-flex justify-content-between align-items-center mb-2">' +
                         '<h5 class="mb-0 scene-number"></h5>' +
-                        '<button type="button" class="btn btn-sm btn-outline-danger scene-remove">Remove Scene</button>' +
+                        '<div class="d-flex gap-2">' +
+                            (sceneData.id
+                                ? '<a href="' + sceneDownloadUrlTemplate.replace('__SCENE_ID__', sceneData.id) + '" class="btn btn-sm btn-outline-secondary">Download Script</a>'
+                                : '') +
+                            '<button type="button" class="btn btn-sm btn-outline-danger scene-remove">Remove Scene</button>' +
+                        '</div>' +
                     '</div>' +
                     '<div class="mb-2">' +
                         '<label class="form-label">Scene title (what this scene is about)</label>' +

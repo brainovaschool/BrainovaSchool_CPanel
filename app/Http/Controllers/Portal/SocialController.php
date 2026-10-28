@@ -495,6 +495,7 @@ class SocialController extends Controller
         $data['assigneeRoleIds']    = PortalSetting::current()->content_assignee_role_ids ?: [];
         $data['globalInstructions'] = setting('reel_global_instructions');
         $data['aiPromptTemplate']   = setting('reel_ai_prompt_template');
+        $data['reelCharacters']     = \App\Models\Portal\ReelCharacter::orderBy('sort_order')->orderBy('name')->get();
         $data['title']              = 'Social Board Settings';
         return view('portal.social.settings', compact('data'));
     }

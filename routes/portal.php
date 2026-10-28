@@ -156,6 +156,7 @@ Route::middleware(saasMiddleware())->group(function () {
 
                     Route::post('/{projectId}/scenes', 'storeScenes')->name('scenes.store')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
                     Route::get('/{projectId}/scenes/download', 'downloadScript')->name('scenes.download')->middleware('PermissionCheck:reel_studio_access');
+                    Route::get('/{projectId}/scenes/{sceneId}/download', 'downloadSceneScript')->name('scenes.download-one')->middleware('PermissionCheck:reel_studio_access');
                     Route::post('/{projectId}/ai/generate-scenes', 'aiGenerateScenes')->name('ai.generate-scenes')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
                 });
 
