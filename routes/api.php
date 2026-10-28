@@ -224,11 +224,19 @@ Route::middleware(saasApiMiddleware())->group(function () {
         // uses, so only staff actually granted Team Portal access see this.
         Route::group(['prefix' => 'portal', 'middleware' => 'PermissionCheck:portal_access'], function () {
             Route::get('my-tasks',          [App\Http\Controllers\Api\Portal\PortalTaskController::class, 'myTasks']);
-            Route::get('assignable-staff',  [App\Http\Controllers\Api\Portal\PortalTaskController::class, 'assignableStaff']);
-            Route::post('tasks',            [App\Http\Controllers\Api\Portal\PortalTaskController::class, 'store']);
+            Route::get('my-permissions',    [App\Http\Controllers\Api\Portal\PortalTaskController::class, 'myPermissions']);
             Route::get('reels',             [App\Http\Controllers\Api\Portal\PortalReelController::class, 'index']);
             Route::get('work-log',          [App\Http\Controllers\Api\Portal\PortalWorkLogController::class, 'today']);
             Route::post('work-log',         [App\Http\Controllers\Api\Portal\PortalWorkLogController::class, 'store']);
+
+            // Assigning work to other people is a coordinator/manager
+            // action on the website (PermissionCheck:portal_manage) -- the
+            // mobile API was missing that same check entirely, so anyone
+            // with plain portal_access could call these directly.
+            Route::middleware('PermissionCheck:portal_manage')->group(function () {
+                Route::get('assignable-staff', [App\Http\Controllers\Api\Portal\PortalTaskController::class, 'assignableStaff']);
+                Route::post('tasks',           [App\Http\Controllers\Api\Portal\PortalTaskController::class, 'store']);
+            });
         });
 
     });

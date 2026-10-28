@@ -46,6 +46,16 @@ class PortalTaskController extends Controller
         }
     }
 
+    /** Tells the app which coordinator-only screens/buttons to actually
+     *  show -- without this, the app had no way to know and was showing
+     *  "Assign a Task" to everyone with portal_access, not just managers. */
+    public function myPermissions()
+    {
+        return $this->responseWithSuccess(___('alert.success'), [
+            'can_manage' => hasPermission('portal_manage'),
+        ]);
+    }
+
     /** For the "Assign to" dropdown -- active staff, same list the website's
      *  Assign Task screen uses. */
     public function assignableStaff()
