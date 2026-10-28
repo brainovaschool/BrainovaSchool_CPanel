@@ -36,7 +36,14 @@ class PortalReelController extends Controller
     public function index(Request $request)
     {
         try {
+            $staffId = $this->actingStaffId();
             $reels = $this->repo->reels($request->only(['status', 'category', 'format', 'series_name']));
+            // Computed, not persisted -- tells the app which reels this
+            // person can open Reel Studio for, without it needing to know
+            // its own staff id to compare assigned_to itself.
+            $reels->each(function ($reel) use ($staffId) {
+                $reel->setAttribute('is_mine', $staffId !== null && (int) $reel->assigned_to === $staffId);
+            });
             return $this->responseWithSuccess(___('alert.success'), $reels);
         } catch (\Throwable $th) {
             return $this->responseWithError(___('alert.something_went_wrong'), $th->getMessage());
