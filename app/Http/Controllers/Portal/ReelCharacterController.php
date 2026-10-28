@@ -33,6 +33,7 @@ class ReelCharacterController extends Controller
         return [
             'name'               => 'required|string|max:100',
             'portrait'           => 'nullable|image|dimensions:ratio=9/16',
+            'description_file'   => 'nullable|file|max:10240',
             'appearance_text'    => 'nullable|string|max:3000',
             'voice_profile_text' => 'nullable|string|max:3000',
             'rules_text'         => 'nullable|string|max:3000',
@@ -77,6 +78,23 @@ class ReelCharacterController extends Controller
     {
         $result = $this->repo->destroy((int) $id);
         return redirect()->route('portal-social-reel-characters.index')->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function storeCostume(Request $request, $id)
+    {
+        $request->validate([
+            'costume_image' => 'required|image|max:10240',
+            'label'          => 'nullable|string|max:100',
+        ]);
+
+        $result = $this->repo->storeCostume($request, (int) $id);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function destroyCostume($id, $costumeId)
+    {
+        $result = $this->repo->destroyCostume((int) $id, (int) $costumeId);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
 }

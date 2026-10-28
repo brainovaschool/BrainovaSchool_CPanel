@@ -239,7 +239,10 @@
                     </p>
                     <p class="text-secondary">
                         Use these placeholders anywhere in your text — they're filled in automatically for each reel:
-                        <br><code>@{{title}}</code>, <code>@{{hook}}</code>, <code>@{{description}}</code>, <code>@{{format}}</code>, <code>@{{target_duration}}</code>, <code>@{{scene_count_instruction}}</code> (a ready-made sentence telling the AI how many scenes to make), <code>@{{characters}}</code> (the list of involved characters with their appearance/voice/rules).
+                        <br><code>@{{title}}</code>, <code>@{{hook}}</code>, <code>@{{description}}</code>, <code>@{{format}}</code>, <code>@{{target_duration}}</code>, <code>@{{scene_count_instruction}}</code> (a ready-made sentence telling the AI how many scenes to make), <code>@{{characters}}</code> (the full roster the AI can choose from — their appearance/voice/rules — not what ends up in any one scene).
+                    </p>
+                    <p class="text-secondary">
+                        Each scene features at most 3 characters, picked by the AI (or by a teacher, via the checkboxes on each scene) from that roster — never the whole roster at once. Dialogue in a scene only ever comes from whoever's checked for that scene, and the downloaded script includes each checked character's full appearance/voice/rules (plus a note about their reference portrait/costume images) right under that scene, alongside its duration, scene number, description and dialogue — all added automatically, you don't need to type any of it.
                     </p>
                     <p class="text-secondary">
                         You don't need to ask for JSON or worry about output format — the system adds its own technical instructions after your prompt automatically so the generated scenes always land back into the editable Scene boxes correctly.

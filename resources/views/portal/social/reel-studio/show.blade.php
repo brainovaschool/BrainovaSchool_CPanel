@@ -163,7 +163,7 @@
                     <h4 class="mb-0">Scenes</h4>
                     <p class="text-secondary mb-0">
                         @if ($data['sceneCount'])
-                            This reel needs {{ $data['sceneCount'] }} scene(s) at {{ $project->scene_length_seconds }}s each. Fill in Description + Dialogue for each, or let AI draft them — either way, everything stays editable before you save.
+                            This reel needs {{ $data['sceneCount'] }} scene(s) at {{ $project->scene_length_seconds }}s each. For each one, fill in Description + Dialogue and check which 1-3 characters appear in it — or let AI draft everything. Either way, everything stays editable before you save.
                         @else
                             Set a target total length and a scene length in Reel Setup above to see how many scenes this reel needs.
                         @endif
@@ -214,14 +214,40 @@
         (function () {
             var initialScenes = {!! json_encode($data['initialScenesJson']) !!};
             var sceneCount    = {{ (int) ($data['sceneCount'] ?? 0) }};
+            var availableChars = {!! json_encode($data['availableCharsJson']) !!};
+            var MAX_CHARS_PER_SCENE = 3;
 
             var container = document.getElementById('scenesContainer');
             var addSceneBtn = document.getElementById('addSceneBtn');
             var scenesJsonInput = document.getElementById('scenesJson');
             var form = document.getElementById('scenesForm');
 
+            function characterCheckboxesHtml(uid) {
+                if (!availableChars.length) {
+                    return '<p class="text-secondary mb-0" style="font-size:13px;">No characters picked for this reel yet — add some in Reel Setup above.</p>';
+                }
+                return availableChars.map(function (c) {
+                    var id = 'sceneChar' + uid + '_' + c.id;
+                    return '<div class="form-check form-check-inline">' +
+                        '<input type="checkbox" class="form-check-input scene-character" id="' + id + '" value="' + c.id + '">' +
+                        '<label class="form-check-label" for="' + id + '">' + c.name + '</label>' +
+                        '</div>';
+                }).join('');
+            }
+
+            function enforceCharacterLimit(card) {
+                var boxes = card.querySelectorAll('.scene-character');
+                var checkedCount = card.querySelectorAll('.scene-character:checked').length;
+                boxes.forEach(function (box) {
+                    box.disabled = !box.checked && checkedCount >= MAX_CHARS_PER_SCENE;
+                });
+            }
+
+            var sceneUid = 0;
+
             function addScene(sceneData) {
-                sceneData = sceneData || { id: null, description: '', dialogue: '' };
+                sceneData = sceneData || { id: null, description: '', dialogue: '', characters: [] };
+                sceneUid++;
 
                 var card = document.createElement('div');
                 card.className = 'card p-3';
@@ -235,14 +261,25 @@
                         '<label class="form-label">Description (setting, background, camera, visual events)</label>' +
                         '<textarea class="form-control form-control-sm scene-description" rows="2"></textarea>' +
                     '</div>' +
-                    '<div>' +
+                    '<div class="mb-2">' +
                         '<label class="form-label">Dialogues (one line per character, e.g. "Kea: ...")</label>' +
                         '<textarea class="form-control form-control-sm scene-dialogue" rows="3"></textarea>' +
+                    '</div>' +
+                    '<div>' +
+                        '<label class="form-label">Characters in this scene (up to 3)</label>' +
+                        '<div class="scene-characters-box">' + characterCheckboxesHtml(sceneUid) + '</div>' +
                     '</div>';
 
                 card.querySelector('.scene-description').value = sceneData.description || '';
                 card.querySelector('.scene-dialogue').value = sceneData.dialogue || '';
                 card.querySelector('.scene-remove').addEventListener('click', function () { card.remove(); renumberScenes(); });
+
+                var checkedIds = (sceneData.characters || []).map(String);
+                card.querySelectorAll('.scene-character').forEach(function (box) {
+                    box.checked = checkedIds.indexOf(box.value) !== -1;
+                    box.addEventListener('change', function () { enforceCharacterLimit(card); });
+                });
+                enforceCharacterLimit(card);
 
                 container.appendChild(card);
                 renumberScenes();
@@ -267,10 +304,15 @@
             form.addEventListener('submit', function () {
                 var scenes = [];
                 container.querySelectorAll(':scope > .card').forEach(function (card) {
+                    var characters = [];
+                    card.querySelectorAll('.scene-character:checked').forEach(function (box) {
+                        characters.push(parseInt(box.value, 10));
+                    });
                     scenes.push({
                         id: card.dataset.sceneId || null,
                         description: card.querySelector('.scene-description').value,
-                        dialogue: card.querySelector('.scene-dialogue').value
+                        dialogue: card.querySelector('.scene-dialogue').value,
+                        characters: characters
                     });
                 });
                 scenesJsonInput.value = JSON.stringify(scenes);

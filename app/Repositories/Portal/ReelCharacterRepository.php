@@ -3,6 +3,7 @@
 namespace App\Repositories\Portal;
 
 use App\Models\Portal\ReelCharacter;
+use App\Models\Portal\ReelCharacterCostume;
 use App\Models\Portal\ReelSceneCharacter;
 use App\Traits\CommonHelperTrait;
 use App\Traits\ReturnFormatTrait;
@@ -32,15 +33,19 @@ class ReelCharacterRepository
             $portraitUploadId = $request->hasFile('portrait')
                 ? $this->UploadImageCreate($request->file('portrait'), self::UPLOAD_PATH)
                 : null;
+            $descriptionUploadId = $request->hasFile('description_file')
+                ? $this->UploadImageCreate($request->file('description_file'), self::UPLOAD_PATH)
+                : null;
 
             $character = ReelCharacter::create([
-                'name'               => $request->name,
-                'portrait_upload_id' => $portraitUploadId,
-                'appearance_text'    => $request->appearance_text,
-                'voice_profile_text' => $request->voice_profile_text,
-                'rules_text'         => $request->rules_text,
-                'sort_order'         => (int) ($request->sort_order ?? 0),
-                'status'             => (int) ($request->status ?? 1),
+                'name'                   => $request->name,
+                'portrait_upload_id'     => $portraitUploadId,
+                'description_upload_id'  => $descriptionUploadId,
+                'appearance_text'        => $request->appearance_text,
+                'voice_profile_text'     => $request->voice_profile_text,
+                'rules_text'             => $request->rules_text,
+                'sort_order'             => (int) ($request->sort_order ?? 0),
+                'status'                 => (int) ($request->status ?? 1),
             ]);
 
             return $this->responseWithSuccess('Character added.', ['id' => $character->id]);
@@ -59,6 +64,9 @@ class ReelCharacterRepository
         if ($request->hasFile('portrait')) {
             $character->portrait_upload_id = $this->UploadImageUpdate($request->file('portrait'), self::UPLOAD_PATH, $character->portrait_upload_id);
         }
+        if ($request->hasFile('description_file')) {
+            $character->description_upload_id = $this->UploadImageUpdate($request->file('description_file'), self::UPLOAD_PATH, $character->description_upload_id);
+        }
 
         $character->name               = $request->name;
         $character->appearance_text    = $request->appearance_text;
@@ -71,9 +79,43 @@ class ReelCharacterRepository
         return $this->responseWithSuccess('Character updated.', ['id' => $character->id]);
     }
 
+    /** Adds one costume/outfit reference image - repeatable, no cap. */
+    public function storeCostume($request, int $characterId): array
+    {
+        $character = ReelCharacter::find($characterId);
+        if (!$character || !$request->hasFile('costume_image')) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+
+        $uploadId = $this->UploadImageCreate($request->file('costume_image'), self::UPLOAD_PATH);
+        $nextSort = (int) ReelCharacterCostume::where('reel_character_id', $characterId)->max('sort_order') + 1;
+
+        ReelCharacterCostume::create([
+            'reel_character_id' => $characterId,
+            'upload_id'         => $uploadId,
+            'label'              => $request->label,
+            'sort_order'         => $nextSort,
+        ]);
+
+        return $this->responseWithSuccess('Costume image added.', []);
+    }
+
+    public function destroyCostume(int $characterId, int $costumeId): array
+    {
+        $costume = ReelCharacterCostume::where('reel_character_id', $characterId)->where('id', $costumeId)->first();
+        if (!$costume) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+
+        $this->UploadImageDelete($costume->upload_id);
+        $costume->delete();
+
+        return $this->responseWithSuccess(___('alert.deleted_successfully'), []);
+    }
+
     /** Refuses to delete a character still used in any scene — asks the
      *  admin to deactivate instead, so a teacher's already-built scene
-     *  never silently loses one of its characters' action points/dialogue. */
+     *  never silently loses one of its characters. */
     public function destroy(int $id): array
     {
         $character = ReelCharacter::find($id);
@@ -81,11 +123,18 @@ class ReelCharacterRepository
             return $this->responseWithError(___('alert.not_found'), []);
         }
 
-        if (ReelSceneCharacter::where('reel_character_id', $id)->exists()) {
+        $inUse = ReelSceneCharacter::where('reel_character_id', $id)->exists()
+            || \App\Models\Portal\ReelScene::whereJsonContains('character_ids', $id)->exists();
+        if ($inUse) {
             return $this->responseWithError('This character is used in at least one scene — set it to Inactive instead of deleting it, so existing scenes keep working.', []);
         }
 
         $this->UploadImageDelete($character->portrait_upload_id);
+        $this->UploadImageDelete($character->description_upload_id);
+        foreach ($character->costumes as $costume) {
+            $this->UploadImageDelete($costume->upload_id);
+            $costume->delete();
+        }
         $character->delete();
 
         return $this->responseWithSuccess(___('alert.deleted_successfully'), []);

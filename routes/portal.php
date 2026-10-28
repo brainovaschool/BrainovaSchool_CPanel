@@ -141,6 +141,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',   'edit')->name('edit')->middleware('PermissionCheck:portal_manage');
                     Route::put('/update/{id}', 'update')->name('update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::delete('/{id}',     'destroy')->name('destroy')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::post('/{id}/costumes', 'storeCostume')->name('costumes.store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::delete('/{id}/costumes/{costumeId}', 'destroyCostume')->name('costumes.destroy')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
 
                 // Reel Studio — teacher-facing scene builder (reel_studio_access; portal_manage holders get it auto-granted).

@@ -13,6 +13,7 @@ class ReelScene extends Model
         'generated_prompt_at' => 'datetime',
         'is_first_scene'      => 'boolean',
         'is_last_scene'       => 'boolean',
+        'character_ids'       => 'array',
     ];
 
     public function project()
@@ -23,5 +24,13 @@ class ReelScene extends Model
     public function sceneCharacters()
     {
         return $this->hasMany(ReelSceneCharacter::class)->orderBy('sort_order');
+    }
+
+    /** The 1-3 ReelCharacter models actually appearing in this scene, in
+     *  the order they were checked. */
+    public function characters()
+    {
+        $ids = $this->character_ids ?: [];
+        return ReelCharacter::whereIn('id', $ids)->get()->sortBy(fn ($c) => array_search($c->id, $ids))->values();
     }
 }

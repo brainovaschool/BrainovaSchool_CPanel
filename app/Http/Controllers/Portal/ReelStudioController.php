@@ -81,12 +81,13 @@ class ReelStudioController extends Controller
 
         $characters = ReelCharacter::active()->orderBy('sort_order')->orderBy('name')->get();
 
-        $data['project']            = $project;
-        $data['characters']         = $characters;
-        $data['customFields']       = $this->repo->customFields();
-        $data['sceneCount']         = $this->repo->sceneCount($project);
-        $data['initialScenesJson']  = $this->scenesForJs($project);
-        $data['title']              = $project->title;
+        $data['project']             = $project;
+        $data['characters']          = $characters;
+        $data['customFields']        = $this->repo->customFields();
+        $data['sceneCount']          = $this->repo->sceneCount($project);
+        $data['initialScenesJson']   = $this->scenesForJs($project);
+        $data['availableCharsJson']  = $this->charactersForJs($project->involvedCharacters());
+        $data['title']               = $project->title;
         return view('portal.social.reel-studio.show', compact('data'));
     }
 
@@ -100,9 +101,19 @@ class ReelStudioController extends Controller
                 'id'          => $scene->id,
                 'description' => $scene->description,
                 'dialogue'    => $scene->dialogue,
+                'characters'  => $scene->character_ids ?: [],
             ];
         }
         return $scenes;
+    }
+
+    private function charactersForJs($characters): array
+    {
+        $out = [];
+        foreach ($characters as $character) {
+            $out[] = ['id' => $character->id, 'name' => $character->name];
+        }
+        return $out;
     }
 
     public function update(Request $request, $id)

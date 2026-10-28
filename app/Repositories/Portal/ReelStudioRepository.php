@@ -208,7 +208,7 @@ class ReelStudioRepository
         }
 
         try {
-            DB::transaction(function () use ($decoded, $projectId, $sceneLength, $count) {
+            DB::transaction(function () use ($decoded, $projectId, $sceneLength, $count, $project) {
                 $keptSceneIds = [];
 
                 foreach (array_values($decoded) as $index => $sceneData) {
@@ -226,6 +226,7 @@ class ReelStudioRepository
                     $scene->duration_seconds = $sceneLength;
                     $scene->description      = (string) ($sceneData['description'] ?? '');
                     $scene->dialogue         = (string) ($sceneData['dialogue'] ?? '');
+                    $scene->character_ids    = $this->cleanSceneCharacterIds($sceneData['characters'] ?? [], $project);
                     $scene->is_first_scene   = $index === 0;
                     $scene->is_last_scene    = $index === $count - 1;
                     $scene->save();
@@ -244,6 +245,16 @@ class ReelStudioRepository
         } catch (\Throwable $th) {
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
+    }
+
+    /** Caps a scene's character list at 3 and drops anything not in the
+     *  project's own involved-characters roster. */
+    private function cleanSceneCharacterIds(array $ids, ReelProject $project): array
+    {
+        $allowed = $project->involvedCharacters()->pluck('id')->all();
+        $ids     = array_values(array_unique(array_map('intval', $ids)));
+        $ids     = array_values(array_filter($ids, fn ($id) => in_array($id, $allowed, true)));
+        return array_slice($ids, 0, 3);
     }
 
     /** The whole-reel script/prompt document — project setup + every saved
@@ -309,7 +320,7 @@ class ReelStudioRepository
             return $this->responseWithError('The AI did not return any usable scenes. Please try again.', []);
         }
 
-        $clean = $this->sanitizeAiScenes($scenes, $sceneCount);
+        $clean = $this->sanitizeAiScenes($scenes, $sceneCount, $characters);
 
         if (empty($clean)) {
             return $this->responseWithError('The AI response could not be read into valid scenes. Please try again.', []);
@@ -327,6 +338,7 @@ class ReelStudioRepository
                         'duration_seconds' => $project->scene_length_seconds ?: 8,
                         'description'      => $sceneData['description'],
                         'dialogue'         => $sceneData['dialogue'],
+                        'character_ids'    => $sceneData['character_ids'],
                         'is_first_scene'   => $i === 0,
                         'is_last_scene'    => $i === $last,
                     ]);
@@ -395,7 +407,7 @@ class ReelStudioRepository
         $sceneCountInstruction = "Create exactly {$sceneCount} scenes, each exactly {$sceneLength} seconds long, so the reel totals approximately {$targetSeconds} seconds.";
 
         $characterRotationNote = $characters->count() > 1
-            ? "This reel has {$characters->count()} characters available: {$characters->pluck('name')->implode(', ')}. If there are enough scenes, make sure EVERY one of them gets a meaningful role in at least one scene across the whole reel — do not silently ignore any supplied character for the entire video."
+            ? "This reel has {$characters->count()} characters available: {$characters->pluck('name')->implode(', ')}. Each scene may feature AT MOST 3 of them (often just 1 or 2) — pick whichever characters actually belong in that specific scene, never the whole roster at once. If there are enough scenes, make sure EVERY character still gets a meaningful role somewhere across the whole reel — do not silently ignore any supplied character for the entire video."
             : '';
 
         $customTemplate = trim((string) setting('reel_ai_prompt_template'));
@@ -428,7 +440,7 @@ OPENING HOOK (scene 1 opens with this exact line, spoken by Kea — the system a
 VIDEO FORMAT: {$formatLabel}
 {$sceneCountInstruction}
 {$characterRotationNote}
-CHARACTERS AVAILABLE FOR THIS VIDEO (use ONLY these, by name, written directly into the dialogue as "Name: line" — never invent or substitute a different character):
+CHARACTERS AVAILABLE FOR THIS VIDEO (use ONLY these, by name, written directly into the dialogue as "Name: line" — never invent or substitute a different character). For EACH scene, pick 1-3 of them who actually appear in it and list those exact names in that scene's own "characters" array — dialogue in a scene must only ever come from the characters listed for that same scene:
 {$roster}
 
 ---
@@ -440,7 +452,7 @@ You are planning a short educational reel for a school, scene by scene, for use 
 
 {$globalInstructions}
 
-For each scene write: a short, visually rich scene description (setting, background, camera, lighting, visual effects, and how it transitions to the next scene), and a dialogue block with every character's lines for that scene written as "Name: line" (one per line) in their established voice — leave a scene's dialogue empty if nobody speaks in it. Make the dialogue feel like a real, engaging conversation, not a textbook explanation.
+For each scene write: a short, visually rich scene description (setting, background, camera, lighting, visual effects, and how it transitions to the next scene); pick 1-3 characters from the roster who actually appear in that scene; and a dialogue block with only those characters' lines for that scene written as "Name: line" (one per line) in their established voice — leave a scene's dialogue empty if nobody speaks in it. Make the dialogue feel like a real, engaging conversation, not a textbook explanation.
 PROMPT;
 
         $closing = <<<PROMPT
@@ -450,18 +462,25 @@ PROMPT;
 Reminder: this video's real topic is "{$project->title}" ({$project->description}) — not any example topic shown above. The system automatically adds the opening hook line and the fixed closing line ("Brainbot: Think Smart." / "Kea: Learn Smarter.") to the first and last scene — do not write those yourself, just make those scenes lead naturally into them.
 
 Respond with ONLY valid JSON (no markdown, no commentary, no code fences) matching exactly this schema:
-{"scenes":[{"description":"...","dialogue":"..."}]}
+{"scenes":[{"description":"...","dialogue":"...","characters":["Name1","Name2"]}]}
 PROMPT;
 
         return $facts . $base . $closing;
     }
 
     /** Validates/repairs the AI's scene list: keeps description/dialogue as
-     *  plain strings and caps the count at what the template calls for
-     *  (padding with blank scenes if the AI returned fewer than that, as
-     *  long as it returned at least one usable scene). */
-    private function sanitizeAiScenes($scenes, int $sceneCount): array
+     *  plain strings, resolves each scene's "characters" names back to ids
+     *  against the project's own roster (dropping anything that doesn't
+     *  match, capping at 3), and caps the count at what the template calls
+     *  for (padding with blank scenes if the AI returned fewer than that,
+     *  as long as it returned at least one usable scene). */
+    private function sanitizeAiScenes($scenes, int $sceneCount, $characters): array
     {
+        $idByName = [];
+        foreach ($characters as $c) {
+            $idByName[strtolower(trim($c->name))] = $c->id;
+        }
+
         $clean = [];
 
         foreach ($scenes as $sceneData) {
@@ -469,9 +488,19 @@ PROMPT;
                 continue;
             }
 
+            $names = array_values(array_filter((array) ($sceneData['characters'] ?? [])));
+            $ids   = [];
+            foreach ($names as $name) {
+                $id = $idByName[strtolower(trim((string) $name))] ?? null;
+                if ($id !== null && !in_array($id, $ids, true)) {
+                    $ids[] = $id;
+                }
+            }
+
             $clean[] = [
-                'description' => (string) ($sceneData['description'] ?? ''),
-                'dialogue'    => (string) ($sceneData['dialogue'] ?? ''),
+                'description'    => (string) ($sceneData['description'] ?? ''),
+                'dialogue'       => (string) ($sceneData['dialogue'] ?? ''),
+                'character_ids'  => array_slice($ids, 0, 3),
             ];
 
             if (count($clean) >= $sceneCount) {
@@ -484,7 +513,7 @@ PROMPT;
         }
 
         while (count($clean) < $sceneCount) {
-            $clean[] = ['description' => '', 'dialogue' => ''];
+            $clean[] = ['description' => '', 'dialogue' => '', 'character_ids' => []];
         }
 
         return $clean;

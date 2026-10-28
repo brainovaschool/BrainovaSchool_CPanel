@@ -22,6 +22,21 @@
         @endif
     </div>
 
+    <div class="col-12 col-md-6 mb-3">
+        <label class="form-label">Character description (file, optional)</label>
+        <div class="ot_fileUploader left-side mb-1">
+            <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file chosen" readonly>
+            <button class="primary-btn-small-input" type="button">
+                <label class="btn btn-lg ot-btn-primary" for="descriptionFile">{{ ___('common.browse') }}</label>
+                <input type="file" class="d-none bn-file-input" id="descriptionFile" name="description_file">
+            </button>
+        </div>
+        <small class="text-secondary d-block mt-1">A reference doc for people to read (a brief, a moodboard, etc.) — doesn't feed the AI prompt, the text fields below do that.</small>
+        @if ($character && $character->descriptionUpload)
+            <p class="text-secondary mt-1 mb-0"><a href="{{ globalAsset($character->descriptionUpload->path) }}" target="_blank">Current file</a></p>
+        @endif
+    </div>
+
     <div class="col-12 mb-3">
         <label class="form-label">Visual appearance &amp; consistency</label>
         <textarea name="appearance_text" rows="4" class="form-control ot-textarea"
@@ -53,3 +68,20 @@
         </select>
     </div>
 </div>
+
+@push('script')
+<script>
+    // main.js hides every input[type=file] on every page - clicking the
+    // visible "Browse" <label> still opens the picker natively via its
+    // for="", so this only needs to mirror the chosen filename into the
+    // readonly text box next to it.
+    document.addEventListener('change', function (e) {
+        if (!e.target.classList.contains('bn-file-input')) return;
+        var wrapper = e.target.closest('.ot_fileUploader');
+        var placeholder = wrapper ? wrapper.querySelector('.bn-file-placeholder') : null;
+        if (placeholder) {
+            placeholder.value = e.target.files.length ? e.target.files[0].name : '';
+        }
+    });
+</script>
+@endpush

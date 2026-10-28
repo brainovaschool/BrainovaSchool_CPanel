@@ -19,4 +19,19 @@ class ReelCharacter extends Model
     {
         return $this->belongsTo(Upload::class, 'portrait_upload_id');
     }
+
+    /** An optional uploaded reference doc (PDF, doc, image, etc.) - a
+     *  supplement a designer/writer can attach, read by people, not fed
+     *  into the AI prompt (which uses the text fields below instead). */
+    public function descriptionUpload()
+    {
+        return $this->belongsTo(Upload::class, 'description_upload_id');
+    }
+
+    /** As many costume/outfit reference images as needed, each separately
+     *  downloadable. */
+    public function costumes()
+    {
+        return $this->hasMany(ReelCharacterCostume::class)->orderBy('sort_order');
+    }
 }

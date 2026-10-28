@@ -56,12 +56,8 @@ class ReelDocumentBuilder
 
         $characters = $project->involvedCharacters();
         if ($characters->isNotEmpty()) {
-            $lines[] = 'CHARACTERS INVOLVED:';
-            foreach ($characters as $character) {
-                $lines[] = "- {$character->name}: appearance: " . ($character->appearance_text ?: '(not set)')
-                    . ' | voice: ' . ($character->voice_profile_text ?: '(not set)')
-                    . ' | rules: ' . ($character->rules_text ?: '(not set)');
-            }
+            $lines[] = 'CHARACTERS INVOLVED IN THIS REEL: ' . $characters->pluck('name')->implode(', ');
+            $lines[] = '(Full appearance/voice/rules for each one appear under the specific scene(s) where they are checked in, below.)';
             $lines[] = '';
         }
 
@@ -90,6 +86,24 @@ class ReelDocumentBuilder
                 $lines[] = '';
                 $lines[] = '(This scene must also close with: Brainbot: Think Smart. / Kea: Learn Smarter. — added automatically if not already written above.)';
             }
+
+            $sceneCharacters = $scene->characters();
+            if ($sceneCharacters->isNotEmpty()) {
+                $lines[] = '';
+                $lines[] = 'CHARACTERS IN THIS SCENE:';
+                foreach ($sceneCharacters as $character) {
+                    $lines[] = "- {$character->name}: appearance: " . ($character->appearance_text ?: '(not set)')
+                        . ' | voice: ' . ($character->voice_profile_text ?: '(not set)')
+                        . ' | rules: ' . ($character->rules_text ?: '(not set)');
+                    if ($character->portrait) {
+                        $lines[] = '  Reference portrait on file — use it for visual consistency.';
+                    }
+                    if ($character->costumes->isNotEmpty()) {
+                        $lines[] = '  Costume references on file: ' . $character->costumes->pluck('label')->map(fn ($l) => $l ?: 'untitled')->implode(', ');
+                    }
+                }
+            }
+
             $lines[] = '';
             $lines[] = str_repeat('-', 40);
         }
