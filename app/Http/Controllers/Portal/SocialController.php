@@ -32,11 +32,7 @@ class SocialController extends Controller
 
     private function canManageContent(): bool
     {
-        if (hasPermission('portal_manage') || hasPermission('portal_social_suggest_reel_read')) {
-            return true;
-        }
-        $staffId = $this->actingStaffId();
-        return $staffId !== null && in_array($staffId, PortalResponsibility::ownerStaffIdsForKey(PortalResponsibility::KEY_CONTENT), true);
+        return $this->repo->canManageContent($this->actingStaffId());
     }
 
     private function canAssignReels(): bool

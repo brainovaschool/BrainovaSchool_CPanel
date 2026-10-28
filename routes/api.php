@@ -226,6 +226,11 @@ Route::middleware(saasApiMiddleware())->group(function () {
             Route::get('my-tasks',          [App\Http\Controllers\Api\Portal\PortalTaskController::class, 'myTasks']);
             Route::get('my-permissions',    [App\Http\Controllers\Api\Portal\PortalTaskController::class, 'myPermissions']);
             Route::get('reels',             [App\Http\Controllers\Api\Portal\PortalReelController::class, 'index']);
+            Route::get('reel-series',       [App\Http\Controllers\Api\Portal\PortalReelController::class, 'series']);
+            Route::post('reels',            [App\Http\Controllers\Api\Portal\PortalReelController::class, 'store']);
+            Route::get('reels/{id}/open-studio', [App\Http\Controllers\Api\Portal\PortalReelController::class, 'openStudio']);
+            Route::get('reel-studio/{id}',        [App\Http\Controllers\Api\Portal\PortalReelStudioController::class, 'show']);
+            Route::post('reel-studio/{id}/scenes', [App\Http\Controllers\Api\Portal\PortalReelStudioController::class, 'saveScenes']);
             Route::get('work-log',          [App\Http\Controllers\Api\Portal\PortalWorkLogController::class, 'today']);
             Route::post('work-log',         [App\Http\Controllers\Api\Portal\PortalWorkLogController::class, 'store']);
 

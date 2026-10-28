@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\Portal;
 
 use App\Http\Controllers\Controller;
 use App\Models\Staff\Staff;
+use App\Repositories\Portal\SocialRepository;
 use App\Repositories\Portal\TaskRepository;
 use App\Traits\ReturnFormatTrait;
 use Illuminate\Http\Request;
@@ -20,10 +21,12 @@ class PortalTaskController extends Controller
     use ReturnFormatTrait;
 
     private $repo;
+    private $socialRepo;
 
-    public function __construct(TaskRepository $repo)
+    public function __construct(TaskRepository $repo, SocialRepository $socialRepo)
     {
         $this->repo = $repo;
+        $this->socialRepo = $socialRepo;
     }
 
     private function actingStaffId(): ?int
@@ -53,6 +56,7 @@ class PortalTaskController extends Controller
     {
         return $this->responseWithSuccess(___('alert.success'), [
             'can_manage' => hasPermission('portal_manage'),
+            'can_suggest_reel' => $this->socialRepo->canManageContent($this->actingStaffId()),
         ]);
     }
 

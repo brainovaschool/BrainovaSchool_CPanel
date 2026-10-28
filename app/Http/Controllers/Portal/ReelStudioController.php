@@ -26,18 +26,8 @@ class ReelStudioController extends Controller
      *  came from a Content Pool/Reels suggestion they were assigned. */
     private function authorizeProject($project): bool
     {
-        if (!$project) {
-            return false;
-        }
-        if ($this->isManager() || (int) $project->created_by === (int) Auth::id()) {
-            return true;
-        }
-        $reel = $project->portalReel;
-        if ($reel && $reel->assigned_to) {
-            $staff = Auth::user()->staff;
-            return $staff && (int) $staff->id === (int) $reel->assigned_to;
-        }
-        return false;
+        $staff = Auth::user()->staff;
+        return $this->repo->authorizeProject($project, (int) Auth::id(), $staff ? (int) $staff->id : null, $this->isManager());
     }
 
     /** No more standalone list to browse - every project is reached

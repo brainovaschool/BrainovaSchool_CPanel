@@ -50,6 +50,25 @@ class ReelStudioRepository
         return ReelProject::with(['scenes', 'portalReel'])->find($id);
     }
 
+    /** Shared with the mobile API so both sides agree on who can open/edit
+     *  a project: whoever created it, portal_manage, or -- if it's linked
+     *  to a Reels/Content Pool suggestion -- whoever that reel is assigned
+     *  to. Moved here (was private on ReelStudioController) to avoid drift. */
+    public function authorizeProject(?ReelProject $project, int $userId, ?int $actingStaffId, bool $isManager): bool
+    {
+        if (!$project) {
+            return false;
+        }
+        if ($isManager || (int) $project->created_by === $userId) {
+            return true;
+        }
+        $reel = $project->portalReel;
+        if ($reel && $reel->assigned_to) {
+            return $actingStaffId !== null && $actingStaffId === (int) $reel->assigned_to;
+        }
+        return false;
+    }
+
     public function customFields()
     {
         return PortalReelCustomField::orderBy('sort_order')->get();

@@ -180,6 +180,19 @@ class SocialRepository
         return PortalReelSeries::orderBy('sort_order')->get();
     }
 
+    /** Shared with the mobile API so both sides enforce the exact same
+     *  rule for who can suggest/manage reel content -- portal_manage,
+     *  the dedicated suggest permission, or whoever currently holds the
+     *  Content responsibility. Moved here (was private on SocialController)
+     *  so it can't drift between web and mobile. */
+    public function canManageContent(?int $actingStaffId): bool
+    {
+        if (hasPermission('portal_manage') || hasPermission('portal_social_suggest_reel_read')) {
+            return true;
+        }
+        return $actingStaffId !== null && in_array($actingStaffId, PortalResponsibility::ownerStaffIdsForKey(PortalResponsibility::KEY_CONTENT), true);
+    }
+
     /** [] if no series picked, or the series was renamed/deleted since -
      *  callers already treat a missing default as "leave that field as
      *  the submitter set it". Shape: {category, format, custom_fields:
