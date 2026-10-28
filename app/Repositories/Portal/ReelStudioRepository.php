@@ -224,6 +224,7 @@ class ReelStudioRepository
 
                     $scene->sort_order       = $index + 1;
                     $scene->duration_seconds = $sceneLength;
+                    $scene->title            = (string) ($sceneData['title'] ?? '');
                     $scene->description      = (string) ($sceneData['description'] ?? '');
                     $scene->dialogue         = (string) ($sceneData['dialogue'] ?? '');
                     $scene->character_ids    = $this->cleanSceneCharacterIds($sceneData['characters'] ?? [], $project);
@@ -336,6 +337,7 @@ class ReelStudioRepository
                         'reel_project_id'  => $projectId,
                         'sort_order'       => $i + 1,
                         'duration_seconds' => $project->scene_length_seconds ?: 8,
+                        'title'            => $sceneData['title'],
                         'description'      => $sceneData['description'],
                         'dialogue'         => $sceneData['dialogue'],
                         'character_ids'    => $sceneData['character_ids'],
@@ -443,6 +445,11 @@ VIDEO FORMAT: {$formatLabel}
 CHARACTERS AVAILABLE FOR THIS VIDEO (use ONLY these, by name, written directly into the dialogue as "Name: line" — never invent or substitute a different character). For EACH scene, pick 1-3 of them who actually appear in it and list those exact names in that scene's own "characters" array — dialogue in a scene must only ever come from the characters listed for that same scene:
 {$roster}
 
+THESE THREE RULES APPLY NO MATTER WHAT STYLE GUIDE FOLLOWS BELOW — they are structural requirements, not style choices:
+1. TITLE: every scene needs a short 3-6 word title naming what that scene is about.
+2. DESCRIPTION LENGTH: every scene's description must be 3-5 full sentences — specific setting details, exactly where each character is and what they're physically doing, camera framing/movement, lighting/mood, and the transition to the next scene. A one-line or one-sentence description is NOT acceptable, it is not enough for a video generator to actually render the shot.
+3. EVERY PICKED CHARACTER MUST SPEAK: if a scene's "characters" array has 2 or 3 names in it, the dialogue MUST contain at least one line from EACH of those names — never pick 3 characters for a scene and then only write a line for 1 of them. The dialogue should read as a real back-and-forth exchange (2-4 lines total for a {$sceneLength}-second scene), not a single line.
+
 ---
 
 PROMPT;
@@ -452,7 +459,11 @@ You are planning a short educational reel for a school, scene by scene, for use 
 
 {$globalInstructions}
 
-For each scene write: a short, visually rich scene description (setting, background, camera, lighting, visual effects, and how it transitions to the next scene); pick 1-3 characters from the roster who actually appear in that scene; and a dialogue block with only those characters' lines for that scene written as "Name: line" (one per line) in their established voice — leave a scene's dialogue empty if nobody speaks in it. Make the dialogue feel like a real, engaging conversation, not a textbook explanation.
+For each scene write:
+1. A short title (3-6 words) naming what that scene is about, e.g. "The Honest Mistake" or "Kea's Question".
+2. A detailed, visually rich scene description — 3 to 5 full sentences, enough for a video generator to actually render the shot: the setting/background in specific detail, where each character is positioned and what they are physically doing, camera framing and movement, lighting and mood, and how the scene transitions into the next one. Do not write a one-line summary — describe it like a shot list a director could follow.
+3. Pick 1-3 characters from the roster who actually appear in that scene.
+4. A dialogue block that is a real back-and-forth exchange: if 2 or 3 characters are picked for the scene, EVERY one of them must have at least one line — never write dialogue for only one of the picked characters while leaving the others silent. Write each line as "Name: line" on its own line, 2-4 exchanges feels right for a {$sceneLength}-second scene. Leave the dialogue block empty only if the scene has zero characters in it. Make it feel like a real, engaging conversation, not a textbook explanation.
 PROMPT;
 
         $closing = <<<PROMPT
@@ -462,7 +473,7 @@ PROMPT;
 Reminder: this video's real topic is "{$project->title}" ({$project->description}) — not any example topic shown above. The system automatically adds the opening hook line and the fixed closing line ("Brainbot: Think Smart." / "Kea: Learn Smarter.") to the first and last scene — do not write those yourself, just make those scenes lead naturally into them.
 
 Respond with ONLY valid JSON (no markdown, no commentary, no code fences) matching exactly this schema:
-{"scenes":[{"description":"...","dialogue":"...","characters":["Name1","Name2"]}]}
+{"scenes":[{"title":"...","description":"...","dialogue":"...","characters":["Name1","Name2"]}]}
 PROMPT;
 
         return $facts . $base . $closing;
@@ -498,6 +509,7 @@ PROMPT;
             }
 
             $clean[] = [
+                'title'          => (string) ($sceneData['title'] ?? ''),
                 'description'    => (string) ($sceneData['description'] ?? ''),
                 'dialogue'       => (string) ($sceneData['dialogue'] ?? ''),
                 'character_ids'  => array_slice($ids, 0, 3),
@@ -513,7 +525,7 @@ PROMPT;
         }
 
         while (count($clean) < $sceneCount) {
-            $clean[] = ['description' => '', 'dialogue' => '', 'character_ids' => []];
+            $clean[] = ['title' => '', 'description' => '', 'dialogue' => '', 'character_ids' => []];
         }
 
         return $clean;

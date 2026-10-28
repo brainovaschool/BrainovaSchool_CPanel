@@ -246,7 +246,7 @@
             var sceneUid = 0;
 
             function addScene(sceneData) {
-                sceneData = sceneData || { id: null, description: '', dialogue: '', characters: [] };
+                sceneData = sceneData || { id: null, title: '', description: '', dialogue: '', characters: [] };
                 sceneUid++;
 
                 var card = document.createElement('div');
@@ -258,11 +258,15 @@
                         '<button type="button" class="btn btn-sm btn-outline-danger scene-remove">Remove Scene</button>' +
                     '</div>' +
                     '<div class="mb-2">' +
-                        '<label class="form-label">Description (setting, background, camera, visual events)</label>' +
-                        '<textarea class="form-control form-control-sm scene-description" rows="2"></textarea>' +
+                        '<label class="form-label">Scene title (what this scene is about)</label>' +
+                        '<input type="text" class="form-control form-control-sm scene-title" placeholder="e.g. The Honest Mistake">' +
                     '</div>' +
                     '<div class="mb-2">' +
-                        '<label class="form-label">Dialogues (one line per character, e.g. "Kea: ...")</label>' +
+                        '<label class="form-label">Description (setting, background, camera, lighting, what each character is doing — be specific, this drives the actual video)</label>' +
+                        '<textarea class="form-control form-control-sm scene-description" rows="4"></textarea>' +
+                    '</div>' +
+                    '<div class="mb-2">' +
+                        '<label class="form-label">Dialogues — one line per character, e.g. "Kea: ..." (every character checked below should get at least one line)</label>' +
                         '<textarea class="form-control form-control-sm scene-dialogue" rows="3"></textarea>' +
                     '</div>' +
                     '<div>' +
@@ -270,6 +274,7 @@
                         '<div class="scene-characters-box">' + characterCheckboxesHtml(sceneUid) + '</div>' +
                     '</div>';
 
+                card.querySelector('.scene-title').value = sceneData.title || '';
                 card.querySelector('.scene-description').value = sceneData.description || '';
                 card.querySelector('.scene-dialogue').value = sceneData.dialogue || '';
                 card.querySelector('.scene-remove').addEventListener('click', function () { card.remove(); renumberScenes(); });
@@ -310,6 +315,7 @@
                     });
                     scenes.push({
                         id: card.dataset.sceneId || null,
+                        title: card.querySelector('.scene-title').value,
                         description: card.querySelector('.scene-description').value,
                         dialogue: card.querySelector('.scene-dialogue').value,
                         characters: characters

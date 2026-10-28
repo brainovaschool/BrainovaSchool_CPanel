@@ -76,6 +76,9 @@ class ReelDocumentBuilder
                 $header .= ' (CLOSING SCENE)';
             }
             $lines[] = $header;
+            if (trim((string) $scene->title) !== '') {
+                $lines[] = 'TITLE: ' . trim($scene->title);
+            }
             $lines[] = '';
             $lines[] = 'DESCRIPTION:';
             $lines[] = $scene->description ?: '(none provided)';

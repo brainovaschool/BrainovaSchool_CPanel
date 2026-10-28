@@ -99,6 +99,7 @@ class ReelStudioController extends Controller
         foreach ($project->scenes as $scene) {
             $scenes[] = [
                 'id'          => $scene->id,
+                'title'       => $scene->title,
                 'description' => $scene->description,
                 'dialogue'    => $scene->dialogue,
                 'characters'  => $scene->character_ids ?: [],
