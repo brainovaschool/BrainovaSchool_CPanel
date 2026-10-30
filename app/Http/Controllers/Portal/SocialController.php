@@ -358,7 +358,7 @@ class SocialController extends Controller
         if (!$this->canApproveReels()) {
             abort(403, 'Only admin/coordinator can schedule a reel.');
         }
-        $request->validate(['date' => 'required|date']);
+        $request->validate(['date' => 'nullable|date']);
 
         $result = $this->repo->planReelDate((int) $id, $request->date);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);

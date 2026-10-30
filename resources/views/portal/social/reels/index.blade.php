@@ -269,22 +269,13 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($data['canApprove'] && $reel->video_approved_at)
-                                            <form action="{{ route('portal-social-reels.schedule', $reel->id) }}" method="post" class="bn-inline-deadline-form">
-                                                @csrf
-                                                <input type="date" name="planned_date" class="form-control ot-input form-control-sm" value="{{ $reel->planned_date?->format('Y-m-d') }}" onchange="this.form.submit()">
-                                            </form>
-                                        @elseif ($data['canApprove'] && !$reel->planned_date && !$reel->deadline)
+                                        @if ($data['canApprove'])
                                             <form action="{{ route('portal-social-reels.plan-date', $reel->id) }}" method="post" class="bn-inline-deadline-form">
                                                 @csrf
-                                                <input type="date" name="date" class="form-control ot-input form-control-sm" onchange="this.form.submit()" title="Not yet on the Production or Upload plan — pick a date to add it to both">
+                                                <input type="date" name="date" class="form-control ot-input form-control-sm" value="{{ $reel->planned_date?->format('Y-m-d') }}" onchange="this.form.submit()" title="Upload Plan date — independent of Deadline, only set when picked here or in Month Plan">
                                             </form>
-                                        @elseif ($reel->planned_date)
-                                            {{ $reel->planned_date->format('d M Y') }}
-                                        @elseif ($reel->deadline)
-                                            <span class="text-secondary" title="Provisional - from Production Plan's deadline, not yet confirmed on Upload Plan">{{ $reel->deadline->format('d M Y') }} (planned)</span>
                                         @else
-                                            —
+                                            {{ $reel->planned_date?->format('d M Y') ?: '—' }}
                                         @endif
                                     </td>
                                     <td class="action bn-reel-actions">
