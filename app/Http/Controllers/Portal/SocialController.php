@@ -347,6 +347,23 @@ class SocialController extends Controller
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    /** Puts a completely unscheduled reel onto both the Production and
+     *  Upload plans at once with a single date - only offered in the
+     *  Reels list while neither a deadline nor an upload date exists yet,
+     *  so there's nothing to overwrite. Once either one is set on its
+     *  own (via Deadline here, or scheduleReel() once the video's
+     *  approved), that field owns itself again. */
+    public function planReelDate(Request $request, $id)
+    {
+        if (!$this->canApproveReels()) {
+            abort(403, 'Only admin/coordinator can schedule a reel.');
+        }
+        $request->validate(['date' => 'required|date']);
+
+        $result = $this->repo->planReelDate((int) $id, $request->date);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
     // ---- Month plan ----------------------------------------------------
 
     public function monthPlan(Request $request)

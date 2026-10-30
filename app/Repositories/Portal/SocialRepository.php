@@ -649,6 +649,30 @@ class SocialRepository
         return $this->responseWithSuccess('Upload date set.', []);
     }
 
+    /** One-click scheduling for a reel that isn't on either calendar yet -
+     *  writes the same date into both the deadline (Production Plan) and
+     *  planned_date (Upload Plan) fields, since with neither set there's
+     *  nothing to conflict with. Doesn't touch status or require video
+     *  approval - that's scheduleUpload()'s job once the work is done;
+     *  this is just "get it on the calendar" for brand-new reels. */
+    public function planReelDate(int $id, string $date): array
+    {
+        $reel = PortalReel::find($id);
+        if (!$reel) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+
+        if (!$reel->deadline) {
+            $reel->deadline = $date;
+        }
+        if (!$reel->planned_date) {
+            $reel->planned_date = $date;
+        }
+        $reel->save();
+
+        return $this->responseWithSuccess('Date added to the Production and Upload plans.', []);
+    }
+
     /** Accept, reject, or move to the next pipeline status — always with
      *  a note, per "Review reels: accept, reject, change status, add a
      *  note." */

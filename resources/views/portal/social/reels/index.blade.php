@@ -274,6 +274,11 @@
                                                 @csrf
                                                 <input type="date" name="planned_date" class="form-control ot-input form-control-sm" value="{{ $reel->planned_date?->format('Y-m-d') }}" onchange="this.form.submit()">
                                             </form>
+                                        @elseif ($data['canApprove'] && !$reel->planned_date && !$reel->deadline)
+                                            <form action="{{ route('portal-social-reels.plan-date', $reel->id) }}" method="post" class="bn-inline-deadline-form">
+                                                @csrf
+                                                <input type="date" name="date" class="form-control ot-input form-control-sm" onchange="this.form.submit()" title="Not yet on the Production or Upload plan — pick a date to add it to both">
+                                            </form>
                                         @elseif ($reel->planned_date)
                                             {{ $reel->planned_date->format('d M Y') }}
                                         @elseif ($reel->deadline)
@@ -284,7 +289,6 @@
                                     </td>
                                     <td class="action bn-reel-actions">
                                         @if ($data['canManage'])
-                                            <a href="{{ route('portal-social-reels.edit', $reel->id) }}" class="btn btn-sm btn-outline-secondary">{{ ___('common.edit') }}</a>
                                             <form action="{{ route('portal-social-reels.destroy', $reel->id) }}" method="post" class="d-inline" onsubmit="return confirm('Remove this reel/topic?');">
                                                 @csrf
                                                 @method('DELETE')

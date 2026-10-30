@@ -92,6 +92,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/{id}/submit-link', 'submitReelLink')->name('submit-link')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/{id}/approve-stage', 'approveReelStage')->name('approve-stage')->middleware('PermissionCheck:portal_manage,portal_reel_approve', 'DemoCheck');
                     Route::post('/{id}/schedule', 'scheduleReel')->name('schedule')->middleware('PermissionCheck:portal_manage,portal_reel_approve', 'DemoCheck');
+                    Route::post('/{id}/plan-date', 'planReelDate')->name('plan-date')->middleware('PermissionCheck:portal_manage,portal_reel_approve', 'DemoCheck');
                     Route::delete('/{id}',       'destroyReel')->name('destroy')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                 });
 
