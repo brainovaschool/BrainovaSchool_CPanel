@@ -473,6 +473,23 @@
                 }
             });
 
+            // The datalist is rendered from the database at page load, so a
+            // name typed into a still-unsaved "+ Add a series" row isn't in
+            // it yet - mirror it in as soon as it's typed, so other rows
+            // being added in the same sitting can suggest it too.
+            document.addEventListener('input', function (e) {
+                if (!e.target.matches('input[name^="new_series"][name$="[name]"]')) return;
+                var val = e.target.value.trim();
+                if (!val) return;
+                var datalist = document.getElementById('existingSeriesNames');
+                var already = Array.prototype.some.call(datalist.options, function (o) { return o.value === val; });
+                if (!already) {
+                    var opt = document.createElement('option');
+                    opt.value = val;
+                    datalist.appendChild(opt);
+                }
+            });
+
             // A <tr> string only parses correctly when the element it's
             // injected into is itself a valid table-row container (a bare
             // <div> silently drops stray <tr> tags) - a throwaway <tbody>
