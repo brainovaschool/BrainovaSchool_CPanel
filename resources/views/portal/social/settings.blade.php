@@ -240,6 +240,12 @@
                     <br>
                     <button type="submit" class="btn btn-lg ot-btn-primary">Save Series</button>
                 </form>
+
+                <form action="{{ route('portal-social-settings.series.regenerate-codes') }}" method="post" class="mt-4 pt-3 border-top" onsubmit="return confirm('Recalculate every reel\'s code from each series\' current Code field? This rewrites the Code column on existing reels/topics in the Reels list.');">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-secondary btn-sm">Regenerate Reel Codes from Series</button>
+                    <span class="text-secondary d-block mt-1" style="font-size:12px;">Use this after changing a series' Code above, or moving a reel to a different series, so the Reels list's Code column catches up.</span>
+                </form>
             </div>
         </div>
 

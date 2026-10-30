@@ -120,6 +120,7 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::post('/portal/social/settings/reel-fields', [SocialController::class, 'updateReelFields'])->name('portal-social-settings.reel-fields')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 Route::post('/portal/social/settings/series', [SocialController::class, 'updateReelSeries'])->name('portal-social-settings.series')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 Route::delete('/portal/social/settings/series/{id}', [SocialController::class, 'destroySeries'])->name('portal-social-settings.series.destroy')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                Route::post('/portal/social/settings/series/regenerate-codes', [SocialController::class, 'regenerateReelCodes'])->name('portal-social-settings.series.regenerate-codes')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 Route::post('/portal/social/settings/content-assignees', [SocialController::class, 'updateContentAssigneeRoles'])->name('portal-social-settings.content-assignees')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 Route::post('/portal/social/settings/reel-ai-prompt', [SocialController::class, 'updateReelAiPrompt'])->name('portal-social-settings.reel-ai-prompt')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
 

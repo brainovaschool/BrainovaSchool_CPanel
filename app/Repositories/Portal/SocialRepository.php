@@ -258,6 +258,42 @@ class SocialRepository
         return $this->responseWithSuccess('Series removed.', []);
     }
 
+    /** A reel's `code` is normally set once (PortalReel::booted()'s saving
+     *  hook) and never touched again - but a series' Code can be edited
+     *  any time afterward, or a reel moved to a different series, which
+     *  leaves existing reels carrying a stale or missing code. This is
+     *  the manual catch-up: every non-suggested, non-rejected reel is
+     *  renumbered from scratch, oldest first, within its *current*
+     *  series using that series' *current* Code - same "series code +
+     *  running number" rule, just reapplied to everything at once. A
+     *  reel whose series has no code ends up with none, same as new. */
+    public function regenerateReelCodes(): array
+    {
+        $seriesCodes = PortalReelSeries::pluck('code', 'name');
+        $counters = [];
+
+        $reels = PortalReel::whereNotIn('status', [PortalReel::SUGGESTED, PortalReel::REJECTED])
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($reels as $reel) {
+            $seriesCode = $reel->series_name ? ($seriesCodes[$reel->series_name] ?? null) : null;
+            if (!$seriesCode) {
+                $newCode = null;
+            } else {
+                $counters[$reel->series_name] = ($counters[$reel->series_name] ?? 0) + 1;
+                $newCode = $seriesCode . $counters[$reel->series_name];
+            }
+            if ($reel->code !== $newCode) {
+                $reel->code = $newCode;
+                $reel->save();
+            }
+        }
+
+        return $this->responseWithSuccess('Reel codes updated to match the current series codes.', []);
+    }
+
     /** $data: the submitted series[...]/new_series[...] row - category,
      *  format, and custom_fields[field_key] (an array for the Characters
      *  field, a plain value for everything else, an uploaded file for a

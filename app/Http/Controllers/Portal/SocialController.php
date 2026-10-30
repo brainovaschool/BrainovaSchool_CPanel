@@ -547,6 +547,15 @@ class SocialController extends Controller
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    public function regenerateReelCodes()
+    {
+        if (!hasPermission('portal_manage')) {
+            abort(403);
+        }
+        $result = $this->repo->regenerateReelCodes();
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
     public function updateReelAiPrompt(Request $request)
     {
         if (!hasPermission('portal_manage')) {
