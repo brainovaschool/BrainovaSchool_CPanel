@@ -17,6 +17,9 @@
             </div>
         </div>
 
+        @php
+            $pillarOptions = optional($data['lists']->firstWhere('key', 'reel_categories'))->values ?? [];
+        @endphp
         <div class="card ot-card">
             <div class="card-body">
                 <form action="{{ route('portal-social-reels.store') }}" method="post">
@@ -24,11 +27,20 @@
                     <input type="hidden" name="return_to" value="suggest">
                     <div class="row g-3">
                         <div class="col-md-12">
+                            <label class="form-label">Pillar</label>
+                            <select name="category" id="suggestPillarSelect" class="form-control ot-input">
+                                <option value="">—</option>
+                                @foreach ($pillarOptions as $cat)
+                                    <option value="{{ $cat }}" {{ old('category') === $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-12">
                             <label class="form-label">Series Name</label>
-                            <select name="series_name" class="nice-select niceSelect bordered_style wide">
+                            <select name="series_name" id="suggestSeriesSelect" class="form-control ot-input">
                                 <option value="">—</option>
                                 @foreach ($data['series'] as $s)
-                                    <option value="{{ $s->name }}" {{ old('series_name') === $s->name ? 'selected' : '' }}>{{ $s->name }}</option>
+                                    <option value="{{ $s->name }}" data-pillar="{{ $s->defaults['category'] ?? '' }}" {{ old('series_name') === $s->name ? 'selected' : '' }}>{{ $s->name }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -48,5 +60,33 @@
                 </form>
             </div>
         </div>
+
+        @push('script')
+        <script>
+            (function () {
+                // Series Name only narrows once a Pillar is picked - with
+                // no Pillar chosen yet, every series is still offered so
+                // this never blocks someone who wants to skip it.
+                var pillarSelect = document.getElementById('suggestPillarSelect');
+                var seriesSelect = document.getElementById('suggestSeriesSelect');
+
+                function applyPillarFilter() {
+                    var pillar = pillarSelect.value;
+                    var currentStillValid = false;
+                    Array.prototype.forEach.call(seriesSelect.options, function (opt) {
+                        if (!opt.value) return; // always keep the blank "—" option
+                        var matches = !pillar || opt.dataset.pillar === pillar;
+                        opt.hidden = !matches;
+                        opt.disabled = !matches;
+                        if (matches && opt.selected) currentStillValid = true;
+                    });
+                    if (!currentStillValid) seriesSelect.value = '';
+                }
+
+                pillarSelect.addEventListener('change', applyPillarFilter);
+                applyPillarFilter();
+            })();
+        </script>
+        @endpush
     </div>
 @endsection

@@ -116,6 +116,7 @@ class SocialController extends Controller
     {
         $this->requireContentAccess();
         $data['series'] = $this->repo->reelSeries();
+        $data['lists']  = $this->repo->settingLists();
         $data['title']  = 'Suggest';
         return view('portal.social.suggest-reel.create', compact('data'));
     }
