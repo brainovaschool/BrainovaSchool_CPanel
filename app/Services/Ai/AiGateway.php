@@ -5,6 +5,7 @@ namespace App\Services\Ai;
 use Illuminate\Support\Facades\Log;
 use App\Services\Ai\Providers\GeminiProvider;
 use App\Services\Ai\Providers\OpenAiProvider;
+use App\Services\Ai\Providers\OpenAiImageProvider;
 use App\Services\Ai\Providers\AnthropicProvider;
 
 /**
@@ -24,14 +25,15 @@ use App\Services\Ai\Providers\AnthropicProvider;
  */
 class AiGateway
 {
-    // 30s/100s (not 20s/90s) because Reel Studio's prompts can be far larger
+    // 60s/150s (not 20s/90s) because Reel Studio's prompts can be far larger
     // than AI Helper's original lesson-plan prompts (a multi-thousand-word
-    // custom style template plus structured JSON for many scenes) — a
+    // custom style template plus structured JSON for many scenes), and
+    // cover-image generation routinely takes 30-60s on its own — a
     // genuinely slower response for a big request shouldn't be misread as
     // a dead account. A higher ceiling never slows down a fast response.
-    private const TIMEOUT_SECONDS_PER_ATTEMPT = 30;
+    private const TIMEOUT_SECONDS_PER_ATTEMPT = 60;
     private const MAX_ATTEMPTS_PER_ACCOUNT    = 3;
-    private const TOTAL_BUDGET_SECONDS        = 100;
+    private const TOTAL_BUDGET_SECONDS        = 150;
 
     /** @var array<string,object> */
     private array $providers;
@@ -57,8 +59,67 @@ class AiGateway
             return ['ok' => false, 'message' => 'This AI helper has not been set up yet — add at least one AI account in Website Setup → AI Helper.'];
         }
 
+        $result = $this->attemptWithAccounts($accounts, function (array $account, int $timeout) use ($prompt, $forceJson) {
+            $provider = $this->providers[$account['provider']] ?? null;
+            if (!$provider) {
+                return ['ok' => false, 'kind' => 'permanent', 'message' => 'unknown provider'];
+            }
+            return $provider->call($account['api_key'], $account['model'], $prompt, $forceJson, $timeout);
+        });
+
+        if (!$result['ok']) {
+            return $result;
+        }
+
+        $text = $forceJson ? $this->stripJsonFences($result['text']) : $result['text'];
+        return [
+            'ok'       => true,
+            'text'     => $text,
+            'provider' => $result['account']['provider'],
+            'label'    => $result['account']['label'] ?: ucfirst($result['account']['provider']),
+        ];
+    }
+
+    /**
+     * Cover-image generation — OpenAI only (the other configured providers
+     * don't expose an image endpoint through a plain API key), so this only
+     * walks whichever of the configured accounts are OpenAI.
+     * Returns ['ok'=>true,'base64'=>string] or ['ok'=>false,'message'=>string].
+     */
+    public function generateImage(string $prompt, string $size = '1024x1024'): array
+    {
+        $accounts = array_values(array_filter($this->accounts(), fn ($a) => $a['provider'] === 'openai'));
+
+        if (empty($accounts)) {
+            return ['ok' => false, 'message' => 'No OpenAI account is configured — add one in Website Setup → AI Helper to generate cover images.'];
+        }
+
+        $imageProvider = new OpenAiImageProvider();
+        $result = $this->attemptWithAccounts($accounts, fn (array $account, int $timeout) =>
+            $imageProvider->generate($account['api_key'], $prompt, $size, $timeout)
+        );
+
+        if (!$result['ok']) {
+            return $result;
+        }
+
+        return ['ok' => true, 'base64' => $result['base64']];
+    }
+
+    /**
+     * Shared account-walking retry loop used by both generate() and
+     * generateImage() - tries each account in order, retrying a single
+     * account a couple of times on a transient failure but moving on
+     * immediately on a rate limit or permanent error. $call gets
+     * (account, timeoutSeconds) and returns the same shape a provider's
+     * call()/generate() does. On success, the winning account is merged
+     * into the result as 'account' so the caller can report which one
+     * answered.
+     */
+    private function attemptWithAccounts(array $accounts, callable $call): array
+    {
         $deadline    = microtime(true) + self::TOTAL_BUDGET_SECONDS;
-        $lastMessage = 'The AI helper could not generate an answer right now. Please try again shortly.';
+        $lastMessage = 'The AI helper could not complete this request right now. Please try again shortly.';
         // One line per account tried, so a final failure can show exactly
         // what happened with EVERY key, not just the last one — otherwise
         // accounts 1 and 2's real errors are silently lost, and all the
@@ -67,11 +128,6 @@ class AiGateway
 
         foreach ($accounts as $account) {
             $accountLabel = ($account['label'] ?: ucfirst($account['provider'])) . " ({$account['provider']})";
-            $provider     = $this->providers[$account['provider']] ?? null;
-            if (!$provider) {
-                $accountFailures[] = "{$accountLabel}: unknown provider";
-                continue;
-            }
 
             for ($attempt = 1; $attempt <= self::MAX_ATTEMPTS_PER_ACCOUNT; $attempt++) {
                 $remaining = $deadline - microtime(true);
@@ -81,17 +137,10 @@ class AiGateway
                 }
 
                 $timeout = max(5, (int) min(self::TIMEOUT_SECONDS_PER_ATTEMPT, $remaining));
-                $result  = $provider->call($account['api_key'], $account['model'], $prompt, $forceJson, $timeout);
+                $result  = $call($account, $timeout);
 
                 if ($result['ok']) {
-                    $text = $forceJson ? $this->stripJsonFences($result['text']) : $result['text'];
-
-                    return [
-                        'ok'       => true,
-                        'text'     => $text,
-                        'provider' => $account['provider'],
-                        'label'    => $account['label'] ?: ucfirst($account['provider']),
-                    ];
+                    return $result + ['account' => $account];
                 }
 
                 $lastMessage = $result['message'];

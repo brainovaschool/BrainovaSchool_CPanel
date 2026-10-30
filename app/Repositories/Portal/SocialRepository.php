@@ -1058,6 +1058,9 @@ class SocialRepository
         try {
             $this->setSetting('reel_global_instructions', $request->input('reel_global_instructions'));
             $this->setSetting('reel_ai_prompt_template', $request->input('reel_ai_prompt_template'));
+            $this->setSetting('reel_cover_ai_prompt', $request->input('reel_cover_ai_prompt'));
+            $this->setSetting('reel_start_scene_ai_prompt', $request->input('reel_start_scene_ai_prompt'));
+            $this->setSetting('reel_end_scene_ai_prompt', $request->input('reel_end_scene_ai_prompt'));
 
             return $this->responseWithSuccess('Settings updated.', []);
         } catch (\Throwable $th) {

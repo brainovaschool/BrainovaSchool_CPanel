@@ -477,6 +477,9 @@ class SocialController extends Controller
         $data['assigneeRoleIds']    = PortalSetting::current()->content_assignee_role_ids ?: [];
         $data['globalInstructions'] = setting('reel_global_instructions');
         $data['aiPromptTemplate']   = setting('reel_ai_prompt_template');
+        $data['coverAiPrompt']      = setting('reel_cover_ai_prompt');
+        $data['startSceneAiPrompt'] = setting('reel_start_scene_ai_prompt');
+        $data['endSceneAiPrompt']   = setting('reel_end_scene_ai_prompt');
         $data['reelCharacters']     = \App\Models\Portal\ReelCharacter::orderBy('sort_order')->orderBy('name')->get();
         $data['title']              = 'Social Board Settings';
         return view('portal.social.settings', compact('data'));
@@ -524,8 +527,11 @@ class SocialController extends Controller
             abort(403);
         }
         $request->validate([
-            'reel_global_instructions' => 'nullable|string|max:5000',
-            'reel_ai_prompt_template'  => 'nullable|string|max:20000',
+            'reel_global_instructions'   => 'nullable|string|max:5000',
+            'reel_ai_prompt_template'    => 'nullable|string|max:20000',
+            'reel_cover_ai_prompt'       => 'nullable|string|max:5000',
+            'reel_start_scene_ai_prompt' => 'nullable|string|max:5000',
+            'reel_end_scene_ai_prompt'   => 'nullable|string|max:5000',
         ]);
         $result = $this->repo->updateReelAiPrompt($request);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);

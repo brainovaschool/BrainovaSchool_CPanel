@@ -256,4 +256,20 @@ class ReelStudioController extends Controller
         $result = $this->repo->aiGenerateScenes((int) $projectId);
         return response()->json($result, $result['status'] ? 200 : 422);
     }
+
+    /** AJAX endpoint for the "Create Cover" button - same reasoning as
+     *  aiGenerateScenes() above, a real loading state instead of a
+     *  full-page wait while the image generates. */
+    public function generateCoverImage($projectId)
+    {
+        $project = $this->repo->find((int) $projectId);
+        if (!$project || !$this->authorizeProject($project)) {
+            return response()->json(['status' => false, 'message' => ___('alert.not_found')], 404);
+        }
+
+        set_time_limit(180); // image generation plus the gateway's own account fallback can run well past a text-only request
+
+        $result = $this->repo->generateCoverImage((int) $projectId);
+        return response()->json($result, $result['status'] ? 200 : 422);
+    }
 }

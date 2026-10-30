@@ -470,6 +470,83 @@ class ReelStudioRepository
         }
     }
 
+    /** AI-generates a cover image (via OpenAI - see AiGateway::generateImage)
+     *  from the admin's Cover Image AI Prompt template in Social Settings,
+     *  saves it as this project's cover the same way an uploaded one would
+     *  be, and returns its URL so the page can show/download it without a
+     *  full reload. */
+    public function generateCoverImage(int $projectId): array
+    {
+        $project = ReelProject::find($projectId);
+        if (!$project) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+
+        $template = trim((string) setting('reel_cover_ai_prompt'));
+        if (!$template) {
+            return $this->responseWithError('Add a Cover Image AI Prompt in Social Settings → AI Scene Generation first.', []);
+        }
+
+        $formatLabel = ReelProject::FORMATS[$project->format] ?? ReelProject::FORMATS['vertical'];
+        $placeholders = [
+            '{{title}}'       => $project->title,
+            '{{hook}}'        => (string) $project->hook,
+            '{{description}}' => (string) $project->description,
+            '{{format}}'      => $formatLabel,
+        ];
+        $prompt = strtr($template, $placeholders);
+
+        $size   = $project->format === 'horizontal' ? '1536x1024' : '1024x1536';
+        $result = (new AiGateway())->generateImage($prompt, $size);
+        if (!$result['ok']) {
+            return $this->responseWithError($result['message'], []);
+        }
+
+        $bytes = base64_decode($result['base64'], true);
+        if ($bytes === false) {
+            return $this->responseWithError('The AI returned an image that could not be read. Please try again.', []);
+        }
+
+        $uploadId = $this->saveGeneratedImageAsUpload($bytes, 'uploads/reel-projects');
+        if (!$uploadId) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+
+        $project->cover_upload_id = $uploadId;
+        $project->save();
+
+        $this->aiHelperRepo->logUsage(
+            Auth::id(),
+            optional(Auth::user())->name,
+            'teacher',
+            'reel_cover_generation',
+            "Reel #{$projectId} \"{$project->title}\" — cover image generated",
+            'openai'
+        );
+
+        return $this->responseWithSuccess('Cover image generated.', ['url' => globalAsset($project->coverUpload->path)]);
+    }
+
+    /** Saves raw generated image bytes (from an AI image API, not a browser
+     *  upload) through the same UploadImageCreate() path a real upload
+     *  takes, by wrapping them in a temp file Laravel's UploadedFile can
+     *  move - "test mode" (the trailing true) makes it movable without
+     *  having actually come through a real HTTP upload. */
+    private function saveGeneratedImageAsUpload(string $bytes, string $path): ?int
+    {
+        $tempPath = tempnam(sys_get_temp_dir(), 'reel-cover-');
+        file_put_contents($tempPath, $bytes);
+
+        try {
+            $file = new \Illuminate\Http\UploadedFile($tempPath, 'cover.png', 'image/png', null, true);
+            return $this->UploadImageCreate($file, $path);
+        } finally {
+            if (file_exists($tempPath)) {
+                @unlink($tempPath);
+            }
+        }
+    }
+
     /** How many scenes this project's template calls for, or null until
      *  both a target length and a scene length are set. */
     public function sceneCount(ReelProject $project): ?int
@@ -562,7 +639,7 @@ THESE RULES APPLY TO EVERY SCENE (Start, content, and End alike) NO MATTER WHAT 
 3. EVERY PICKED CHARACTER MUST SPEAK: if a scene's "characters" array has 2 or 3 names in it, the dialogue MUST contain at least one line from EACH of those names — never pick 3 characters for a scene and then only write a line for 1 of them. The dialogue should read as a real back-and-forth exchange (2-4 lines total for a {$sceneLength}-second scene), not a single line.
 4. START SCENE: its dialogue must end with the Opening Hook above, spoken exactly as written, by whichever character you pick to open the video.
 5. END SCENE: its dialogue must end with the End Hook above, spoken exactly as written, by whichever character you pick to close the video. If no End Hook is given, just write a natural send-off instead.
-
+{$this->startEndScenePromptNote()}
 ---
 
 PROMPT;
@@ -590,6 +667,29 @@ Respond with ONLY valid JSON (no markdown, no commentary, no code fences) matchi
 PROMPT;
 
         return $facts . $base . $closing;
+    }
+
+    /** The admin's own extra guidance for the Start/End scenes specifically
+     *  (Social Settings → AI Scene Generation), appended on top of the
+     *  structural rules above - blank for either one if nothing's been set. */
+    private function startEndScenePromptNote(): string
+    {
+        $start = trim((string) setting('reel_start_scene_ai_prompt'));
+        $end   = trim((string) setting('reel_end_scene_ai_prompt'));
+
+        if (!$start && !$end) {
+            return '';
+        }
+
+        $note = '';
+        if ($start) {
+            $note .= "\nADDITIONAL INSTRUCTIONS FOR THE START SCENE SPECIFICALLY: {$start}";
+        }
+        if ($end) {
+            $note .= "\nADDITIONAL INSTRUCTIONS FOR THE END SCENE SPECIFICALLY: {$end}";
+        }
+
+        return $note . "\n";
     }
 
     /** Validates/repairs the AI's content scene list: keeps description/

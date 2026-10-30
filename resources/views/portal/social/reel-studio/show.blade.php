@@ -225,9 +225,16 @@
                                 <input type="file" class="d-none bn-file-input" id="coverFile" name="cover_file" accept="image/*">
                             </button>
                         </div>
-                        @if ($project->coverUpload)
-                            <p class="text-secondary mb-0"><a href="{{ globalAsset($project->coverUpload->path) }}" target="_blank">Download current cover</a></p>
-                        @endif
+                        <div class="d-flex align-items-center gap-2 flex-wrap mt-1">
+                            <button type="button" id="createCoverBtn" class="btn btn-sm ot-btn-primary">✨ Create Cover</button>
+                            @if ($project->coverUpload)
+                                <a href="{{ globalAsset($project->coverUpload->path) }}" target="_blank" class="text-secondary">Download current cover</a>
+                            @endif
+                            <span id="createCoverStatus" class="d-flex align-items-center gap-2" style="display:none;">
+                                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                <span id="createCoverStatusText" style="white-space:pre-line;"></span>
+                            </span>
+                        </div>
                     </div>
                     <div class="mb-3">
                         <p class="text-secondary mb-1" style="font-size:13px;">Start Scene — the intro, telling the viewer what this video is about, closing with the Hook above.</p>
@@ -464,6 +471,48 @@
                 if (controller) {
                     controller.abort();
                 }
+            });
+        })();
+
+        (function () {
+            var createBtn = document.getElementById('createCoverBtn');
+            if (!createBtn) return;
+            var statusBox  = document.getElementById('createCoverStatus');
+            var statusText = document.getElementById('createCoverStatusText');
+
+            createBtn.addEventListener('click', function () {
+                if (!confirm("AI will generate a cover image and replace the current one (if any). Continue?")) {
+                    return;
+                }
+
+                createBtn.disabled = true;
+                statusBox.style.display = 'flex';
+                statusText.style.color = '';
+                statusText.textContent = 'Generating cover image… this can take up to a minute.';
+
+                fetch('{{ route('portal-social-reel-studio.ai.generate-cover', $project->id) }}', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                    body: new FormData()
+                })
+                .then(function (response) {
+                    return response.json().then(function (data) { return { ok: response.ok, data: data }; });
+                })
+                .then(function (result) {
+                    if (result.ok && result.data.status) {
+                        statusText.textContent = (result.data.message || 'Cover image generated.') + ' Reloading…';
+                        window.location.reload();
+                    } else {
+                        statusText.textContent = result.data.message || 'Something went wrong generating the cover image.';
+                        statusText.style.color = '#b91c1c';
+                        createBtn.disabled = false;
+                    }
+                })
+                .catch(function () {
+                    statusText.textContent = 'Could not reach the server.';
+                    statusText.style.color = '#b91c1c';
+                    createBtn.disabled = false;
+                });
             });
         })();
 

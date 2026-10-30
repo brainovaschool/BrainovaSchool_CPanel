@@ -283,6 +283,39 @@
                     <textarea name="reel_ai_prompt_template" rows="20" class="form-control ot-textarea" style="font-family:monospace;font-size:13px;"
                         placeholder="e.g. VISUAL STYLE: Premium futuristic Brainova educational animation. FORMAT: @{{format}}...">{{ old('reel_ai_prompt_template', $data['aiPromptTemplate']) }}</textarea>
 
+                    <label class="form-label fw-bold mt-4">Start Scene AI Prompt <span class="text-secondary" style="font-weight:normal;">(optional)</span></label>
+                    <p class="text-secondary">Extra instructions used only for the Start scene (the intro, closing with the Hook) when "AI: Fill In Scenes" runs — on top of the Scene Generation Prompt above.</p>
+                    <textarea name="reel_start_scene_ai_prompt" rows="4" class="form-control ot-textarea mb-4"
+                        placeholder="e.g. Open on a wide shot of the Brainova studio before cutting to the host...">{{ old('reel_start_scene_ai_prompt', $data['startSceneAiPrompt']) }}</textarea>
+
+                    <label class="form-label fw-bold">End Scene AI Prompt <span class="text-secondary" style="font-weight:normal;">(optional)</span></label>
+                    <p class="text-secondary">Extra instructions used only for the End scene (the send-off, closing with the End Hook) when "AI: Fill In Scenes" runs.</p>
+                    <textarea name="reel_end_scene_ai_prompt" rows="4" class="form-control ot-textarea"
+                        placeholder="e.g. End on a warm, encouraging close-up, inviting viewers to follow for more...">{{ old('reel_end_scene_ai_prompt', $data['endSceneAiPrompt']) }}</textarea>
+
+                    <button type="submit" class="btn btn-lg ot-btn-primary mt-3">Save</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 p-0">
+        <div class="card ot-card bn-reels-filters mb-24" style="padding:1.25rem">
+            <div class="card-body">
+                <h4>AI Cover Image</h4>
+                <p class="text-secondary">Used by Reel Studio's "Create Cover" button. Needs an OpenAI account configured in Website Setup → AI Helper — that's the only provider this can use for images.</p>
+
+                <form action="{{ route('portal-social-settings.reel-ai-prompt') }}" method="post">
+                    @csrf
+
+                    <label class="form-label fw-bold">Cover Image AI Prompt</label>
+                    <p class="text-secondary">
+                        Describes the image to generate — art style, mood, composition, anything you want every cover to share. Leave it blank and "Create Cover" will tell you to fill this in first.
+                        <br>Placeholders: <code>@{{title}}</code>, <code>@{{hook}}</code>, <code>@{{description}}</code>, <code>@{{format}}</code>.
+                    </p>
+                    <textarea name="reel_cover_ai_prompt" rows="6" class="form-control ot-textarea"
+                        placeholder="e.g. A premium, clean educational thumbnail in Brainova's turquoise/purple style for a reel titled &quot;@{{title}}&quot;, about: @{{description}}. No text on the image.">{{ old('reel_cover_ai_prompt', $data['coverAiPrompt']) }}</textarea>
+
                     <button type="submit" class="btn btn-lg ot-btn-primary mt-3">Save</button>
                 </form>
             </div>
