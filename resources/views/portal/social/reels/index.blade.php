@@ -167,21 +167,45 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($isSuggested && $data['canApprove'])
-                                            <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" class="mb-1">
-                                                @csrf
-                                                <input type="hidden" name="status" value="accepted">
-                                                <button type="submit" class="btn btn-sm ot-btn-primary w-100">Approve</button>
-                                            </form>
-                                            <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" onsubmit="return confirm('Discard this suggestion?');">
-                                                @csrf
-                                                <input type="hidden" name="status" value="rejected">
-                                                <button type="submit" class="btn btn-sm btn-outline-danger w-100">Discard</button>
-                                            </form>
-                                        @elseif ($isSuggested)
-                                            <span class="badge-basic-secondary-text">Suggested</span>
+                                        @if ($data['canApprove'])
+                                            @php($promptCheckable = $reel->prompt_link && !$reel->prompt_approved_at)
+                                            @php($canvaCheckable = $reel->canva_link && !$reel->canva_approved_at)
+                                            <details class="bn-approve-details">
+                                                <summary>
+                                                    <span class="{{ $isSuggested ? 'text-secondary' : 'text-success' }}" title="Topic">T</span>
+                                                    <span class="{{ $reel->prompt_approved_at ? 'text-success' : 'text-secondary' }}" title="Prompt">P</span>
+                                                    <span class="{{ $reel->canva_approved_at ? 'text-success' : 'text-secondary' }}" title="Canva">C</span>
+                                                </summary>
+                                                <div class="bn-approve-panel">
+                                                    <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-1">
+                                                        @csrf
+                                                        <input type="hidden" name="status" value="accepted">
+                                                        <input type="checkbox" class="form-check-input" {{ $isSuggested ? '' : 'checked disabled' }} onchange="this.form.submit()">
+                                                        <label class="mb-0">Topic</label>
+                                                    </form>
+                                                    <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-1">
+                                                        @csrf
+                                                        <input type="hidden" name="stage" value="prompt">
+                                                        <input type="checkbox" class="form-check-input" {{ $reel->prompt_approved_at ? 'checked' : '' }} {{ $promptCheckable ? '' : 'disabled' }} onchange="this.form.submit()">
+                                                        <label class="mb-0">Prompt</label>
+                                                    </form>
+                                                    <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-2">
+                                                        @csrf
+                                                        <input type="hidden" name="stage" value="canva">
+                                                        <input type="checkbox" class="form-check-input" {{ $reel->canva_approved_at ? 'checked' : '' }} {{ $canvaCheckable ? '' : 'disabled' }} onchange="this.form.submit()">
+                                                        <label class="mb-0">Canva</label>
+                                                    </form>
+                                                    @if ($isSuggested)
+                                                        <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" onsubmit="return confirm('Discard this suggestion?');">
+                                                            @csrf
+                                                            <input type="hidden" name="status" value="rejected">
+                                                            <button type="submit" class="btn btn-sm btn-outline-danger w-100">Discard</button>
+                                                        </form>
+                                                    @endif
+                                                </div>
+                                            </details>
                                         @else
-                                            <span class="{{ $reel->statusBadgeClass() }}">{{ $reel->statusLabel() }}</span>
+                                            <span class="{{ $isSuggested ? 'badge-basic-secondary-text' : $reel->statusBadgeClass() }}">{{ $isSuggested ? 'Suggested' : $reel->statusLabel() }}</span>
                                         @endif
                                     </td>
                                     <td>
@@ -217,7 +241,7 @@
                                     </td>
                                     <td>
                                         @if ($reel->prompt_link)
-                                            <a href="{{ $reel->prompt_link }}" target="_blank" class="btn btn-sm btn-outline-secondary">Download{{ $reel->prompt_approved_at ? '' : ' (pending)' }}</a>
+                                            <a href="{{ $reel->prompt_link }}" target="_blank" class="btn btn-sm btn-outline-secondary">Download</a>
                                         @else
                                             —
                                         @endif
@@ -277,6 +301,11 @@
         .dark-theme .bn-series-tag { background: rgba(0, 151, 178, .22); color: var(--bn-turquoise-light); }
         .bn-reel-sub { color: var(--bn-muted, #8a8fa3); font-size: .78rem; margin-top: .15rem; }
         .bn-inline-assign-form select, .bn-inline-deadline-form input { min-width: 120px; }
+        .bn-approve-details summary { cursor: pointer; list-style: none; font-weight: 700; font-size: 13px; letter-spacing: .1em; }
+        .bn-approve-details summary::-webkit-details-marker { display: none; }
+        .bn-approve-details summary span { margin-right: 4px; }
+        .bn-approve-panel { margin-top: 6px; padding: 8px; border: 1px solid rgba(0,0,0,.1); border-radius: 6px; min-width: 110px; }
+        .bn-approve-panel label { font-size: 13px; }
         .bn-reel-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem; }
         .bn-reels-table { table-layout: fixed; width: 100%; }
         .bn-reels-table td { vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }
