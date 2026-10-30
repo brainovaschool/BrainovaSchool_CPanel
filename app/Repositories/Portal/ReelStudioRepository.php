@@ -91,6 +91,8 @@ class ReelStudioRepository
             'target_duration_seconds'  => $request->target_duration_seconds ?: null,
             'scene_length_seconds'     => $sceneLength,
             'character_ids'            => $characterIds,
+            'canva_link'               => $request->canva_link ?: null,
+            'drive_link'               => $request->drive_link ?: null,
         ];
     }
 
@@ -161,25 +163,42 @@ class ReelStudioRepository
         }
         $project->save();
 
-        $this->rebuildBlankScenes($project);
+        $this->propagateDriveLink($project);
 
-        return $this->responseWithSuccess('Reel project updated — scenes have been rebuilt for the new setup.', []);
+        return $this->responseWithSuccess('Reel project updated.', []);
     }
 
-    /** Saving Reel Setup always throws away whatever scenes existed and
-     *  starts over with a fresh, blank set sized to the (possibly just
-     *  changed) target/scene length — so the scene list never drifts out
-     *  of sync with those numbers. Deliberately unconditional: any scene
-     *  content already written is lost on every Reel Setup save, by
-     *  design. */
-    private function rebuildBlankScenes(ReelProject $project): void
+    /** The Drive link lives on this project, but the Reels list, the
+     *  Production/Upload Plan calendars and anywhere else this reel is
+     *  shown all read portal_reels.drive_link directly - so when this
+     *  project is linked to a suggested Reel, copy it there too. Canva
+     *  link stays on the project only, nothing else reads it. */
+    private function propagateDriveLink(ReelProject $project): void
     {
-        ReelScene::where('reel_project_id', $project->id)->delete(); // cascades to any reel_scene_characters rows
+        $reel = $project->portalReel;
+        if ($reel && $reel->drive_link !== $project->drive_link) {
+            $reel->drive_link = $project->drive_link;
+            $reel->save();
+        }
+    }
+
+    /** Explicit, teacher-triggered reset (a confirm() in the browser warns
+     *  them first): throws away whatever scenes currently exist and starts
+     *  over with a fresh, blank set sized to the project's current target/
+     *  scene length. Never runs on its own - only from this action. */
+    public function createScenesFromZero(int $projectId): array
+    {
+        $project = ReelProject::find($projectId);
+        if (!$project) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
 
         $count = $this->sceneCount($project);
         if (!$count) {
-            return;
+            return $this->responseWithError('Set a target total length and a scene length in Reel Setup first.', []);
         }
+
+        ReelScene::where('reel_project_id', $project->id)->delete(); // cascades to any reel_scene_characters rows
 
         for ($i = 0; $i < $count; $i++) {
             ReelScene::create([
@@ -194,6 +213,8 @@ class ReelStudioRepository
                 'is_last_scene'    => $i === $count - 1,
             ]);
         }
+
+        return $this->responseWithSuccess($count . ' blank scene(s) created.', []);
     }
 
     public function destroyProject(int $id): array

@@ -51,6 +51,8 @@ class ReelStudioController extends Controller
             'character_ids.*'         => 'integer|exists:reel_characters,id',
             'cover_file'              => 'nullable|file|image|max:10240',
             'custom_fields'           => 'nullable|array',
+            'canva_link'              => 'nullable|url|max:500',
+            'drive_link'              => 'nullable|url|max:500',
         ];
     }
 
@@ -127,6 +129,19 @@ class ReelStudioController extends Controller
         $request->validate($this->projectRules());
 
         $result = $this->repo->updateProject($request, (int) $id);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    /** "Create Scenes" button — the browser's confirm() already warned the
+     *  teacher this deletes whatever scenes currently exist. */
+    public function createScenesFromZero($id)
+    {
+        $project = $this->repo->find((int) $id);
+        if (!$project || !$this->authorizeProject($project)) {
+            abort(404);
+        }
+
+        $result = $this->repo->createScenesFromZero((int) $id);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

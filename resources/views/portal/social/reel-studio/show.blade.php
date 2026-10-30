@@ -130,6 +130,17 @@
                             </div>
                         </div>
 
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label">Canva link</label>
+                            <input type="url" name="canva_link" class="form-control ot-input" placeholder="https://..." value="{{ $project->canva_link }}">
+                            <p class="text-secondary mb-0 mt-1">Add this once the reel is finished — stays here on Reel Setup only.</p>
+                        </div>
+                        <div class="col-12 col-md-6 mb-3">
+                            <label class="form-label">Drive link</label>
+                            <input type="url" name="drive_link" class="form-control ot-input" placeholder="https://..." value="{{ $project->drive_link }}">
+                            <p class="text-secondary mb-0 mt-1">Add this once the reel is finished — also saved on the reel itself, so it shows up wherever this reel appears.</p>
+                        </div>
+
                         @foreach ($otherFields as $field)
                             <div class="col-12 col-md-6 mb-3">
                                 <label class="form-label">{{ $field->label }}</label>
@@ -169,9 +180,16 @@
                         @endif
                     </p>
                 </div>
-                <form id="aiGenerateForm">
-                    <button type="submit" id="aiGenerateBtn" class="btn ot-btn-primary" {{ $data['sceneCount'] ? '' : 'disabled' }}>✨ AI: Fill In Scenes</button>
-                </form>
+                <div class="d-flex gap-2">
+                    <form action="{{ route('portal-social-reel-studio.scenes.create-from-zero', $project->id) }}" method="post"
+                          onsubmit="return confirm('This will delete all current scenes and create a fresh blank set based on your current Target length / Scene length. Continue?');">
+                        @csrf
+                        <button type="submit" class="btn btn-outline-secondary" {{ $data['sceneCount'] ? '' : 'disabled' }}>Create Scenes</button>
+                    </form>
+                    <form id="aiGenerateForm">
+                        <button type="submit" id="aiGenerateBtn" class="btn ot-btn-primary" {{ $data['sceneCount'] ? '' : 'disabled' }}>✨ AI: Fill In Scenes</button>
+                    </form>
+                </div>
             </div>
             <div id="aiGenerateStatus" class="card-body border-top" style="display:none;">
                 <div class="d-flex align-items-center gap-2">
