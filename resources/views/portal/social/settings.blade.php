@@ -134,6 +134,12 @@
                     @method('DELETE')
                 </form>
 
+                <datalist id="existingSeriesNames">
+                    @foreach ($data['series']->pluck('name')->unique()->sort() as $existingName)
+                        <option value="{{ $existingName }}"></option>
+                    @endforeach
+                </datalist>
+
                 <form action="{{ route('portal-social-settings.series') }}" method="post" enctype="multipart/form-data">
                     @csrf
 
@@ -161,7 +167,7 @@
                                     @php($d = $s->defaults ?: [])
                                     @php($dc = $d['custom_fields'] ?? [])
                                     <tr class="series-row">
-                                        <td><input type="text" name="series[{{ $s->id }}][name]" value="{{ $s->name }}" class="form-control ot-input" style="min-width:140px" required></td>
+                                        <td><input type="text" name="series[{{ $s->id }}][name]" value="{{ $s->name }}" class="form-control ot-input" style="min-width:140px" list="existingSeriesNames" required></td>
                                         <td><input type="color" name="series[{{ $s->id }}][color]" value="{{ $s->color ?: '#007585' }}" class="form-control ot-input p-1" style="width:50px"></td>
                                         <td><input type="text" name="series[{{ $s->id }}][code]" value="{{ $s->code }}" class="form-control ot-input" placeholder="e.g. SS" maxlength="20" style="width:60px"></td>
                                         <td>
@@ -329,7 +335,7 @@
 
     <template id="newSeriesTemplate">
         <tr class="series-row">
-            <td><input type="text" name="new_series[__INDEX__][name]" value="" class="form-control ot-input" placeholder="Series name" style="min-width:140px" required></td>
+            <td><input type="text" name="new_series[__INDEX__][name]" value="" class="form-control ot-input" placeholder="Series name" style="min-width:140px" list="existingSeriesNames" required></td>
             <td><input type="color" name="new_series[__INDEX__][color]" value="#007585" class="form-control ot-input p-1" style="width:50px"></td>
             <td><input type="text" name="new_series[__INDEX__][code]" value="" class="form-control ot-input" placeholder="e.g. SS" maxlength="20" style="width:60px"></td>
             <td>
