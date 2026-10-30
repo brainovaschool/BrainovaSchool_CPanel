@@ -42,7 +42,6 @@
                         <div class="col-md-4"><strong>Deadline:</strong> {{ $linkedReel->deadline?->format('d M Y') ?: '—' }}</div>
                         <div class="col-md-4"><strong>Suggested by:</strong> {{ optional($linkedReel->suggestedBy)->name ?: '—' }}</div>
                         <div class="col-md-4"><strong>Assigned to:</strong> {{ optional($linkedReel->assignee)->first_name ? trim($linkedReel->assignee->first_name . ' ' . $linkedReel->assignee->last_name) : '—' }}</div>
-                        <div class="col-md-4"><a href="{{ route('portal-social-reels.show', $linkedReel->id) }}">Open the reel's own page</a></div>
                     </div>
 
                     <div class="d-flex align-items-center gap-3 flex-wrap">

@@ -594,7 +594,7 @@ class SocialRepository
     private function notifyReviewer(PortalReel $reel, string $title, string $message): void
     {
         if ($reel->reviewed_by) {
-            PortalNotifier::send((int) $reel->reviewed_by, $title, $message, route('portal-social-reels.show', $reel->id));
+            PortalNotifier::send((int) $reel->reviewed_by, $title, $message, route('portal-social-reels.index'));
         }
     }
 
@@ -602,7 +602,10 @@ class SocialRepository
     {
         $userId = optional($reel->assignee)->user_id;
         if ($userId) {
-            PortalNotifier::send((int) $userId, $title, $message, route('portal-social-reels.show', $reel->id));
+            $link = $reel->reel_project_id
+                ? route('portal-social-reel-studio.show', $reel->reel_project_id)
+                : route('portal-social-reels.index');
+            PortalNotifier::send((int) $userId, $title, $message, $link);
         }
     }
 

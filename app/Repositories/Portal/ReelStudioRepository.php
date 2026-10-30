@@ -251,7 +251,7 @@ class ReelStudioRepository
      *  Scenes and AI generation so all three build rows the same way.
      *  $sceneData: optional {id, title, description, dialogue, characters}
      *  from the client/AI; missing keys just mean a blank field. */
-    private function upsertScene(int $projectId, string $type, int $sortOrder, int $sceneLength, array $sceneData): ReelScene
+    private function upsertScene(int $projectId, string $type, int $sortOrder, int $sceneLength, array $sceneData, ?ReelProject $project = null): ReelScene
     {
         $sceneId = (int) ($sceneData['id'] ?? 0);
         $scene   = $sceneId ? ReelScene::where('reel_project_id', $projectId)->where('scene_type', $type)->find($sceneId) : null;
@@ -265,7 +265,7 @@ class ReelStudioRepository
         $scene->title            = (string) ($sceneData['title'] ?? '');
         $scene->description      = (string) ($sceneData['description'] ?? '');
         $scene->dialogue         = (string) ($sceneData['dialogue'] ?? '');
-        $scene->character_ids    = $this->cleanSceneCharacterIds($sceneData['characters'] ?? []);
+        $scene->character_ids    = $this->cleanSceneCharacterIds($sceneData['characters'] ?? [], $project ?: ReelProject::find($projectId));
         $scene->is_first_scene   = $type === ReelScene::TYPE_START;
         $scene->is_last_scene    = $type === ReelScene::TYPE_END;
         $scene->save();
@@ -344,11 +344,12 @@ class ReelStudioRepository
         }
     }
 
-    /** Caps a scene's character list at 3 and drops anything not an active
-     *  Reel Character. */
-    private function cleanSceneCharacterIds(array $ids): array
+    /** Caps a scene's character list at 3 and drops anything not in the
+     *  project's own involved-characters roster (its "Character" custom
+     *  field, or every active Reel Character if that isn't set). */
+    private function cleanSceneCharacterIds(array $ids, ?ReelProject $project = null): array
     {
-        $allowed = ReelCharacter::active()->pluck('id')->all();
+        $allowed = ($project ? $project->involvedCharacters() : ReelCharacter::active())->pluck('id')->all();
         $ids     = array_values(array_unique(array_map('intval', $ids)));
         $ids     = array_values(array_filter($ids, fn ($id) => in_array($id, $allowed, true)));
         return array_slice($ids, 0, 3);
@@ -387,7 +388,7 @@ class ReelStudioRepository
         if (!$reel || !$reel->reviewed_by || (int) $reel->reviewed_by === (int) Auth::id()) {
             return;
         }
-        PortalNotifier::send($reel->reviewed_by, 'Reel setup ready for review', $reel->title, route('portal-social-reels.show', $reel->id));
+        PortalNotifier::send($reel->reviewed_by, 'Reel setup ready for review', $reel->title, route('portal-social-reel-studio.show', $projectId));
     }
 
     /**

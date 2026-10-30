@@ -158,7 +158,7 @@
                                     </td>
                                     <td>{{ $reel->code ?: '—' }}</td>
                                     <td>
-                                        <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="bn-reel-title">{{ $reel->title }}</a>
+                                        <span class="bn-reel-title">{{ $reel->title }}</span>
                                     </td>
                                     <td>
                                         {{ optional($reel->suggestedBy)->name ?: '—' }}
@@ -170,11 +170,13 @@
                                         @if ($data['canApprove'])
                                             @php($promptCheckable = $reel->prompt_link && !$reel->prompt_approved_at)
                                             @php($canvaCheckable = $reel->canva_link && !$reel->canva_approved_at)
+                                            @php($videoCheckable = $reel->drive_link && !$reel->video_approved_at)
                                             <details class="bn-approve-details">
                                                 <summary>
                                                     <span class="{{ $isSuggested ? 'text-secondary' : 'text-success' }}" title="Topic">T</span>
                                                     <span class="{{ $reel->prompt_approved_at ? 'text-success' : 'text-secondary' }}" title="Prompt">P</span>
                                                     <span class="{{ $reel->canva_approved_at ? 'text-success' : 'text-secondary' }}" title="Canva">C</span>
+                                                    <span class="{{ $reel->video_approved_at ? 'text-success' : 'text-secondary' }}" title="Video">V</span>
                                                 </summary>
                                                 <div class="bn-approve-panel">
                                                     <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-1">
@@ -189,11 +191,17 @@
                                                         <input type="checkbox" class="form-check-input" {{ $reel->prompt_approved_at ? 'checked' : '' }} {{ $promptCheckable ? '' : 'disabled' }} onchange="this.form.submit()">
                                                         <label class="mb-0">Prompt</label>
                                                     </form>
-                                                    <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-2">
+                                                    <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-1">
                                                         @csrf
                                                         <input type="hidden" name="stage" value="canva">
                                                         <input type="checkbox" class="form-check-input" {{ $reel->canva_approved_at ? 'checked' : '' }} {{ $canvaCheckable ? '' : 'disabled' }} onchange="this.form.submit()">
                                                         <label class="mb-0">Canva</label>
+                                                    </form>
+                                                    <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-2">
+                                                        @csrf
+                                                        <input type="hidden" name="stage" value="video">
+                                                        <input type="checkbox" class="form-check-input" {{ $reel->video_approved_at ? 'checked' : '' }} {{ $videoCheckable ? '' : 'disabled' }} onchange="this.form.submit()">
+                                                        <label class="mb-0">Video</label>
                                                     </form>
                                                     @if ($isSuggested)
                                                         <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" onsubmit="return confirm('Discard this suggestion?');">
@@ -247,25 +255,26 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($reel->canva_approved_at)
-                                            <a href="{{ $reel->canva_link }}" target="_blank" class="text-success" title="Approved">Approved</a>
-                                        @elseif ($reel->canva_link)
-                                            <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="text-warning" title="Pending approval — click to review">Pending</a>
+                                        @if ($reel->canva_link)
+                                            <a href="{{ $reel->canva_link }}" target="_blank" class="bn-link-cell {{ $reel->canva_approved_at ? 'text-success' : 'text-warning' }}" title="{{ $reel->canva_approved_at ? 'Approved' : 'Pending approval — tick Canva in Approve once reviewed' }}">{{ $reel->canva_link }}</a>
                                         @else
                                             —
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($reel->video_approved_at)
-                                            <a href="{{ $reel->drive_link }}" target="_blank" class="text-success" title="Approved">Approved</a>
-                                        @elseif ($reel->drive_link)
-                                            <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="text-warning" title="Pending approval — click to review">Pending</a>
+                                        @if ($reel->drive_link)
+                                            <a href="{{ $reel->drive_link }}" target="_blank" class="bn-link-cell {{ $reel->video_approved_at ? 'text-success' : 'text-warning' }}" title="{{ $reel->video_approved_at ? 'Approved' : 'Pending approval — tick Video in Approve once reviewed' }}">{{ $reel->drive_link }}</a>
                                         @else
                                             —
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($reel->planned_date)
+                                        @if ($data['canApprove'] && $reel->video_approved_at)
+                                            <form action="{{ route('portal-social-reels.schedule', $reel->id) }}" method="post" class="bn-inline-deadline-form">
+                                                @csrf
+                                                <input type="date" name="planned_date" class="form-control ot-input form-control-sm" value="{{ $reel->planned_date?->format('Y-m-d') }}" onchange="this.form.submit()">
+                                            </form>
+                                        @elseif ($reel->planned_date)
                                             {{ $reel->planned_date->format('d M Y') }}
                                         @elseif ($reel->deadline)
                                             <span class="text-secondary" title="Provisional - from Production Plan's deadline, not yet confirmed on Upload Plan">{{ $reel->deadline->format('d M Y') }} (planned)</span>
@@ -275,6 +284,7 @@
                                     </td>
                                     <td class="action bn-reel-actions">
                                         @if ($data['canManage'])
+                                            <a href="{{ route('portal-social-reels.edit', $reel->id) }}" class="btn btn-sm btn-outline-secondary">{{ ___('common.edit') }}</a>
                                             <form action="{{ route('portal-social-reels.destroy', $reel->id) }}" method="post" class="d-inline" onsubmit="return confirm('Remove this reel/topic?');">
                                                 @csrf
                                                 @method('DELETE')
@@ -301,6 +311,7 @@
         .dark-theme .bn-series-tag { background: rgba(0, 151, 178, .22); color: var(--bn-turquoise-light); }
         .bn-reel-sub { color: var(--bn-muted, #8a8fa3); font-size: .78rem; margin-top: .15rem; }
         .bn-inline-assign-form select, .bn-inline-deadline-form input { min-width: 120px; }
+        .bn-link-cell { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .bn-approve-details summary { cursor: pointer; list-style: none; font-weight: 700; font-size: 13px; letter-spacing: .1em; }
         .bn-approve-details summary::-webkit-details-marker { display: none; }
         .bn-approve-details summary span { margin-right: 4px; }

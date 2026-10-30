@@ -147,28 +147,9 @@ class SocialController extends Controller
             if ($request->input('return_to') === 'suggest') {
                 return redirect()->route('portal-social-suggest-reel.index')->with('success', $result['message']);
             }
-            return redirect()->route('portal-social-reels.show', $result['data']['id'])->with('success', $result['message']);
+            return redirect()->route('portal-social-reels.index')->with('success', $result['message']);
         }
         return back()->withInput()->with('danger', $result['message']);
-    }
-
-    public function showReel($id)
-    {
-        $reel = $this->repo->showReel((int) $id);
-        if (!$reel) {
-            return redirect()->route('portal-social-reels.index')->with('danger', ___('alert.not_found'));
-        }
-
-        $data['reel']         = $reel;
-        $data['canManage']    = $this->canManageContent();
-        $data['isManager']    = hasPermission('portal_manage');
-        $data['canAssign']    = $this->canAssignReels();
-        $data['canApprove']   = $this->canApproveReels();
-        $data['contentTeam']  = $this->repo->assignableStaff();
-        $data['myStaffId']    = $this->actingStaffId();
-        $data['customFields'] = $this->repo->reelCustomFields();
-        $data['title']        = $reel->title;
-        return view('portal.social.reels.show', compact('data'));
     }
 
     /** The bridge into Reel Studio: a suggestion has to be approved
@@ -188,7 +169,7 @@ class SocialController extends Controller
             abort(403);
         }
         if ($reel->status === PortalReel::SUGGESTED) {
-            return redirect()->route('portal-social-reels.show', $id)->with('danger', 'Approve this suggestion before setting it up.');
+            return redirect()->route('portal-social-reels.index')->with('danger', 'Approve this suggestion before setting it up.');
         }
 
         $project = $this->repo->openOrCreateReelProject($reel, Auth::id());
@@ -221,7 +202,7 @@ class SocialController extends Controller
         ]);
 
         $result = $this->repo->updateReel($request, (int) $id);
-        return redirect()->route('portal-social-reels.show', $id)->with($result['status'] ? 'success' : 'danger', $result['message']);
+        return redirect()->route('portal-social-reels.index')->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
     public function reviewReel(Request $request, $id)

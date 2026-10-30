@@ -52,11 +52,28 @@ class ReelProject extends Model
         return !$this->portalReel;
     }
 
-    /** Every active Reel Character - the full roster available to pick
-     *  from on each scene (up to 3 per scene) and for AI scene generation.
-     *  No project-level pre-selection step anymore. */
+    /** The roster available to pick from on each scene (up to 3 per scene)
+     *  and for AI scene generation: whichever names are listed in this
+     *  reel's own "Character" custom field (set on the suggested Reel when
+     *  linked, or on this project's own custom fields when standalone) -
+     *  falling back to every active Reel Character if that field isn't
+     *  set, so the list is never empty. */
     public function involvedCharacters()
     {
+        $reel   = $this->portalReel;
+        $fields = $reel ? ($reel->custom_fields ?: []) : ($this->custom_fields ?: []);
+
+        $definitions = PortalReelCustomField::orderBy('sort_order')->get();
+        $key = optional($definitions->first(fn ($f) => strtolower(trim($f->label)) === 'character'))->key;
+        $names = $key ? array_filter((array) ($fields[$key] ?? [])) : [];
+
+        if ($names) {
+            $characters = ReelCharacter::active()->whereIn('name', $names)->orderBy('sort_order')->orderBy('name')->get();
+            if ($characters->isNotEmpty()) {
+                return $characters;
+            }
+        }
+
         return ReelCharacter::active()->orderBy('sort_order')->orderBy('name')->get();
     }
 }
