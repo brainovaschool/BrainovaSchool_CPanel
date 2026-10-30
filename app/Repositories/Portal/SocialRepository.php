@@ -1038,6 +1038,10 @@ class SocialRepository
             $list->label  = $label;
             $list->values = array_values(array_filter(array_map('trim', (array) ($block['values'] ?? []))));
             $list->save();
+
+            if ($list->key === 'series_names') {
+                $this->syncSeriesNamesList($list->values);
+            }
         }
 
         $newBlocks = (array) $request->input('new_lists', []);
@@ -1056,6 +1060,29 @@ class SocialRepository
         }
 
         return $this->responseWithSuccess('Saved.', []);
+    }
+
+    /** The "Series" block under Settings Lists is the old, pre-table way
+     *  of naming series (kept around so nothing already typed there is
+     *  lost) - the Series card below it, with Pillar/Format/defaults per
+     *  row, is what the Reel form actually reads. A name typed into this
+     *  block wouldn't otherwise become a real, pickable series, which is
+     *  confusing since it's labelled "Series" - so saving it also creates
+     *  a bare PortalReelSeries row (no defaults yet) for any name here
+     *  that doesn't already have one, by exact name match. */
+    private function syncSeriesNamesList(array $names): void
+    {
+        $nextOrder = ((int) PortalReelSeries::max('sort_order')) + 1;
+        foreach ($names as $name) {
+            $name = trim($name);
+            if ($name === '' || PortalReelSeries::where('name', $name)->exists()) {
+                continue;
+            }
+            PortalReelSeries::create([
+                'name'       => $name,
+                'sort_order' => $nextOrder++,
+            ]);
+        }
     }
 
     private function uniqueListKey(string $label): string
