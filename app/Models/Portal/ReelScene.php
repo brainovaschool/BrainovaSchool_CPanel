@@ -9,6 +9,10 @@ class ReelScene extends Model
     protected $table = 'reel_scenes';
     protected $guarded = ['id'];
 
+    public const TYPE_START   = 'start';
+    public const TYPE_CONTENT = 'content';
+    public const TYPE_END     = 'end';
+
     protected $casts = [
         'generated_prompt_at' => 'datetime',
         'is_first_scene'      => 'boolean',

@@ -12,7 +12,6 @@ class ReelProject extends Model
     protected $guarded = ['id'];
 
     protected $casts = [
-        'character_ids' => 'array',
         'custom_fields' => 'array',
     ];
 
@@ -53,11 +52,11 @@ class ReelProject extends Model
         return !$this->portalReel;
     }
 
-    /** The characters marked as "involved in this reel" at project level —
-     *  the roster AI scene generation is allowed to pick from. */
+    /** Every active Reel Character - the full roster available to pick
+     *  from on each scene (up to 3 per scene) and for AI scene generation.
+     *  No project-level pre-selection step anymore. */
     public function involvedCharacters()
     {
-        $ids = $this->character_ids ?: [];
-        return ReelCharacter::whereIn('id', $ids)->orderBy('sort_order')->get();
+        return ReelCharacter::active()->orderBy('sort_order')->orderBy('name')->get();
     }
 }

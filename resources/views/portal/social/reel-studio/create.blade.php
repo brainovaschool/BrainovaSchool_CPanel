@@ -51,21 +51,6 @@
                             <small class="text-secondary">You'll set a scene length (max 10s) on the next screen — that's what splits this into scene boxes.</small>
                         </div>
 
-                        <div class="col-12 mb-3">
-                            <label class="form-label">Characters involved in this reel</label>
-                            <div class="d-flex flex-wrap gap-3">
-                                @forelse ($data['characters'] as $character)
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" name="character_ids[]" value="{{ $character->id }}" id="char{{ $character->id }}"
-                                            {{ in_array($character->id, old('character_ids', [])) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="char{{ $character->id }}">{{ $character->name }}</label>
-                                    </div>
-                                @empty
-                                    <p class="text-secondary mb-0">No characters set up yet — add some in Reel Characters first.</p>
-                                @endforelse
-                            </div>
-                            <small class="text-secondary">This is the roster AI can pick from when auto-generating scenes — you can still choose any of these per scene either way.</small>
-                        </div>
                     </div>
 
                     <button type="submit" class="btn btn-lg ot-btn-primary">Create &amp; Add Scenes</button>

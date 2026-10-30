@@ -13,12 +13,12 @@ use App\Models\Portal\ReelScene;
  * can always be produced even if every AI provider is down or none is
  * configured at all.
  *
- * Two fixed brand rules are applied mechanically here, regardless of what
- * was typed (manually or by AI) into any scene: scene 1 opens with Kea
- * speaking the reel's hook, and the last scene closes with Brainbot saying
- * "Think Smart" and Kea saying "Learn Smarter" - spelled out as instructions
- * rather than rewritten into the teacher's own Dialogue text, so nothing
- * they typed is silently changed.
+ * Every reel is always bracketed by a Start scene (the intro, closing with
+ * the reel's Hook) and an End scene (the send-off, closing with its End
+ * Hook custom field), either side of the numbered content scenes. Both
+ * reminders are spelled out as instructions in the document rather than
+ * rewritten into the teacher's own Dialogue text, so nothing they typed is
+ * silently changed.
  */
 class ReelDocumentBuilder
 {
@@ -38,8 +38,15 @@ class ReelDocumentBuilder
         $lines[] = "LENGTH: {$project->target_duration_seconds}s target across {$count} scene(s) of {$sceneLength}s each";
         $lines[] = '';
 
-        if (trim((string) $project->hook) !== '') {
-            $lines[] = 'HOOK (opening line, spoken by Kea in Scene 1, word for word — do not repeat it in any scene\'s dialogue): ' . trim($project->hook);
+        $hook    = trim((string) $project->hook) !== '' ? trim($project->hook) : null;
+        $endHook = $this->endHookText($project);
+
+        if ($hook) {
+            $lines[] = 'OPENING HOOK (closes the Start scene, word for word): ' . $hook;
+            $lines[] = '';
+        }
+        if ($endHook) {
+            $lines[] = 'END HOOK (closes the End scene, word for word): ' . $endHook;
             $lines[] = '';
         }
 
@@ -66,7 +73,7 @@ class ReelDocumentBuilder
 
         foreach ($project->scenes as $scene) {
             $lines[] = '';
-            $lines = array_merge($lines, $this->sceneLines($scene, $sceneLength));
+            $lines = array_merge($lines, $this->sceneLines($scene, $sceneLength, $hook, $endHook));
             $lines[] = '';
             $lines[] = str_repeat('-', 40);
         }
@@ -102,26 +109,30 @@ class ReelDocumentBuilder
         $lines[] = '';
 
         $sceneLength = $project->scene_length_seconds ?: $scene->duration_seconds ?: 8;
-        $lines       = array_merge($lines, $this->sceneLines($scene, $sceneLength));
+        $hook        = trim((string) $project->hook) !== '' ? trim($project->hook) : null;
+        $endHook     = $this->endHookText($project);
+        $lines       = array_merge($lines, $this->sceneLines($scene, $sceneLength, $hook, $endHook));
 
         return implode("\n", $lines);
     }
 
-    /** The lines for one scene: header (number/length/opening-closing tag),
+    /** The lines for one scene: header (Start/Scene N/End, plus length),
      *  title, description, dialogue, and the consistency details for
      *  whichever 1-3 characters are checked into it. Shared by the
      *  whole-reel document and the single-scene download so both describe
-     *  a scene identically. */
-    private function sceneLines(ReelScene $scene, int $sceneLength): array
+     *  a scene identically. $hook/$endHook: shown as a reminder only on
+     *  the Start/End scenes respectively - never rewritten into the
+     *  teacher's own Dialogue text. */
+    private function sceneLines(ReelScene $scene, int $sceneLength, ?string $hook = null, ?string $endHook = null): array
     {
         $lines = [];
 
-        $header = "SCENE {$scene->sort_order} — {$sceneLength}s";
-        if ($scene->is_first_scene) {
-            $header .= ' (OPENING SCENE)';
-        }
-        if ($scene->is_last_scene) {
-            $header .= ' (CLOSING SCENE)';
+        if ($scene->scene_type === ReelScene::TYPE_START) {
+            $header = "START SCENE — {$sceneLength}s (intro — what this video is about)";
+        } elseif ($scene->scene_type === ReelScene::TYPE_END) {
+            $header = "END SCENE — {$sceneLength}s (send-off)";
+        } else {
+            $header = "SCENE {$scene->sort_order} — {$sceneLength}s";
         }
         $lines[] = $header;
         if (trim((string) $scene->title) !== '') {
@@ -133,9 +144,15 @@ class ReelDocumentBuilder
         $lines[] = '';
         $lines[] = 'DIALOGUE:';
         $lines[] = $scene->dialogue ?: '(none provided)';
-        if ($scene->is_last_scene) {
+        if ($scene->scene_type === ReelScene::TYPE_START && $hook) {
             $lines[] = '';
-            $lines[] = '(This scene must also close with: Brainbot: Think Smart. / Kea: Learn Smarter. — added automatically if not already written above.)';
+            $lines[] = "(This scene must close with the Opening Hook, word for word: \"{$hook}\")";
+        }
+        if ($scene->scene_type === ReelScene::TYPE_END) {
+            $lines[] = '';
+            $lines[] = $endHook
+                ? "(This scene must close with the End Hook, word for word: \"{$endHook}\")"
+                : '(This scene is the send-off — closing line.)';
         }
 
         $sceneCharacters = $scene->characters();
@@ -175,5 +192,18 @@ class ReelDocumentBuilder
         $seriesKey  = optional($definitions->first(fn ($f) => strtolower(trim($f->label)) === 'series'))->key;
 
         return [$pillarKey ? ($fields[$pillarKey] ?? null) : null, $seriesKey ? ($fields[$seriesKey] ?? null) : null];
+    }
+
+    /** Same source/lookup as pillarAndSeries() above, for the "End Hook"
+     *  custom field - spoken word for word in the End scene. */
+    private function endHookText(ReelProject $project): ?string
+    {
+        $reel   = $project->portalReel;
+        $fields = $reel ? ($reel->custom_fields ?: []) : ($project->custom_fields ?: []);
+
+        $definitions = PortalReelCustomField::orderBy('sort_order')->get();
+        $key = optional($definitions->first(fn ($f) => strtolower(trim($f->label)) === 'end hook'))->key;
+
+        return $key ? ($fields[$key] ?? null) : null;
     }
 }

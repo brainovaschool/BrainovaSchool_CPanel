@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Portal;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Portal\ReelCharacter;
 use App\Repositories\Portal\ReelStudioRepository;
 
 class ReelStudioController extends Controller
@@ -47,8 +46,6 @@ class ReelStudioController extends Controller
             'format'                  => 'required|in:vertical,horizontal',
             'target_duration_seconds' => 'nullable|integer|min:5|max:600',
             'scene_length_seconds'    => 'nullable|integer|min:1|max:10',
-            'character_ids'           => 'nullable|array',
-            'character_ids.*'         => 'integer|exists:reel_characters,id',
             'cover_file'              => 'nullable|file|image|max:10240',
             'custom_fields'           => 'nullable|array',
             'canva_link'              => 'nullable|url|max:500',
@@ -58,8 +55,7 @@ class ReelStudioController extends Controller
 
     public function create()
     {
-        $data['characters'] = ReelCharacter::active()->orderBy('sort_order')->orderBy('name')->get();
-        $data['title']      = 'New Reel';
+        $data['title'] = 'New Reel';
         return view('portal.social.reel-studio.create', compact('data'));
     }
 
@@ -81,10 +77,7 @@ class ReelStudioController extends Controller
             abort(404);
         }
 
-        $characters = ReelCharacter::active()->orderBy('sort_order')->orderBy('name')->get();
-
         $data['project']             = $project;
-        $data['characters']          = $characters;
         $data['customFields']        = $this->repo->customFields();
         $data['sceneCount']          = $this->repo->sceneCount($project);
         $data['initialScenesJson']   = $this->scenesForJs($project);
@@ -93,21 +86,32 @@ class ReelStudioController extends Controller
         return view('portal.social.reel-studio.show', compact('data'));
     }
 
-    /** Plain-array shape of this project's scenes, ready to JSON-encode for
-     *  the Scene Builder's JS — kept out of the Blade file on purpose. */
+    /** This project's scenes, ready to JSON-encode for the Scene Builder's
+     *  JS — kept out of the Blade file on purpose. The Start/End scenes
+     *  are singled out from the numbered content scenes so the page can
+     *  render them as their own fixed boxes. */
     private function scenesForJs($project): array
     {
-        $scenes = [];
+        $out = ['start' => null, 'scenes' => [], 'end' => null];
+
         foreach ($project->scenes as $scene) {
-            $scenes[] = [
+            $data = [
                 'id'          => $scene->id,
                 'title'       => $scene->title,
                 'description' => $scene->description,
                 'dialogue'    => $scene->dialogue,
                 'characters'  => $scene->character_ids ?: [],
             ];
+            if ($scene->scene_type === \App\Models\Portal\ReelScene::TYPE_START) {
+                $out['start'] = $data;
+            } elseif ($scene->scene_type === \App\Models\Portal\ReelScene::TYPE_END) {
+                $out['end'] = $data;
+            } else {
+                $out['scenes'][] = $data;
+            }
         }
-        return $scenes;
+
+        return $out;
     }
 
     private function charactersForJs($characters): array

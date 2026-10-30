@@ -79,8 +79,6 @@ class ReelStudioRepository
     /** Shared field extraction for store/update — keeps the two in sync. */
     private function projectFields($request): array
     {
-        $characterIds = array_values(array_filter(array_map('intval', (array) $request->input('character_ids', []))));
-
         $sceneLength = $request->scene_length_seconds
             ? max(1, min(self::MAX_SCENE_SECONDS, (int) $request->scene_length_seconds))
             : null;
@@ -92,7 +90,6 @@ class ReelStudioRepository
             'description'              => $request->description,
             'target_duration_seconds'  => $request->target_duration_seconds ?: null,
             'scene_length_seconds'     => $sceneLength,
-            'character_ids'            => $characterIds,
         ];
     }
 
@@ -224,7 +221,8 @@ class ReelStudioRepository
     /** Explicit, teacher-triggered reset (a confirm() in the browser warns
      *  them first): throws away whatever scenes currently exist and starts
      *  over with a fresh, blank set sized to the project's current target/
-     *  scene length. Never runs on its own - only from this action. */
+     *  scene length, always bracketed by a Start Scene and an End Scene.
+     *  Never runs on its own - only from this action. */
     public function createScenesFromZero(int $projectId): array
     {
         $project = ReelProject::find($projectId);
@@ -239,21 +237,40 @@ class ReelStudioRepository
 
         ReelScene::where('reel_project_id', $project->id)->delete(); // cascades to any reel_scene_characters rows
 
+        $sceneLength = $project->scene_length_seconds ?: 8;
+        $this->upsertScene($project->id, ReelScene::TYPE_START, 0, $sceneLength, []);
         for ($i = 0; $i < $count; $i++) {
-            ReelScene::create([
-                'reel_project_id'  => $project->id,
-                'sort_order'       => $i + 1,
-                'duration_seconds' => $project->scene_length_seconds ?: 8,
-                'title'            => '',
-                'description'      => '',
-                'dialogue'         => '',
-                'character_ids'    => [],
-                'is_first_scene'   => $i === 0,
-                'is_last_scene'    => $i === $count - 1,
-            ]);
+            $this->upsertScene($project->id, ReelScene::TYPE_CONTENT, $i + 1, $sceneLength, []);
+        }
+        $this->upsertScene($project->id, ReelScene::TYPE_END, $count + 1, $sceneLength, []);
+
+        return $this->responseWithSuccess($count . ' blank scene(s) created, plus a Start and End scene.', []);
+    }
+
+    /** Creates or updates one scene row - shared by Create Scenes, Save
+     *  Scenes and AI generation so all three build rows the same way.
+     *  $sceneData: optional {id, title, description, dialogue, characters}
+     *  from the client/AI; missing keys just mean a blank field. */
+    private function upsertScene(int $projectId, string $type, int $sortOrder, int $sceneLength, array $sceneData): ReelScene
+    {
+        $sceneId = (int) ($sceneData['id'] ?? 0);
+        $scene   = $sceneId ? ReelScene::where('reel_project_id', $projectId)->where('scene_type', $type)->find($sceneId) : null;
+        if (!$scene) {
+            $scene = new ReelScene(['reel_project_id' => $projectId]);
         }
 
-        return $this->responseWithSuccess($count . ' blank scene(s) created.', []);
+        $scene->scene_type       = $type;
+        $scene->sort_order       = $sortOrder;
+        $scene->duration_seconds = $sceneLength;
+        $scene->title            = (string) ($sceneData['title'] ?? '');
+        $scene->description      = (string) ($sceneData['description'] ?? '');
+        $scene->dialogue         = (string) ($sceneData['dialogue'] ?? '');
+        $scene->character_ids    = $this->cleanSceneCharacterIds($sceneData['characters'] ?? []);
+        $scene->is_first_scene   = $type === ReelScene::TYPE_START;
+        $scene->is_last_scene    = $type === ReelScene::TYPE_END;
+        $scene->save();
+
+        return $scene;
     }
 
     public function destroyProject(int $id): array
@@ -271,13 +288,12 @@ class ReelStudioRepository
     /**
      * Replaces this project's entire scene list from the teacher's
      * `scenes_json` blob (one hidden field built client-side — see
-     * reel-studio/show.blade.php): just a Description and Dialogue per
-     * scene now. Duration is uniform (the project's own scene length) and
-     * first/last scene are derived from position, not stored as separate
-     * flags the teacher has to set correctly. Upserts scenes still present,
-     * deletes whichever existed before but were removed from the blob, all
-     * inside one transaction. Returns the compiled script document on
-     * success so the caller can stream it straight back as a download.
+     * reel-studio/show.blade.php): {start:{...}, scenes:[...content...],
+     * end:{...}}. Duration is uniform (the project's own scene length).
+     * Upserts scenes still present, deletes whichever existed before but
+     * were removed from the blob, all inside one transaction. Returns the
+     * compiled script document on success so the caller can stream it
+     * straight back as a download.
      */
     public function saveScenes($request, int $projectId): array
     {
@@ -287,12 +303,13 @@ class ReelStudioRepository
         }
 
         $decoded = json_decode((string) $request->input('scenes_json'), true);
-        if (!is_array($decoded) || empty($decoded)) {
+        $contentScenes = is_array($decoded['scenes'] ?? null) ? array_values($decoded['scenes']) : [];
+        if (!is_array($decoded) || empty($contentScenes)) {
             return $this->responseWithError('No scene data was submitted.', []);
         }
 
         $sceneLength = $project->scene_length_seconds ?: 8;
-        $count       = count($decoded);
+        $count       = count($contentScenes);
 
         if ($request->hasFile('cover_file')) {
             $project->cover_upload_id = $this->UploadImageCreate($request->file('cover_file'), 'uploads/reel-projects');
@@ -300,32 +317,19 @@ class ReelStudioRepository
         }
 
         try {
-            DB::transaction(function () use ($decoded, $projectId, $sceneLength, $count, $project) {
+            DB::transaction(function () use ($decoded, $contentScenes, $projectId, $sceneLength, $count) {
                 $keptSceneIds = [];
 
-                foreach (array_values($decoded) as $index => $sceneData) {
+                $keptSceneIds[] = $this->upsertScene($projectId, ReelScene::TYPE_START, 0, $sceneLength, (array) ($decoded['start'] ?? []))->id;
+
+                foreach ($contentScenes as $index => $sceneData) {
                     if (!is_array($sceneData)) {
                         continue;
                     }
-
-                    $sceneId = (int) ($sceneData['id'] ?? 0);
-                    $scene   = $sceneId ? ReelScene::where('reel_project_id', $projectId)->find($sceneId) : null;
-                    if (!$scene) {
-                        $scene = new ReelScene(['reel_project_id' => $projectId]);
-                    }
-
-                    $scene->sort_order       = $index + 1;
-                    $scene->duration_seconds = $sceneLength;
-                    $scene->title            = (string) ($sceneData['title'] ?? '');
-                    $scene->description      = (string) ($sceneData['description'] ?? '');
-                    $scene->dialogue         = (string) ($sceneData['dialogue'] ?? '');
-                    $scene->character_ids    = $this->cleanSceneCharacterIds($sceneData['characters'] ?? [], $project);
-                    $scene->is_first_scene   = $index === 0;
-                    $scene->is_last_scene    = $index === $count - 1;
-                    $scene->save();
-
-                    $keptSceneIds[] = $scene->id;
+                    $keptSceneIds[] = $this->upsertScene($projectId, ReelScene::TYPE_CONTENT, $index + 1, $sceneLength, $sceneData)->id;
                 }
+
+                $keptSceneIds[] = $this->upsertScene($projectId, ReelScene::TYPE_END, $count + 1, $sceneLength, (array) ($decoded['end'] ?? []))->id;
 
                 ReelScene::where('reel_project_id', $projectId)
                     ->whereNotIn('id', $keptSceneIds ?: [0])
@@ -340,11 +344,11 @@ class ReelStudioRepository
         }
     }
 
-    /** Caps a scene's character list at 3 and drops anything not in the
-     *  project's own involved-characters roster. */
-    private function cleanSceneCharacterIds(array $ids, ReelProject $project): array
+    /** Caps a scene's character list at 3 and drops anything not an active
+     *  Reel Character. */
+    private function cleanSceneCharacterIds(array $ids): array
     {
-        $allowed = $project->involvedCharacters()->pluck('id')->all();
+        $allowed = ReelCharacter::active()->pluck('id')->all();
         $ids     = array_values(array_unique(array_map('intval', $ids)));
         $ids     = array_values(array_filter($ids, fn ($id) => in_array($id, $allowed, true)));
         return array_slice($ids, 0, 3);
@@ -431,24 +435,22 @@ class ReelStudioRepository
             return $this->responseWithError('The AI response could not be read into valid scenes. Please try again.', []);
         }
 
+        $idByName  = $this->characterIdsByName($characters);
+        $cleanStart = $this->sanitizeOneAiScene((array) ($decoded['start'] ?? []), $idByName);
+        $cleanEnd   = $this->sanitizeOneAiScene((array) ($decoded['end'] ?? []), $idByName);
+
         try {
-            DB::transaction(function () use ($clean, $projectId, $project) {
+            DB::transaction(function () use ($clean, $cleanStart, $cleanEnd, $projectId, $project) {
                 ReelScene::where('reel_project_id', $projectId)->delete(); // cascades to any reel_scene_characters rows
 
-                $last = count($clean) - 1;
+                $sceneLength = $project->scene_length_seconds ?: 8;
+                $this->upsertScene($projectId, ReelScene::TYPE_START, 0, $sceneLength, $cleanStart);
+
                 foreach ($clean as $i => $sceneData) {
-                    ReelScene::create([
-                        'reel_project_id'  => $projectId,
-                        'sort_order'       => $i + 1,
-                        'duration_seconds' => $project->scene_length_seconds ?: 8,
-                        'title'            => $sceneData['title'],
-                        'description'      => $sceneData['description'],
-                        'dialogue'         => $sceneData['dialogue'],
-                        'character_ids'    => $sceneData['character_ids'],
-                        'is_first_scene'   => $i === 0,
-                        'is_last_scene'    => $i === $last,
-                    ]);
+                    $this->upsertScene($projectId, ReelScene::TYPE_CONTENT, $i + 1, $sceneLength, $sceneData);
                 }
+
+                $this->upsertScene($projectId, ReelScene::TYPE_END, count($clean) + 1, $sceneLength, $cleanEnd);
             });
 
             $this->aiHelperRepo->logUsage(
@@ -509,6 +511,7 @@ class ReelStudioRepository
         $targetSeconds       = $project->target_duration_seconds ?: 40;
         $sceneLength         = $project->scene_length_seconds ?: 8;
         $formatLabel         = ReelProject::FORMATS[$project->format] ?? ReelProject::FORMATS['vertical'];
+        $endHook              = $this->endHookText($project);
 
         $sceneCountInstruction = "Create exactly {$sceneCount} scenes, each exactly {$sceneLength} seconds long, so the reel totals approximately {$targetSeconds} seconds.";
 
@@ -542,17 +545,22 @@ THE ACTUAL VIDEO TO CREATE RIGHT NOW. Everything below this point (any style gui
 
 TITLE: {$project->title}
 WHAT THIS VIDEO IS ACTUALLY ABOUT (the real subject — do not substitute a different topic for this): {$project->description}
-OPENING HOOK (scene 1 opens with this exact line, spoken by Kea — the system adds it automatically, do not write it yourself): {$project->hook}
+OPENING HOOK (for the Start scene — spoken word for word by whichever character opens the video): {$project->hook}
+END HOOK (for the End scene — spoken word for word by whichever character closes the video): {$endHook}
 VIDEO FORMAT: {$formatLabel}
 {$sceneCountInstruction}
 {$characterRotationNote}
-CHARACTERS AVAILABLE FOR THIS VIDEO (use ONLY these, by name, written directly into the dialogue as "Name: line" — never invent or substitute a different character). For EACH scene, pick 1-3 of them who actually appear in it and list those exact names in that scene's own "characters" array — dialogue in a scene must only ever come from the characters listed for that same scene:
+CHARACTERS AVAILABLE FOR THIS VIDEO (use ONLY these, by name, written directly into the dialogue as "Name: line" — never invent or substitute a different character). For EACH scene (including Start and End), pick 1-3 of them who actually appear in it and list those exact names in that scene's own "characters" array — dialogue in a scene must only ever come from the characters listed for that same scene:
 {$roster}
 
-THESE THREE RULES APPLY NO MATTER WHAT STYLE GUIDE FOLLOWS BELOW — they are structural requirements, not style choices:
+THE REEL HAS THREE PARTS: a Start scene (the intro, telling the viewer what this video is about, ending with the Opening Hook spoken word for word), exactly {$sceneCount} numbered content scenes (the "scenes" array), and an End scene (the send-off, closing with the End Hook spoken word for word). Build all three.
+
+THESE RULES APPLY TO EVERY SCENE (Start, content, and End alike) NO MATTER WHAT STYLE GUIDE FOLLOWS BELOW — they are structural requirements, not style choices:
 1. TITLE: every scene needs a short 3-6 word title naming what that scene is about.
 2. DESCRIPTION LENGTH: every scene's description must be 3-5 full sentences — specific setting details, exactly where each character is and what they're physically doing, camera framing/movement, lighting/mood, and the transition to the next scene. A one-line or one-sentence description is NOT acceptable, it is not enough for a video generator to actually render the shot.
 3. EVERY PICKED CHARACTER MUST SPEAK: if a scene's "characters" array has 2 or 3 names in it, the dialogue MUST contain at least one line from EACH of those names — never pick 3 characters for a scene and then only write a line for 1 of them. The dialogue should read as a real back-and-forth exchange (2-4 lines total for a {$sceneLength}-second scene), not a single line.
+4. START SCENE: its dialogue must end with the Opening Hook above, spoken exactly as written, by whichever character you pick to open the video.
+5. END SCENE: its dialogue must end with the End Hook above, spoken exactly as written, by whichever character you pick to close the video. If no End Hook is given, just write a natural send-off instead.
 
 ---
 
@@ -574,50 +582,32 @@ PROMPT;
 
 
 ---
-Reminder: this video's real topic is "{$project->title}" ({$project->description}) — not any example topic shown above. The system automatically adds the opening hook line and the fixed closing line ("Brainbot: Think Smart." / "Kea: Learn Smarter.") to the first and last scene — do not write those yourself, just make those scenes lead naturally into them.
+Reminder: this video's real topic is "{$project->title}" ({$project->description}) — not any example topic shown above.
 
 Respond with ONLY valid JSON (no markdown, no commentary, no code fences) matching exactly this schema:
-{"scenes":[{"title":"...","description":"...","dialogue":"...","characters":["Name1","Name2"]}]}
+{"start":{"title":"...","description":"...","dialogue":"...","characters":["Name1"]},"scenes":[{"title":"...","description":"...","dialogue":"...","characters":["Name1","Name2"]}],"end":{"title":"...","description":"...","dialogue":"...","characters":["Name1"]}}
 PROMPT;
 
         return $facts . $base . $closing;
     }
 
-    /** Validates/repairs the AI's scene list: keeps description/dialogue as
-     *  plain strings, resolves each scene's "characters" names back to ids
-     *  against the project's own roster (dropping anything that doesn't
-     *  match, capping at 3), and caps the count at what the template calls
-     *  for (padding with blank scenes if the AI returned fewer than that,
-     *  as long as it returned at least one usable scene). */
+    /** Validates/repairs the AI's content scene list: keeps description/
+     *  dialogue as plain strings, resolves each scene's "characters" names
+     *  back to ids against the project's own roster (dropping anything
+     *  that doesn't match, capping at 3), and caps the count at what the
+     *  template calls for (padding with blank scenes if the AI returned
+     *  fewer than that, as long as it returned at least one usable scene). */
     private function sanitizeAiScenes($scenes, int $sceneCount, $characters): array
     {
-        $idByName = [];
-        foreach ($characters as $c) {
-            $idByName[strtolower(trim($c->name))] = $c->id;
-        }
-
-        $clean = [];
+        $idByName = $this->characterIdsByName($characters);
+        $clean    = [];
 
         foreach ($scenes as $sceneData) {
             if (!is_array($sceneData)) {
                 continue;
             }
 
-            $names = array_values(array_filter((array) ($sceneData['characters'] ?? [])));
-            $ids   = [];
-            foreach ($names as $name) {
-                $id = $idByName[strtolower(trim((string) $name))] ?? null;
-                if ($id !== null && !in_array($id, $ids, true)) {
-                    $ids[] = $id;
-                }
-            }
-
-            $clean[] = [
-                'title'          => (string) ($sceneData['title'] ?? ''),
-                'description'    => (string) ($sceneData['description'] ?? ''),
-                'dialogue'       => (string) ($sceneData['dialogue'] ?? ''),
-                'character_ids'  => array_slice($ids, 0, 3),
-            ];
+            $clean[] = $this->sanitizeOneAiScene($sceneData, $idByName);
 
             if (count($clean) >= $sceneCount) {
                 break;
@@ -633,5 +623,51 @@ PROMPT;
         }
 
         return $clean;
+    }
+
+    private function characterIdsByName($characters): array
+    {
+        $idByName = [];
+        foreach ($characters as $c) {
+            $idByName[strtolower(trim($c->name))] = $c->id;
+        }
+        return $idByName;
+    }
+
+    /** The reel's "End Hook" custom field value (same source as the
+     *  read-only field shown in Reel Setup when linked, or the project's
+     *  own custom_fields when standalone) - spoken in the End scene,
+     *  mirroring how the Hook is spoken in the Start scene. */
+    private function endHookText(ReelProject $project): ?string
+    {
+        $reel   = $project->portalReel;
+        $fields = $reel ? ($reel->custom_fields ?: []) : ($project->custom_fields ?: []);
+
+        $definitions = PortalReelCustomField::orderBy('sort_order')->get();
+        $key = optional($definitions->first(fn ($f) => strtolower(trim($f->label)) === 'end hook'))->key;
+
+        return $key ? ($fields[$key] ?? null) : null;
+    }
+
+    /** One scene's worth of AI output, cleaned the same way regardless of
+     *  whether it's the Start scene, an End scene, or one of the numbered
+     *  content scenes. */
+    private function sanitizeOneAiScene($sceneData, array $idByName): array
+    {
+        $names = array_values(array_filter((array) ($sceneData['characters'] ?? [])));
+        $ids   = [];
+        foreach ($names as $name) {
+            $id = $idByName[strtolower(trim((string) $name))] ?? null;
+            if ($id !== null && !in_array($id, $ids, true)) {
+                $ids[] = $id;
+            }
+        }
+
+        return [
+            'title'         => (string) ($sceneData['title'] ?? ''),
+            'description'   => (string) ($sceneData['description'] ?? ''),
+            'dialogue'      => (string) ($sceneData['dialogue'] ?? ''),
+            'character_ids' => array_slice($ids, 0, 3),
+        ];
     }
 }

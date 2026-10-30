@@ -128,21 +128,6 @@
                             <p class="text-secondary mb-0 mt-1">Total length ÷ scene length = how many scene boxes you get below.</p>
                         </div>
 
-                        <div class="col-12 mb-3">
-                            <label class="form-label">Characters involved in this reel</label>
-                            <div class="d-flex flex-wrap gap-3">
-                                @forelse ($data['characters'] as $character)
-                                    <div class="form-check">
-                                        <input type="checkbox" class="form-check-input" name="character_ids[]" value="{{ $character->id }}" id="projChar{{ $character->id }}"
-                                            {{ in_array($character->id, $project->character_ids ?? []) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="projChar{{ $character->id }}">{{ $character->name }}</label>
-                                    </div>
-                                @empty
-                                    <p class="text-secondary mb-0">No characters set up yet.</p>
-                                @endforelse
-                            </div>
-                        </div>
-
                         @php
                             $canvaLocked = !$isStandalone && !optional($linkedReel)->prompt_approved_at;
                             $driveLocked = !$isStandalone && !optional($linkedReel)->canva_approved_at;
@@ -205,7 +190,7 @@
                     <h4 class="mb-0">Scenes</h4>
                     <p class="text-secondary mb-0">
                         @if ($data['sceneCount'])
-                            This reel needs {{ $data['sceneCount'] }} scene(s) at {{ $project->scene_length_seconds }}s each. For each one, fill in Description + Dialogue and check which 1-3 characters appear in it — or let AI draft everything. Either way, everything stays editable before you save.
+                            This reel needs {{ $data['sceneCount'] }} content scene(s) at {{ $project->scene_length_seconds }}s each, plus the Start and End scenes below. For each one, fill in Description + Dialogue and check which 1-3 characters appear in it — or let AI draft everything. Either way, everything stays editable before you save.
                         @else
                             Set a target total length and a scene length in Reel Setup above to see how many scenes this reel needs.
                         @endif
@@ -245,8 +230,19 @@
                             <p class="text-secondary mb-0"><a href="{{ globalAsset($project->coverUpload->path) }}" target="_blank">Download current cover</a></p>
                         @endif
                     </div>
+                    <div class="mb-3">
+                        <p class="text-secondary mb-1" style="font-size:13px;">Start Scene — the intro, telling the viewer what this video is about, closing with the Hook above.</p>
+                        <div id="startSceneContainer"></div>
+                    </div>
+
                     <div id="scenesContainer" class="d-flex flex-column gap-3"></div>
                     <button type="button" id="addSceneBtn" class="btn btn-sm btn-outline-secondary mt-3">+ Add Scene</button>
+
+                    <div class="mt-3">
+                        <p class="text-secondary mb-1" style="font-size:13px;">End Scene — the send-off, closing with the reel's End Hook (if set, under "other options" in Reel Setup above).</p>
+                        <div id="endSceneContainer"></div>
+                    </div>
+
                     <input type="hidden" name="scenes_json" id="scenesJson">
                     <div class="mt-3 d-flex gap-2">
                         <button type="submit" class="btn btn-lg ot-btn-primary">Save Scenes &amp; Download Script</button>
@@ -261,20 +257,22 @@
 
     <script>
         (function () {
-            var initialScenes = {!! json_encode($data['initialScenesJson']) !!};
+            var initial       = {!! json_encode($data['initialScenesJson']) !!}; // {start, scenes, end}
             var sceneCount    = {{ (int) ($data['sceneCount'] ?? 0) }};
             var availableChars = {!! json_encode($data['availableCharsJson']) !!};
             var MAX_CHARS_PER_SCENE = 3;
             var sceneDownloadUrlTemplate = '{{ route('portal-social-reel-studio.scenes.download-one', [$project->id, '__SCENE_ID__']) }}';
 
-            var container = document.getElementById('scenesContainer');
-            var addSceneBtn = document.getElementById('addSceneBtn');
+            var container      = document.getElementById('scenesContainer');
+            var startContainer = document.getElementById('startSceneContainer');
+            var endContainer   = document.getElementById('endSceneContainer');
+            var addSceneBtn    = document.getElementById('addSceneBtn');
             var scenesJsonInput = document.getElementById('scenesJson');
-            var form = document.getElementById('scenesForm');
+            var form           = document.getElementById('scenesForm');
 
             function characterCheckboxesHtml(uid) {
                 if (!availableChars.length) {
-                    return '<p class="text-secondary mb-0" style="font-size:13px;">No characters picked for this reel yet — add some in Reel Setup above.</p>';
+                    return '<p class="text-secondary mb-0" style="font-size:13px;">No characters set up yet — add some in Reel Characters first.</p>';
                 }
                 return availableChars.map(function (c) {
                     var id = 'sceneChar' + uid + '_' + c.id;
@@ -295,21 +293,25 @@
 
             var sceneUid = 0;
 
-            function addScene(sceneData) {
+            /** Builds one scene box. headerText is only the INITIAL label -
+             *  content scenes get renumbered afterward; Start/End keep
+             *  whatever's passed since there's only ever one of each. */
+            function buildSceneCard(sceneData, headerText, removable) {
                 sceneData = sceneData || { id: null, title: '', description: '', dialogue: '', characters: [] };
                 sceneUid++;
+                var uid = sceneUid;
 
                 var card = document.createElement('div');
                 card.className = 'card p-3';
                 card.dataset.sceneId = sceneData.id || '';
                 card.innerHTML =
                     '<div class="d-flex justify-content-between align-items-center mb-2">' +
-                        '<h5 class="mb-0 scene-number"></h5>' +
+                        '<h5 class="mb-0 scene-number">' + headerText + '</h5>' +
                         '<div class="d-flex gap-2">' +
                             (sceneData.id
                                 ? '<a href="' + sceneDownloadUrlTemplate.replace('__SCENE_ID__', sceneData.id) + '" class="btn btn-sm btn-outline-secondary">Download Script</a>'
                                 : '') +
-                            '<button type="button" class="btn btn-sm btn-outline-danger scene-remove">Remove Scene</button>' +
+                            (removable ? '<button type="button" class="btn btn-sm btn-outline-danger scene-remove">Remove Scene</button>' : '') +
                         '</div>' +
                     '</div>' +
                     '<div class="mb-2">' +
@@ -326,13 +328,15 @@
                     '</div>' +
                     '<div>' +
                         '<label class="form-label">Characters in this scene (up to 3)</label>' +
-                        '<div class="scene-characters-box">' + characterCheckboxesHtml(sceneUid) + '</div>' +
+                        '<div class="scene-characters-box">' + characterCheckboxesHtml(uid) + '</div>' +
                     '</div>';
 
                 card.querySelector('.scene-title').value = sceneData.title || '';
                 card.querySelector('.scene-description').value = sceneData.description || '';
                 card.querySelector('.scene-dialogue').value = sceneData.dialogue || '';
-                card.querySelector('.scene-remove').addEventListener('click', function () { card.remove(); renumberScenes(); });
+                if (removable) {
+                    card.querySelector('.scene-remove').addEventListener('click', function () { card.remove(); renumberScenes(); });
+                }
 
                 var checkedIds = (sceneData.characters || []).map(String);
                 card.querySelectorAll('.scene-character').forEach(function (box) {
@@ -341,7 +345,11 @@
                 });
                 enforceCharacterLimit(card);
 
-                container.appendChild(card);
+                return card;
+            }
+
+            function addScene(sceneData) {
+                container.appendChild(buildSceneCard(sceneData, '', true));
                 renumberScenes();
             }
 
@@ -351,10 +359,27 @@
                 });
             }
 
+            function collectCard(card) {
+                var characters = [];
+                card.querySelectorAll('.scene-character:checked').forEach(function (box) {
+                    characters.push(parseInt(box.value, 10));
+                });
+                return {
+                    id: card.dataset.sceneId || null,
+                    title: card.querySelector('.scene-title').value,
+                    description: card.querySelector('.scene-description').value,
+                    dialogue: card.querySelector('.scene-dialogue').value,
+                    characters: characters
+                };
+            }
+
             addSceneBtn.addEventListener('click', function () { addScene(); });
 
-            if (initialScenes.length) {
-                initialScenes.forEach(addScene);
+            startContainer.appendChild(buildSceneCard(initial.start, 'Start Scene', false));
+            endContainer.appendChild(buildSceneCard(initial.end, 'End Scene', false));
+
+            if (initial.scenes.length) {
+                initial.scenes.forEach(addScene);
             } else if (sceneCount) {
                 for (var i = 0; i < sceneCount; i++) { addScene(); }
             } else {
@@ -364,19 +389,13 @@
             form.addEventListener('submit', function () {
                 var scenes = [];
                 container.querySelectorAll(':scope > .card').forEach(function (card) {
-                    var characters = [];
-                    card.querySelectorAll('.scene-character:checked').forEach(function (box) {
-                        characters.push(parseInt(box.value, 10));
-                    });
-                    scenes.push({
-                        id: card.dataset.sceneId || null,
-                        title: card.querySelector('.scene-title').value,
-                        description: card.querySelector('.scene-description').value,
-                        dialogue: card.querySelector('.scene-dialogue').value,
-                        characters: characters
-                    });
+                    scenes.push(collectCard(card));
                 });
-                scenesJsonInput.value = JSON.stringify(scenes);
+                scenesJsonInput.value = JSON.stringify({
+                    start: collectCard(startContainer.querySelector('.card')),
+                    scenes: scenes,
+                    end: collectCard(endContainer.querySelector('.card'))
+                });
             });
         })();
 
