@@ -106,18 +106,19 @@
                     <table class="ot-basic-table ot-table-bg bn-reels-table">
                         <colgroup>
                             @if ($showBulk)<col style="width:4%">@endif
-                            <col style="width:7%">
+                            <col style="width:6%">
                             <col style="width:5%">
+                            <col style="width:12%">
+                            <col style="width:7%">
+                            <col style="width:7%">
                             <col style="width:11%">
-                            <col style="width:9%">
                             <col style="width:7%">
-                            <col style="width:9%">
+                            <col style="width:7%">
+                            <col style="width:7%">
+                            <col style="width:7%">
+                            <col style="width:7%">
                             <col style="width:7%">
                             <col style="width:6%">
-                            <col style="width:8%">
-                            <col style="width:8%">
-                            <col style="width:6%">
-                            <col style="width:13%">
                         </colgroup>
                         <thead class="thead">
                             <tr>
@@ -127,10 +128,11 @@
                                 <th>Series</th>
                                 <th>Code</th>
                                 <th>Topic</th>
-                                <th>Hook</th>
                                 <th>Suggested by</th>
-                                <th>Status</th>
+                                <th>Approve</th>
+                                <th>Assign</th>
                                 <th>Deadline</th>
+                                <th>Reel Setup</th>
                                 <th>Prompt</th>
                                 <th>Canva link</th>
                                 <th>Drive link</th>
@@ -141,6 +143,7 @@
                         <tbody class="tbody">
                             @forelse ($data['reels'] as $reel)
                                 @php($staff = optional($reel->suggestedBy)->staff)
+                                @php($isSuggested = $reel->status === \App\Models\Portal\PortalReel::SUGGESTED)
                                 <tr class="{{ $reel->rowStateClass() }}">
                                     @if ($showBulk)
                                         <td><input type="checkbox" class="bn-reel-check" value="{{ $reel->id }}"></td>
@@ -158,20 +161,60 @@
                                         <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="bn-reel-title">{{ $reel->title }}</a>
                                     </td>
                                     <td>
-                                        @if ($reel->hook)
-                                            <span class="bn-reel-hook" title="{{ $reel->hook }}">{{ \Illuminate\Support\Str::limit($reel->hook, 60) }}</span>
-                                        @else
-                                            —
-                                        @endif
-                                    </td>
-                                    <td>
                                         {{ optional($reel->suggestedBy)->name ?: '—' }}
                                         @if (optional($staff?->designation)->name)
                                             <div class="bn-reel-sub">{{ $staff->designation->name }}</div>
                                         @endif
                                     </td>
-                                    <td><span class="{{ $reel->statusBadgeClass() }}">{{ $reel->statusLabel() }}</span></td>
-                                    <td>{{ $reel->deadline?->format('d M Y') ?: '—' }}</td>
+                                    <td>
+                                        @if ($isSuggested && $data['canApprove'])
+                                            <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" class="mb-1">
+                                                @csrf
+                                                <input type="hidden" name="status" value="accepted">
+                                                <button type="submit" class="btn btn-sm ot-btn-primary w-100">Approve</button>
+                                            </form>
+                                            <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" onsubmit="return confirm('Discard this suggestion?');">
+                                                @csrf
+                                                <input type="hidden" name="status" value="rejected">
+                                                <button type="submit" class="btn btn-sm btn-outline-danger w-100">Discard</button>
+                                            </form>
+                                        @elseif ($isSuggested)
+                                            <span class="badge-basic-secondary-text">Suggested</span>
+                                        @else
+                                            <span class="{{ $reel->statusBadgeClass() }}">{{ $reel->statusLabel() }}</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($data['canAssign'] && !$isSuggested)
+                                            <form action="{{ route('portal-social-reels.assign', $reel->id) }}" method="post" class="bn-inline-assign-form">
+                                                @csrf
+                                                <select name="assigned_to" class="form-control ot-input form-control-sm" {{ $reel->is_open_paid ? 'disabled' : '' }} onchange="this.form.submit()">
+                                                    <option value="">— Select —</option>
+                                                    @foreach ($data['contentTeam'] as $s)
+                                                        <option value="{{ $s->id }}" {{ (int) $reel->assigned_to === $s->id ? 'selected' : '' }}>{{ $s->first_name }} {{ $s->last_name }}</option>
+                                                    @endforeach
+                                                </select>
+                                                <input type="hidden" name="deadline" value="{{ $reel->deadline?->format('Y-m-d') }}">
+                                            </form>
+                                        @else
+                                            {{ $reel->is_open_paid ? 'Open — Paid Task' : (optional($reel->assignee)->first_name ? trim($reel->assignee->first_name . ' ' . $reel->assignee->last_name) : '—') }}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($data['canAssign'] && !$isSuggested)
+                                            <form action="{{ route('portal-social-reels.assign', $reel->id) }}" method="post" class="bn-inline-deadline-form">
+                                                @csrf
+                                                <input type="hidden" name="assigned_to" value="{{ $reel->assigned_to }}">
+                                                @if ($reel->is_open_paid)<input type="hidden" name="open_paid" value="1">@endif
+                                                <input type="date" name="deadline" class="form-control ot-input form-control-sm" value="{{ $reel->deadline?->format('Y-m-d') }}" onchange="this.form.submit()">
+                                            </form>
+                                        @else
+                                            {{ $reel->deadline?->format('d M Y') ?: '—' }}
+                                        @endif
+                                    </td>
+                                    <td>
+                                        <a href="{{ route('portal-social-reels.setup', $reel->id) }}" class="btn btn-sm ot-btn-primary">Reel Setup</a>
+                                    </td>
                                     <td>
                                         @if ($reel->prompt_link)
                                             <a href="{{ $reel->prompt_link }}" target="_blank" class="btn btn-sm btn-outline-secondary">Download{{ $reel->prompt_approved_at ? '' : ' (pending)' }}</a>
@@ -180,15 +223,19 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($reel->canva_link)
-                                            <a href="{{ $reel->canva_link }}" target="_blank" title="{{ $reel->canva_approved_at ? 'Approved' : 'Pending approval' }}">{{ $reel->canva_approved_at ? 'Approved' : 'Pending' }}</a>
+                                        @if ($reel->canva_approved_at)
+                                            <a href="{{ $reel->canva_link }}" target="_blank" class="text-success" title="Approved">Approved</a>
+                                        @elseif ($reel->canva_link)
+                                            <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="text-warning" title="Pending approval — click to review">Pending</a>
                                         @else
                                             —
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($reel->drive_link)
-                                            <a href="{{ $reel->drive_link }}" target="_blank" title="{{ $reel->video_approved_at ? 'Approved' : 'Pending approval' }}">{{ $reel->video_approved_at ? 'Approved' : 'Pending' }}</a>
+                                        @if ($reel->video_approved_at)
+                                            <a href="{{ $reel->drive_link }}" target="_blank" class="text-success" title="Approved">Approved</a>
+                                        @elseif ($reel->drive_link)
+                                            <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="text-warning" title="Pending approval — click to review">Pending</a>
                                         @else
                                             —
                                         @endif
@@ -203,15 +250,6 @@
                                         @endif
                                     </td>
                                     <td class="action bn-reel-actions">
-                                        @php($needsAssignment = $reel->status !== \App\Models\Portal\PortalReel::SUGGESTED && !$reel->is_open_paid && !$reel->assigned_to)
-                                        @if ($reel->status === \App\Models\Portal\PortalReel::SUGGESTED || $needsAssignment)
-                                            <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a>
-                                        @else
-                                            <a href="{{ route('portal-social-reels.setup', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a>
-                                            @if ($data['canAssign'])
-                                                <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="btn btn-sm btn-outline-secondary">Reassign</a>
-                                            @endif
-                                        @endif
                                         @if ($data['canManage'])
                                             <form action="{{ route('portal-social-reels.destroy', $reel->id) }}" method="post" class="d-inline" onsubmit="return confirm('Remove this reel/topic?');">
                                                 @csrf
@@ -237,8 +275,8 @@
         .bn-reel-title { font-weight: 600; display: block; word-break: break-word; }
         .bn-series-tag { font-family: "Lexend", sans-serif; font-weight: 600; font-size: 11px; border-radius: 14px; padding: 3px 10px; background: rgba(var(--bn-turquoise-rgb), .14); color: var(--bn-turquoise-text, #007585); white-space: normal; display: inline-block; line-height: 1.3; }
         .dark-theme .bn-series-tag { background: rgba(0, 151, 178, .22); color: var(--bn-turquoise-light); }
-        .bn-reel-hook { color: var(--bn-muted, #8a8fa3); font-size: .85rem; font-style: italic; word-break: break-word; }
         .bn-reel-sub { color: var(--bn-muted, #8a8fa3); font-size: .78rem; margin-top: .15rem; }
+        .bn-inline-assign-form select, .bn-inline-deadline-form input { min-width: 120px; }
         .bn-reel-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem; }
         .bn-reels-table { table-layout: fixed; width: 100%; }
         .bn-reels-table td { vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }

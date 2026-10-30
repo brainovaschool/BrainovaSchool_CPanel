@@ -330,7 +330,7 @@ class SocialController extends Controller
             abort(403);
         }
         $request->validate([
-            'stage' => 'required|in:prompt,video',
+            'stage' => 'required|in:prompt,canva,video',
             'link'  => 'required|string|max:500',
         ]);
 
@@ -344,11 +344,12 @@ class SocialController extends Controller
             abort(403, 'Only admin/coordinator can approve.');
         }
         $request->validate([
-            'stage'    => 'required|in:prompt,video',
-            'feedback' => 'nullable|string|max:1000',
+            'stage'         => 'required|in:prompt,canva,video',
+            'feedback'      => 'nullable|string|max:1000',
+            'feedback_file' => 'nullable|file|max:10240',
         ]);
 
-        $result = $this->repo->approveStage((int) $id, $request->stage, Auth::id(), $request->feedback);
+        $result = $this->repo->approveStage((int) $id, $request->stage, Auth::id(), $request->feedback, $request->file('feedback_file'));
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

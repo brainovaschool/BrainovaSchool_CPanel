@@ -95,6 +95,21 @@ class PortalReel extends Model
         return $this->belongsTo(Upload::class, 'thumb_upload_id');
     }
 
+    public function promptFeedbackUpload()
+    {
+        return $this->belongsTo(Upload::class, 'prompt_feedback_upload_id');
+    }
+
+    public function canvaFeedbackUpload()
+    {
+        return $this->belongsTo(Upload::class, 'canva_feedback_upload_id');
+    }
+
+    public function videoFeedbackUpload()
+    {
+        return $this->belongsTo(Upload::class, 'video_feedback_upload_id');
+    }
+
     /** The Reel Studio project (scenes, AI-generated prompts) this
      *  suggestion's setup work happens in - null until an admin opens it
      *  for the first time (see SocialRepository::openOrCreateReelProject()). */

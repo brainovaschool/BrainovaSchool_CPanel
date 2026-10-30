@@ -116,6 +116,23 @@ class ReelStudioRepository
         $this->socialRepo->syncStageLinkFromReelStudio($reel, 'video', $request->drive_link);
     }
 
+    /** Title/Hook are edited here in Reel Setup, but the Reels list, the
+     *  reel's own page, and everywhere else that reel is shown all read
+     *  them off portal_reels directly - so a linked project's Reel Setup
+     *  save keeps that copy in sync instead of silently drifting apart. */
+    private function syncTitleHookToReel(ReelProject $project): void
+    {
+        $reel = $project->portalReel;
+        if (!$reel) {
+            return;
+        }
+        if ($reel->title !== $project->title || $reel->hook !== $project->hook) {
+            $reel->title = $project->title;
+            $reel->hook  = $project->hook;
+            $reel->save();
+        }
+    }
+
     /** $existing: a File-type custom field with no new upload on this
      *  submit keeps whatever it already had instead of being wiped. */
     private function collectCustomFieldValues($request, array $existing = []): array
@@ -182,6 +199,8 @@ class ReelStudioRepository
             $project->cover_upload_id = $this->UploadImageCreate($request->file('cover_file'), 'uploads/reel-projects');
         }
         $project->save();
+
+        $this->syncTitleHookToReel($project);
 
         $this->applyCanvaDriveLinks($request, $project);
 

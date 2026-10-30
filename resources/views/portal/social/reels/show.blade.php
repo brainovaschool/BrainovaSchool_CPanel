@@ -71,6 +71,7 @@
                             </p>
                         @endif
                         @if ($reel->prompt_feedback)<p class="mb-1 text-secondary"><strong>Prompt feedback:</strong> {{ $reel->prompt_feedback }}</p>@endif
+                        @if ($reel->promptFeedbackUpload)<p class="mb-1"><a href="{{ globalAsset($reel->promptFeedbackUpload->path) }}" target="_blank">Download prompt feedback file</a></p>@endif
                         @if ($reel->promptUpload)<p><strong>Prompt file:</strong> <a href="{{ globalAsset($reel->promptUpload->path) }}" target="_blank">Download</a></p>@endif
                         @if ($reel->thumbUpload)<p><strong>Thumbnail:</strong><br><img src="{{ globalAsset($reel->thumbUpload->path) }}" alt="Thumbnail for {{ $reel->title }}" style="max-width:200px;border-radius:8px"></p>@endif
                         @if ($reel->canva_link)
@@ -79,12 +80,14 @@
                             </p>
                         @endif
                         @if ($reel->canva_feedback)<p class="mb-1 text-secondary"><strong>Canva feedback:</strong> {{ $reel->canva_feedback }}</p>@endif
+                        @if ($reel->canvaFeedbackUpload)<p class="mb-1"><a href="{{ globalAsset($reel->canvaFeedbackUpload->path) }}" target="_blank">Download Canva feedback file</a></p>@endif
                         @if ($reel->drive_link)
                             <p class="mb-1"><strong>Video link:</strong> <a href="{{ $reel->drive_link }}" target="_blank">{{ $reel->drive_link }}</a>
                                 @if ($reel->video_approved_at) <span class="text-success">— approved</span> @else <span class="text-secondary">— pending approval</span> @endif
                             </p>
                         @endif
                         @if ($reel->video_feedback)<p class="mb-1 text-secondary"><strong>Video feedback:</strong> {{ $reel->video_feedback }}</p>@endif
+                        @if ($reel->videoFeedbackUpload)<p class="mb-1"><a href="{{ globalAsset($reel->videoFeedbackUpload->path) }}" target="_blank">Download video feedback file</a></p>@endif
                         @if ($reel->note)<p class="mt-3"><strong>Note:</strong> {{ $reel->note }}</p>@endif
                         @foreach ($data['customFields'] ?? [] as $field)
                             @php($value = ($reel->custom_fields ?? [])[$field->key] ?? null)
@@ -222,11 +225,12 @@
                             <div class="card-header"><h4 class="mb-0">Approve prompt</h4></div>
                             <div class="card-body">
                                 <p class="mb-2"><a href="{{ $reel->prompt_link }}" target="_blank">{{ $reel->prompt_link }}</a></p>
-                                <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post">
+                                <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" enctype="multipart/form-data">
                                     @csrf
                                     <input type="hidden" name="stage" value="prompt">
                                     <label class="form-label">Feedback (optional)</label>
                                     <textarea name="feedback" class="form-control ot-input mb-2" rows="2">{{ $reel->prompt_feedback }}</textarea>
+                                    @include('portal.social.reels._feedback-file-input', ['id' => 'promptFeedbackFile'])
                                     <button type="submit" class="btn ot-btn-primary w-100">Approve prompt</button>
                                 </form>
                             </div>
@@ -238,11 +242,12 @@
                             <div class="card-header"><h4 class="mb-0">Approve Canva</h4></div>
                             <div class="card-body">
                                 <p class="mb-2"><a href="{{ $reel->canva_link }}" target="_blank">{{ $reel->canva_link }}</a></p>
-                                <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post">
+                                <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" enctype="multipart/form-data">
                                     @csrf
                                     <input type="hidden" name="stage" value="canva">
                                     <label class="form-label">Feedback (optional)</label>
                                     <textarea name="feedback" class="form-control ot-input mb-2" rows="2">{{ $reel->canva_feedback }}</textarea>
+                                    @include('portal.social.reels._feedback-file-input', ['id' => 'canvaFeedbackFile'])
                                     <button type="submit" class="btn ot-btn-primary w-100">Approve Canva</button>
                                 </form>
                             </div>
@@ -254,11 +259,12 @@
                             <div class="card-header"><h4 class="mb-0">Approve video</h4></div>
                             <div class="card-body">
                                 <p class="mb-2"><a href="{{ $reel->drive_link }}" target="_blank">{{ $reel->drive_link }}</a></p>
-                                <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post">
+                                <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" enctype="multipart/form-data">
                                     @csrf
                                     <input type="hidden" name="stage" value="video">
                                     <label class="form-label">Feedback (optional)</label>
                                     <textarea name="feedback" class="form-control ot-input mb-2" rows="2">{{ $reel->video_feedback }}</textarea>
+                                    @include('portal.social.reels._feedback-file-input', ['id' => 'videoFeedbackFile'])
                                     <button type="submit" class="btn ot-btn-primary w-100">Approve video</button>
                                 </form>
                             </div>
@@ -325,6 +331,19 @@
             // Leave Request role toggle), but a plain checkbox is native.
             openPaid.addEventListener('change', syncDisabled);
         })();
+
+        // main.js hides every input[type=file] on every page - clicking the
+        // visible "Browse" <label> still opens the picker natively via its
+        // for="", so this only needs to mirror the chosen filename into the
+        // readonly text box next to it.
+        document.addEventListener('change', function (e) {
+            if (!e.target.classList.contains('bn-file-input')) return;
+            var wrapper = e.target.closest('.ot_fileUploader');
+            var placeholder = wrapper ? wrapper.querySelector('.bn-file-placeholder') : null;
+            if (placeholder) {
+                placeholder.value = e.target.files.length ? e.target.files[0].name : '';
+            }
+        });
     </script>
     @endpush
 @endsection

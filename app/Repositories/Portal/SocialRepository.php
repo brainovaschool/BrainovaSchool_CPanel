@@ -551,12 +551,14 @@ class SocialRepository
         return $this->responseWithSuccess('Saved.', []);
     }
 
-    public function approveStage(int $id, string $stage, int $reviewerUserId, ?string $feedback = null): array
+    public function approveStage(int $id, string $stage, int $reviewerUserId, ?string $feedback = null, $feedbackFile = null): array
     {
         $reel = PortalReel::find($id);
         if (!$reel) {
             return $this->responseWithError(___('alert.not_found'), []);
         }
+
+        $uploadId = $feedbackFile ? $this->UploadImageCreate($feedbackFile, 'uploads/portal-reels') : null;
 
         if ($stage === 'prompt') {
             if (!$reel->prompt_link) {
@@ -564,6 +566,7 @@ class SocialRepository
             }
             $reel->prompt_approved_at = now();
             $reel->prompt_feedback    = $feedback;
+            if ($uploadId) { $reel->prompt_feedback_upload_id = $uploadId; }
             $this->notifyAssignee($reel, 'Prompt approved', 'You can start on the Canva link now.');
         } elseif ($stage === 'canva') {
             if (!$reel->canva_link) {
@@ -571,6 +574,7 @@ class SocialRepository
             }
             $reel->canva_approved_at = now();
             $reel->canva_feedback    = $feedback;
+            if ($uploadId) { $reel->canva_feedback_upload_id = $uploadId; }
             $this->notifyAssignee($reel, 'Canva approved', 'Go ahead and upload the video to Drive now.');
         } elseif ($stage === 'video') {
             if (!$reel->drive_link) {
@@ -578,6 +582,7 @@ class SocialRepository
             }
             $reel->video_approved_at = now();
             $reel->video_feedback    = $feedback;
+            if ($uploadId) { $reel->video_feedback_upload_id = $uploadId; }
             $reel->status            = PortalReel::READY;
         } else {
             return $this->responseWithError('Not a valid stage.', []);
