@@ -468,11 +468,12 @@ class SocialRepository
         }
     }
 
-    /** The assignee submits a link for whichever stage is next - the
-     *  video stage is blocked until the prompt is approved, matching
-     *  "share prompt first, it gets approved, then generate and share
-     *  the video". Resubmitting a stage clears its own approval (a new
-     *  link needs a fresh look), never the other stage's. */
+    /** The assignee submits a link for whichever stage is next - three
+     *  stages in order (Prompt -> Canva -> Video/Drive), each blocked
+     *  until the previous one is approved. Resubmitting a stage clears
+     *  its own approval (a new link needs a fresh look), never another
+     *  stage's. Notifies whoever last reviewed this reel that something's
+     *  waiting on them. */
     public function submitStageLink(int $id, string $stage, string $link, int $staffId): array
     {
         $reel = PortalReel::find($id);
@@ -483,15 +484,60 @@ class SocialRepository
             return $this->responseWithError("This isn't your reel/topic.", []);
         }
 
+        $result = $this->recordStageLink($reel, $stage, $link);
+        if (!$result['status']) {
+            return $result;
+        }
+
+        return $this->responseWithSuccess('Submitted for approval.', []);
+    }
+
+    /** "Send Prompt for Approval" in Reel Studio - always (re)submits the
+     *  Reel Studio script download as this reel's prompt link, clears any
+     *  previous approval, and notifies the reviewer. Unlike
+     *  syncStageLinkFromReelStudio() below this never skips: the download
+     *  URL itself is stable even when the scenes behind it changed, so
+     *  "nothing changed" can't be inferred from the link text here. */
+    public function sendPromptFromReelStudio(PortalReel $reel, string $scriptUrl): array
+    {
+        return $this->recordStageLink($reel, 'prompt', $scriptUrl);
+    }
+
+    /** Same stage-link write as submitStageLink(), minus the "is this
+     *  your reel" ownership check - used when Reel Studio's own Reel
+     *  Setup save propagates a Canva/Drive link, since ReelStudioRepository
+     *  already ran its own (broader) authorization check. Silently skips
+     *  if the stage isn't unlocked yet or the link hasn't actually
+     *  changed, rather than failing the whole Reel Setup save over it. */
+    public function syncStageLinkFromReelStudio(PortalReel $reel, string $stage, ?string $link): void
+    {
+        $link = trim((string) $link);
+        $current = $stage === 'canva' ? $reel->canva_link : $reel->drive_link;
+        if ($link === '' || $link === $current) {
+            return;
+        }
+        $this->recordStageLink($reel, $stage, $link);
+    }
+
+    /** The actual field-level write + gating + notification for one stage
+     *  submission, shared by both entry points above. */
+    private function recordStageLink(PortalReel $reel, string $stage, string $link): array
+    {
         if ($stage === 'prompt') {
             $reel->prompt_link        = $link;
             $reel->prompt_approved_at = null;
             if ($reel->status === PortalReel::ACCEPTED) {
                 $reel->status = PortalReel::PRODUCTION;
             }
-        } elseif ($stage === 'video') {
+        } elseif ($stage === 'canva') {
             if (!$reel->prompt_approved_at) {
                 return $this->responseWithError('The prompt needs to be approved first.', []);
+            }
+            $reel->canva_link        = $link;
+            $reel->canva_approved_at = null;
+        } elseif ($stage === 'video') {
+            if (!$reel->canva_approved_at) {
+                return $this->responseWithError('The Canva link needs to be approved first.', []);
             }
             $reel->drive_link       = $link;
             $reel->video_approved_at = null;
@@ -500,7 +546,9 @@ class SocialRepository
         }
         $reel->save();
 
-        return $this->responseWithSuccess('Submitted for approval.', []);
+        $this->notifyReviewer($reel, ucfirst($stage) . ' submitted for review', $reel->title);
+
+        return $this->responseWithSuccess('Saved.', []);
     }
 
     public function approveStage(int $id, string $stage, int $reviewerUserId, ?string $feedback = null): array
@@ -516,6 +564,14 @@ class SocialRepository
             }
             $reel->prompt_approved_at = now();
             $reel->prompt_feedback    = $feedback;
+            $this->notifyAssignee($reel, 'Prompt approved', 'You can start on the Canva link now.');
+        } elseif ($stage === 'canva') {
+            if (!$reel->canva_link) {
+                return $this->responseWithError('No Canva link to approve yet.', []);
+            }
+            $reel->canva_approved_at = now();
+            $reel->canva_feedback    = $feedback;
+            $this->notifyAssignee($reel, 'Canva approved', 'Go ahead and upload the video to Drive now.');
         } elseif ($stage === 'video') {
             if (!$reel->drive_link) {
                 return $this->responseWithError('No video link to approve yet.', []);
@@ -531,6 +587,24 @@ class SocialRepository
         $reel->save();
 
         return $this->responseWithSuccess(ucfirst($stage) . ' approved.', []);
+    }
+
+    /** Lets whoever last reviewed this reel know something's waiting on
+     *  them - falls back to nothing (not every reel has a reviewer yet,
+     *  e.g. one approved in bulk) rather than guessing a recipient. */
+    private function notifyReviewer(PortalReel $reel, string $title, string $message): void
+    {
+        if ($reel->reviewed_by) {
+            PortalNotifier::send((int) $reel->reviewed_by, $title, $message, route('portal-social-reels.show', $reel->id));
+        }
+    }
+
+    private function notifyAssignee(PortalReel $reel, string $title, string $message): void
+    {
+        $userId = optional($reel->assignee)->user_id;
+        if ($userId) {
+            PortalNotifier::send((int) $userId, $title, $message, route('portal-social-reels.show', $reel->id));
+        }
     }
 
     /** Who shows up in the "Assign to" dropdown - every staff member

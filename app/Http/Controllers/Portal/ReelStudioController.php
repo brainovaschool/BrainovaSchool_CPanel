@@ -145,6 +145,19 @@ class ReelStudioController extends Controller
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    /** "Send Prompt for Approval" — submits the script download as this
+     *  reel's prompt link and notifies whoever reviews it. */
+    public function sendPromptForApproval($id)
+    {
+        $project = $this->repo->find((int) $id);
+        if (!$project || !$this->authorizeProject($project)) {
+            abort(404);
+        }
+
+        $result = $this->repo->sendPromptForApproval((int) $id);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
     public function destroy($id)
     {
         $project = $this->repo->find((int) $id);

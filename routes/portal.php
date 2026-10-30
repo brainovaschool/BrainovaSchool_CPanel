@@ -154,6 +154,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::put('/update/{id}', 'update')->name('update')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
                     Route::delete('/{id}',     'destroy')->name('destroy')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
                     Route::post('/{id}/scenes/create-from-zero', 'createScenesFromZero')->name('scenes.create-from-zero')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
+                    Route::post('/{id}/send-prompt-for-approval', 'sendPromptForApproval')->name('send-prompt-for-approval')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
 
                     Route::post('/{projectId}/scenes', 'storeScenes')->name('scenes.store')->middleware('PermissionCheck:reel_studio_access', 'DemoCheck');
                     Route::get('/{projectId}/scenes/download', 'downloadScript')->name('scenes.download')->middleware('PermissionCheck:reel_studio_access');

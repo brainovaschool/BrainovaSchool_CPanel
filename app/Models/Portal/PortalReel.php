@@ -29,6 +29,7 @@ class PortalReel extends Model
         'deadline'           => 'date',
         'reviewed_at'        => 'datetime',
         'prompt_approved_at' => 'datetime',
+        'canva_approved_at'  => 'datetime',
         'video_approved_at'  => 'datetime',
         'is_open_paid'       => 'boolean',
         'custom_fields'      => 'array',
@@ -120,8 +121,14 @@ class PortalReel extends Model
         if ($this->drive_link) {
             return 'Video pending approval';
         }
+        if ($this->canva_approved_at) {
+            return 'Canva approved — awaiting video';
+        }
+        if ($this->canva_link) {
+            return 'Canva pending approval';
+        }
         if ($this->prompt_approved_at) {
-            return 'Prompt approved — awaiting video';
+            return 'Prompt approved — awaiting Canva';
         }
         if ($this->prompt_link) {
             return 'Prompt pending approval';
@@ -151,10 +158,10 @@ class PortalReel extends Model
         if ($this->video_approved_at) {
             return 'badge-basic-success-text';
         }
-        if ($this->drive_link || $this->prompt_link) {
+        if ($this->drive_link || $this->canva_link || $this->prompt_link) {
             return 'badge-basic-warning-text';
         }
-        if ($this->prompt_approved_at) {
+        if ($this->canva_approved_at || $this->prompt_approved_at) {
             return 'badge-basic-info-text';
         }
         if ($this->is_open_paid || $this->assigned_to) {
@@ -182,7 +189,7 @@ class PortalReel extends Model
         if ($this->video_approved_at) {
             return 'bn-row-complete';
         }
-        if ($this->drive_link || $this->prompt_link) {
+        if ($this->drive_link || $this->canva_link || $this->prompt_link) {
             return 'bn-row-in-progress';
         }
         if ($this->deadline || $this->is_open_paid || $this->assigned_to) {
@@ -194,27 +201,4 @@ class PortalReel extends Model
         return '';
     }
 
-    /** Colour for the small "P" (prompt) progress dot on the Reels table. */
-    public function promptBadgeClass(): string
-    {
-        if ($this->prompt_approved_at) {
-            return 'badge-basic-success-text';
-        }
-        if ($this->prompt_link) {
-            return 'badge-basic-warning-text';
-        }
-        return 'badge-basic-secondary-text';
-    }
-
-    /** Colour for the small "V" (video) progress dot on the Reels table. */
-    public function videoBadgeClass(): string
-    {
-        if ($this->video_approved_at) {
-            return 'badge-basic-success-text';
-        }
-        if ($this->drive_link) {
-            return 'badge-basic-warning-text';
-        }
-        return 'badge-basic-secondary-text';
-    }
 }

@@ -26,10 +26,12 @@ class ReelStudioRepository
     private const MAX_SCENE_SECONDS = 10; // Google Flow's hard per-scene limit
 
     private $aiHelperRepo;
+    private $socialRepo;
 
-    public function __construct(AiHelperRepository $aiHelperRepo)
+    public function __construct(AiHelperRepository $aiHelperRepo, SocialRepository $socialRepo)
     {
         $this->aiHelperRepo = $aiHelperRepo;
+        $this->socialRepo   = $socialRepo;
     }
 
     /** Only standalone projects (never linked to a Reels/Content Pool
@@ -91,9 +93,27 @@ class ReelStudioRepository
             'target_duration_seconds'  => $request->target_duration_seconds ?: null,
             'scene_length_seconds'     => $sceneLength,
             'character_ids'            => $characterIds,
-            'canva_link'               => $request->canva_link ?: null,
-            'drive_link'               => $request->drive_link ?: null,
         ];
+    }
+
+    /** Canva/Drive link handling differs by whether this project is linked
+     *  to a suggested Reel: linked ones go through that reel's own
+     *  Prompt -> Canva -> Video approval gate (SocialRepository owns that
+     *  state), so nothing is stored here for them; a standalone project
+     *  has no reviewer workflow at all, so its links just live on itself,
+     *  always editable. */
+    private function applyCanvaDriveLinks($request, ReelProject $project): void
+    {
+        if ($project->isStandalone()) {
+            $project->canva_link = $request->canva_link ?: null;
+            $project->drive_link = $request->drive_link ?: null;
+            $project->save();
+            return;
+        }
+
+        $reel = $project->portalReel;
+        $this->socialRepo->syncStageLinkFromReelStudio($reel, 'canva', $request->canva_link);
+        $this->socialRepo->syncStageLinkFromReelStudio($reel, 'video', $request->drive_link);
     }
 
     /** $existing: a File-type custom field with no new upload on this
@@ -163,23 +183,23 @@ class ReelStudioRepository
         }
         $project->save();
 
-        $this->propagateDriveLink($project);
+        $this->applyCanvaDriveLinks($request, $project);
 
         return $this->responseWithSuccess('Reel project updated.', []);
     }
 
-    /** The Drive link lives on this project, but the Reels list, the
-     *  Production/Upload Plan calendars and anywhere else this reel is
-     *  shown all read portal_reels.drive_link directly - so when this
-     *  project is linked to a suggested Reel, copy it there too. Canva
-     *  link stays on the project only, nothing else reads it. */
-    private function propagateDriveLink(ReelProject $project): void
+    /** "Send Prompt for Approval" in Reel Setup - only meaningful for a
+     *  project linked to a suggested Reel (a standalone one has no
+     *  reviewer to send anything to). */
+    public function sendPromptForApproval(int $projectId): array
     {
-        $reel = $project->portalReel;
-        if ($reel && $reel->drive_link !== $project->drive_link) {
-            $reel->drive_link = $project->drive_link;
-            $reel->save();
+        $project = ReelProject::with('portalReel')->find($projectId);
+        if (!$project || !$project->portalReel) {
+            return $this->responseWithError('This reel has no admin suggestion to send a prompt to.', []);
         }
+
+        $url = route('portal-social-reel-studio.scenes.download', $projectId);
+        return $this->socialRepo->sendPromptFromReelStudio($project->portalReel, $url);
     }
 
     /** Explicit, teacher-triggered reset (a confirm() in the browser warns

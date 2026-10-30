@@ -106,16 +106,18 @@
                     <table class="ot-basic-table ot-table-bg bn-reels-table">
                         <colgroup>
                             @if ($showBulk)<col style="width:4%">@endif
-                            <col style="width:{{ $showBulk ? 7 : 8 }}%">
-                            <col style="width:6%">
-                            <col style="width:{{ $showBulk ? 13 : 14 }}%">
-                            <col style="width:{{ $showBulk ? 14 : 15 }}%">
-                            <col style="width:9%">
+                            <col style="width:7%">
+                            <col style="width:5%">
                             <col style="width:11%">
+                            <col style="width:9%">
+                            <col style="width:7%">
+                            <col style="width:9%">
+                            <col style="width:7%">
+                            <col style="width:6%">
                             <col style="width:8%">
-                            <col style="width:7%">
-                            <col style="width:7%">
-                            <col style="width:{{ $showBulk ? 14 : 15 }}%">
+                            <col style="width:8%">
+                            <col style="width:6%">
+                            <col style="width:13%">
                         </colgroup>
                         <thead class="thead">
                             <tr>
@@ -129,7 +131,9 @@
                                 <th>Suggested by</th>
                                 <th>Status</th>
                                 <th>Deadline</th>
-                                <th>Progress</th>
+                                <th>Prompt</th>
+                                <th>Canva link</th>
+                                <th>Drive link</th>
                                 <th>Upload</th>
                                 <th class="action">{{ ___('common.action') }}</th>
                             </tr>
@@ -169,8 +173,25 @@
                                     <td><span class="{{ $reel->statusBadgeClass() }}">{{ $reel->statusLabel() }}</span></td>
                                     <td>{{ $reel->deadline?->format('d M Y') ?: '—' }}</td>
                                     <td>
-                                        <span class="{{ $reel->promptBadgeClass() }} bn-progress-dot" title="Prompt: {{ $reel->prompt_approved_at ? 'approved' : ($reel->prompt_link ? 'pending approval' : 'not submitted') }}">P</span>
-                                        <span class="{{ $reel->videoBadgeClass() }} bn-progress-dot" title="Video: {{ $reel->video_approved_at ? 'approved' : ($reel->drive_link ? 'pending approval' : 'not submitted') }}">V</span>
+                                        @if ($reel->prompt_link)
+                                            <a href="{{ $reel->prompt_link }}" target="_blank" class="btn btn-sm btn-outline-secondary">Download{{ $reel->prompt_approved_at ? '' : ' (pending)' }}</a>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($reel->canva_link)
+                                            <a href="{{ $reel->canva_link }}" target="_blank" title="{{ $reel->canva_approved_at ? 'Approved' : 'Pending approval' }}">{{ $reel->canva_approved_at ? 'Approved' : 'Pending' }}</a>
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if ($reel->drive_link)
+                                            <a href="{{ $reel->drive_link }}" target="_blank" title="{{ $reel->video_approved_at ? 'Approved' : 'Pending approval' }}">{{ $reel->video_approved_at ? 'Approved' : 'Pending' }}</a>
+                                        @else
+                                            —
+                                        @endif
                                     </td>
                                     <td>
                                         @if ($reel->planned_date)
@@ -187,6 +208,9 @@
                                             <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a>
                                         @else
                                             <a href="{{ route('portal-social-reels.setup', $reel->id) }}" class="btn btn-sm ot-btn-primary">Open</a>
+                                            @if ($data['canAssign'])
+                                                <a href="{{ route('portal-social-reels.show', $reel->id) }}" class="btn btn-sm btn-outline-secondary">Reassign</a>
+                                            @endif
                                         @endif
                                         @if ($data['canManage'])
                                             <form action="{{ route('portal-social-reels.destroy', $reel->id) }}" method="post" class="d-inline" onsubmit="return confirm('Remove this reel/topic?');">
@@ -215,7 +239,6 @@
         .dark-theme .bn-series-tag { background: rgba(0, 151, 178, .22); color: var(--bn-turquoise-light); }
         .bn-reel-hook { color: var(--bn-muted, #8a8fa3); font-size: .85rem; font-style: italic; word-break: break-word; }
         .bn-reel-sub { color: var(--bn-muted, #8a8fa3); font-size: .78rem; margin-top: .15rem; }
-        .bn-progress-dot { display: inline-flex; align-items: center; justify-content: center; width: 1.5rem; height: 1.5rem; border-radius: 50%; font-size: .72rem; font-weight: 700; margin-right: .35rem; }
         .bn-reel-actions { display: flex; flex-wrap: wrap; align-items: flex-start; gap: .4rem; }
         .bn-reels-table { table-layout: fixed; width: 100%; }
         .bn-reels-table td { vertical-align: top; word-wrap: break-word; overflow-wrap: break-word; }

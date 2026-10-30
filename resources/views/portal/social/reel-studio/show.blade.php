@@ -38,12 +38,25 @@
             <div class="card ot-card mb-3">
                 <div class="card-header"><h4 class="mb-0">From suggestion</h4></div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row mb-3">
                         <div class="col-md-4"><strong>Deadline:</strong> {{ $linkedReel->deadline?->format('d M Y') ?: '—' }}</div>
                         <div class="col-md-4"><strong>Suggested by:</strong> {{ optional($linkedReel->suggestedBy)->name ?: '—' }}</div>
                         <div class="col-md-4"><strong>Assigned to:</strong> {{ optional($linkedReel->assignee)->first_name ? trim($linkedReel->assignee->first_name . ' ' . $linkedReel->assignee->last_name) : '—' }}</div>
                         <div class="col-md-4"><a href="{{ route('portal-social-reels.show', $linkedReel->id) }}">Open the reel's own page</a></div>
                     </div>
+
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <span class="badge-basic-info-text">{{ $linkedReel->statusLabel() }}</span>
+                        <form action="{{ route('portal-social-reel-studio.send-prompt-for-approval', $project->id) }}" method="post">
+                            @csrf
+                            @if ($project->scenes->isEmpty())
+                                <button type="submit" class="btn btn-sm ot-btn-primary" disabled title="Save scenes first">Send Prompt for Approval</button>
+                            @else
+                                <button type="submit" class="btn btn-sm ot-btn-primary">Send Prompt for Approval</button>
+                            @endif
+                        </form>
+                    </div>
+                    <p class="text-secondary mb-0 mt-1" style="font-size:13px;">Sends the current script (Download Script, in the Scenes section below) for approval. Canva link below unlocks once it's approved.</p>
                 </div>
             </div>
         @endif
@@ -130,15 +143,33 @@
                             </div>
                         </div>
 
+                        @php
+                            $canvaLocked = !$isStandalone && !optional($linkedReel)->prompt_approved_at;
+                            $driveLocked = !$isStandalone && !optional($linkedReel)->canva_approved_at;
+                            $canvaValue  = $isStandalone ? $project->canva_link : optional($linkedReel)->canva_link;
+                            $driveValue  = $isStandalone ? $project->drive_link : optional($linkedReel)->drive_link;
+                        @endphp
                         <div class="col-12 col-md-6 mb-3">
                             <label class="form-label">Canva link</label>
-                            <input type="url" name="canva_link" class="form-control ot-input" placeholder="https://..." value="{{ $project->canva_link }}">
-                            <p class="text-secondary mb-0 mt-1">Add this once the reel is finished — stays here on Reel Setup only.</p>
+                            <input type="url" name="canva_link" class="form-control ot-input" placeholder="https://..." value="{{ $canvaValue }}" {{ $canvaLocked ? 'disabled' : '' }}>
+                            <p class="text-secondary mb-0 mt-1">
+                                @if ($canvaLocked)
+                                    Locked until the Prompt is approved.
+                                @else
+                                    Add this once the reel is finished, then Save Reel Setup.
+                                @endif
+                            </p>
                         </div>
                         <div class="col-12 col-md-6 mb-3">
                             <label class="form-label">Drive link</label>
-                            <input type="url" name="drive_link" class="form-control ot-input" placeholder="https://..." value="{{ $project->drive_link }}">
-                            <p class="text-secondary mb-0 mt-1">Add this once the reel is finished — also saved on the reel itself, so it shows up wherever this reel appears.</p>
+                            <input type="url" name="drive_link" class="form-control ot-input" placeholder="https://..." value="{{ $driveValue }}" {{ $driveLocked ? 'disabled' : '' }}>
+                            <p class="text-secondary mb-0 mt-1">
+                                @if ($driveLocked)
+                                    Locked until the Canva link is approved.
+                                @else
+                                    Add this once uploaded, then Save Reel Setup — also saved on the reel itself, so it shows up wherever this reel appears.
+                                @endif
+                            </p>
                         </div>
 
                         @foreach ($otherFields as $field)

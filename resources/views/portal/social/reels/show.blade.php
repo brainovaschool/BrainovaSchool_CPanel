@@ -73,6 +73,12 @@
                         @if ($reel->prompt_feedback)<p class="mb-1 text-secondary"><strong>Prompt feedback:</strong> {{ $reel->prompt_feedback }}</p>@endif
                         @if ($reel->promptUpload)<p><strong>Prompt file:</strong> <a href="{{ globalAsset($reel->promptUpload->path) }}" target="_blank">Download</a></p>@endif
                         @if ($reel->thumbUpload)<p><strong>Thumbnail:</strong><br><img src="{{ globalAsset($reel->thumbUpload->path) }}" alt="Thumbnail for {{ $reel->title }}" style="max-width:200px;border-radius:8px"></p>@endif
+                        @if ($reel->canva_link)
+                            <p class="mb-1"><strong>Canva link:</strong> <a href="{{ $reel->canva_link }}" target="_blank">{{ $reel->canva_link }}</a>
+                                @if ($reel->canva_approved_at) <span class="text-success">— approved</span> @else <span class="text-secondary">— pending approval</span> @endif
+                            </p>
+                        @endif
+                        @if ($reel->canva_feedback)<p class="mb-1 text-secondary"><strong>Canva feedback:</strong> {{ $reel->canva_feedback }}</p>@endif
                         @if ($reel->drive_link)
                             <p class="mb-1"><strong>Video link:</strong> <a href="{{ $reel->drive_link }}" target="_blank">{{ $reel->drive_link }}</a>
                                 @if ($reel->video_approved_at) <span class="text-success">— approved</span> @else <span class="text-secondary">— pending approval</span> @endif
@@ -173,6 +179,25 @@
 
                     @if ($reel->prompt_approved_at)
                         <div class="card ot-card mt-3">
+                            <div class="card-header"><h4 class="mb-0">Submit Canva link</h4></div>
+                            <div class="card-body">
+                                @if ($reel->canva_approved_at)
+                                    <p class="text-success mb-0">Canva approved — you can submit the video once it's ready.</p>
+                                @else
+                                    <form action="{{ route('portal-social-reels.submit-link', $reel->id) }}" method="post">
+                                        @csrf
+                                        <input type="hidden" name="stage" value="canva">
+                                        <label class="form-label">Canva link</label>
+                                        <input type="url" name="link" class="form-control ot-input mb-2" value="{{ $reel->canva_link }}" required placeholder="https://...">
+                                        <button type="submit" class="btn ot-btn-primary w-100">Submit for approval</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($reel->canva_approved_at)
+                        <div class="card ot-card mt-3">
                             <div class="card-header"><h4 class="mb-0">Submit video</h4></div>
                             <div class="card-body">
                                 @if ($reel->video_approved_at)
@@ -203,6 +228,22 @@
                                     <label class="form-label">Feedback (optional)</label>
                                     <textarea name="feedback" class="form-control ot-input mb-2" rows="2">{{ $reel->prompt_feedback }}</textarea>
                                     <button type="submit" class="btn ot-btn-primary w-100">Approve prompt</button>
+                                </form>
+                            </div>
+                        </div>
+                    @endif
+
+                    @if ($reel->canva_link && !$reel->canva_approved_at)
+                        <div class="card ot-card mt-3">
+                            <div class="card-header"><h4 class="mb-0">Approve Canva</h4></div>
+                            <div class="card-body">
+                                <p class="mb-2"><a href="{{ $reel->canva_link }}" target="_blank">{{ $reel->canva_link }}</a></p>
+                                <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post">
+                                    @csrf
+                                    <input type="hidden" name="stage" value="canva">
+                                    <label class="form-label">Feedback (optional)</label>
+                                    <textarea name="feedback" class="form-control ot-input mb-2" rows="2">{{ $reel->canva_feedback }}</textarea>
+                                    <button type="submit" class="btn ot-btn-primary w-100">Approve Canva</button>
                                 </form>
                             </div>
                         </div>
