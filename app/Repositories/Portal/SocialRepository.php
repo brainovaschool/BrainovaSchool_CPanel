@@ -218,10 +218,6 @@ class SocialRepository
             if (!$series) {
                 continue;
             }
-            if (!empty($data['delete'])) {
-                $series->delete();
-                continue;
-            }
             $name = trim($data['name'] ?? '');
             if ($name === '') {
                 continue;
@@ -250,6 +246,16 @@ class SocialRepository
         }
 
         return $this->responseWithSuccess('Saved.', []);
+    }
+
+    public function deleteSeries(int $id): array
+    {
+        $series = PortalReelSeries::find($id);
+        if (!$series) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+        $series->delete();
+        return $this->responseWithSuccess('Series removed.', []);
     }
 
     /** $data: the submitted series[...]/new_series[...] row - category,

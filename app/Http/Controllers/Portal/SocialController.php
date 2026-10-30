@@ -538,6 +538,15 @@ class SocialController extends Controller
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    public function destroySeries($id)
+    {
+        if (!hasPermission('portal_manage')) {
+            abort(403);
+        }
+        $result = $this->repo->deleteSeries((int) $id);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
     public function updateReelAiPrompt(Request $request)
     {
         if (!hasPermission('portal_manage')) {

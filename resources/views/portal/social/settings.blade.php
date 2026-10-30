@@ -129,6 +129,11 @@
                     can carry its own defaults — Pillar, Format, and every field below. Pick the series on the Reel
                     form and all of it fills itself in automatically. Characters can take more than one.</p>
 
+                <form id="deleteSeriesForm" method="post" action="" class="d-none">
+                    @csrf
+                    @method('DELETE')
+                </form>
+
                 <form action="{{ route('portal-social-settings.series') }}" method="post" enctype="multipart/form-data">
                     @csrf
 
@@ -216,7 +221,7 @@
                                             </td>
                                         @endforeach
                                         <td class="text-center">
-                                            <input type="checkbox" name="series[{{ $s->id }}][delete]" value="1" class="delete-series-checkbox" title="Delete this series">
+                                            <button type="button" class="btn btn-sm btn-outline-danger delete-series-btn" data-url="{{ route('portal-social-settings.series.destroy', $s->id) }}" title="Delete this series">Delete</button>
                                         </td>
                                     </tr>
                                 @endforeach
@@ -447,9 +452,12 @@
         })();
 
         (function () {
-            document.addEventListener('change', function (e) {
-                if (e.target.classList.contains('delete-series-checkbox')) {
-                    e.target.closest('.series-row').style.opacity = e.target.checked ? '0.4' : '1';
+            document.addEventListener('click', function (e) {
+                if (e.target.classList.contains('delete-series-btn')) {
+                    if (!confirm('Delete this series? This cannot be undone.')) return;
+                    var form = document.getElementById('deleteSeriesForm');
+                    form.action = e.target.dataset.url;
+                    form.submit();
                 }
             });
 
