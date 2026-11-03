@@ -907,16 +907,31 @@ if (!function_exists('isSuperAdmin')) {
 
 
 if (!function_exists('online_admission_programs')) {
+    /** The real list lives in Website Setup → Programs → Categories - this
+     *  used to be a hand-maintained copy of it in config/online_admission.php,
+     *  which is exactly how it drifted out of sync with what was actually
+     *  edited there. Now it reads those categories directly; the config
+     *  array (still kept in sync as a label) and the baked-in list below
+     *  only cover a table that's empty or unreachable. */
     function online_admission_programs(): array
     {
+        try {
+            $categoryNames = \App\Models\WebsiteSetup\ProgramCategory::where('status', 1)
+                ->orderBy('sort_order')->orderBy('name')
+                ->pluck('name')->filter()->values()->all();
+            if ($categoryNames) {
+                return $categoryNames;
+            }
+        } catch (\Throwable $e) {
+            // Table not migrated yet / unreachable - fall through below.
+        }
+
         $programs = config('online_admission.programs');
 
         if (is_array($programs)) {
             return $programs;
         }
 
-        // Kept in sync with config/online_admission.php — used only if that
-        // config value fails to load (e.g. a stale config cache on the host).
         return [
             'Homeschooling',
             'Academic Support',
