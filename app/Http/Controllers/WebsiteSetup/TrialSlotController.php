@@ -113,4 +113,24 @@ class TrialSlotController extends Controller
 
         return redirect()->route('trial-slot.index')->with('success', ___('alert.updated_successfully'));
     }
+
+    // The public page's own title/heading/subtext - same simple
+    // Setting-row pattern as updatePageMode(), one row per field, blank
+    // clears it back to the page's built-in default text.
+    public function updatePageText(Request $request)
+    {
+        $request->validate([
+            'free_trial_page_title'   => 'nullable|string|max:150',
+            'free_trial_form_heading' => 'nullable|string|max:150',
+            'free_trial_form_subtext' => 'nullable|string|max:500',
+        ]);
+
+        foreach (['free_trial_page_title', 'free_trial_form_heading', 'free_trial_form_subtext'] as $name) {
+            $setting = \App\Models\Setting::where('name', $name)->first() ?: new \App\Models\Setting(['name' => $name]);
+            $setting->value = $request->input($name);
+            $setting->save();
+        }
+
+        return redirect()->route('trial-slot.index')->with('success', ___('alert.updated_successfully'));
+    }
 }

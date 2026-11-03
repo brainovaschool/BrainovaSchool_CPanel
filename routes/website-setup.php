@@ -323,6 +323,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/bulk-delete',     'bulkDelete')->name('bulk-delete')->middleware('PermissionCheck:trial_slot_delete', 'DemoCheck');
                     Route::post('/bulk-status',     'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:trial_slot_update', 'DemoCheck');
                     Route::post('/page-mode',       'updatePageMode')->name('page-mode')->middleware('PermissionCheck:trial_slot_update', 'DemoCheck');
+                    Route::post('/page-text',       'updatePageText')->name('page-text')->middleware('PermissionCheck:trial_slot_update', 'DemoCheck');
                 });
 
               }); // end FeatureCheck:course_catalogue (trial-slot part)

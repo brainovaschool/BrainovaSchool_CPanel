@@ -1,6 +1,6 @@
 @extends('frontend.master')
 @section('title')
-    Demo Class
+    {{ setting('free_trial_page_title') ?: 'Demo Class' }}
 @endsection
 
 @section('main')
@@ -10,10 +10,10 @@
             <div class="row justify-content-center">
                 <div class="col-lg-6 col-xl-5">
                     <div class="breadcam_wrap text-center">
-                        <h3>Demo Class</h3>
+                        <h3>{{ setting('free_trial_page_title') ?: 'Demo Class' }}</h3>
                         <div class="custom_breadcam">
                             <a href="{{ url('/') }}" class="breadcrumb-item">{{ ___('frontend.home') }}</a>
-                            <a href="#" class="breadcrumb-item">Demo Class</a>
+                            <a href="#" class="breadcrumb-item">{{ setting('free_trial_page_title') ?: 'Demo Class' }}</a>
                         </div>
                     </div>
                 </div>
@@ -32,8 +32,8 @@
                             </div>
                         @else
                             <div class="section__title mb_40 text-center">
-                                <h3 class="mb-2">Try a week with us — free</h3>
-                                <p class="mb-0">Tell us a little about your child and what you’re looking for. Our admissions team will set up a trial and get back to you.</p>
+                                <h3 class="mb-2">{{ setting('free_trial_form_heading') ?: 'Try a week with us — free' }}</h3>
+                                <p class="mb-0">{{ setting('free_trial_form_subtext') ?: 'Tell us a little about your child and what you’re looking for. Our admissions team will set up a trial and get back to you.' }}</p>
                             </div>
                         @endif
 

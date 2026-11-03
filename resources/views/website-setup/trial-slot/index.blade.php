@@ -37,6 +37,32 @@
                         saved here — switching to Demo Class just hides them from visitors until you switch back.</p>
                 </div>
             </div>
+
+            <div class="card ot-card mb-3">
+                <div class="card-body">
+                    <h5 class="mb-3">Page text</h5>
+                    <form action="{{ route('trial-slot.page-text') }}" method="post">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="form-label mb-1">Page title</label>
+                            <input type="text" name="free_trial_page_title" class="form-control" maxlength="150"
+                                placeholder="Demo Class" value="{{ setting('free_trial_page_title') }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label mb-1">Form heading</label>
+                            <input type="text" name="free_trial_form_heading" class="form-control" maxlength="150"
+                                placeholder="Try a week with us — free" value="{{ setting('free_trial_form_heading') }}">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label mb-1">Form subtext</label>
+                            <textarea name="free_trial_form_subtext" class="form-control" rows="2" maxlength="500"
+                                placeholder="Tell us a little about your child and what you’re looking for. Our admissions team will set up a trial and get back to you.">{{ setting('free_trial_form_subtext') }}</textarea>
+                        </div>
+                        <p class="text-secondary mb-3" style="font-size:13px">Leave any field blank to use its default text shown above as a placeholder.</p>
+                        <button class="btn ot-btn-primary">{{ ___('common.update') }}</button>
+                    </form>
+                </div>
+            </div>
         @endif
 
         <div class="table-content table-basic mt-20">
