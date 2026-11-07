@@ -18,7 +18,7 @@ class ReelStudioController extends Controller
 
     private function isManager(): bool
     {
-        return hasPermission('portal_manage');
+        return hasPermission('social_board_manage');
     }
 
     /** Non-managers may act on their own projects, or a project that

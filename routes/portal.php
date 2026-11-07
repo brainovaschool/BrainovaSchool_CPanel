@@ -86,13 +86,13 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::put('/update/{id}',   'updateReel')->name('update')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/{id}/review',  'reviewReel')->name('review')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/bulk-review',  'bulkReviewReels')->name('bulk-review')->middleware('PermissionCheck:portal_access', 'DemoCheck');
-                    Route::post('/{id}/assign',  'assignReel')->name('assign')->middleware('PermissionCheck:portal_manage,portal_reel_assign', 'DemoCheck');
-                    Route::post('/bulk-assign',  'bulkAssignReels')->name('bulk-assign')->middleware('PermissionCheck:portal_manage,portal_reel_assign', 'DemoCheck');
-                    Route::post('/bulk-mark-paid', 'bulkMarkReelsPaid')->name('bulk-mark-paid')->middleware('PermissionCheck:portal_manage,portal_reel_assign', 'DemoCheck');
+                    Route::post('/{id}/assign',  'assignReel')->name('assign')->middleware('PermissionCheck:social_board_manage,portal_reel_assign', 'DemoCheck');
+                    Route::post('/bulk-assign',  'bulkAssignReels')->name('bulk-assign')->middleware('PermissionCheck:social_board_manage,portal_reel_assign', 'DemoCheck');
+                    Route::post('/bulk-mark-paid', 'bulkMarkReelsPaid')->name('bulk-mark-paid')->middleware('PermissionCheck:social_board_manage,portal_reel_assign', 'DemoCheck');
                     Route::post('/{id}/submit-link', 'submitReelLink')->name('submit-link')->middleware('PermissionCheck:portal_access', 'DemoCheck');
-                    Route::post('/{id}/approve-stage', 'approveReelStage')->name('approve-stage')->middleware('PermissionCheck:portal_manage,portal_reel_approve', 'DemoCheck');
-                    Route::post('/{id}/schedule', 'scheduleReel')->name('schedule')->middleware('PermissionCheck:portal_manage,portal_reel_approve', 'DemoCheck');
-                    Route::post('/{id}/plan-date', 'planReelDate')->name('plan-date')->middleware('PermissionCheck:portal_manage,portal_reel_approve', 'DemoCheck');
+                    Route::post('/{id}/approve-stage', 'approveReelStage')->name('approve-stage')->middleware('PermissionCheck:social_board_manage,portal_reel_approve', 'DemoCheck');
+                    Route::post('/{id}/schedule', 'scheduleReel')->name('schedule')->middleware('PermissionCheck:social_board_manage,portal_reel_approve', 'DemoCheck');
+                    Route::post('/{id}/plan-date', 'planReelDate')->name('plan-date')->middleware('PermissionCheck:social_board_manage,portal_reel_approve', 'DemoCheck');
                     Route::delete('/{id}',       'destroyReel')->name('destroy')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                 });
 
@@ -104,25 +104,25 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/portal/social/content-pool', [SocialController::class, 'contentPool'])->name('portal-social-content-pool.index')->middleware('PermissionCheck:portal_access');
 
                 Route::get('/portal/social/month-plan', [SocialController::class, 'monthPlan'])->name('portal-social-month-plan.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_social_month_plan_read']);
-                Route::post('/portal/social/month-plan/targets', [SocialController::class, 'updateCategoryTargets'])->name('portal-social-month-plan.targets')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
-                Route::post('/portal/social/month-plan/calendar', [SocialController::class, 'updateMonthCalendar'])->name('portal-social-month-plan.calendar')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
-                Route::post('/portal/social/month-plan/production', [SocialController::class, 'updateProductionCalendar'])->name('portal-social-month-plan.production')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                Route::post('/portal/social/month-plan/targets', [SocialController::class, 'updateCategoryTargets'])->name('portal-social-month-plan.targets')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
+                Route::post('/portal/social/month-plan/calendar', [SocialController::class, 'updateMonthCalendar'])->name('portal-social-month-plan.calendar')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
+                Route::post('/portal/social/month-plan/production', [SocialController::class, 'updateProductionCalendar'])->name('portal-social-month-plan.production')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
 
                 Route::get('/portal/social/audience', [SocialController::class, 'audience'])->name('portal-social-audience.index')->middleware('PermissionCheck:portal_access');
                 Route::post('/portal/social/audience/store', [SocialController::class, 'storeMetric'])->name('portal-social-audience.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
 
                 Route::get('/portal/social/page-fixes', [SocialController::class, 'pageFixes'])->name('portal-social-page-fixes.index')->middleware('PermissionCheck:portal_access');
-                Route::post('/portal/social/page-fixes/store', [SocialController::class, 'storePageFix'])->name('portal-social-page-fixes.store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                Route::post('/portal/social/page-fixes/store', [SocialController::class, 'storePageFix'])->name('portal-social-page-fixes.store')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
                 Route::post('/portal/social/page-fixes/{id}/status', [SocialController::class, 'updatePageFixStatus'])->name('portal-social-page-fixes.status')->middleware('PermissionCheck:portal_access', 'DemoCheck');
 
-                Route::get('/portal/social/settings', [SocialController::class, 'settings'])->name('portal-social-settings.edit')->middleware('PermissionCheck:portal_manage,portal_social_settings_read');
-                Route::post('/portal/social/settings', [SocialController::class, 'updateSettings'])->name('portal-social-settings.update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
-                Route::post('/portal/social/settings/reel-fields', [SocialController::class, 'updateReelFields'])->name('portal-social-settings.reel-fields')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
-                Route::post('/portal/social/settings/series', [SocialController::class, 'updateReelSeries'])->name('portal-social-settings.series')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
-                Route::delete('/portal/social/settings/series/{id}', [SocialController::class, 'destroySeries'])->name('portal-social-settings.series.destroy')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
-                Route::post('/portal/social/settings/series/regenerate-codes', [SocialController::class, 'regenerateReelCodes'])->name('portal-social-settings.series.regenerate-codes')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
-                Route::post('/portal/social/settings/content-assignees', [SocialController::class, 'updateContentAssigneeRoles'])->name('portal-social-settings.content-assignees')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
-                Route::post('/portal/social/settings/reel-ai-prompt', [SocialController::class, 'updateReelAiPrompt'])->name('portal-social-settings.reel-ai-prompt')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                Route::get('/portal/social/settings', [SocialController::class, 'settings'])->name('portal-social-settings.edit')->middleware('PermissionCheck:social_board_manage,portal_social_settings_read');
+                Route::post('/portal/social/settings', [SocialController::class, 'updateSettings'])->name('portal-social-settings.update')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
+                Route::post('/portal/social/settings/reel-fields', [SocialController::class, 'updateReelFields'])->name('portal-social-settings.reel-fields')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
+                Route::post('/portal/social/settings/series', [SocialController::class, 'updateReelSeries'])->name('portal-social-settings.series')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
+                Route::delete('/portal/social/settings/series/{id}', [SocialController::class, 'destroySeries'])->name('portal-social-settings.series.destroy')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
+                Route::post('/portal/social/settings/series/regenerate-codes', [SocialController::class, 'regenerateReelCodes'])->name('portal-social-settings.series.regenerate-codes')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
+                Route::post('/portal/social/settings/content-assignees', [SocialController::class, 'updateContentAssigneeRoles'])->name('portal-social-settings.content-assignees')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
+                Route::post('/portal/social/settings/reel-ai-prompt', [SocialController::class, 'updateReelAiPrompt'])->name('portal-social-settings.reel-ai-prompt')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
 
                 Route::get('/portal/social/daily-plan', [SocialController::class, 'dailyPlan'])->name('portal-social-daily-plan.index')->middleware('PermissionCheck:portal_access');
                 Route::post('/portal/social/daily-plan', [SocialController::class, 'storeDailyPlan'])->name('portal-social-daily-plan.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
@@ -135,19 +135,19 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/{id}/mark-paid', 'markPaid')->name('mark-paid')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
 
-                // Reel Studio — admin character catalogue (portal_manage; Social Board admin).
+                // Reel Studio — admin character catalogue (social_board_manage; Social Board admin).
                 Route::controller(ReelCharacterController::class)->prefix('portal/social/reel-characters')->name('portal-social-reel-characters.')->group(function () {
-                    Route::get('/',            'index')->name('index')->middleware('PermissionCheck:portal_manage,portal_reel_characters_read');
-                    Route::get('/create',      'create')->name('create')->middleware('PermissionCheck:portal_manage');
-                    Route::post('/store',      'store')->name('store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
-                    Route::get('/edit/{id}',   'edit')->name('edit')->middleware('PermissionCheck:portal_manage');
-                    Route::put('/update/{id}', 'update')->name('update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
-                    Route::delete('/{id}',     'destroy')->name('destroy')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
-                    Route::post('/{id}/costumes', 'storeCostume')->name('costumes.store')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
-                    Route::delete('/{id}/costumes/{costumeId}', 'destroyCostume')->name('costumes.destroy')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::get('/',            'index')->name('index')->middleware('PermissionCheck:social_board_manage,portal_reel_characters_read');
+                    Route::get('/create',      'create')->name('create')->middleware('PermissionCheck:social_board_manage');
+                    Route::post('/store',      'store')->name('store')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
+                    Route::get('/edit/{id}',   'edit')->name('edit')->middleware('PermissionCheck:social_board_manage');
+                    Route::put('/update/{id}', 'update')->name('update')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
+                    Route::delete('/{id}',     'destroy')->name('destroy')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
+                    Route::post('/{id}/costumes', 'storeCostume')->name('costumes.store')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
+                    Route::delete('/{id}/costumes/{costumeId}', 'destroyCostume')->name('costumes.destroy')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
                 });
 
-                // Reel Studio — teacher-facing scene builder (reel_studio_access; portal_manage holders get it auto-granted).
+                // Reel Studio — teacher-facing scene builder (reel_studio_access; social_board_manage holders get it auto-granted).
                 Route::controller(ReelStudioController::class)->prefix('portal/social/reel-studio')->name('portal-social-reel-studio.')->group(function () {
                     Route::get('/',            'index')->name('index')->middleware('PermissionCheck:reel_studio_access');
                     Route::get('/create',      'create')->name('create')->middleware('PermissionCheck:reel_studio_access');

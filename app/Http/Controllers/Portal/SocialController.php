@@ -13,7 +13,7 @@ use App\Repositories\Portal\SocialRepository;
 
 /** Social board — handoff spec phase 8. "Content" rights (reels, month
  *  plan) and "Audience" rights (metrics) follow whoever currently holds
- *  that Responsibility (phase 5) — not a role — plus portal_manage
+ *  that Responsibility (phase 5) — not a role — plus social_board_manage
  *  always has both, matching the spec's access matrix exactly. */
 class SocialController extends Controller
 {
@@ -41,17 +41,17 @@ class SocialController extends Controller
         // Pool page's permission - that page is now just the Reels page,
         // but the permission still means the same thing (can see/use the
         // assign control), so anyone already granted it keeps it working.
-        return hasPermission('portal_manage') || hasPermission('portal_reel_assign') || hasPermission('portal_social_content_pool_read');
+        return hasPermission('social_board_manage') || hasPermission('portal_reel_assign') || hasPermission('portal_social_content_pool_read');
     }
 
     private function canApproveReels(): bool
     {
-        return hasPermission('portal_manage') || hasPermission('portal_reel_approve');
+        return hasPermission('social_board_manage') || hasPermission('portal_reel_approve');
     }
 
     private function canManageAudience(): bool
     {
-        if (hasPermission('portal_manage')) {
+        if (hasPermission('social_board_manage')) {
             return true;
         }
         $staffId = $this->actingStaffId();
@@ -84,11 +84,11 @@ class SocialController extends Controller
     public function createReel()
     {
         $this->requireContentAccess();
-        // "Admin or coordinator" (portal_manage) gets the full form; a
+        // "Admin or coordinator" (social_board_manage) gets the full form; a
         // content-team member raising their own suggestion gets the
         // short one - series, topic, hook, nothing else (everything
         // else comes from the series' defaults).
-        $data['isManager']    = hasPermission('portal_manage');
+        $data['isManager']    = hasPermission('social_board_manage');
         $data['settings']     = PortalSetting::current();
         $data['customFields'] = $this->repo->reelCustomFields();
         $data['series']       = $this->repo->reelSeries();
@@ -106,7 +106,7 @@ class SocialController extends Controller
         if (!$this->canManageContent() && !hasPermission('portal_social_page_fixes_read')) {
             abort(403, 'Only admin or whoever holds the Content responsibility can do this.');
         }
-        $data['canManage'] = hasPermission('portal_manage');
+        $data['canManage'] = hasPermission('social_board_manage');
         $data['fixes']     = $this->repo->pageFixes();
         $data['title']     = 'Suggest';
         return view('portal.social.suggest-reel.index', compact('data'));
@@ -186,7 +186,7 @@ class SocialController extends Controller
         }
 
         $data['reel']         = $reel;
-        $data['isManager']    = hasPermission('portal_manage');
+        $data['isManager']    = hasPermission('social_board_manage');
         $data['settings']     = PortalSetting::current();
         $data['customFields'] = $this->repo->reelCustomFields();
         $data['series']       = $this->repo->reelSeries();
@@ -387,7 +387,7 @@ class SocialController extends Controller
 
     public function updateCategoryTargets(Request $request)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $result = $this->repo->updateCategoryTargets($request);
@@ -396,7 +396,7 @@ class SocialController extends Controller
 
     public function updateMonthCalendar(Request $request)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $result = $this->repo->updateMonthCalendar($request);
@@ -407,7 +407,7 @@ class SocialController extends Controller
 
     public function updateProductionCalendar(Request $request)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $result = $this->repo->updateProductionCalendar($request);
@@ -460,7 +460,7 @@ class SocialController extends Controller
 
     public function storePageFix(Request $request)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $request->validate(['title' => 'required|string|max:150']);
@@ -471,7 +471,7 @@ class SocialController extends Controller
 
     public function updatePageFixStatus(Request $request, $id)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $request->validate(['status' => 'required|in:open,in_progress,fixed']);
@@ -484,7 +484,7 @@ class SocialController extends Controller
 
     public function settings()
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $data['lists']              = $this->repo->settingLists();
@@ -505,7 +505,7 @@ class SocialController extends Controller
 
     public function updateSettings(Request $request)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $result = $this->repo->updateSocialSettings($request);
@@ -514,7 +514,7 @@ class SocialController extends Controller
 
     public function updateContentAssigneeRoles(Request $request)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $result = $this->repo->updateContentAssigneeRoles($request);
@@ -523,7 +523,7 @@ class SocialController extends Controller
 
     public function updateReelFields(Request $request)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $result = $this->repo->updateReelCustomFields($request);
@@ -532,7 +532,7 @@ class SocialController extends Controller
 
     public function updateReelSeries(Request $request)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $result = $this->repo->updateReelSeries($request);
@@ -541,7 +541,7 @@ class SocialController extends Controller
 
     public function destroySeries($id)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $result = $this->repo->deleteSeries((int) $id);
@@ -550,7 +550,7 @@ class SocialController extends Controller
 
     public function regenerateReelCodes()
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $result = $this->repo->regenerateReelCodes();
@@ -559,7 +559,7 @@ class SocialController extends Controller
 
     public function updateReelAiPrompt(Request $request)
     {
-        if (!hasPermission('portal_manage')) {
+        if (!hasPermission('social_board_manage')) {
             abort(403);
         }
         $request->validate([
@@ -577,7 +577,7 @@ class SocialController extends Controller
 
     public function dailyPlan(Request $request)
     {
-        if (!$this->canManageContent()) {
+        if (!$this->canManageContent() && !hasPermission('planning_board_manage')) {
             abort(403, 'Only admin or whoever holds the Content responsibility can see this.');
         }
 

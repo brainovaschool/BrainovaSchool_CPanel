@@ -331,17 +331,17 @@
                                                 <a href="{{ route('portal-social-month-plan.index') }}">Month Plan</a>
                                             </li>
                                         @endif
-                                        @if (portalOwnsResponsibility('audience'))
+                                        @if (portalOwnsResponsibility('audience') || hasPermission('social_board_manage'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/audience']) }}">
                                                 <a href="{{ route('portal-social-audience.index') }}">Audience Numbers</a>
                                             </li>
                                         @endif
-                                        @if (hasPermission('portal_manage') || hasPermission('portal_social_settings_read'))
+                                        @if (hasPermission('social_board_manage') || hasPermission('portal_social_settings_read'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/settings']) }}">
                                                 <a href="{{ route('portal-social-settings.edit') }}">Social Settings</a>
                                             </li>
                                         @endif
-                                        @if (hasPermission('reel_studio_access') || hasPermission('portal_manage'))
+                                        @if (hasPermission('reel_studio_access') || hasPermission('social_board_manage'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/reel-studio*']) }}">
                                                 <a href="{{ route('portal-social-reel-studio.index') }}">Reel Studio</a>
                                             </li>
@@ -352,7 +352,7 @@
                                 <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">
                                     <a class="has-arrow">Planning Board</a>
                                     <ul class="child-menu-list">
-                                        @if (portalOwnsResponsibility('content'))
+                                        @if (portalOwnsResponsibility('content') || hasPermission('planning_board_manage'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">
                                                 <a href="{{ route('portal-social-daily-plan.index') }}">Daily Plan &amp; Goals</a>
                                             </li>

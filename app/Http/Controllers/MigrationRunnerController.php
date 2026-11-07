@@ -132,6 +132,13 @@ class MigrationRunnerController extends Controller
         'portal_growth_pay' => ['read' => 'portal_growth_pay_read'],
         'portal_reel_characters' => ['read' => 'portal_reel_characters_read'],
         'portal_reel_settings' => ['read' => 'portal_reel_settings_read'],
+        // Social Board and Planning Board each used to be covered by
+        // portal_manage (Task Board's own "manage everything in Staff
+        // Zone" toggle) - these give each its own, independent one. See
+        // the grandfather block in syncPermissions() for how existing
+        // roles keep working the first time these are created.
+        'social_board' => ['manage' => 'social_board_manage'],
+        'planning_board' => ['manage' => 'planning_board_manage'],
     ];
 
     /**
@@ -3867,7 +3874,7 @@ class MigrationRunnerController extends Controller
         // for the same reason reel_studio/portal are: existing roles already
         // had real access to it (its routes carried no permission check at
         // all until this sync), so its keywords must never be auto-stripped.
-        $nonStrippableGroups = ['class_content', 'fees_payment_proof', 'portal', 'reel_studio', 'leave_type', 'leave_request', 'leave_log', 'leave_approval', 'subscription', 'attendance_teacher'];
+        $nonStrippableGroups = ['class_content', 'fees_payment_proof', 'portal', 'reel_studio', 'leave_type', 'leave_request', 'leave_log', 'leave_approval', 'subscription', 'attendance_teacher', 'social_board', 'planning_board'];
 
         foreach (self::PERMISSION_GROUPS as $attribute => $keywords) {
             if (!Permission::where('attribute', $attribute)->exists()) {
@@ -3965,17 +3972,43 @@ class MigrationRunnerController extends Controller
         }
 
 
+        // One-time: Social Board and Planning Board used to be covered by
+        // portal_manage (Task Board's own broad "manage everything in
+        // Staff Zone" toggle) - now that each has its own manage keyword,
+        // every role that already had portal_manage is grandfathered into
+        // both, so nobody loses Social Board / Planning Board access the
+        // moment this deploys. Only runs the one time these two rows are
+        // first created - an admin's later choice to uncheck either one
+        // for a role always sticks from then on (unlike the Reel Studio
+        // grant below, which is deliberately perpetual). Runs before that
+        // Reel Studio grant so a role grandfathered in here also picks up
+        // reel_studio_access in this same pass, not the next one.
+        $boardSplitGroups = ['social_board', 'planning_board'];
+        if (count(array_intersect($boardSplitGroups, $added)) > 0) {
+            foreach (Role::all() as $role) {
+                if ((int) $role->id === 1) {
+                    continue;
+                }
+                $rolePerms = is_array($role->permissions) ? $role->permissions : [];
+                if (in_array('portal_manage', $rolePerms, true)) {
+                    $role->permissions = array_values(array_unique(array_merge($rolePerms, ['social_board_manage', 'planning_board_manage'])));
+                    $role->save();
+                }
+            }
+        }
+
         // Reel Studio: PermissionCheck can only test one keyword at a time,
-        // so portal_manage holders need reel_studio_access explicitly on
-        // their role too (Super Admin already gets it via the role_id===1
-        // branch above) — otherwise a Social Board admin who never happened
-        // to tick that checkbox would be locked out of the teacher-facing
-        // Reel Studio pages they're meant to always be able to reach.
-        // Grant-only, re-checked every run, never strips a manual revoke of
-        // portal_manage itself (if that goes, this stops being re-granted).
+        // so social_board_manage holders need reel_studio_access explicitly
+        // on their role too (Super Admin already gets it via the
+        // role_id===1 branch above) — otherwise a Social Board admin who
+        // never happened to tick that checkbox would be locked out of the
+        // teacher-facing Reel Studio pages they're meant to always be able
+        // to reach. Grant-only, re-checked every run, never strips a manual
+        // revoke of social_board_manage itself (if that goes, this stops
+        // being re-granted).
         foreach (Role::all() as $role) {
             $rolePerms = is_array($role->permissions) ? $role->permissions : [];
-            if (in_array('portal_manage', $rolePerms, true) && !in_array('reel_studio_access', $rolePerms, true)) {
+            if (in_array('social_board_manage', $rolePerms, true) && !in_array('reel_studio_access', $rolePerms, true)) {
                 $role->permissions = array_values(array_merge($rolePerms, ['reel_studio_access']));
                 $role->save();
             }

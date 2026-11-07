@@ -53,9 +53,10 @@ class ReelStudioRepository
     }
 
     /** Shared with the mobile API so both sides agree on who can open/edit
-     *  a project: whoever created it, portal_manage, or -- if it's linked
-     *  to a Reels/Content Pool suggestion -- whoever that reel is assigned
-     *  to. Moved here (was private on ReelStudioController) to avoid drift. */
+     *  a project: whoever created it, social_board_manage, or -- if it's
+     *  linked to a Reels/Content Pool suggestion -- whoever that reel is
+     *  assigned to. Moved here (was private on ReelStudioController) to
+     *  avoid drift. */
     public function authorizeProject(?ReelProject $project, int $userId, ?int $actingStaffId, bool $isManager): bool
     {
         if (!$project) {

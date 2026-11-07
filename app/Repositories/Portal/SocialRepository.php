@@ -181,13 +181,13 @@ class SocialRepository
     }
 
     /** Shared with the mobile API so both sides enforce the exact same
-     *  rule for who can suggest/manage reel content -- portal_manage,
+     *  rule for who can suggest/manage reel content -- social_board_manage,
      *  the dedicated suggest permission, or whoever currently holds the
      *  Content responsibility. Moved here (was private on SocialController)
      *  so it can't drift between web and mobile. */
     public function canManageContent(?int $actingStaffId): bool
     {
-        if (hasPermission('portal_manage') || hasPermission('portal_social_suggest_reel_read')) {
+        if (hasPermission('social_board_manage') || hasPermission('portal_social_suggest_reel_read')) {
             return true;
         }
         return $actingStaffId !== null && in_array($actingStaffId, PortalResponsibility::ownerStaffIdsForKey(PortalResponsibility::KEY_CONTENT), true);

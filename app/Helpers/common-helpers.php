@@ -1255,18 +1255,19 @@ if (!function_exists('createAvatarAndUpload')) {
 }
 
 if (!function_exists('portalOwnsResponsibility')) {
-    /** Team Portal (phase 8): true for portal_manage, or for the Staff
-     *  currently holding the given Responsibility key (content/audience)
-     *  — used in sidebar/view code where a full permission check isn't
-     *  worth a controller round-trip. The controllers re-check this same
-     *  thing server-side on every write, so this is purely for what to
-     *  show, never the actual access control. */
+    /** Staff Zone (phase 8): true for social_board_manage, or for the
+     *  Staff currently holding the given Responsibility key
+     *  (content/audience, both Social/Planning Board concepts) — used in
+     *  sidebar/view code where a full permission check isn't worth a
+     *  controller round-trip. The controllers re-check this same thing
+     *  server-side on every write, so this is purely for what to show,
+     *  never the actual access control. */
     function portalOwnsResponsibility(string $key): bool
     {
         if (!Auth::check()) {
             return false;
         }
-        if ((int) Auth::user()->role_id === 1 || authHasPermission('portal_manage')) {
+        if ((int) Auth::user()->role_id === 1 || authHasPermission('social_board_manage')) {
             return true;
         }
         $staff = Auth::user()->staff;
@@ -1324,14 +1325,14 @@ if (!function_exists('permission_category_map')) {
             'leave_log' => 'Leave',
             'leave_approval' => 'Leave',
 
-            // Staff Zone's two sidebar sub-menus (Task Board = old "Team
-            // Portal", Social Board unchanged) get their own categories here
-            // instead of one flat "Staff Zone" blob, so this screen's
-            // grouping matches the sidebar 1:1. Planning Board, the sidebar's
-            // third sub-menu, has no row here on purpose - its one item
-            // (Daily Plan & Goals) is gated by the "content" responsibility
-            // assignment (see portalOwnsResponsibility()), not a Role
-            // permission, so there's nothing to list.
+            // Staff Zone's three sidebar sub-menus each get their own
+            // category here instead of one flat "Staff Zone" blob, so this
+            // screen's grouping matches the sidebar 1:1. Each board also has
+            // its own independent "manage everything in this board" keyword
+            // now (portal_manage / social_board_manage / planning_board_manage)
+            // - they used to all ride on portal_manage alone, which meant
+            // ticking Task Board's broad Manage checkbox silently unlocked
+            // Social Board and Planning Board too.
             // Task Board (was Team Portal)
             // 'portal' itself (Access/Manage) is Staff Zone's own overall
             // gate, not specific to Task Board - kept here since Task Board
@@ -1351,6 +1352,7 @@ if (!function_exists('permission_category_map')) {
             'portal_analytics' => 'Task Board',
 
             // Social Board
+            'social_board' => 'Social Board',
             'reel_studio' => 'Social Board',
             'portal_social_reels' => 'Social Board',
             'portal_social_suggest_reel' => 'Social Board',
@@ -1361,6 +1363,9 @@ if (!function_exists('permission_category_map')) {
             'portal_social_settings' => 'Social Board',
             'portal_reel_characters' => 'Social Board',
             'portal_reel_settings' => 'Social Board',
+
+            // Planning Board
+            'planning_board' => 'Planning Board',
 
             // Teacher Zone (Class Content, Homework, Exam, AI/analytics tools)
             'class_content' => 'Teacher Zone',

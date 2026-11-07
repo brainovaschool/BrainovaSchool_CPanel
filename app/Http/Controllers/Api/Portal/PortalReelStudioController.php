@@ -35,7 +35,7 @@ class PortalReelStudioController extends Controller
 
     private function authorized($project): bool
     {
-        return $this->repo->authorizeProject($project, (int) Auth::id(), $this->actingStaffId(), hasPermission('portal_manage'));
+        return $this->repo->authorizeProject($project, (int) Auth::id(), $this->actingStaffId(), hasPermission('social_board_manage'));
     }
 
     public function show($id)
