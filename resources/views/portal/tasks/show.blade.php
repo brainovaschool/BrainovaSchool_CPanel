@@ -135,8 +135,8 @@
                     <div class="card ot-card">
                         <div class="card-header"><h4 class="mb-0">Claim this paid task</h4></div>
                         <div class="card-body">
-                            @if ($data['claimBlockers']->isNotEmpty())
-                                <p class="text-danger mb-2">You can't claim this right now — you have an overdue task or one in revision:</p>
+                            @if ($data['claimBlocked'])
+                                <p class="text-danger mb-2">Complete 1 of your tasks to become eligible for more — you already have {{ $data['claimBlockers']->count() }} still with you:</p>
                                 <ul class="mb-0">
                                     @foreach ($data['claimBlockers'] as $b)
                                         <li><a href="{{ route('portal-tasks.show', $b->id) }}">{{ $b->title }}</a></li>

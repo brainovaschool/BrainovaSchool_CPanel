@@ -39,10 +39,12 @@
                             <p class="text-secondary mb-0" style="font-size:.8rem" id="assignHint">Required, unless this is a paid task left open to claim.</p>
                             @error('assigned_to') <div class="text-danger">{{ $message }}</div> @enderror
                         </div>
+                    </div>
 
+                    <div class="row g-3 mt-0">
                         <div class="col-md-3">
                             <div class="form-check mt-4">
-                                <input type="checkbox" class="form-check-input" id="paid" name="paid" value="1" {{ old('paid') ? 'checked' : '' }} onchange="document.getElementById('amountWrap').style.display = this.checked ? '' : 'none'; document.getElementById('visibleToWrap').style.display = this.checked ? '' : 'none';">
+                                <input type="checkbox" class="form-check-input" id="paid" name="paid" value="1" {{ old('paid') ? 'checked' : '' }} onchange="document.getElementById('amountWrap').style.display = this.checked ? '' : 'none'; document.getElementById('visibilityCard').style.display = this.checked ? '' : 'none';">
                                 <label class="form-check-label" for="paid">This is a paid task</label>
                             </div>
                         </div>
@@ -51,16 +53,42 @@
                             <input type="number" step="0.01" min="0" name="amount" class="form-control ot-input" value="{{ old('amount') }}">
                             @error('amount') <div class="text-danger">{{ $message }}</div> @enderror
                         </div>
-                        <div class="col-md-6" id="visibleToWrap" style="{{ old('paid') ? '' : 'display:none' }}">
-                            <label class="form-label">Visible to (optional)</label>
-                            <select name="visible_to_staff_ids[]" class="form-control select2_multy wide" multiple data-placeholder="Visible to everyone">
-                                @foreach ($data['employeesList'] as $emp)
-                                    <option value="{{ $emp->id }}">{{ trim($emp->first_name . ' ' . $emp->last_name) }} — {{ optional($emp->role)->name }}</option>
-                                @endforeach
-                            </select>
-                            <p class="text-secondary mb-0" style="font-size:.8rem">Leave blank to let any employee claim it — pick specific people to restrict who can see and claim this task.</p>
-                        </div>
+                    </div>
 
+                    <div class="card ot-card bg-light-subtle mt-3 mb-0" id="visibilityCard" style="{{ old('paid') ? '' : 'display:none' }}">
+                        <div class="card-body">
+                            <h5 class="mb-1">Who can see and claim it</h5>
+                            <p class="text-secondary mb-3" style="font-size:.8rem">Leave everything below blank to let any employee claim it. Pick a designation to open it to a whole group (e.g. all Coordinators) — then optionally add specific people on top of that, or hide it from one or two specific people even though their designation would otherwise include them.</p>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Open to designation(s) (optional)</label>
+                                    <select name="visible_to_role_ids[]" class="form-control select2_multy wide" multiple data-placeholder="Any designation">
+                                        @foreach ($data['rolesList'] as $role)
+                                            <option value="{{ $role->id }}">{{ $role->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Also show to these people (optional)</label>
+                                    <select name="visible_to_staff_ids[]" class="form-control select2_multy wide" multiple data-placeholder="No one extra">
+                                        @foreach ($data['employeesList'] as $emp)
+                                            <option value="{{ $emp->id }}">{{ trim($emp->first_name . ' ' . $emp->last_name) }} — {{ optional($emp->role)->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Hide from these people (optional)</label>
+                                    <select name="hidden_from_staff_ids[]" class="form-control select2_multy wide" multiple data-placeholder="No one excluded">
+                                        @foreach ($data['employeesList'] as $emp)
+                                            <option value="{{ $emp->id }}">{{ trim($emp->first_name . ' ' . $emp->last_name) }} — {{ optional($emp->role)->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-0">
                         <div class="col-md-4">
                             <label class="form-label">Category</label>
                             <select name="category" class="nice-select niceSelect bordered_style wide">
@@ -83,7 +111,9 @@
                             <input type="date" name="due_date" class="form-control ot-input" value="{{ old('due_date') }}" required>
                             @error('due_date') <div class="text-danger">{{ $message }}</div> @enderror
                         </div>
+                    </div>
 
+                    <div class="row g-3 mt-0">
                         <div class="col-md-4">
                             <div class="form-check mt-4">
                                 <input type="checkbox" class="form-check-input" id="urgent" name="urgent" value="1" {{ old('urgent') ? 'checked' : '' }}>
@@ -98,7 +128,9 @@
                             <label class="form-label">Expected format</label>
                             <input type="text" name="format" class="form-control ot-input" value="{{ old('format') }}" placeholder="e.g. PDF, Reel, Doc">
                         </div>
+                    </div>
 
+                    <div class="row g-3 mt-0">
                         <div class="col-md-12">
                             <label class="form-label">Description</label>
                             <textarea name="description" class="form-control ot-input" rows="3">{{ old('description') }}</textarea>

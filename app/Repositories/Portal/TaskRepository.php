@@ -141,17 +141,19 @@ class TaskRepository
                 'paid'                 => $isPaid,
                 'amount'               => $isPaid ? $request->amount : null,
                 'pay_status'           => $isPaid ? 'unpaid' : null,
-                'status'               => $isOpen ? PortalTask::OPEN : PortalTask::ASSIGNED,
-                'visible_to_staff_ids' => $isOpen ? (array_values(array_filter((array) $request->input('visible_to_staff_ids', []))) ?: null) : null,
+                'status'                => $isOpen ? PortalTask::OPEN : PortalTask::ASSIGNED,
+                'visible_to_staff_ids'  => $isOpen ? (array_values(array_filter((array) $request->input('visible_to_staff_ids', []))) ?: null) : null,
+                'visible_to_role_ids'   => $isOpen ? (array_values(array_filter((array) $request->input('visible_to_role_ids', []))) ?: null) : null,
+                'hidden_from_staff_ids' => $isOpen ? (array_values(array_filter((array) $request->input('hidden_from_staff_ids', []))) ?: null) : null,
             ]);
 
             if ($isOpen) {
                 // "Paid task available -> All active employees" - or just
-                // the ones it's restricted to, if any.
-                $visibleIds = $task->visible_to_staff_ids;
-                Staff::active()->whereNotNull('user_id')
-                    ->when($visibleIds, fn ($q) => $q->whereIn('id', $visibleIds))
-                    ->get()
+                // whoever it's actually visible to, once designation/
+                // specific-people/excluded-people are all taken into
+                // account (same rule the claim screens use).
+                Staff::active()->whereNotNull('user_id')->get()
+                    ->filter(fn (Staff $staff) => $task->isVisibleTo($staff->id))
                     ->each(function (Staff $staff) use ($task) {
                         PortalNotifier::send($staff->user_id, 'Paid task available', $task->title, route('portal-tasks.show', $task->id));
                     });
@@ -171,12 +173,13 @@ class TaskRepository
         }
     }
 
-    /** The tasks that would block this employee from claiming a paid task
-     *  right now - any task still sitting with them, needing their own
+    /** Every task currently sitting with this employee, needing their own
      *  action (Assigned, In Progress, or sent back for Revision). A task
-     *  they've already Submitted and is waiting on review doesn't block
-     *  them - the ball's in the reviewer's court, not theirs. Returned
-     *  (not just a bool) so the UI can name them. */
+     *  they've already Submitted and is waiting on review doesn't count -
+     *  the ball's in the reviewer's court, not theirs. Claiming is only
+     *  actually blocked once this reaches PortalTask::MAX_OPEN_TASKS_FOR_CLAIM
+     *  (see claim()) - returned as the full list either way, not just a
+     *  bool, so the UI can always name what they're carrying. */
     public function claimBlockers(int $staffId)
     {
         return PortalTask::where('assigned_to', $staffId)
@@ -200,8 +203,8 @@ class TaskRepository
         }
 
         $blockers = $this->claimBlockers($staffId);
-        if ($blockers->isNotEmpty()) {
-            return $this->responseWithError('You can\'t claim a paid task while you have a task of your own still in progress: ' . $blockers->pluck('title')->implode(', '), []);
+        if ($blockers->count() >= PortalTask::MAX_OPEN_TASKS_FOR_CLAIM) {
+            return $this->responseWithError('Complete 1 of your tasks to become eligible for more tasks: ' . $blockers->pluck('title')->implode(', '), []);
         }
 
         $task->assigned_to = $staffId;

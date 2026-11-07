@@ -23,10 +23,10 @@
         </div>
 
         @unless ($data['isManager'])
-            @if ($data['claimBlockers']->isNotEmpty())
+            @if ($data['claimBlocked'])
                 <div class="card ot-card mb-24" style="border-left:4px solid #dc3545;">
                     <div class="card-body">
-                        <p class="text-danger mb-2"><strong>You can't claim an open task right now</strong> — you have a task of your own still in progress:</p>
+                        <p class="text-danger mb-2"><strong>You can't claim an open task right now</strong> — complete 1 of your {{ $data['claimBlockers']->count() }} tasks to become eligible for more:</p>
                         <ul class="mb-0">
                             @foreach ($data['claimBlockers'] as $b)
                                 <li><a href="{{ route('portal-tasks.show', $b->id) }}">{{ $b->title }}</a></li>
@@ -52,11 +52,20 @@
                                     <td>{{ $t->due_date?->format('d M Y') }}</td>
                                     <td>{{ Setting('currency_symbol') }} {{ number_format($t->amount, 2) }}</td>
                                     @if ($data['isManager'])
-                                        <td>
-                                            @if (empty($t->visible_to_staff_ids))
+                                        <td style="font-size:.85rem">
+                                            @if (empty($t->visible_to_role_ids) && empty($t->visible_to_staff_ids))
                                                 Everyone
                                             @else
-                                                {{ \App\Models\Staff\Staff::whereIn('id', $t->visible_to_staff_ids)->get()->map(fn ($s) => trim($s->first_name . ' ' . $s->last_name))->implode(', ') }}
+                                                @if (!empty($t->visible_to_role_ids))
+                                                    {{ \App\Models\Role::whereIn('id', $t->visible_to_role_ids)->pluck('name')->implode(', ') }}
+                                                @endif
+                                                @if (!empty($t->visible_to_staff_ids))
+                                                    @if (!empty($t->visible_to_role_ids))<br>+ @endif
+                                                    {{ \App\Models\Staff\Staff::whereIn('id', $t->visible_to_staff_ids)->get()->map(fn ($s) => trim($s->first_name . ' ' . $s->last_name))->implode(', ') }}
+                                                @endif
+                                            @endif
+                                            @if (!empty($t->hidden_from_staff_ids))
+                                                <br><span class="text-danger">− {{ \App\Models\Staff\Staff::whereIn('id', $t->hidden_from_staff_ids)->get()->map(fn ($s) => trim($s->first_name . ' ' . $s->last_name))->implode(', ') }}</span>
                                             @endif
                                         </td>
                                     @endif

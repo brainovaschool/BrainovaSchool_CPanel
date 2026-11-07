@@ -113,6 +113,7 @@ class TaskController extends Controller
     public function create()
     {
         $data['employeesList']   = \App\Models\Staff\Staff::with('role')->orderBy('first_name')->get();
+        $data['rolesList']       = \App\Models\Role::whereNotIn('id', [\App\Enums\RoleEnum::STUDENT, \App\Enums\RoleEnum::GUARDIAN])->orderBy('name')->get();
         $data['settings']        = PortalSetting::current();
         $data['taskCategories']  = \App\Models\Portal\PortalTaskCategory::orderBy('name')->get();
         $data['title']           = 'Assign a Task';
@@ -131,8 +132,12 @@ class TaskController extends Controller
             'amount'                 => 'required_if:paid,1|nullable|numeric|min:0',
             'due_date'               => 'required|date',
             'priority'               => 'nullable|in:Low,Medium,High',
-            'visible_to_staff_ids'   => 'nullable|array',
-            'visible_to_staff_ids.*' => 'integer|exists:staff,id',
+            'visible_to_staff_ids'    => 'nullable|array',
+            'visible_to_staff_ids.*'  => 'integer|exists:staff,id',
+            'visible_to_role_ids'     => 'nullable|array',
+            'visible_to_role_ids.*'   => 'integer|exists:roles,id',
+            'hidden_from_staff_ids'   => 'nullable|array',
+            'hidden_from_staff_ids.*' => 'integer|exists:staff,id',
         ]);
 
         $result = $this->repo->store($request, Auth::id());
@@ -169,6 +174,7 @@ class TaskController extends Controller
         $data['isCreator']  = $isManager && ((int) $task->assigned_by === (int) Auth::id() || (int) Auth::user()->role_id === 1);
         $data['canClaim']   = $task->paid && $task->status === \App\Models\Portal\PortalTask::OPEN && $staffId !== null && $task->isVisibleTo($staffId);
         $data['claimBlockers'] = $data['canClaim'] ? $this->repo->claimBlockers($staffId) : collect();
+        $data['claimBlocked']  = $data['claimBlockers']->count() >= \App\Models\Portal\PortalTask::MAX_OPEN_TASKS_FOR_CLAIM;
         $data['canMarkPaid'] = $isManager && $task->paid && $task->status === \App\Models\Portal\PortalTask::COMPLETED && $task->pay_status === 'due';
         $data['title']      = $task->title;
         return view('portal.tasks.show', compact('data'));
@@ -211,6 +217,7 @@ class TaskController extends Controller
                 ->with(['assignee', 'payout'])->get();
         } else {
             $data['claimBlockers'] = $staffId ? $this->repo->claimBlockers($staffId) : collect();
+            $data['claimBlocked']  = $data['claimBlockers']->count() >= \App\Models\Portal\PortalTask::MAX_OPEN_TASKS_FOR_CLAIM;
             $data['myPaidTasks']   = $staffId ? \App\Models\Portal\PortalTask::where('paid', true)->where('assigned_to', $staffId)->get() : collect();
         }
 
