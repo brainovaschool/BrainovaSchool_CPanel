@@ -101,6 +101,42 @@
             </div>
         </div>
 
+        <div class="table-content table-basic mb-24">
+            <div class="card">
+                <div class="card-header"><h4 class="mb-0">Responsibilities — check-ins in this range</h4></div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="ot-basic-table ot-table-bg">
+                            <thead class="thead">
+                                <tr><th>Employee</th><th>Expected check-ins</th><th>Done</th><th>Rate</th><th>By duty</th></tr>
+                            </thead>
+                            <tbody class="tbody">
+                                @forelse ($data['dutyRows'] as $row)
+                                    <tr>
+                                        <td>{{ trim($row['staff']->first_name . ' ' . $row['staff']->last_name) }}</td>
+                                        <td>{{ $row['expected'] }}</td>
+                                        <td>{{ $row['done'] }}</td>
+                                        <td>
+                                            @if ($row['rate'] === null)
+                                                <span class="text-secondary">— no duties —</span>
+                                            @else
+                                                <span class="{{ $row['rate'] >= 80 ? 'badge-basic-success-text' : ($row['rate'] >= 50 ? 'badge-basic-warning-text' : 'badge-basic-danger-text') }}">{{ $row['rate'] }}%</span>
+                                            @endif
+                                        </td>
+                                        <td style="font-size:.8rem">
+                                            {{ collect($row['breakdown'])->map(fn ($b) => "{$b['title']}: {$b['done']}/{$b['expected']}")->implode(' · ') }}
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr><td colspan="100%" class="text-center gray-color">{{ ___('common.no_data_available') }}</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="card ot-card">
             <div class="card-header"><h4 class="mb-0">Completed tasks per day</h4></div>
             <div class="card-body">

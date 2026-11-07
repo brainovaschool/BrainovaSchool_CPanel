@@ -45,7 +45,7 @@
                                         @if ($entry->upload)<br><a href="{{ globalAsset($entry->upload->path) }}" target="_blank">Document</a>@endif
                                     </td>
                                     <td>
-                                        <form action="{{ route('portal-work-log.entry.feedback', $entry->id) }}" method="post" class="d-flex gap-2 align-items-center">
+                                        <form action="{{ route('portal-work-logs.entry.feedback', $entry->id) }}" method="post" class="d-flex gap-2 align-items-center">
                                             @csrf
                                             <input type="text" name="feedback" class="form-control ot-input" value="{{ $entry->feedback }}" placeholder="Leave an observation...">
                                             <button type="submit" class="btn btn-sm ot-btn-primary">{{ $entry->feedback ? 'Update' : 'Send' }}</button>

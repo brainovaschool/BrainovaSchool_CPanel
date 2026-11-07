@@ -41,6 +41,7 @@ class AnalyticsController extends Controller
         $data['filters'] = $filters;
         $data['summary'] = $this->repo->orgSummary($from, $to, $filters);
         $data['rows']    = $this->repo->byEmployee($from, $to, $filters);
+        $data['dutyRows'] = $this->repo->dutyCompletion($from, $to, $filters['assigned_to'] ?? null);
         $data['trend']   = $this->repo->trend($from, $to, $filters['assigned_to'] ?? null);
         $data['employeesList'] = Staff::orderBy('first_name')->get();
         $data['settings']      = PortalSetting::current();

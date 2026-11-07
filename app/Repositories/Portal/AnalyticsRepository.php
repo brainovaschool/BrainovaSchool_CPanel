@@ -3,6 +3,7 @@
 namespace App\Repositories\Portal;
 
 use App\Models\Portal\PortalAttendance;
+use App\Models\Portal\PortalResponsibility;
 use App\Models\Portal\PortalTask;
 use App\Models\Portal\PortalWorkLogEntry;
 use App\Models\Staff\Staff;
@@ -83,6 +84,56 @@ class AnalyticsRepository
             $out[] = ['date' => $d, 'count' => $byDate->get($d, 0)];
         }
         return $out;
+    }
+
+    /** One row per employee — how many of their active responsibilities'
+     *  expected check-ins (one per day for a Daily duty, one per Monday
+     *  for a Weekly one) actually got ticked done inside the range.
+     *  Answers "has this person been keeping up with their
+     *  responsibilities over the last X days" directly, rather than
+     *  only showing today's status like isDoneForCurrentPeriod() does. */
+    public function dutyCompletion(string $from, string $to, ?int $staffId = null)
+    {
+        $staffQuery = Staff::orderBy('first_name');
+        if ($staffId) {
+            $staffQuery->where('id', $staffId);
+        }
+
+        $fromDate = Carbon::parse($from)->startOfDay();
+        $toDate   = Carbon::parse($to)->endOfDay();
+        $allDays  = collect(CarbonPeriod::create($fromDate, $toDate));
+
+        return $staffQuery->get()->map(function (Staff $staff) use ($fromDate, $toDate, $allDays) {
+            $duties = PortalResponsibility::where('is_active', true)
+                ->whereHas('owners', fn ($q) => $q->where('staff.id', $staff->id))
+                ->with(['ticks' => fn ($q) => $q->whereBetween('period', [$fromDate->format('Y-m-d'), $toDate->format('Y-m-d')])])
+                ->get();
+
+            $expected = 0;
+            $done = 0;
+            $breakdown = [];
+
+            foreach ($duties as $duty) {
+                $periods = $duty->freq === 'weekly'
+                    ? $allDays->map(fn ($d) => $d->copy()->startOfWeek(Carbon::MONDAY)->format('Y-m-d'))->unique()
+                    : $allDays->map(fn ($d) => $d->format('Y-m-d'));
+
+                $tickedPeriods = $duty->ticks->map(fn ($t) => $t->period->format('Y-m-d'))->all();
+                $dutyDone = $periods->filter(fn ($p) => in_array($p, $tickedPeriods, true))->count();
+
+                $expected += $periods->count();
+                $done += $dutyDone;
+                $breakdown[] = ['title' => $duty->title, 'expected' => $periods->count(), 'done' => $dutyDone];
+            }
+
+            return [
+                'staff'     => $staff,
+                'expected'  => $expected,
+                'done'      => $done,
+                'rate'      => $expected ? round($done / $expected * 100) : null,
+                'breakdown' => $breakdown,
+            ];
+        })->values();
     }
 
     public function myPerformance(int $staffId, string $from, string $to): array
