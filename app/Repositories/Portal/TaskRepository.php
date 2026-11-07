@@ -246,7 +246,7 @@ class TaskRepository
 
             $expense = new Expense();
             $expense->session_id   = setting('session');
-            $expense->name         = 'Team Portal payout — ' . $task->title;
+            $expense->name         = 'Task Board payout — ' . $task->title;
             $expense->expense_head = $head->id;
             $expense->date         = now()->format('Y-m-d');
             $expense->amount       = $task->amount;

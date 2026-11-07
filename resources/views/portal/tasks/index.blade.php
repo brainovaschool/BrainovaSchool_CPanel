@@ -8,7 +8,7 @@
         <div class="page-header">
             <div class="row">
                 <div class="col-sm-6">
-                    <h4 class="bradecrumb-title mb-1">Team Portal</h4>
+                    <h4 class="bradecrumb-title mb-1">Task Board</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
                         <li class="breadcrumb-item">Tasks</li>

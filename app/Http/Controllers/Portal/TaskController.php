@@ -46,7 +46,7 @@ class TaskController extends Controller
         $data['employeesList'] = \App\Models\Staff\Staff::orderBy('first_name')->get();
         $data['settings']  = PortalSetting::current();
         $data['filters']   = $filters;
-        $data['title']     = 'Team Portal — Tasks';
+        $data['title']     = 'Task Board — Tasks';
         return view('portal.tasks.index', compact('data'));
     }
 

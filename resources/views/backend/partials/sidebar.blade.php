@@ -253,7 +253,7 @@
                         <ul class="child-menu-list">
                             @if (hasPermission('portal_access'))
                                 <li class="sidebar-menu-item {{ set_menu(['portal*']) }}">
-                                    <a class="has-arrow">Team Portal</a>
+                                    <a class="has-arrow">Task Board</a>
                                     <ul class="child-menu-list">
                                         @if (hasPermission('portal_manage') || hasPermission('portal_manager_tasks_read'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/tasks', 'portal/tasks/create', 'portal/tasks/show*']) }}">
@@ -350,7 +350,7 @@
                                 </li>
 
                                 <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">
-                                    <a class="has-arrow">Planning</a>
+                                    <a class="has-arrow">Planning Board</a>
                                     <ul class="child-menu-list">
                                         @if (portalOwnsResponsibility('content'))
                                             <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">

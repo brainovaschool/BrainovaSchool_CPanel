@@ -20,7 +20,7 @@ class SettingsController extends Controller
     {
         $data['settings']      = PortalSetting::current();
         $data['taskCategories'] = \App\Models\Portal\PortalTaskCategory::orderBy('name')->get();
-        $data['title']    = 'Team Portal Settings';
+        $data['title']    = 'Task Board Settings';
         return view('portal.settings.edit', compact('data'));
     }
 

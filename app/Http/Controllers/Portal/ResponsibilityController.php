@@ -27,7 +27,7 @@ class ResponsibilityController extends Controller
     {
         $data['duties']  = $this->repo->all();
         $data['staffList'] = Staff::orderBy('first_name')->get();
-        $data['title']   = 'Team Portal — Responsibilities';
+        $data['title']   = 'Task Board — Responsibilities';
         return view('portal.responsibilities.index', compact('data'));
     }
 

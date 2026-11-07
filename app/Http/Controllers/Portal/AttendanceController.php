@@ -21,7 +21,7 @@ class AttendanceController extends Controller
 
         $data['date']   = $date;
         $data['rows']   = $this->repo->forDate($date);
-        $data['title']  = 'Team Portal — Attendance';
+        $data['title']  = 'Task Board — Attendance';
         return view('portal.attendance.index', compact('data'));
     }
 }

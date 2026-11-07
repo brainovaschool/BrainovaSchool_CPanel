@@ -44,7 +44,7 @@ class AnalyticsController extends Controller
         $data['trend']   = $this->repo->trend($from, $to, $filters['assigned_to'] ?? null);
         $data['employeesList'] = Staff::orderBy('first_name')->get();
         $data['settings']      = PortalSetting::current();
-        $data['title']   = 'Team Portal — Analytics';
+        $data['title']   = 'Task Board — Analytics';
         return view('portal.analytics.index', compact('data'));
     }
 

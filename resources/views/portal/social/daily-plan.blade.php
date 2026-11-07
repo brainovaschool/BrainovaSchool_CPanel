@@ -14,7 +14,7 @@
         <div class="page-header">
             <div class="row">
                 <div class="col-sm-8">
-                    <h4 class="bradecrumb-title mb-1">Social Board</h4>
+                    <h4 class="bradecrumb-title mb-1">Planning Board</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
                         <li class="breadcrumb-item">Daily Plan &amp; Weekly Goals</li>
@@ -63,7 +63,7 @@
                                         @endforeach
                                     </tr>
                                 @empty
-                                    <tr><td colspan="100%" class="text-center gray-color">No one currently holds the Content responsibility — assign it from Team Portal â†’ Responsibilities.</td></tr>
+                                    <tr><td colspan="100%" class="text-center gray-color">No one currently holds the Content responsibility — assign it from Task Board → Responsibilities.</td></tr>
                                 @endforelse
                             </tbody>
                         </table>

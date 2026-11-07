@@ -128,7 +128,7 @@ class WorkLogController extends Controller
         $data['to']          = $to;
         $data['rows']        = $this->repo->managerSummary($from, $to, $this->actingStaffId(), $this->seesEveryone());
         $data['isSuperAdmin'] = (int) Auth::user()->role_id === 1;
-        $data['title']       = 'Team Portal — Work Logs';
+        $data['title']       = 'Task Board — Work Logs';
         return view('portal.work-log.manager-index', compact('data'));
     }
 

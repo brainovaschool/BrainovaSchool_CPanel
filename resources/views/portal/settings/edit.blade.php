@@ -12,7 +12,7 @@
                     <h4 class="bradecrumb-title mb-1">{{ $data['title'] }}</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
-                        <li class="breadcrumb-item">Team Portal Settings</li>
+                        <li class="breadcrumb-item">Task Board Settings</li>
                     </ol>
                 </div>
             </div>
