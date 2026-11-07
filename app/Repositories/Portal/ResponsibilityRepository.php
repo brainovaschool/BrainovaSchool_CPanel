@@ -34,7 +34,7 @@ class ResponsibilityRepository
             'title'       => $request->title,
             'description' => $request->description,
             'freq'        => $request->freq === 'weekly' ? 'weekly' : 'daily',
-            'is_active'   => $request->boolean('is_active', true),
+            'is_active'   => $request->boolean('is_active'),
             // key stays null — only the one-off seeder creates the two
             // built-in (content, audience) duties.
         ]);
@@ -69,7 +69,7 @@ class ResponsibilityRepository
         $duty->title       = $request->title;
         $duty->description = $request->description;
         $duty->freq        = $request->freq === 'weekly' ? 'weekly' : 'daily';
-        $duty->is_active   = $request->boolean('is_active', true);
+        $duty->is_active   = $request->boolean('is_active');
         $duty->save();
 
         $newOwnerIds = array_values(array_filter((array) $request->owner_staff_ids));

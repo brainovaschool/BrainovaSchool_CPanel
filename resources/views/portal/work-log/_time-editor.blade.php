@@ -15,14 +15,14 @@
 @endphp
 <input type="hidden" name="{{ $startName }}" id="{{ $prefix }}Start" value="{{ $startValue }}">
 <div class="d-flex align-items-center gap-1">
-    <select class="form-select ot-input" style="width:64px" onchange="window.combineWorkLogTime('{{ $prefix }}StartHour','{{ $prefix }}StartMin','{{ $prefix }}Start')" id="{{ $prefix }}StartHour">
+    <select class="form-select ot-input" style="min-width:68px" onchange="window.combineWorkLogTime('{{ $prefix }}StartHour','{{ $prefix }}StartMin','{{ $prefix }}Start')" id="{{ $prefix }}StartHour">
         <option value="">HH</option>
         @for ($h = 0; $h < 24; $h++)
             <option value="{{ sprintf('%02d', $h) }}" {{ $startH === sprintf('%02d', $h) ? 'selected' : '' }}>{{ sprintf('%02d', $h) }}</option>
         @endfor
     </select>
     <span>:</span>
-    <select class="form-select ot-input" style="width:64px" onchange="window.combineWorkLogTime('{{ $prefix }}StartHour','{{ $prefix }}StartMin','{{ $prefix }}Start')" id="{{ $prefix }}StartMin">
+    <select class="form-select ot-input" style="min-width:68px" onchange="window.combineWorkLogTime('{{ $prefix }}StartHour','{{ $prefix }}StartMin','{{ $prefix }}Start')" id="{{ $prefix }}StartMin">
         <option value="">MM</option>
         @foreach ([0, 15, 30, 45] as $m)
             <option value="{{ sprintf('%02d', $m) }}" {{ $startM === sprintf('%02d', $m) ? 'selected' : '' }}>{{ sprintf('%02d', $m) }}</option>
@@ -32,14 +32,14 @@
 <span>–</span>
 <input type="hidden" name="{{ $endName }}" id="{{ $prefix }}End" value="{{ $endValue }}">
 <div class="d-flex align-items-center gap-1">
-    <select class="form-select ot-input" style="width:64px" onchange="window.combineWorkLogTime('{{ $prefix }}EndHour','{{ $prefix }}EndMin','{{ $prefix }}End')" id="{{ $prefix }}EndHour">
+    <select class="form-select ot-input" style="min-width:68px" onchange="window.combineWorkLogTime('{{ $prefix }}EndHour','{{ $prefix }}EndMin','{{ $prefix }}End')" id="{{ $prefix }}EndHour">
         <option value="">HH</option>
         @for ($h = 0; $h < 24; $h++)
             <option value="{{ sprintf('%02d', $h) }}" {{ $endH === sprintf('%02d', $h) ? 'selected' : '' }}>{{ sprintf('%02d', $h) }}</option>
         @endfor
     </select>
     <span>:</span>
-    <select class="form-select ot-input" style="width:64px" onchange="window.combineWorkLogTime('{{ $prefix }}EndHour','{{ $prefix }}EndMin','{{ $prefix }}End')" id="{{ $prefix }}EndMin">
+    <select class="form-select ot-input" style="min-width:68px" onchange="window.combineWorkLogTime('{{ $prefix }}EndHour','{{ $prefix }}EndMin','{{ $prefix }}End')" id="{{ $prefix }}EndMin">
         <option value="">MM</option>
         @foreach ([0, 15, 30, 45] as $m)
             <option value="{{ sprintf('%02d', $m) }}" {{ $endM === sprintf('%02d', $m) ? 'selected' : '' }}>{{ sprintf('%02d', $m) }}</option>

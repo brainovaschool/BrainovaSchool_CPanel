@@ -48,7 +48,8 @@ class WorkLogController extends Controller
         $data['myTasks']  = PortalTask::where('assigned_to', $staffId)
             ->whereIn('status', [PortalTask::ASSIGNED, PortalTask::IN_PROGRESS, PortalTask::REVISION])
             ->get();
-        $data['myDuties'] = PortalResponsibility::whereHas('owners', fn ($q) => $q->where('staff.id', $staffId))->orderBy('title')->get();
+        $data['myDuties'] = PortalResponsibility::where('is_active', true)
+            ->whereHas('owners', fn ($q) => $q->where('staff.id', $staffId))->orderBy('title')->get();
         $data['history']  = $this->repo->history($staffId);
         $data['title']    = 'My Work Log';
         return view('portal.work-log.my', compact('data'));

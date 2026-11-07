@@ -55,7 +55,7 @@
                                         <td>
                                             <select name="owner_staff_ids[]" form="{{ $formId($duty) }}" multiple class="form-control select2_multy">
                                                 @foreach ($data['staffList'] as $s)
-                                                    <option value="{{ $s->id }}" {{ in_array($s->id, $ownerIdsOf($duty)) ? 'selected' : '' }}>{{ trim($s->first_name . ' ' . $s->last_name) }}</option>
+                                                    <option value="{{ $s->id }}" {{ in_array($s->id, $ownerIdsOf($duty)) ? 'selected' : '' }}>{{ trim($s->first_name . ' ' . $s->last_name) }} (#{{ $s->id }})</option>
                                                 @endforeach
                                             </select>
                                         </td>
@@ -67,7 +67,7 @@
                                         </td>
                                         <td>{{ $duty->isDoneForCurrentPeriod() ? '✓ Done' : '— not yet —' }}</td>
                                         <td class="action">
-                                            <form id="{{ $formId($duty) }}" action="{{ route('portal-responsibilities.update', $duty->id) }}" method="post">@csrf</form>
+                                            <form id="{{ $formId($duty) }}" class="duty-row-form" action="{{ route('portal-responsibilities.update', $duty->id) }}" method="post">@csrf</form>
                                             <button type="submit" form="{{ $formId($duty) }}" class="btn btn-sm ot-btn-primary">Save</button>
                                             @unless ($duty->key)
                                                 <form action="{{ route('portal-responsibilities.destroy', $duty->id) }}" method="post" class="d-inline" onsubmit="return confirm('Remove this responsibility?');">
@@ -80,6 +80,9 @@
                                 @endforeach
                             </tbody>
                         </table>
+                    </div>
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" id="dutySaveAllBtn" class="btn ot-btn-primary">Save All Changes</button>
                     </div>
                 </div>
             </div>
@@ -105,7 +108,7 @@
                         <label class="form-label">Assigned to</label>
                         <select name="owner_staff_ids[]" multiple class="form-control select2_multy" style="min-width:200px">
                             @foreach ($data['staffList'] as $s)
-                                <option value="{{ $s->id }}">{{ trim($s->first_name . ' ' . $s->last_name) }}</option>
+                                <option value="{{ $s->id }}">{{ trim($s->first_name . ' ' . $s->last_name) }} (#{{ $s->id }})</option>
                             @endforeach
                         </select>
                     </div>
@@ -126,5 +129,23 @@
 
 @push('script')
     @include('backend.partials.delete-ajax')
+    <script>
+        // Each row is its own form (so one Save only touches that row's
+        // owners/etc, never anyone else's) - this fires all of them in the
+        // background in one go, so editing several rows - e.g. assigning
+        // the same person to many duties at once - doesn't depend on
+        // remembering to click Save on each one individually.
+        document.getElementById('dutySaveAllBtn')?.addEventListener('click', function () {
+            var forms = Array.prototype.slice.call(document.querySelectorAll('.duty-row-form'));
+            var btn = this;
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            Promise.allSettled(forms.map(function (form) {
+                return fetch(form.action, { method: 'POST', body: new FormData(form), redirect: 'manual' }).catch(function () {});
+            })).then(function () {
+                window.location.reload();
+            });
+        });
+    </script>
 @endpush
 @include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'portal/responsibilities'])
