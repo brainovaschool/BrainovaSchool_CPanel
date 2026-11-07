@@ -1324,30 +1324,43 @@ if (!function_exists('permission_category_map')) {
             'leave_log' => 'Leave',
             'leave_approval' => 'Leave',
 
-            // Staff Zone (Team Portal, Social Board, Planning)
-            'portal' => 'Staff Zone',
-            'reel_studio' => 'Staff Zone',
-            'portal_employees' => 'Staff Zone',
-            'portal_my_tasks' => 'Staff Zone',
-            'portal_paid_tasks' => 'Staff Zone',
-            'portal_work_log' => 'Staff Zone',
-            'portal_my_responsibilities' => 'Staff Zone',
-            'portal_my_performance' => 'Staff Zone',
-            'portal_social_reels' => 'Staff Zone',
-            'portal_social_suggest_reel' => 'Staff Zone',
-            'portal_social_content_pool' => 'Staff Zone',
-            'portal_reel_workflow' => 'Staff Zone',
-            'portal_social_month_plan' => 'Staff Zone',
-            'portal_social_page_fixes' => 'Staff Zone',
-            'portal_manager_tasks' => 'Staff Zone',
-            'portal_settings' => 'Staff Zone',
-            'portal_team_attendance' => 'Staff Zone',
-            'portal_manager_work_logs' => 'Staff Zone',
-            'portal_responsibilities_manage' => 'Staff Zone',
-            'portal_analytics' => 'Staff Zone',
-            'portal_social_settings' => 'Staff Zone',
-            'portal_reel_characters' => 'Staff Zone',
-            'portal_reel_settings' => 'Staff Zone',
+            // Staff Zone's two sidebar sub-menus (Task Board = old "Team
+            // Portal", Social Board unchanged) get their own categories here
+            // instead of one flat "Staff Zone" blob, so this screen's
+            // grouping matches the sidebar 1:1. Planning Board, the sidebar's
+            // third sub-menu, has no row here on purpose - its one item
+            // (Daily Plan & Goals) is gated by the "content" responsibility
+            // assignment (see portalOwnsResponsibility()), not a Role
+            // permission, so there's nothing to list.
+            // Task Board (was Team Portal)
+            // 'portal' itself (Access/Manage) is Staff Zone's own overall
+            // gate, not specific to Task Board - kept here since Task Board
+            // is the default of the three.
+            'portal' => 'Task Board',
+            'portal_employees' => 'Task Board',
+            'portal_my_tasks' => 'Task Board',
+            'portal_paid_tasks' => 'Task Board',
+            'portal_work_log' => 'Task Board',
+            'portal_my_responsibilities' => 'Task Board',
+            'portal_my_performance' => 'Task Board',
+            'portal_manager_tasks' => 'Task Board',
+            'portal_settings' => 'Task Board',
+            'portal_team_attendance' => 'Task Board',
+            'portal_manager_work_logs' => 'Task Board',
+            'portal_responsibilities_manage' => 'Task Board',
+            'portal_analytics' => 'Task Board',
+
+            // Social Board
+            'reel_studio' => 'Social Board',
+            'portal_social_reels' => 'Social Board',
+            'portal_social_suggest_reel' => 'Social Board',
+            'portal_social_content_pool' => 'Social Board',
+            'portal_reel_workflow' => 'Social Board',
+            'portal_social_month_plan' => 'Social Board',
+            'portal_social_page_fixes' => 'Social Board',
+            'portal_social_settings' => 'Social Board',
+            'portal_reel_characters' => 'Social Board',
+            'portal_reel_settings' => 'Social Board',
 
             // Teacher Zone (Class Content, Homework, Exam, AI/analytics tools)
             'class_content' => 'Teacher Zone',
