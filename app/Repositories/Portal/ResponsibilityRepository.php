@@ -20,9 +20,12 @@ class ResponsibilityRepository
         return PortalResponsibility::with('owners')->orderByRaw('`key` IS NULL')->orderBy('title')->get();
     }
 
+    /** Active ones only - an inactive duty is a paused/retired one, not
+     *  something the owner still needs to see or act on. */
     public function forStaff(int $staffId)
     {
-        return PortalResponsibility::with('owners')->whereHas('owners', fn ($q) => $q->where('staff.id', $staffId))->orderBy('title')->get();
+        return PortalResponsibility::with('owners')->where('is_active', true)
+            ->whereHas('owners', fn ($q) => $q->where('staff.id', $staffId))->orderBy('title')->get();
     }
 
     public function store($request): array
@@ -31,6 +34,7 @@ class ResponsibilityRepository
             'title'       => $request->title,
             'description' => $request->description,
             'freq'        => $request->freq === 'weekly' ? 'weekly' : 'daily',
+            'is_active'   => $request->boolean('is_active', true),
             // key stays null — only the one-off seeder creates the two
             // built-in (content, audience) duties.
         ]);
@@ -65,6 +69,7 @@ class ResponsibilityRepository
         $duty->title       = $request->title;
         $duty->description = $request->description;
         $duty->freq        = $request->freq === 'weekly' ? 'weekly' : 'daily';
+        $duty->is_active   = $request->boolean('is_active', true);
         $duty->save();
 
         $newOwnerIds = array_values(array_filter((array) $request->owner_staff_ids));
@@ -101,6 +106,20 @@ class ResponsibilityRepository
 
         $duty->delete();
         return $this->responseWithSuccess('Removed.', []);
+    }
+
+    /** Built-in duties are silently skipped rather than failing the whole
+     *  batch, same rule as the single destroy() above. */
+    public function bulkDestroy(array $ids): array
+    {
+        $deleted = PortalResponsibility::whereIn('id', $ids)->whereNull('key')->delete();
+        return $this->responseWithSuccess("Removed {$deleted} responsibilit" . ($deleted === 1 ? 'y' : 'ies') . '.', []);
+    }
+
+    public function bulkStatus(array $ids, bool $isActive): array
+    {
+        PortalResponsibility::whereIn('id', $ids)->update(['is_active' => $isActive]);
+        return $this->responseWithSuccess('Updated.', []);
     }
 
     /** $staffId: the acting employee's own staff id, or null when a

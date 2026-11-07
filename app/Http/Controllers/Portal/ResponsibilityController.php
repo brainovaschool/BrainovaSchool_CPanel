@@ -59,6 +59,26 @@ class ResponsibilityController extends Controller
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    public function bulkDelete(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+        $result = $this->repo->bulkDestroy($ids);
+        return response()->json([$result['message'], 'success', ___('alert.deleted'), ___('alert.OK')]);
+    }
+
+    public function bulkStatus(Request $request)
+    {
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+        $result = $this->repo->bulkStatus($ids, (bool) $request->input('status', 1));
+        return response()->json([$result['message'], 'success', ___('alert.updated'), ___('alert.OK')]);
+    }
+
     public function myDuties()
     {
         $staffId = $this->actingStaffId();

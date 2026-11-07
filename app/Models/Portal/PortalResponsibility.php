@@ -10,6 +10,10 @@ class PortalResponsibility extends Model
     protected $table = 'portal_responsibilities';
     protected $guarded = ['id'];
 
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
     public const KEY_CONTENT  = 'content';
     public const KEY_AUDIENCE = 'audience';
 

@@ -21,40 +21,54 @@
             <div class="card">
                 <div class="card-header"><h4 class="mb-0">Duties</h4></div>
                 <div class="card-body">
+                    @include('backend.partials.bulk-actions-bar', ['bulkStatusToggle' => true])
                     <div class="table-responsive">
                         <table class="ot-basic-table ot-table-bg">
                             <thead class="thead">
                                 <tr>
-                                    <th>Title</th>
-                                    <th>Frequency</th>
-                                    <th>Owners</th>
+                                    <th style="width:36px"><input type="checkbox" id="bulkSelectAll"></th>
+                                    <th style="min-width:160px">Title</th>
+                                    <th style="min-width:110px">Frequency</th>
+                                    <th style="min-width:180px">Assigned to</th>
+                                    <th>Active</th>
+                                    <th style="min-width:200px">Details</th>
                                     <th>This period</th>
-                                    <th style="min-width:420px" class="action">{{ ___('common.action') }}</th>
+                                    <th style="min-width:160px" class="action">{{ ___('common.action') }}</th>
                                 </tr>
                             </thead>
                             <tbody class="tbody">
                                 @php($ownerIdsOf = fn ($duty) => $duty->owners->pluck('id')->all())
+                                @php($formId = fn ($duty) => 'dutyForm' . $duty->id)
                                 @foreach ($data['duties'] as $duty)
-                                    <tr>
-                                        <td>{{ $duty->title }} @if ($duty->key)<span class="badge-basic-info-text">Built-in</span>@endif</td>
-                                        <td>{{ ucfirst($duty->freq) }}</td>
-                                        <td>{{ $duty->owners->isNotEmpty() ? $duty->owners->map(fn ($o) => trim($o->first_name . ' ' . $o->last_name))->implode(', ') : '— unassigned (admin) —' }}</td>
-                                        <td>{{ $duty->isDoneForCurrentPeriod() ? 'âœ“ Done' : '— not yet —' }}</td>
+                                    <tr id="row_{{ $duty->id }}">
+                                        <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $duty->id }}"></td>
+                                        <td>
+                                            <input type="text" name="title" form="{{ $formId($duty) }}" class="form-control ot-input" value="{{ $duty->title }}" required>
+                                            @if ($duty->key)<span class="badge-basic-info-text d-block mt-1" style="width:fit-content">Built-in</span>@endif
+                                        </td>
+                                        <td>
+                                            <select name="freq" form="{{ $formId($duty) }}" class="form-control ot-input">
+                                                <option value="daily" {{ $duty->freq === 'daily' ? 'selected' : '' }}>Daily</option>
+                                                <option value="weekly" {{ $duty->freq === 'weekly' ? 'selected' : '' }}>Weekly</option>
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select name="owner_staff_ids[]" form="{{ $formId($duty) }}" multiple class="form-control select2_multy">
+                                                @foreach ($data['staffList'] as $s)
+                                                    <option value="{{ $s->id }}" {{ in_array($s->id, $ownerIdsOf($duty)) ? 'selected' : '' }}>{{ trim($s->first_name . ' ' . $s->last_name) }}</option>
+                                                @endforeach
+                                            </select>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="checkbox" class="form-check-input" name="is_active" form="{{ $formId($duty) }}" value="1" {{ $duty->is_active ? 'checked' : '' }}>
+                                        </td>
+                                        <td>
+                                            <textarea name="description" form="{{ $formId($duty) }}" class="form-control ot-input" rows="1">{{ $duty->description }}</textarea>
+                                        </td>
+                                        <td>{{ $duty->isDoneForCurrentPeriod() ? '✓ Done' : '— not yet —' }}</td>
                                         <td class="action">
-                                            <form action="{{ route('portal-responsibilities.update', $duty->id) }}" method="post" class="d-flex gap-2 flex-wrap align-items-center">
-                                                @csrf
-                                                <input type="text" name="title" class="form-control ot-input" value="{{ $duty->title }}" style="max-width:160px" required>
-                                                <select name="freq" class="nice-select niceSelect bordered_style">
-                                                    <option value="daily" {{ $duty->freq === 'daily' ? 'selected' : '' }}>Daily</option>
-                                                    <option value="weekly" {{ $duty->freq === 'weekly' ? 'selected' : '' }}>Weekly</option>
-                                                </select>
-                                                <select name="owner_staff_ids[]" multiple class="form-select" style="min-width:180px" size="3" title="Ctrl/Cmd-click to select more than one">
-                                                    @foreach ($data['staffList'] as $s)
-                                                        <option value="{{ $s->id }}" {{ in_array($s->id, $ownerIdsOf($duty)) ? 'selected' : '' }}>{{ trim($s->first_name . ' ' . $s->last_name) }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <button type="submit" class="btn btn-sm ot-btn-primary">Save</button>
-                                            </form>
+                                            <form id="{{ $formId($duty) }}" action="{{ route('portal-responsibilities.update', $duty->id) }}" method="post">@csrf</form>
+                                            <button type="submit" form="{{ $formId($duty) }}" class="btn btn-sm ot-btn-primary">Save</button>
                                             @unless ($duty->key)
                                                 <form action="{{ route('portal-responsibilities.destroy', $duty->id) }}" method="post" class="d-inline" onsubmit="return confirm('Remove this responsibility?');">
                                                     @csrf @method('DELETE')
@@ -82,21 +96,25 @@
                     </div>
                     <div>
                         <label class="form-label">Frequency</label>
-                        <select name="freq" class="nice-select niceSelect bordered_style">
+                        <select name="freq" class="form-control ot-input">
                             <option value="daily">Daily</option>
                             <option value="weekly">Weekly</option>
                         </select>
                     </div>
                     <div>
-                        <label class="form-label">Owner(s)</label>
-                        <select name="owner_staff_ids[]" multiple class="form-select" style="min-width:180px" size="3" title="Ctrl/Cmd-click to select more than one">
+                        <label class="form-label">Assigned to</label>
+                        <select name="owner_staff_ids[]" multiple class="form-control select2_multy" style="min-width:200px">
                             @foreach ($data['staffList'] as $s)
                                 <option value="{{ $s->id }}">{{ trim($s->first_name . ' ' . $s->last_name) }}</option>
                             @endforeach
                         </select>
                     </div>
+                    <div class="d-flex align-items-center gap-1 mb-2">
+                        <input type="checkbox" class="form-check-input" name="is_active" value="1" id="newDutyActive" checked>
+                        <label class="form-label mb-0" for="newDutyActive">Active</label>
+                    </div>
                     <div style="min-width:240px">
-                        <label class="form-label">Description (optional)</label>
+                        <label class="form-label">Details (optional)</label>
                         <input type="text" name="description" class="form-control ot-input">
                     </div>
                     <button type="submit" class="btn ot-btn-primary">Add</button>
@@ -105,3 +123,8 @@
         </div>
     </div>
 @endsection
+
+@push('script')
+    @include('backend.partials.delete-ajax')
+@endpush
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'portal/responsibilities'])

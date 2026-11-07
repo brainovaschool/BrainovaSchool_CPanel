@@ -23,7 +23,7 @@
                     <div class="table-responsive">
                         <table class="ot-basic-table ot-table-bg">
                             <thead class="thead">
-                                <tr><th>Title</th><th>Frequency</th><th>Description</th><th>This period</th><th class="action">{{ ___('common.action') }}</th></tr>
+                                <tr><th>Title</th><th>Frequency</th><th>Description</th><th>Assigned to</th><th>This period</th><th class="action">{{ ___('common.action') }}</th></tr>
                             </thead>
                             <tbody class="tbody">
                                 @forelse ($data['duties'] as $duty)
@@ -31,6 +31,7 @@
                                         <td>{{ $duty->title }}</td>
                                         <td>{{ ucfirst($duty->freq) }}</td>
                                         <td>{{ $duty->description }}</td>
+                                        <td>{{ $duty->owners->map(fn ($o) => trim($o->first_name . ' ' . $o->last_name))->implode(', ') }}</td>
                                         <td>
                                             @if ($duty->isDoneForCurrentPeriod())
                                                 <span class="badge-basic-success-text">Done</span>
