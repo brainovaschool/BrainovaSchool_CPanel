@@ -39,7 +39,11 @@
                                 <tr>
                                     <td>{{ $entry->start_label }}–{{ $entry->end_label }} @if ($entry->is_extra)<span class="badge-basic-info-text">Extra</span>@endif</td>
                                     <td>{{ $entry->task ? 'Task: ' . $entry->task->title : $entry->activity }}</td>
-                                    <td>{{ $entry->notes }}</td>
+                                    <td>
+                                        {{ $entry->notes }}
+                                        @if ($entry->link)<br><a href="{{ $entry->link }}" target="_blank" rel="noopener">Link</a>@endif
+                                        @if ($entry->upload)<br><a href="{{ globalAsset($entry->upload->path) }}" target="_blank">Document</a>@endif
+                                    </td>
                                     <td>
                                         <form action="{{ route('portal-work-log.entry.feedback', $entry->id) }}" method="post" class="d-flex gap-2 align-items-center">
                                             @csrf
