@@ -37,7 +37,7 @@ class SocialRepository
 
     public function reels(array $filters)
     {
-        return PortalReel::with(['suggestedBy.staff.designation', 'creator', 'assignee', 'seriesModel'])
+        return PortalReel::with(['suggestedBy.staff.designation', 'creator', 'assignee', 'seriesModel', 'promptUpload'])
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
             ->when($filters['format'] ?? null, fn ($q, $v) => $q->where('format', $v))
@@ -73,11 +73,12 @@ class SocialRepository
                 'planned_date'     => $request->planned_date ?: null,
                 'drive_link'       => $request->drive_link,
                 'prompt_text'      => $request->prompt_text,
-                'prompt_upload_id' => $promptUploadId,
-                'prompt_link'      => $request->prompt_link,
-                'thumb_upload_id'  => $thumbUploadId,
-                'note'             => $request->note,
-                'custom_fields'    => $customFields,
+                'prompt_upload_id'  => $promptUploadId,
+                'prompt_link'       => $request->prompt_link,
+                'thumb_upload_id'   => $thumbUploadId,
+                'note'              => $request->note,
+                'custom_fields'     => $customFields,
+                'is_document_track' => $request->boolean('is_document_track'),
             ]);
 
             return $this->responseWithSuccess('Reel added.', ['id' => $reel->id]);
@@ -116,6 +117,7 @@ class SocialRepository
         $reel->prompt_link  = $request->prompt_link;
         $reel->note         = $request->note;
         $reel->custom_fields = $customFields;
+        $reel->is_document_track = $request->boolean('is_document_track');
         $reel->save();
 
         return $this->responseWithSuccess('Saved.', []);
@@ -572,7 +574,11 @@ class SocialRepository
             $reel->canva_link        = $link;
             $reel->canva_approved_at = null;
         } elseif ($stage === 'video') {
-            if (!$reel->canva_approved_at) {
+            // A document-track reel never has a Prompt/Canva stage to
+            // begin with - the assignee got a prompt document + character
+            // sheets straight from the admin, so Video is its only real
+            // approval step.
+            if (!$reel->canva_approved_at && !$reel->is_document_track) {
                 return $this->responseWithError('The Canva link needs to be approved first.', []);
             }
             $reel->drive_link       = $link;
@@ -1137,6 +1143,16 @@ class SocialRepository
     public function reelCustomFields()
     {
         return PortalReelCustomField::orderBy('sort_order')->get();
+    }
+
+    /** The key of the one admin-defined Characters field, if any has been
+     *  set up (type Dropdown, sourced from the live Reel Characters
+     *  roster) - null if none exists yet. Used wherever a reel's own
+     *  associated characters need resolving, e.g. document-track reels'
+     *  "download characters" links. */
+    public function charactersFieldKey(): ?string
+    {
+        return PortalReelCustomField::where('list_key', PortalReelCustomField::SOURCE_REEL_CHARACTERS)->value('key');
     }
 
     /** Global Instructions + the AI Scene Generation prompt template used

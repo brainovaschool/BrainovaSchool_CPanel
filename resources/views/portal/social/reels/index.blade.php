@@ -108,7 +108,8 @@
                             @if ($showBulk)<col style="width:4%">@endif
                             <col style="width:6%">
                             <col style="width:5%">
-                            <col style="width:12%">
+                            <col style="width:10%">
+                            <col style="width:6%">
                             <col style="width:7%">
                             <col style="width:7%">
                             <col style="width:11%">
@@ -118,7 +119,7 @@
                             <col style="width:7%">
                             <col style="width:7%">
                             <col style="width:7%">
-                            <col style="width:6%">
+                            <col style="width:7%">
                         </colgroup>
                         <thead class="thead">
                             <tr>
@@ -128,6 +129,7 @@
                                 <th>Series</th>
                                 <th>Code</th>
                                 <th>Topic</th>
+                                <th>Characters</th>
                                 <th>Suggested by</th>
                                 <th>Approve</th>
                                 <th>Assign</th>
@@ -159,6 +161,38 @@
                                     <td>{{ $reel->code ?: '—' }}</td>
                                     <td>
                                         <span class="bn-reel-title">{{ $reel->title }}</span>
+                                        @if ($reel->is_document_track)
+                                            <span class="badge-basic-info-text d-block mt-1" style="width:fit-content">Document track</span>
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @php($charNames = $data['charactersFieldKey'] ? array_values(array_filter((array) ($reel->custom_fields[$data['charactersFieldKey']] ?? []))) : [])
+                                        @if ($charNames)
+                                            <details class="bn-approve-details">
+                                                <summary><span class="text-secondary" title="{{ implode(', ', $charNames) }}">{{ count($charNames) }} 👤</span></summary>
+                                                <div class="bn-approve-panel" style="min-width:170px">
+                                                    @foreach ($charNames as $name)
+                                                        @php($char = $data['charactersByName']->get($name))
+                                                        <div class="mb-1 pb-1" style="border-bottom:1px solid rgba(0,0,0,.08)">
+                                                            <strong style="font-size:12px">{{ $name }}</strong><br>
+                                                            @if ($char)
+                                                                <span style="font-size:11px">
+                                                                    @if ($char->portrait)<a href="{{ globalAsset($char->portrait->path) }}" target="_blank">Portrait</a>@endif
+                                                                    @if ($char->descriptionUpload)@if($char->portrait) · @endif<a href="{{ globalAsset($char->descriptionUpload->path) }}" target="_blank">Notes</a>@endif
+                                                                    @foreach ($char->costumes as $i => $costume)
+                                                                        @if ($costume->upload)@if($char->portrait || $char->descriptionUpload || $i > 0) · @endif<a href="{{ globalAsset($costume->upload->path) }}" target="_blank">Costume {{ $i + 1 }}</a>@endif
+                                                                    @endforeach
+                                                                </span>
+                                                            @else
+                                                                <span class="text-secondary" style="font-size:11px">not found</span>
+                                                            @endif
+                                                        </div>
+                                                    @endforeach
+                                                </div>
+                                            </details>
+                                        @else
+                                            —
+                                        @endif
                                     </td>
                                     <td>
                                         {{ optional($reel->suggestedBy)->name ?: '—' }}
@@ -174,8 +208,10 @@
                                             <details class="bn-approve-details">
                                                 <summary>
                                                     <span class="{{ $isSuggested ? 'text-secondary' : 'text-success' }}" title="Topic">T</span>
-                                                    <span class="{{ $reel->prompt_approved_at ? 'text-success' : 'text-secondary' }}" title="Prompt">P</span>
-                                                    <span class="{{ $reel->canva_approved_at ? 'text-success' : 'text-secondary' }}" title="Canva">C</span>
+                                                    @unless ($reel->is_document_track)
+                                                        <span class="{{ $reel->prompt_approved_at ? 'text-success' : 'text-secondary' }}" title="Prompt">P</span>
+                                                        <span class="{{ $reel->canva_approved_at ? 'text-success' : 'text-secondary' }}" title="Canva">C</span>
+                                                    @endunless
                                                     <span class="{{ $reel->video_approved_at ? 'text-success' : 'text-secondary' }}" title="Video">V</span>
                                                 </summary>
                                                 <div class="bn-approve-panel">
@@ -185,18 +221,20 @@
                                                         <input type="checkbox" class="form-check-input" {{ $isSuggested ? '' : 'checked disabled' }} onchange="this.form.submit()">
                                                         <label class="mb-0">Topic</label>
                                                     </form>
-                                                    <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-1">
-                                                        @csrf
-                                                        <input type="hidden" name="stage" value="prompt">
-                                                        <input type="checkbox" class="form-check-input" {{ $reel->prompt_approved_at ? 'checked' : '' }} {{ $promptCheckable ? '' : 'disabled' }} onchange="this.form.submit()">
-                                                        <label class="mb-0">Prompt</label>
-                                                    </form>
-                                                    <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-1">
-                                                        @csrf
-                                                        <input type="hidden" name="stage" value="canva">
-                                                        <input type="checkbox" class="form-check-input" {{ $reel->canva_approved_at ? 'checked' : '' }} {{ $canvaCheckable ? '' : 'disabled' }} onchange="this.form.submit()">
-                                                        <label class="mb-0">Canva</label>
-                                                    </form>
+                                                    @unless ($reel->is_document_track)
+                                                        <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-1">
+                                                            @csrf
+                                                            <input type="hidden" name="stage" value="prompt">
+                                                            <input type="checkbox" class="form-check-input" {{ $reel->prompt_approved_at ? 'checked' : '' }} {{ $promptCheckable ? '' : 'disabled' }} onchange="this.form.submit()">
+                                                            <label class="mb-0">Prompt</label>
+                                                        </form>
+                                                        <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-1">
+                                                            @csrf
+                                                            <input type="hidden" name="stage" value="canva">
+                                                            <input type="checkbox" class="form-check-input" {{ $reel->canva_approved_at ? 'checked' : '' }} {{ $canvaCheckable ? '' : 'disabled' }} onchange="this.form.submit()">
+                                                            <label class="mb-0">Canva</label>
+                                                        </form>
+                                                    @endunless
                                                     <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-2">
                                                         @csrf
                                                         <input type="hidden" name="stage" value="video">
@@ -228,6 +266,20 @@
                                                 </select>
                                                 <input type="hidden" name="deadline" value="{{ $reel->deadline?->format('Y-m-d') }}">
                                             </form>
+                                            @unless ($reel->is_open_paid)
+                                                <details class="bn-approve-details mt-1">
+                                                    <summary><span class="text-secondary" title="Mark as a paid, open-to-claim task">💰 Paid</span></summary>
+                                                    <div class="bn-approve-panel">
+                                                        <form action="{{ route('portal-social-reels.bulk-mark-paid') }}" method="post" class="d-flex flex-column gap-1">
+                                                            @csrf
+                                                            <input type="hidden" name="ids[]" value="{{ $reel->id }}">
+                                                            <input type="number" step="0.01" min="0" name="amount" class="form-control ot-input form-control-sm" placeholder="Amount" required style="width:110px">
+                                                            <input type="date" name="deadline" class="form-control ot-input form-control-sm" value="{{ $reel->deadline?->format('Y-m-d') }}" style="width:130px">
+                                                            <button type="submit" class="btn btn-sm ot-btn-primary">Mark as paid</button>
+                                                        </form>
+                                                    </div>
+                                                </details>
+                                            @endunless
                                         @else
                                             {{ $reel->is_open_paid ? 'Open — Paid Task' : (optional($reel->assignee)->first_name ? trim($reel->assignee->first_name . ' ' . $reel->assignee->last_name) : '—') }}
                                         @endif
@@ -245,10 +297,30 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <a href="{{ route('portal-social-reels.setup', $reel->id) }}" class="btn btn-sm ot-btn-primary">Reel Setup</a>
+                                        @if ($reel->is_document_track)
+                                            @if ($data['staffId'] !== null && (int) $reel->assigned_to === (int) $data['staffId'])
+                                                <details class="bn-approve-details">
+                                                    <summary><span class="{{ $reel->drive_link ? 'text-success' : 'text-secondary' }}">{{ $reel->drive_link ? 'Video submitted' : 'Submit video link' }}</span></summary>
+                                                    <div class="bn-approve-panel" style="min-width:200px">
+                                                        <form action="{{ route('portal-social-reels.submit-link', $reel->id) }}" method="post" class="d-flex flex-column gap-1">
+                                                            @csrf
+                                                            <input type="hidden" name="stage" value="video">
+                                                            <input type="text" name="link" class="form-control ot-input form-control-sm" value="{{ $reel->drive_link }}" placeholder="Drive link to your clip" required>
+                                                            <button type="submit" class="btn btn-sm ot-btn-primary">Submit</button>
+                                                        </form>
+                                                    </div>
+                                                </details>
+                                            @else
+                                                <span class="text-secondary" style="font-size:.85rem">Document track</span>
+                                            @endif
+                                        @else
+                                            <a href="{{ route('portal-social-reels.setup', $reel->id) }}" class="btn btn-sm ot-btn-primary">Reel Setup</a>
+                                        @endif
                                     </td>
                                     <td>
-                                        @if ($reel->prompt_link)
+                                        @if ($reel->promptUpload)
+                                            <a href="{{ globalAsset($reel->promptUpload->path) }}" target="_blank" class="btn btn-sm btn-outline-secondary">Download</a>
+                                        @elseif ($reel->prompt_link)
                                             <a href="{{ $reel->prompt_link }}" target="_blank" class="btn btn-sm btn-outline-secondary">Download</a>
                                         @else
                                             —
@@ -280,6 +352,7 @@
                                     </td>
                                     <td class="action bn-reel-actions">
                                         @if ($data['canManage'])
+                                            <a href="{{ route('portal-social-reels.edit', $reel->id) }}" class="btn btn-sm btn-outline-secondary">{{ ___('common.edit') }}</a>
                                             <form action="{{ route('portal-social-reels.destroy', $reel->id) }}" method="post" class="d-inline" onsubmit="return confirm('Remove this reel/topic?');">
                                                 @csrf
                                                 @method('DELETE')

@@ -59,6 +59,36 @@
             <textarea name="note" class="form-control ot-input" rows="2">{{ old('note', $reel->note ?? '') }}</textarea>
         </div>
 
+        <div class="col-md-12">
+            <div class="card ot-card bg-light-subtle mb-0">
+                <div class="card-body">
+                    <div class="form-check mb-2">
+                        <input type="checkbox" class="form-check-input" id="isDocumentTrack" name="is_document_track" value="1" {{ old('is_document_track', $reel->is_document_track ?? false) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="isDocumentTrack"><strong>Document track</strong> — skip Reel Studio. The assignee downloads the prompt file/link below plus this reel's Characters (if set), creates the clips themselves (e.g. in Google Flow), and submits a video link directly. Only the Video stage needs your approval.</label>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Prompt file (optional)</label>
+                            <div class="ot_fileUploader left-side mb-1">
+                                <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file chosen" readonly>
+                                <button class="primary-btn-small-input" type="button">
+                                    <label class="btn btn-lg ot-btn-primary" for="promptFileInput">Browse</label>
+                                    <input type="file" class="d-none bn-file-input" id="promptFileInput" name="prompt_file">
+                                </button>
+                            </div>
+                            @if (!empty($reel) && $reel->promptUpload)
+                                <p class="text-secondary mt-1 mb-0"><a href="{{ globalAsset($reel->promptUpload->path) }}" target="_blank">Current file</a> — uploading a new one replaces it.</p>
+                            @endif
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Prompt link (optional)</label>
+                            <input type="text" name="prompt_link" class="form-control ot-input" value="{{ old('prompt_link', $reel->prompt_link ?? '') }}" placeholder="Used instead of/alongside the file, if you'd rather share a link">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         @php($customFields = $customFields ?? [])
         @foreach ($customFields as $field)
             @php($current = old('custom_fields.' . $field->key, ($reel->custom_fields ?? [])[$field->key] ?? null))

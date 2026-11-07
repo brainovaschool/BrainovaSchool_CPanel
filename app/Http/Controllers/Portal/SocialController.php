@@ -77,6 +77,12 @@ class SocialController extends Controller
         $data['series']      = $this->repo->reelSeries();
         $data['contentTeam'] = $this->repo->assignableStaff();
         $data['filters']     = $request->only(['status', 'category', 'format', 'series_name']);
+        $data['staffId']     = $this->actingStaffId();
+        // For the Characters column - resolved once here (not per row)
+        // so a reel's Characters field (a list of names) can be turned
+        // into real ReelCharacter records with their downloadable files.
+        $data['charactersFieldKey'] = $this->repo->charactersFieldKey();
+        $data['charactersByName']   = \App\Models\Portal\ReelCharacter::with(['portrait', 'descriptionUpload', 'costumes.upload'])->get()->keyBy('name');
         $data['title']       = 'Social Board — Reels';
         return view('portal.social.reels.index', compact('data'));
     }

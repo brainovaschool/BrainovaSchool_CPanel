@@ -32,6 +32,7 @@ class PortalReel extends Model
         'canva_approved_at'  => 'datetime',
         'video_approved_at'  => 'datetime',
         'is_open_paid'       => 'boolean',
+        'is_document_track'  => 'boolean',
         'custom_fields'      => 'array',
     ];
 
