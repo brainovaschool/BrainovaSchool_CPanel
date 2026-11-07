@@ -3,6 +3,7 @@
 namespace App\Models\Portal;
 
 use App\Models\Staff\Staff;
+use App\Models\Upload;
 use Illuminate\Database\Eloquent\Model;
 
 class PortalWorkLogEntry extends Model
@@ -23,6 +24,11 @@ class PortalWorkLogEntry extends Model
     public function task()
     {
         return $this->belongsTo(PortalTask::class, 'task_id');
+    }
+
+    public function upload()
+    {
+        return $this->belongsTo(Upload::class, 'upload_id');
     }
 
     /** "HH:MM" for form inputs and display — the DB cast leaves start_time/

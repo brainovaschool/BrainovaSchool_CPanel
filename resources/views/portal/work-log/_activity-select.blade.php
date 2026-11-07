@@ -1,6 +1,7 @@
 @php
     $selectedTaskId = $selectedTaskId ?? null;
     $selectedActivity = $selectedActivity ?? null;
+    $myDuties = $myDuties ?? collect();
     $selectedValue = $selectedTaskId ? 'task:' . $selectedTaskId : ($selectedActivity ?: '');
 @endphp
 <select name="task_or_activity" class="nice-select niceSelect bordered_style work-log-select" onchange="
@@ -14,6 +15,13 @@
             <option value="task:{{ $t->id }}" {{ $selectedValue === 'task:' . $t->id ? 'selected' : '' }}>{{ $t->title }}</option>
         @endforeach
     </optgroup>
+    @if ($myDuties->isNotEmpty())
+        <optgroup label="My Responsibilities">
+            @foreach ($myDuties as $duty)
+                <option value="{{ $duty->title }}" {{ $selectedValue === $duty->title ? 'selected' : '' }}>{{ $duty->title }}</option>
+            @endforeach
+        </optgroup>
+    @endif
     <optgroup label="Activities">
         @foreach ($activities as $act)
             <option value="{{ $act }}" {{ $selectedValue === $act ? 'selected' : '' }}>{{ $act }}</option>

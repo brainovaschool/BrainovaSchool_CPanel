@@ -5,8 +5,10 @@ namespace App\Repositories\Portal;
 use App\Models\Portal\PortalDaySubmission;
 use App\Models\Portal\PortalTask;
 use App\Models\Portal\PortalWorkLogEntry;
+use App\Models\Portal\PortalWorkLogSlotPreference;
 use App\Models\Staff\Staff;
 use App\Services\Portal\PortalNotifier;
+use App\Traits\CommonHelperTrait;
 use App\Traits\ReturnFormatTrait;
 use Carbon\Carbon;
 
@@ -15,7 +17,32 @@ use Carbon\Carbon;
  *  the "My Work Log" screen offers to fill in, never what's stored. */
 class WorkLogRepository
 {
-    use ReturnFormatTrait;
+    use ReturnFormatTrait, CommonHelperTrait;
+
+    /** Overlays each staff member's own remembered custom time onto the
+     *  site-wide template, for slots they've previously customized. Every
+     *  non-lunch slot also gets 'default_start' - the template's own,
+     *  un-customized start - so the form that saves a slot always knows
+     *  which preference row to update, even once the row on screen is
+     *  already showing a customized time. Purely a display default: an
+     *  entry already saved under its own start_time is never touched. */
+    public function slotsWithPreferences(array $slots, int $staffId): array
+    {
+        $prefs = PortalWorkLogSlotPreference::where('staff_id', $staffId)->get()->keyBy('default_start');
+
+        return array_map(function ($slot) use ($prefs) {
+            if ($slot['is_lunch']) {
+                return $slot;
+            }
+            $slot['default_start'] = $slot['start'];
+            $pref = $prefs->get($slot['start']);
+            if ($pref) {
+                $slot['start'] = substr($pref->start_time, 0, 5);
+                $slot['end']   = substr($pref->end_time, 0, 5);
+            }
+            return $slot;
+        }, $slots);
+    }
 
     /** A day is locked once it's either explicitly submitted, or its grace
      *  period has run out -- whichever comes first. Keeps someone from
@@ -85,8 +112,23 @@ class WorkLogRepository
         $entry->task_id    = $taskId;
         $entry->activity   = $taskId ? null : $request->activity;
         $entry->notes      = $request->notes;
+        $entry->link       = $request->link;
         $entry->is_extra   = (bool) $request->boolean('is_extra');
+        if ($request->hasFile('document')) {
+            $entry->upload_id = $this->UploadImageCreate($request->file('document'), 'uploads/portal-work-log');
+        }
         $entry->save();
+
+        // Remembers this time as the default for this slot from now on -
+        // only for a real template slot, never an extra entry (which has
+        // no fixed position to remember).
+        $defaultStart = $request->default_start;
+        if ($defaultStart && !$entry->is_extra) {
+            PortalWorkLogSlotPreference::updateOrCreate(
+                ['staff_id' => $staffId, 'default_start' => $defaultStart],
+                ['start_time' => $start, 'end_time' => $end]
+            );
+        }
 
         return $this->responseWithSuccess('Saved.', ['id' => $entry->id]);
     }

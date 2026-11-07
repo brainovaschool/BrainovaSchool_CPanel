@@ -10,7 +10,7 @@
     <style>
         /* The theme's nice-select plugin was rendering too narrow for a task
            title or a long activity name to fit, truncating the visible text. */
-        .nice-select.work-log-select { min-width: 280px; }
+        .nice-select.work-log-select { min-width: 220px; }
         .nice-select.work-log-select .current { white-space: normal; overflow: visible; }
     </style>
     <div class="page-content">
@@ -49,30 +49,40 @@
                 <div class="table-responsive">
                 <table class="ot-basic-table ot-table-bg">
                     <thead class="thead">
-                        <tr><th style="width:140px">Time</th><th colspan="2">Activity &amp; Notes</th><th>Coordinator Feedback</th><th class="action">{{ ___('common.action') }}</th></tr>
+                        <tr><th style="width:150px">Time</th><th style="min-width:200px">Activity</th><th style="min-width:260px">Notes, Link &amp; File</th><th>Coordinator Feedback</th><th class="action">{{ ___('common.action') }}</th></tr>
                     </thead>
                     <tbody class="tbody">
                         @foreach ($data['slots'] as $slot)
                             @if ($slot['is_lunch'])
                                 <tr class="table-light"><td>{{ $slot['start'] }}–{{ $slot['end'] }}</td><td colspan="4" class="text-secondary">Lunch</td></tr>
                             @else
-                                @php($entry = $entriesByStart->get($slot['start']))
+                                {{-- Tries the slot's current (possibly remembered-override) time
+                                     first, then falls back to its original un-customized time - so
+                                     an entry logged on an older day, before the time was last
+                                     changed, is still found and shown instead of looking unlogged. --}}
+                                @php($entry = $entriesByStart->get($slot['start']) ?? $entriesByStart->get($slot['default_start']))
+                                @php($prefix = 'slot' . str_replace(':', '', $slot['default_start']))
                                 <tr>
-                                    <td>{{ $slot['start'] }}–{{ $slot['end'] }}</td>
                                     @if ($entry && $data['isLocked'])
-                                        <td colspan="2">{{ $entry->task ? 'Task: ' . $entry->task->title : $entry->activity }} — {{ $entry->notes }}</td>
+                                        <td>{{ $slot['start'] }}–{{ $slot['end'] }}</td>
+                                        <td>{{ $entry->task ? 'Task: ' . $entry->task->title : $entry->activity }}</td>
+                                        <td>
+                                            {{ $entry->notes }}
+                                            @if ($entry->link)<br><a href="{{ $entry->link }}" target="_blank" rel="noopener">Link</a>@endif
+                                            @if ($entry->upload)<br><a href="{{ globalAsset($entry->upload->path) }}" target="_blank">Document</a>@endif
+                                        </td>
                                         <td>@if ($entry->feedback)<span class="badge-basic-info-text">{{ $entry->feedback }}</span>@endif</td>
                                         <td class="action"></td>
                                     @elseif ($entry)
-                                        <td colspan="2">
-                                            <form action="{{ route('portal-work-log.entry.store') }}" method="post" class="d-flex gap-2 flex-wrap align-items-center work-log-slot-form">
+                                        <td colspan="3">
+                                            <form action="{{ route('portal-work-log.entry.store') }}" method="post" enctype="multipart/form-data" class="d-flex gap-2 flex-wrap align-items-center work-log-slot-form">
                                                 @csrf
                                                 <input type="hidden" name="id" value="{{ $entry->id }}">
                                                 <input type="hidden" name="date" value="{{ $data['date'] }}">
-                                                <input type="hidden" name="start_time" value="{{ $slot['start'] }}">
-                                                <input type="hidden" name="end_time" value="{{ $slot['end'] }}">
-                                                @include('portal.work-log._activity-select', ['myTasks' => $data['myTasks'], 'activities' => $data['settings']->activities, 'selectedTaskId' => $entry->task_id, 'selectedActivity' => $entry->activity])
-                                                <input type="text" name="notes" value="{{ $entry->notes }}" class="form-control ot-input" placeholder="Notes (optional)" style="max-width:200px">
+                                                <input type="hidden" name="default_start" value="{{ $slot['default_start'] }}">
+                                                @include('portal.work-log._time-editor', ['prefix' => $prefix, 'startValue' => $slot['start'], 'endValue' => $slot['end']])
+                                                @include('portal.work-log._activity-select', ['myTasks' => $data['myTasks'], 'myDuties' => $data['myDuties'], 'activities' => $data['settings']->activities, 'selectedTaskId' => $entry->task_id, 'selectedActivity' => $entry->activity])
+                                                @include('portal.work-log._notes-fields', ['prefix' => $prefix, 'notesValue' => $entry->notes, 'linkValue' => $entry->link, 'currentUpload' => $entry->upload])
                                                 <button type="submit" class="btn btn-sm ot-btn-primary">Update</button>
                                             </form>
                                         </td>
@@ -84,16 +94,16 @@
                                             </form>
                                         </td>
                                     @elseif ($data['isLocked'])
-                                        <td colspan="4" class="text-secondary">— not logged —</td>
+                                        <td colspan="5" class="text-secondary">— not logged —</td>
                                     @else
-                                        <td colspan="2">
-                                            <form action="{{ route('portal-work-log.entry.store') }}" method="post" class="d-flex gap-2 flex-wrap align-items-center work-log-slot-form">
+                                        <td colspan="3">
+                                            <form action="{{ route('portal-work-log.entry.store') }}" method="post" enctype="multipart/form-data" class="d-flex gap-2 flex-wrap align-items-center work-log-slot-form">
                                                 @csrf
                                                 <input type="hidden" name="date" value="{{ $data['date'] }}">
-                                                <input type="hidden" name="start_time" value="{{ $slot['start'] }}">
-                                                <input type="hidden" name="end_time" value="{{ $slot['end'] }}">
-                                                @include('portal.work-log._activity-select', ['myTasks' => $data['myTasks'], 'activities' => $data['settings']->activities, 'selectedTaskId' => null, 'selectedActivity' => null])
-                                                <input type="text" name="notes" class="form-control ot-input" placeholder="Notes (optional)" style="max-width:200px">
+                                                <input type="hidden" name="default_start" value="{{ $slot['default_start'] }}">
+                                                @include('portal.work-log._time-editor', ['prefix' => $prefix, 'startValue' => $slot['start'], 'endValue' => $slot['end']])
+                                                @include('portal.work-log._activity-select', ['myTasks' => $data['myTasks'], 'myDuties' => $data['myDuties'], 'activities' => $data['settings']->activities, 'selectedTaskId' => null, 'selectedActivity' => null])
+                                                @include('portal.work-log._notes-fields', ['prefix' => $prefix, 'notesValue' => null, 'linkValue' => null, 'currentUpload' => null])
                                                 <button type="submit" class="btn btn-sm ot-btn-primary">Save</button>
                                             </form>
                                         </td>
@@ -105,21 +115,27 @@
                         @endforeach
 
                         @foreach ($extraEntries as $entry)
+                            @php($prefix = 'extra' . $entry->id)
                             <tr>
-                                <td>{{ $entry->start_label }}–{{ $entry->end_label }} <span class="badge-basic-info-text">Extra</span></td>
                                 @if ($data['isLocked'])
-                                    <td colspan="2">{{ $entry->task ? 'Task: ' . $entry->task->title : $entry->activity }} — {{ $entry->notes }}</td>
+                                    <td>{{ $entry->start_label }}–{{ $entry->end_label }} <span class="badge-basic-info-text">Extra</span></td>
+                                    <td>{{ $entry->task ? 'Task: ' . $entry->task->title : $entry->activity }}</td>
+                                    <td>
+                                        {{ $entry->notes }}
+                                        @if ($entry->link)<br><a href="{{ $entry->link }}" target="_blank" rel="noopener">Link</a>@endif
+                                        @if ($entry->upload)<br><a href="{{ globalAsset($entry->upload->path) }}" target="_blank">Document</a>@endif
+                                    </td>
                                 @else
-                                    <td colspan="2">
-                                        <form action="{{ route('portal-work-log.entry.store') }}" method="post" class="d-flex gap-2 flex-wrap align-items-center work-log-slot-form">
+                                    <td colspan="3">
+                                        <form action="{{ route('portal-work-log.entry.store') }}" method="post" enctype="multipart/form-data" class="d-flex gap-2 flex-wrap align-items-center work-log-slot-form">
                                             @csrf
                                             <input type="hidden" name="id" value="{{ $entry->id }}">
                                             <input type="hidden" name="date" value="{{ $data['date'] }}">
-                                            <input type="hidden" name="start_time" value="{{ $entry->start_label }}">
-                                            <input type="hidden" name="end_time" value="{{ $entry->end_label }}">
                                             <input type="hidden" name="is_extra" value="1">
-                                            @include('portal.work-log._activity-select', ['myTasks' => $data['myTasks'], 'activities' => $data['settings']->activities, 'selectedTaskId' => $entry->task_id, 'selectedActivity' => $entry->activity])
-                                            <input type="text" name="notes" value="{{ $entry->notes }}" class="form-control ot-input" placeholder="Notes (optional)" style="max-width:200px">
+                                            <span class="badge-basic-info-text align-self-center">Extra</span>
+                                            @include('portal.work-log._time-editor', ['prefix' => $prefix, 'startValue' => $entry->start_label, 'endValue' => $entry->end_label])
+                                            @include('portal.work-log._activity-select', ['myTasks' => $data['myTasks'], 'myDuties' => $data['myDuties'], 'activities' => $data['settings']->activities, 'selectedTaskId' => $entry->task_id, 'selectedActivity' => $entry->activity])
+                                            @include('portal.work-log._notes-fields', ['prefix' => $prefix, 'notesValue' => $entry->notes, 'linkValue' => $entry->link, 'currentUpload' => $entry->upload])
                                             <button type="submit" class="btn btn-sm ot-btn-primary">Update</button>
                                         </form>
                                     </td>
@@ -146,49 +162,13 @@
 
                     <div class="border-top pt-3 mt-2">
                         <h5>Add an extra entry</h5>
-                        <form action="{{ route('portal-work-log.entry.store') }}" method="post" class="d-flex gap-2 flex-wrap align-items-center work-log-slot-form">
+                        <form action="{{ route('portal-work-log.entry.store') }}" method="post" enctype="multipart/form-data" class="d-flex gap-2 flex-wrap align-items-center work-log-slot-form">
                             @csrf
                             <input type="hidden" name="date" value="{{ $data['date'] }}">
                             <input type="hidden" name="is_extra" value="1">
-
-                            <input type="hidden" name="start_time" id="extraStartTime">
-                            <div class="d-flex align-items-center gap-1">
-                                <select class="form-select ot-input" style="width:72px" onchange="window.combineWorkLogTime('extraStartHour','extraStartMin','extraStartTime')" id="extraStartHour">
-                                    <option value="">HH</option>
-                                    @for ($h = 0; $h < 24; $h++)
-                                        <option value="{{ sprintf('%02d', $h) }}">{{ sprintf('%02d', $h) }}</option>
-                                    @endfor
-                                </select>
-                                <span>:</span>
-                                <select class="form-select ot-input" style="width:72px" onchange="window.combineWorkLogTime('extraStartHour','extraStartMin','extraStartTime')" id="extraStartMin">
-                                    <option value="">MM</option>
-                                    @foreach ([0, 15, 30, 45] as $m)
-                                        <option value="{{ sprintf('%02d', $m) }}">{{ sprintf('%02d', $m) }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <span>to</span>
-
-                            <input type="hidden" name="end_time" id="extraEndTime">
-                            <div class="d-flex align-items-center gap-1">
-                                <select class="form-select ot-input" style="width:72px" onchange="window.combineWorkLogTime('extraEndHour','extraEndMin','extraEndTime')" id="extraEndHour">
-                                    <option value="">HH</option>
-                                    @for ($h = 0; $h < 24; $h++)
-                                        <option value="{{ sprintf('%02d', $h) }}">{{ sprintf('%02d', $h) }}</option>
-                                    @endfor
-                                </select>
-                                <span>:</span>
-                                <select class="form-select ot-input" style="width:72px" onchange="window.combineWorkLogTime('extraEndHour','extraEndMin','extraEndTime')" id="extraEndMin">
-                                    <option value="">MM</option>
-                                    @foreach ([0, 15, 30, 45] as $m)
-                                        <option value="{{ sprintf('%02d', $m) }}">{{ sprintf('%02d', $m) }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            @include('portal.work-log._activity-select', ['myTasks' => $data['myTasks'], 'activities' => $data['settings']->activities, 'selectedTaskId' => null, 'selectedActivity' => null])
-                            <input type="text" name="notes" class="form-control ot-input" placeholder="Notes (optional)" style="max-width:200px">
+                            @include('portal.work-log._time-editor', ['prefix' => 'newExtra', 'startValue' => '', 'endValue' => ''])
+                            @include('portal.work-log._activity-select', ['myTasks' => $data['myTasks'], 'myDuties' => $data['myDuties'], 'activities' => $data['settings']->activities, 'selectedTaskId' => null, 'selectedActivity' => null])
+                            @include('portal.work-log._notes-fields', ['prefix' => 'newExtra', 'notesValue' => null, 'linkValue' => null, 'currentUpload' => null])
                             <button type="submit" class="btn btn-sm ot-btn-primary">Add</button>
                         </form>
                     </div>
@@ -240,6 +220,19 @@
             var m = document.getElementById(minId).value;
             document.getElementById(hiddenId).value = (h && m) ? (h + ':' + m) : '';
         };
+
+        // main.js hides every input[type=file] on every page - clicking the
+        // visible "Browse" <label> still opens the picker natively via its
+        // for="", so this only needs to mirror the chosen filename into the
+        // readonly text box next to it.
+        document.addEventListener('change', function (e) {
+            if (!e.target.classList.contains('bn-file-input')) return;
+            var wrapper = e.target.closest('.ot_fileUploader');
+            var placeholder = wrapper ? wrapper.querySelector('.bn-file-placeholder') : null;
+            if (placeholder) {
+                placeholder.value = e.target.files.length ? e.target.files[0].name : '';
+            }
+        });
 
         // "Save All Changes" -- fires every slot/entry form on the page in
         // the background instead of making someone click Save on each row

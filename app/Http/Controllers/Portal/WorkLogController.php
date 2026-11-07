@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Portal;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Models\Portal\PortalResponsibility;
 use App\Models\Portal\PortalSetting;
 use App\Models\Portal\PortalTask;
 use App\Models\Portal\PortalWorkLogEntry;
@@ -37,11 +38,17 @@ class WorkLogController extends Controller
 
         $data['date']     = $date;
         $data['settings'] = PortalSetting::current();
-        $data['slots']    = $data['settings']->daySlots();
+        $data['slots']    = $this->repo->slotsWithPreferences($data['settings']->daySlots(), $staffId);
         $data['entries']    = $this->repo->entriesForDay($staffId, $date);
         $data['isSubmitted'] = $this->repo->isSubmitted($staffId, $date);
         $data['isLocked']   = $this->repo->isLocked($staffId, $date);
-        $data['myTasks']  = PortalTask::where('assigned_to', $staffId)->whereNotIn('status', [PortalTask::COMPLETED])->get();
+        // Only still-open work - a task drops off the list the moment it's
+        // Submitted, not just once it's fully Completed, so there's nothing
+        // left to log time against after it's been handed in.
+        $data['myTasks']  = PortalTask::where('assigned_to', $staffId)
+            ->whereIn('status', [PortalTask::ASSIGNED, PortalTask::IN_PROGRESS, PortalTask::REVISION])
+            ->get();
+        $data['myDuties'] = PortalResponsibility::whereHas('owners', fn ($q) => $q->where('staff.id', $staffId))->orderBy('title')->get();
         $data['history']  = $this->repo->history($staffId);
         $data['title']    = 'My Work Log';
         return view('portal.work-log.my', compact('data'));
@@ -50,12 +57,15 @@ class WorkLogController extends Controller
     public function storeEntry(Request $request)
     {
         $request->validate([
-            'date'       => 'required|date',
-            'start_time' => 'required',
-            'end_time'   => 'required',
-            'task_id'    => 'nullable',
-            'activity'   => 'nullable|string|max:150',
-            'notes'      => 'nullable|string|max:1000',
+            'date'          => 'required|date',
+            'start_time'    => 'required',
+            'end_time'      => 'required',
+            'default_start' => 'nullable',
+            'task_id'       => 'nullable',
+            'activity'      => 'nullable|string|max:150',
+            'notes'         => 'nullable|string|max:1000',
+            'link'          => 'nullable|url|max:500',
+            'document'      => 'nullable|file|max:10240',
         ]);
 
         $staffId = $this->actingStaffId();
