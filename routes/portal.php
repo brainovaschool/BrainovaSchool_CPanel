@@ -129,10 +129,13 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::post('/portal/social/settings/content-assignees', [SocialController::class, 'updateContentAssigneeRoles'])->name('portal-social-settings.content-assignees')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
                 Route::post('/portal/social/settings/reel-ai-prompt', [SocialController::class, 'updateReelAiPrompt'])->name('portal-social-settings.reel-ai-prompt')->middleware('PermissionCheck:social_board_manage', 'DemoCheck');
 
-                Route::get('/portal/social/daily-plan', [SocialController::class, 'dailyPlan'])->name('portal-social-daily-plan.index')->middleware('PermissionCheck:portal_access');
-                Route::post('/portal/social/daily-plan', [SocialController::class, 'storeDailyPlan'])->name('portal-social-daily-plan.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
-                Route::post('/portal/social/weekly-goal', [SocialController::class, 'storeWeeklyGoal'])->name('portal-social-weekly-goal.store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
-                Route::post('/portal/social/weekly-goal/{id}/toggle', [SocialController::class, 'toggleGoal'])->name('portal-social-weekly-goal.toggle')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                Route::controller(\App\Http\Controllers\Portal\PortalGoalController::class)->prefix('portal/goals')->name('portal-goals.')->group(function () {
+                    Route::get('/',                 'index')->name('index')->middleware('PermissionCheck:planning_board_manage');
+                    Route::post('/',                'store')->name('store')->middleware('PermissionCheck:planning_board_manage', 'DemoCheck');
+                    Route::put('/{id}',             'update')->name('update')->middleware('PermissionCheck:planning_board_manage', 'DemoCheck');
+                    Route::delete('/{id}',          'destroy')->name('destroy')->middleware('PermissionCheck:planning_board_manage', 'DemoCheck');
+                    Route::post('/{id}/assign-task', 'assignTask')->name('assign-task')->middleware('PermissionCheck:planning_board_manage', 'DemoCheck');
+                });
 
                 Route::controller(GrowthPayController::class)->prefix('portal/growth-pay')->name('portal-growth-pay.')->group(function () {
                     Route::get('/',             'index')->name('index')->middleware('PermissionCheck:portal_manage,portal_growth_pay_read');

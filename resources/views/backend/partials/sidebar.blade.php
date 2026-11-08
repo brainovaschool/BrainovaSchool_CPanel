@@ -349,12 +349,12 @@
                                     </ul>
                                 </li>
 
-                                <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">
+                                <li class="sidebar-menu-item {{ set_menu(['portal/goals']) }}">
                                     <a class="has-arrow">Planning Board</a>
                                     <ul class="child-menu-list">
-                                        @if (portalOwnsResponsibility('content') || hasPermission('planning_board_manage'))
-                                            <li class="sidebar-menu-item {{ set_menu(['portal/social/daily-plan']) }}">
-                                                <a href="{{ route('portal-social-daily-plan.index') }}">Daily Plan &amp; Goals</a>
+                                        @if (hasPermission('planning_board_manage'))
+                                            <li class="sidebar-menu-item {{ set_menu(['portal/goals']) }}">
+                                                <a href="{{ route('portal-goals.index') }}">Yearly Goals</a>
                                             </li>
                                         @endif
                                     </ul>

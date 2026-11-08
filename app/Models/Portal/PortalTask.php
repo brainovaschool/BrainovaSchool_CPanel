@@ -58,6 +58,13 @@ class PortalTask extends Model
         return $this->belongsTo(PortalReel::class, 'reel_id');
     }
 
+    /** Set only for tasks assigned from under a Yearly Goal (Planning
+     *  Board) - see PortalGoalRepository::assignTask(). */
+    public function goal()
+    {
+        return $this->belongsTo(PortalGoal::class, 'goal_id');
+    }
+
     /** category is a plain string copy, not a foreign key (same reasoning
      *  as PortalReel.series_name) - this matches it against the unique
      *  category name so a task can still reach its category's own SOP. */
