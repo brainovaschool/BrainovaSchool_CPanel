@@ -28,6 +28,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/bulk-status',          'bulkStatus')->name('bulk-status')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::post('/bulk-reassign',        'bulkReassign')->name('bulk-reassign')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::get('/show/{id}',             'show')->name('show')->middleware('PermissionCheck:portal_access');
+                    Route::get('/{id}/edit',              'edit')->name('edit')->middleware('PermissionCheck:portal_manage');
+                    Route::put('/{id}/update',            'update')->name('update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::post('/{id}/reassign',        'reassign')->name('reassign')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::post('/{id}/accept',          'accept')->name('accept')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/{id}/submit',          'submit')->name('submit')->middleware('PermissionCheck:portal_access', 'DemoCheck');

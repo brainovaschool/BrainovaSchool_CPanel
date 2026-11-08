@@ -148,6 +148,37 @@ class TaskController extends Controller
         return back()->withInput()->with('danger', $result['message']);
     }
 
+    public function edit($id)
+    {
+        $task = $this->repo->show((int) $id);
+        if (!$task) {
+            return redirect()->route('portal-tasks.index')->with('danger', ___('alert.not_found'));
+        }
+
+        $data['task']            = $task;
+        $data['employeesList']   = \App\Models\Staff\Staff::with('role')->orderBy('first_name')->get();
+        $data['rolesList']       = \App\Models\Role::whereNotIn('id', [\App\Enums\RoleEnum::STUDENT, \App\Enums\RoleEnum::GUARDIAN])->orderBy('name')->get();
+        $data['taskCategories']  = \App\Models\Portal\PortalTaskCategory::orderBy('name')->get();
+        $data['title']           = 'Edit Task';
+        return view('portal.tasks.edit', compact('data'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'title'       => 'required|string|max:150',
+            'due_date'    => 'required|date',
+            'priority'    => 'nullable|in:Low,Medium,High',
+        ]);
+
+        $result = $this->repo->update((int) $id, $request);
+
+        if ($result['status']) {
+            return redirect()->route('portal-tasks.show', $id)->with('success', $result['message']);
+        }
+        return back()->withInput()->with('danger', $result['message']);
+    }
+
     public function show($id)
     {
         $task = $this->repo->show((int) $id);

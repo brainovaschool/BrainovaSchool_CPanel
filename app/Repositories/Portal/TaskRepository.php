@@ -304,6 +304,43 @@ class TaskRepository
         return $this->responseWithSuccess('Payment undone — the expense record was removed. The task can now be deleted.', []);
     }
 
+    /** Edits a task's own details - title, description, dates, etc. Who
+     *  it's assigned to (Reassign), paid/amount and visibility are all
+     *  deliberately left out here: they already have their own dedicated,
+     *  guarded actions (reassign(), markPaid()/undoPayment()), and this
+     *  form never offers them (see _form.blade.php). */
+    public function update(int $id, $request): array
+    {
+        $task = PortalTask::find($id);
+        if (!$task) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+
+        try {
+            if ($request->hasFile('ref_file')) {
+                $task->ref_upload_id = $this->UploadImageCreate($request->file('ref_file'), 'uploads/portal-tasks');
+            }
+
+            $task->title       = $request->title;
+            $task->description = $request->description;
+            $task->category    = $request->category;
+            $task->priority    = $request->priority ?: 'Medium';
+            $task->urgent      = (bool) $request->boolean('urgent');
+            $task->due_date    = $request->due_date;
+            $task->est_hours   = $request->filled('est_hours') ? $request->est_hours : null;
+            $task->output      = $request->output;
+            $task->format      = $request->format;
+            $task->refs        = $request->refs;
+            $task->drive_link  = $request->drive_link;
+            $task->notes       = $request->notes;
+            $task->save();
+
+            return $this->responseWithSuccess('Task updated.', ['id' => $task->id]);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
+
     public function reassign(int $id, int $newStaffId): array
     {
         $task = PortalTask::find($id);

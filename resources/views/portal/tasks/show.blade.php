@@ -21,6 +21,11 @@
                         <li class="breadcrumb-item">{{ $task->title }}</li>
                     </ol>
                 </div>
+                @if ($data['isManager'])
+                    <div class="col-sm-4 text-sm-end">
+                        <a href="{{ route('portal-tasks.edit', $task->id) }}" class="btn ot-btn-primary">Edit</a>
+                    </div>
+                @endif
             </div>
         </div>
 
