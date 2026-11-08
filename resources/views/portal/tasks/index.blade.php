@@ -135,6 +135,9 @@
                                         <td>{{ $task->final_score !== null ? $task->final_score . '/10' : '—' }}</td>
                                         <td class="action">
                                             <a href="{{ route('portal-tasks.show', $task->id) }}" class="btn btn-sm ot-btn-primary">Open</a>
+                                            @if (hasPermission('portal_manage'))
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="singleDelete({{ $task->id }})">{{ ___('common.delete') }}</button>
+                                            @endif
                                         </td>
                                     </tr>
                                 @empty
@@ -189,8 +192,9 @@
         bulkToggleBar();
     });
 
-    window.bulk_delete = function () {
-        var ids = bulkSelectedIds();
+    // Shared by the bulk "Delete selected" bar and each row's own Delete
+    // button - only the id list differs between the two callers.
+    function doDelete(ids) {
         if (!ids.length) return;
 
         Swal.fire({
@@ -224,6 +228,14 @@
                 Swal.fire('{{ ___('common.opps') }}...', '{{ ___('common.something_went_wrong_with_ajax') }}', 'error');
             });
         });
+    }
+
+    window.bulk_delete = function () {
+        doDelete(bulkSelectedIds());
+    };
+
+    window.singleDelete = function (id) {
+        doDelete([id]);
     };
 
     window.bulk_status = function (status) {
