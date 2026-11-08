@@ -61,7 +61,7 @@ class FrontendRepository implements FrontendInterface
     public function abouts()
     {
         $data['abouts']   = About::where('status', Status::ACTIVE)->orderBy('serial')->get();
-        $data['teachers'] = Staff::where('status', Status::ACTIVE)->where('role_id', 5)->take(8)->get();
+        $data['teachers'] = Staff::where('status', Status::ACTIVE)->where('role_id', 5)->where('show_on_website', true)->take(8)->get();
         return $data;
     }
 

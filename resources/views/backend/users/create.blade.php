@@ -244,6 +244,13 @@
                             @enderror
                         </div>
                         <div class="col-lg-3 col-md-6 mb-3">
+                            <label class="form-label d-block">Show on website</label>
+                            <div class="form-check form-switch mt-2">
+                                <input type="checkbox" class="form-check-input" id="show_on_website" name="show_on_website" value="1" {{ old('show_on_website', true) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="show_on_website">Featured in "Meet our teachers" on the public site (Teachers only)</label>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
                             <label class="form-label" for="inputImage">{{ ___('common.image') }} {{ ___('common.(95 x 95 px)') }}</label>
                             <div class="ot_fileUploader left-side">
                                 <input class="form-control" type="text" placeholder="{{ ___('common.image') }}" readonly="" id="placeholder">

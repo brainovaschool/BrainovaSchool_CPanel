@@ -142,6 +142,7 @@ class UserRepository implements UserInterface
             $staff->emergency_contact       = $request->emergency_contact;
             $staff->marital_status          = $request->marital_status;
             $staff->status                  = $request->status;
+            $staff->show_on_website         = $request->boolean('show_on_website', true);
             $staff->current_address         = $request->current_address;
             $staff->permanent_address       = $request->permanent_address;
             $staff->basic_salary            = $request->basic_salary;
@@ -204,6 +205,7 @@ class UserRepository implements UserInterface
             $staff->emergency_contact       = $request->emergency_contact;
             $staff->marital_status          = $request->marital_status;
             $staff->status                  = $request->status;
+            $staff->show_on_website         = $request->boolean('show_on_website');
             $staff->current_address         = $request->current_address;
             $staff->permanent_address       = $request->permanent_address;
             $staff->basic_salary            = $request->basic_salary;

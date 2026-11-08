@@ -18,6 +18,7 @@ class Staff extends BaseModel
 
     protected $casts = [
         'upload_documents' => 'array',
+        'show_on_website'  => 'boolean',
     ];
 
      protected $guarded = ['id'];
