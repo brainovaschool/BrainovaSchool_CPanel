@@ -3864,7 +3864,22 @@ class MigrationRunnerController extends Controller
      *  the admin grants portal_access/portal_manage to from the normal
      *  Roles screen is untouched either way, since that grant lives on
      *  the role itself and this loop only ever strips the leaked
-     *  website-setup keywords, never portal's. */
+     *  website-setup keywords, never portal's.
+     *
+     *  Every other portal_* group (My Tasks, Paid Tasks, Work Log,
+     *  Responsibilities, Analytics, Reels, Reel settings/characters,
+     *  Growth Pay, Social/Planning settings, ...) is the SAME situation
+     *  as 'portal' itself - an admin grants these per-role from the
+     *  normal Roles screen, same as portal_access/portal_manage - but
+     *  they were missing from this list, so this unconditional strip ran
+     *  on EVERY /db/migrate visit (not just the one-off website-setup
+     *  cleanup it's meant for) and silently stripped them back out of
+     *  every non-admin role after every single deploy, forcing the admin
+     *  to re-check them in Roles each time. Listed individually (not
+     *  "every 'portal_' group") so a brand-new portal_* group added later
+     *  starts life no different from any other: strippable by default,
+     *  until someone grants it to a role, notices the exact same wipe,
+     *  and deliberately adds it here too. */
     private function syncPermissions(): string
     {
         $added      = [];
@@ -3874,7 +3889,17 @@ class MigrationRunnerController extends Controller
         // for the same reason reel_studio/portal are: existing roles already
         // had real access to it (its routes carried no permission check at
         // all until this sync), so its keywords must never be auto-stripped.
-        $nonStrippableGroups = ['class_content', 'fees_payment_proof', 'portal', 'reel_studio', 'leave_type', 'leave_request', 'leave_log', 'leave_approval', 'subscription', 'attendance_teacher', 'social_board', 'planning_board'];
+        $nonStrippableGroups = [
+            'class_content', 'fees_payment_proof', 'portal', 'reel_studio', 'leave_type', 'leave_request',
+            'leave_log', 'leave_approval', 'subscription', 'attendance_teacher', 'social_board', 'planning_board',
+            'portal_employees', 'portal_my_tasks', 'portal_paid_tasks', 'portal_work_log',
+            'portal_my_responsibilities', 'portal_my_performance', 'portal_social_reels',
+            'portal_social_suggest_reel', 'portal_social_content_pool', 'portal_reel_workflow',
+            'portal_social_month_plan', 'portal_social_page_fixes', 'portal_manager_tasks', 'portal_settings',
+            'portal_team_attendance', 'portal_manager_work_logs', 'portal_responsibilities_manage',
+            'portal_analytics', 'portal_social_settings', 'portal_growth_pay', 'portal_reel_characters',
+            'portal_reel_settings',
+        ];
 
         foreach (self::PERMISSION_GROUPS as $attribute => $keywords) {
             if (!Permission::where('attribute', $attribute)->exists()) {
