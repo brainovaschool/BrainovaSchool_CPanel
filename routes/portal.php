@@ -37,6 +37,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/{id}/comment',         'comment')->name('comment')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/{id}/claim',            'claim')->name('claim')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/{id}/mark-paid',        'markPaid')->name('mark-paid')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::post('/{id}/undo-payment',     'undoPayment')->name('undo-payment')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                 });
 
                 Route::get('/portal/my-tasks', [TaskController::class, 'myTasks'])->name('portal-my-tasks.index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_my_tasks_read']);

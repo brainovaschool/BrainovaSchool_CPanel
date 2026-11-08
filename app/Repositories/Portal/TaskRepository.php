@@ -276,6 +276,34 @@ class TaskRepository
         return $this->responseWithSuccess('Marked paid — recorded as an expense.', []);
     }
 
+    /** Reverses markPaid() - removes the Expense and the PortalPayout audit
+     *  row together, and puts the task's pay_status back to "due". This is
+     *  the only way to delete a paid task: bulkDelete() refuses any task
+     *  with a payout on purpose, so a mistaken "mark paid" has to be
+     *  deliberately undone here first before the task can be deleted. */
+    public function undoPayment(int $id): array
+    {
+        $task = PortalTask::find($id);
+        if (!$task) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+
+        $payout = PortalPayout::where('task_id', $task->id)->first();
+        if (!$payout) {
+            return $this->responseWithError('This task has no payment record to undo.', []);
+        }
+
+        DB::transaction(function () use ($task, $payout) {
+            Expense::where('id', $payout->expense_id)->delete();
+            $payout->delete();
+
+            $task->pay_status = 'due';
+            $task->save();
+        });
+
+        return $this->responseWithSuccess('Payment undone — the expense record was removed. The task can now be deleted.', []);
+    }
+
     public function reassign(int $id, int $newStaffId): array
     {
         $task = PortalTask::find($id);

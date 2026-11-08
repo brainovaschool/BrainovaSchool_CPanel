@@ -176,6 +176,7 @@ class TaskController extends Controller
         $data['claimBlockers'] = $data['canClaim'] ? $this->repo->claimBlockers($staffId) : collect();
         $data['claimBlocked']  = $data['claimBlockers']->count() >= \App\Models\Portal\PortalTask::MAX_OPEN_TASKS_FOR_CLAIM;
         $data['canMarkPaid'] = $isManager && $task->paid && $task->status === \App\Models\Portal\PortalTask::COMPLETED && $task->pay_status === 'due';
+        $data['canUndoPayment'] = $isManager && $task->paid && $task->pay_status === 'paid';
         $data['title']      = $task->title;
         return view('portal.tasks.show', compact('data'));
     }
@@ -194,6 +195,12 @@ class TaskController extends Controller
     public function markPaid($id)
     {
         $result = $this->repo->markPaid((int) $id, Auth::id());
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    public function undoPayment($id)
+    {
+        $result = $this->repo->undoPayment((int) $id);
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

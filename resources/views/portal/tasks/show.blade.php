@@ -198,6 +198,20 @@
                     </div>
                 @endif
 
+                @if ($data['canUndoPayment'])
+                    <div class="card ot-card mt-4">
+                        <div class="card-header"><h4 class="mb-0">Payment</h4></div>
+                        <div class="card-body">
+                            <p class="mb-2">Paid: {{ Setting('currency_symbol') }} {{ number_format($task->amount, 2) }} to {{ optional($task->assignee)->first_name }} {{ optional($task->assignee)->last_name }}</p>
+                            <p class="text-secondary small">This task has a payment record, so it can't be deleted while it's marked paid. Undo the payment first if it was marked paid by mistake.</p>
+                            <form action="{{ route('portal-tasks.undo-payment', $task->id) }}" method="post" onsubmit="return confirm('Undo this payment? The linked expense record will be removed so this task can be deleted.');">
+                                @csrf
+                                <button type="submit" class="btn btn-outline-danger w-100">Undo Payment</button>
+                            </form>
+                        </div>
+                    </div>
+                @endif
+
                 @if ($data['isManager'] && !$data['isAssignee'])
                     <div class="card ot-card mt-4">
                         <div class="card-header"><h4 class="mb-0">Review</h4></div>
