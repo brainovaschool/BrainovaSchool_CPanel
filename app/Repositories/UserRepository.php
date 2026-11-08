@@ -66,9 +66,24 @@ class UserRepository implements UserInterface
         return $this->model->whereIn('id', $request->ids)->update(['status' => $request->status]);
     }
 
+    /** $request->ids are Staff ids (same id this whole controller uses for
+     *  show/edit/update) - deleting only the Staff row, as this used to,
+     *  left the linked User (login account) behind as an orphan. */
     public function deletes($request)
     {
-        return $this->model->destroy((array)$request->ids);
+        $staffIds = (array) $request->ids;
+        $userIds  = $this->model->whereIn('id', $staffIds)->pluck('user_id')->filter();
+
+        DB::beginTransaction();
+        try {
+            User::whereIn('id', $userIds)->delete();
+            $deleted = $this->model->destroy($staffIds);
+            DB::commit();
+            return $deleted;
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            return false;
+        }
     }
 
     public function all()
@@ -225,14 +240,29 @@ class UserRepository implements UserInterface
         }
     }
 
+    /** $id is a Staff id here, same as show()/update() above - this used to
+     *  look it up as a User id instead, so it never found (or deleted) the
+     *  right row, and even when it coincidentally matched an id it still
+     *  never removed the Staff row this list is actually built from. */
     public function destroy($id)
     {
+        $staff = $this->model->find($id);
+        if (!$staff) {
+            return false;
+        }
+
+        DB::beginTransaction();
         try {
-            $user   = User::find($id);
-            $this->UploadImageDelete($user->upload_id); // delete image & record
-            $user->delete();
+            $user = User::find($staff->user_id);
+            if ($user) {
+                $this->UploadImageDelete($user->upload_id); // delete image & record
+                $user->delete();
+            }
+            $staff->delete();
+            DB::commit();
             return true;
         } catch (\Throwable $th) {
+            DB::rollBack();
             return false;
         }
     }
