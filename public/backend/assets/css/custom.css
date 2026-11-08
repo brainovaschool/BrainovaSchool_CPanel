@@ -460,3 +460,21 @@ input.form-check-input:checked {
 .ot-btn-info:active {
   transform: scale(0.97);
 }
+
+/* List tables (.ot-basic-table.ot-table-bg - every Task/Reel/etc list across
+   the portal) in two ways: the vendor's zebra stripe is #fff vs #f7f7f7,
+   too close in value to tell rows apart once a cell wraps to two+ lines, so
+   add a real divider line under every row instead; and the first column
+   (title/name - wherever it isn't a bulk-select checkbox column) gets more
+   room so it wraps less and reads more easily. */
+.ot-basic-table.ot-table-bg tbody tr td {
+  border-bottom: 1px solid var(--ot-border-basic-table-thead);
+  white-space: normal;
+}
+.ot-basic-table.ot-table-bg tbody tr:last-child td {
+  border-bottom: none;
+}
+.ot-basic-table.ot-table-bg thead th:first-child:not(:has(input[type="checkbox"])),
+.ot-basic-table.ot-table-bg tbody td:first-child:not(:has(input[type="checkbox"])) {
+  min-width: 280px;
+}
