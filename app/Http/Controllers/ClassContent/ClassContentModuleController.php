@@ -101,12 +101,14 @@ class ClassContentModuleController extends Controller
             ]);
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $staffId = $this->teacherStaffId();
-        $data['dashboard'] = $this->repo->dashboardForTeacher($staffId);
+        $filters = $request->only(['classes_id', 'section_id', 'subject_id']);
+        $data['dashboard'] = $this->repo->dashboardForTeacher($staffId, $filters);
         $data['counts']    = $this->repo->statusCounts($staffId);
         $data['options']   = $this->comboOptions($staffId);
+        $data['filters']   = $filters;
         $data['title']     = 'Class Content';
         return view('class-content.module.index', compact('data'));
     }

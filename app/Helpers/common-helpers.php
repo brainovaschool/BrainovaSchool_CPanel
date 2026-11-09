@@ -1278,6 +1278,73 @@ if (!function_exists('portalOwnsResponsibility')) {
     }
 }
 
+if (!function_exists('classContentTeacherSubjects')) {
+    /** Class Content's sidebar replaces one generic "Modules" link with one
+     *  entry per class+section+subject this teacher is actually assigned
+     *  to teach - the same scope ClassContentModuleController already
+     *  enforces server-side on every create/update, just surfaced as
+     *  navigation so a teacher juggling several subjects isn't stuck
+     *  filtering one long mixed list by hand. Null (not an empty
+     *  collection) means "show the old single link instead" - Admin has
+     *  no per-subject assignment at all and sees everything anyway. */
+    function classContentTeacherSubjects(): ?\Illuminate\Support\Collection
+    {
+        if (!Auth::check()) {
+            return null;
+        }
+        $user = Auth::user();
+        if ((int) $user->role_id !== 5 || !$user->staff) {
+            return null;
+        }
+
+        return \App\Models\Academic\SubjectAssignChildren::where('staff_id', $user->staff->id)
+            ->with(['subject', 'subjectAssign.class', 'subjectAssign.section'])
+            ->get()
+            ->filter(fn ($a) => $a->subjectAssign && $a->subject)
+            ->map(fn ($a) => [
+                'classes_id' => $a->subjectAssign->classes_id,
+                'section_id' => $a->subjectAssign->section_id,
+                'subject_id' => $a->subject_id,
+                'label'      => optional($a->subject)->name . ' (' . optional($a->subjectAssign->class)->name . ($a->subjectAssign->section ? ' - ' . optional($a->subjectAssign->section)->name : '') . ')',
+            ])
+            ->unique(fn ($a) => $a['classes_id'] . '-' . $a['section_id'] . '-' . $a['subject_id'])
+            ->values();
+    }
+}
+
+if (!function_exists('classContentStudentSubjects')) {
+    /** Same idea for a student: one sidebar entry per subject that
+     *  actually has at least one Approved module for a class/section
+     *  they're enrolled in this session - only subjects with real class
+     *  content to see, not every subject on their timetable. */
+    function classContentStudentSubjects(): ?\Illuminate\Support\Collection
+    {
+        if (!Auth::check()) {
+            return null;
+        }
+        $student = Auth::user()->student;
+        if (!$student) {
+            return null;
+        }
+        $pairs = $student->enrolledClassSectionPairs();
+        if ($pairs->isEmpty()) {
+            return collect();
+        }
+
+        $query = \App\Models\ClassContent\ClassContentModule::approved()
+            ->with('subject')
+            ->where('session_id', setting('session'));
+        $modules = matchAnyClassSectionPair($query, $pairs)->get();
+
+        return $modules->map(fn ($m) => [
+            'classes_id' => $m->classes_id,
+            'section_id' => $m->section_id,
+            'subject_id' => $m->subject_id,
+            'label'      => optional($m->subject)->name,
+        ])->unique(fn ($a) => $a['classes_id'] . '-' . $a['section_id'] . '-' . $a['subject_id'])->values();
+    }
+}
+
 if (!function_exists('permission_category_map')) {
     /**
      * Permission attribute => display category, for the Roles / Change

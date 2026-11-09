@@ -25,10 +25,11 @@ class ClassContentController extends Controller
         $this->completions = $completions;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $student = Auth::user()->student;
-        $data['dashboard'] = $student ? $this->repo->dashboardForStudent($student) : ['groups' => collect(), 'ungrouped' => collect(), 'unitsCount' => 0, 'modulesCount' => 0, 'lessonsCount' => 0];
+        $filters = $request->only(['classes_id', 'section_id', 'subject_id']);
+        $data['dashboard'] = $student ? $this->repo->dashboardForStudent($student, $filters) : ['groups' => collect(), 'ungrouped' => collect(), 'unitsCount' => 0, 'modulesCount' => 0, 'lessonsCount' => 0];
         $data['map']   = $student ? $this->completions->mapForStudent($student->id) : [];
         $data['title'] = 'Class Content';
         return view('student-panel.class-content.index', compact('data'));

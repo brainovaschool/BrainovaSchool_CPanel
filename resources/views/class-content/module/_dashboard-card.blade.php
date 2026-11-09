@@ -1,4 +1,4 @@
-{{-- Expects $row: a ClassContentModule with class/section/subject/lessons.activities eager loaded (see ClassContentModuleRepository::dashboardForTeacher()) --}}
+{{-- Expects $row: a ClassContentModule with class/section/subject/lessons.activities eager loaded (see ClassContentModuleRepository::dashboardForTeacher()), and $number: its display number (e.g. "1.2") --}}
 @php
     $rowLocked = (int) auth()->user()->role_id === 5
         && !in_array($row->review_status, [\App\Models\ClassContent\ClassContentModule::DRAFT, \App\Models\ClassContent\ClassContentModule::CHANGES_REQUESTED]);
@@ -10,7 +10,7 @@
     <div class="cc-module-card-main">
         <div class="cc-module-card-body">
             <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                <h5 class="mb-0">{{ $row->title }}</h5>
+                <h5 class="mb-0">Module {{ $number }} — {{ $row->title }}</h5>
                 @include('class-content._status-badge', ['status' => $row->review_status])
             </div>
             <p class="text-secondary mb-0" style="font-size:.85rem;">
@@ -30,11 +30,6 @@
                 <i class="fa-solid fa-ellipsis"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                    <a class="dropdown-item" href="{{ route('class-content-module.lessons', $row->id) }}">
-                        <span class="icon mr-8"><i class="fa-solid fa-list"></i></span>Lessons ({{ $lessonsCount }})
-                    </a>
-                </li>
                 @if (hasPermission('class_content_update') && !$rowLocked)
                     <li>
                         <a class="dropdown-item" href="{{ route('class-content-module.edit', $row->id) }}">
@@ -72,6 +67,27 @@
             </ul>
         </div>
     </div>
+
+    <details class="cc-lesson-collapse">
+        <summary class="cc-lesson-collapse-summary">{{ $lessonsCount }} {{ \Illuminate\Support\Str::plural('lesson', $lessonsCount) }}</summary>
+        <div class="cc-lesson-collapse-body">
+            @foreach ($row->lessons as $li => $lesson)
+                <div class="cc-lesson-item">
+                    <span class="cc-lesson-item-title">{{ $number }}.{{ $li + 1 }} {{ $lesson->title }}</span>
+                    @if ($lesson->class_date)<span class="cc-lesson-item-date">{{ \Carbon\Carbon::parse($lesson->class_date)->format('d M Y') }}</span>@endif
+                    @if (hasPermission('class_content_update') && !$rowLocked)
+                        <a href="{{ route('class-content-module.lessons.edit', [$row->id, $lesson->id]) }}" class="cc-lesson-item-action">{{ ___('common.edit') }}</a>
+                    @endif
+                    @if (hasPermission('class_content_delete') && !$rowLocked)
+                        <button type="button" class="cc-lesson-item-action cc-lesson-item-action--danger" onclick="delete_row('class-content/{{ $row->id }}/lessons/delete', {{ $lesson->id }})">{{ ___('common.delete') }}</button>
+                    @endif
+                </div>
+            @endforeach
+            @if (hasPermission('class_content_create') && !$rowLocked)
+                <a href="{{ route('class-content-module.lessons.create', $row->id) }}" class="cc-add-link"><i class="fa-solid fa-plus"></i> Add a lesson to this module</a>
+            @endif
+        </div>
+    </details>
 </div>
 
 @once
@@ -83,6 +99,15 @@
         .cc-module-card-stats { display: flex; gap: 20px; }
         .cc-module-card-stat-num { font-size: 14px; font-weight: 700; }
         .cc-module-card-stat-label { font-size: 11px; color: var(--ot-text-secondary, #8b93a3); }
+
+        .cc-lesson-collapse { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--ot-border-basic-table, #edeef1); }
+        .cc-lesson-collapse-summary { cursor: pointer; font-size: 12.5px; font-weight: 600; color: #5b6472; }
+        .cc-lesson-collapse-body { margin-top: 10px; display: flex; flex-direction: column; gap: 2px; }
+        .cc-lesson-item { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 6px 4px; font-size: 13px; }
+        .cc-lesson-item-title { flex: 1; min-width: 200px; font-weight: 600; color: var(--ot-text-primary, #1f2430); }
+        .cc-lesson-item-date { font-size: 12px; color: var(--ot-text-secondary, #8b93a3); }
+        .cc-lesson-item-action { font-size: 12px; font-weight: 600; color: #0097b2; background: none; border: none; }
+        .cc-lesson-item-action--danger { color: #dc2626; }
     </style>
     @endpush
 @endonce

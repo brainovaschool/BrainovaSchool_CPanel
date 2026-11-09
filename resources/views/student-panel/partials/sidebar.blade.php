@@ -129,12 +129,29 @@
                         </a>
                     </li>
                 @endif
-                <li class="sidebar-menu-item {{ set_menu(['student-panel-class-content*']) }}">
-                    <a href="{{ route('student-panel-class-content.index') }}" class="parent-item-content">
-                        <i class="las la-book-reader"></i>
-                        <span class="on-half-expanded">Class Content</span>
-                    </a>
-                </li>
+                @php($ccSubjects = classContentStudentSubjects())
+                @if ($ccSubjects && $ccSubjects->isNotEmpty())
+                    <li class="sidebar-menu-item {{ set_menu(['student-panel-class-content*']) }}">
+                        <a class="parent-item-content has-arrow">
+                            <i class="las la-book-reader"></i>
+                            <span class="on-half-expanded">Class Content</span>
+                        </a>
+                        <ul class="child-menu-list">
+                            @foreach ($ccSubjects as $ccSubject)
+                                <li class="sidebar-menu-item {{ set_menu(['student-panel-class-content*']) }}">
+                                    <a href="{{ route('student-panel-class-content.index', ['classes_id' => $ccSubject['classes_id'], 'section_id' => $ccSubject['section_id'], 'subject_id' => $ccSubject['subject_id']]) }}">{{ $ccSubject['label'] }}</a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </li>
+                @else
+                    <li class="sidebar-menu-item {{ set_menu(['student-panel-class-content*']) }}">
+                        <a href="{{ route('student-panel-class-content.index') }}" class="parent-item-content">
+                            <i class="las la-book-reader"></i>
+                            <span class="on-half-expanded">Class Content</span>
+                        </a>
+                    </li>
+                @endif
 
                 @if (hasModule('StudyMaterial'))
                     <li class="sidebar-menu-item {{ set_menu(['student.study-material*']) }}">

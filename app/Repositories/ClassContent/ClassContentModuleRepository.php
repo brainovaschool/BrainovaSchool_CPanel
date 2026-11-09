@@ -32,9 +32,13 @@ class ClassContentModuleRepository
     }
 
     /** Same approved/enrolled scope as forStudent(), but grouped under Unit
-     *  for the student's own "big picture" dashboard, with everything
-     *  needed to derive each lesson's done/not-done state already loaded. */
-    public function dashboardForStudent(Student $student): array
+     *  (numbered the same way as the teacher's dashboard - Unit 1, 2, 3...,
+     *  its modules "unitNumber.position") for the student's own "big
+     *  picture" dashboard, with everything needed to derive each lesson's
+     *  done/not-done state already loaded. $filters (classes_id/
+     *  section_id/subject_id) scopes it to one of the sidebar's per-subject
+     *  links, same as the teacher side. */
+    public function dashboardForStudent(Student $student, array $filters = []): array
     {
         $pairs = $student->enrolledClassSectionPairs();
         if ($pairs->isEmpty()) {
@@ -44,6 +48,9 @@ class ClassContentModuleRepository
         $query = ClassContentModule::approved()
             ->with(['class', 'section', 'subject', 'lessons.activities'])
             ->where('session_id', setting('session'))
+            ->when($filters['classes_id'] ?? null, fn ($q, $v) => $q->where('classes_id', $v))
+            ->when($filters['section_id'] ?? null, fn ($q, $v) => $q->where('section_id', $v))
+            ->when($filters['subject_id'] ?? null, fn ($q, $v) => $q->where('subject_id', $v))
             ->orderBy('sort_order')->orderBy('id');
 
         $modules = matchAnyClassSectionPair($query, $pairs)->get();
@@ -53,14 +60,23 @@ class ClassContentModuleRepository
 
         $byUnit = $modules->groupBy('unit_id');
 
-        $groups = $units->map(fn ($unit) => [
-            'unit'    => $unit,
-            'modules' => $byUnit->get($unit->id, collect()),
+        $groups = $units->values()->map(function (ClassContentUnit $unit, int $ui) use ($byUnit) {
+            $unitNumber = $ui + 1;
+            $unitModules = $byUnit->get($unit->id, collect())->values()->map(fn ($m, $mi) => [
+                'module' => $m,
+                'number' => $unitNumber . '.' . ($mi + 1),
+            ]);
+            return ['unit' => $unit, 'number' => (string) $unitNumber, 'modules' => $unitModules];
+        });
+
+        $ungrouped = $byUnit->get(null, collect())->values()->map(fn ($m, $mi) => [
+            'module' => $m,
+            'number' => (string) ($mi + 1),
         ]);
 
         return [
             'groups'       => $groups,
-            'ungrouped'    => $byUnit->get(null, collect()),
+            'ungrouped'    => $ungrouped,
             'unitsCount'   => $units->count(),
             'modulesCount' => $modules->count(),
             'lessonsCount' => $modules->sum(fn ($m) => $m->lessons->count()),
@@ -113,29 +129,51 @@ class ClassContentModuleRepository
     /** The "big picture" dashboard: every one of this teacher's modules
      *  (Admin: everyone's), grouped under its Unit - ungrouped modules
      *  fall into a trailing "unitless" bucket rather than disappearing.
-     *  $staffId null = Admin, same "sees everything" rule as elsewhere. */
-    public function dashboardForTeacher(?int $staffId): array
+     *  $staffId null = Admin, same "sees everything" rule as elsewhere.
+     *  $filters (classes_id/section_id/subject_id, all optional) scopes it
+     *  to one of the sidebar's per-subject links - a teacher juggling
+     *  several subjects sees one at a time instead of everything mixed
+     *  together. */
+    public function dashboardForTeacher(?int $staffId, array $filters = []): array
     {
+        $applyFilters = function ($q) use ($filters) {
+            $q->when($filters['classes_id'] ?? null, fn ($q2, $v) => $q2->where('classes_id', $v))
+              ->when($filters['section_id'] ?? null, fn ($q2, $v) => $q2->where('section_id', $v))
+              ->when($filters['subject_id'] ?? null, fn ($q2, $v) => $q2->where('subject_id', $v));
+        };
+
         $modules = ClassContentModule::with(['class', 'section', 'subject', 'lessons.activities'])
             ->when($staffId !== null, fn ($q) => $q->where('created_by', $staffId))
+            ->tap($applyFilters)
             ->orderBy('sort_order')->orderBy('id')
             ->get();
 
         $units = ClassContentUnit::with(['class', 'section', 'subject'])
             ->when($staffId !== null, fn ($q) => $q->where('created_by', $staffId))
+            ->tap($applyFilters)
             ->orderBy('sort_order')->orderBy('id')
             ->get();
 
         $byUnit = $modules->groupBy('unit_id');
 
         // Units are always listed, even empty, so a teacher can see one
-        // they just created before adding a module to it.
-        $groups = $units->map(fn ($unit) => [
-            'unit'    => $unit,
-            'modules' => $byUnit->get($unit->id, collect()),
-        ]);
+        // they just created before adding a module to it. Numbered 1, 2,
+        // 3... and each of its modules "unitNumber.position" (e.g. "2.3"
+        // is the 3rd module in the 2nd unit) - purely a display label,
+        // never stored, so it's always correct even after reordering.
+        $groups = $units->values()->map(function (ClassContentUnit $unit, int $ui) use ($byUnit) {
+            $unitNumber = $ui + 1;
+            $unitModules = $byUnit->get($unit->id, collect())->values()->map(fn ($m, $mi) => [
+                'module' => $m,
+                'number' => $unitNumber . '.' . ($mi + 1),
+            ]);
+            return ['unit' => $unit, 'number' => (string) $unitNumber, 'modules' => $unitModules];
+        });
 
-        $ungrouped = $byUnit->get(null, collect());
+        $ungrouped = $byUnit->get(null, collect())->values()->map(fn ($m, $mi) => [
+            'module' => $m,
+            'number' => (string) ($mi + 1),
+        ]);
 
         return [
             'groups'    => $groups,

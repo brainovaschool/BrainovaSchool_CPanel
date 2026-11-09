@@ -385,9 +385,18 @@
                                     <a class="has-arrow">Class Content</a>
                                     <ul class="child-menu-list">
                                         @if (hasPermission('class_content_read'))
-                                            <li class="sidebar-menu-item {{ set_menu(['class-content', 'class-content/create', 'class-content/edit*']) }}">
-                                                <a href="{{ route('class-content-module.index') }}">Modules</a>
-                                            </li>
+                                            @php($ccSubjects = classContentTeacherSubjects())
+                                            @if ($ccSubjects && $ccSubjects->isNotEmpty())
+                                                @foreach ($ccSubjects as $ccSubject)
+                                                    <li class="sidebar-menu-item {{ set_menu(['class-content', 'class-content/create', 'class-content/edit*']) }}">
+                                                        <a href="{{ route('class-content-module.index', ['classes_id' => $ccSubject['classes_id'], 'section_id' => $ccSubject['section_id'], 'subject_id' => $ccSubject['subject_id']]) }}">{{ $ccSubject['label'] }}</a>
+                                                    </li>
+                                                @endforeach
+                                            @else
+                                                <li class="sidebar-menu-item {{ set_menu(['class-content', 'class-content/create', 'class-content/edit*']) }}">
+                                                    <a href="{{ route('class-content-module.index') }}">Modules</a>
+                                                </li>
+                                            @endif
                                         @endif
                                         @if (hasPermission('class_content_coordinator_review'))
                                             <li class="sidebar-menu-item {{ set_menu(['class-content-coordinator*']) }}">

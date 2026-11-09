@@ -2,7 +2,7 @@
     $m = $data['item'] ?? null;
     $selected = old('classes_id')
         ? old('classes_id') . '|' . old('section_id') . '|' . old('subject_id')
-        : ($m ? $m->classes_id . '|' . $m->section_id . '|' . $m->subject_id : '');
+        : ($m ? $m->classes_id . '|' . $m->section_id . '|' . $m->subject_id : request('classes_id') . '|' . request('section_id') . '|' . request('subject_id'));
 @endphp
 
 <div class="row">
@@ -46,7 +46,7 @@
         <select class="nice-select niceSelect bordered_style wide" name="unit_id">
             <option value="">— No unit —</option>
             @foreach ($data['units'] as $unit)
-                <option value="{{ $unit->id }}" {{ (string) old('unit_id', $m->unit_id ?? '') === (string) $unit->id ? 'selected' : '' }}>
+                <option value="{{ $unit->id }}" {{ (string) old('unit_id', $m->unit_id ?? request('unit_id', '')) === (string) $unit->id ? 'selected' : '' }}>
                     {{ $unit->title }} ({{ optional($unit->class)->name }}{{ $unit->section ? ' - ' . optional($unit->section)->name : '' }} — {{ optional($unit->subject)->name }})
                 </option>
             @endforeach

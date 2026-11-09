@@ -5,7 +5,8 @@
 @section('content')
     @php
         $map = $data['map'];
-        $allLessons = $data['dashboard']['groups']->flatMap(fn ($g) => $g['modules'])->concat($data['dashboard']['ungrouped'])->flatMap(fn ($m) => $m->lessons);
+        $allModules = $data['dashboard']['groups']->flatMap(fn ($g) => $g['modules'])->concat($data['dashboard']['ungrouped'])->pluck('module');
+        $allLessons = $allModules->flatMap(fn ($m) => $m->lessons);
         $lessonsDone  = $allLessons->filter(fn ($l) => $l->isDoneFor($map))->count();
         $withProject  = $allLessons->filter(fn ($l) => $l->hasProject());
         $withQuiz     = $allLessons->filter(fn ($l) => $l->hasQuiz());
@@ -47,19 +48,19 @@
             @foreach ($data['dashboard']['groups'] as $group)
                 <div class="mb-28">
                     <div class="cc-unit-head">
-                        <h3 class="cc-unit-title">{{ $group['unit']->title }}</h3>
+                        <h3 class="cc-unit-title">Unit {{ $group['number'] }} — {{ $group['unit']->title }}</h3>
                         <span class="cc-unit-count">{{ $group['modules']->count() }} {{ \Illuminate\Support\Str::plural('module', $group['modules']->count()) }}</span>
                     </div>
-                    @foreach ($group['modules'] as $module)
-                        @include('student-panel.class-content._module-card', ['module' => $module, 'map' => $map])
+                    @foreach ($group['modules'] as $entry)
+                        @include('student-panel.class-content._module-card', ['module' => $entry['module'], 'number' => $entry['number'], 'map' => $map])
                     @endforeach
                 </div>
             @endforeach
 
             @if ($data['dashboard']['ungrouped']->isNotEmpty())
                 <div class="mb-28">
-                    @foreach ($data['dashboard']['ungrouped'] as $module)
-                        @include('student-panel.class-content._module-card', ['module' => $module, 'map' => $map])
+                    @foreach ($data['dashboard']['ungrouped'] as $entry)
+                        @include('student-panel.class-content._module-card', ['module' => $entry['module'], 'number' => $entry['number'], 'map' => $map])
                     @endforeach
                 </div>
             @endif
