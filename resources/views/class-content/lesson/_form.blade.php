@@ -170,6 +170,42 @@
     </div>
 </div>
 
+<div class="card mt-2 mb-3 cc-form-section cc-form-section--project">
+    <div class="card-body">
+        <h5 class="mb-1"><i class="fa-solid fa-trophy me-1"></i> Project (optional)</h5>
+        <p class="text-secondary mb-2" style="font-size:.85rem;">One deliverable the student submits for this lesson — leave the title blank for no project.</p>
+        <div class="row">
+            <div class="col-md-6 mb-2">
+                <input class="form-control ot-input" name="project_title" maxlength="150" value="{{ old('project_title', $l->project_title ?? '') }}" placeholder="Project title">
+            </div>
+            <div class="col-md-6 mb-2">
+                <input class="form-control ot-input" name="project_link_url" maxlength="500" value="{{ old('project_link_url', $l->project_link_url ?? '') }}" placeholder="Link (optional)">
+            </div>
+            <div class="col-md-12 mb-2">
+                <textarea class="form-control ot-textarea" name="project_description" rows="2" placeholder="What the student should build">{{ old('project_description', $l->project_description ?? '') }}</textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-2 mb-3 cc-form-section cc-form-section--quiz">
+    <div class="card-body">
+        <h5 class="mb-1"><i class="fa-solid fa-circle-question me-1"></i> Quiz (optional)</h5>
+        <p class="text-secondary mb-2" style="font-size:.85rem;">One quiz the student completes for this lesson — leave the title blank for no quiz.</p>
+        <div class="row">
+            <div class="col-md-6 mb-2">
+                <input class="form-control ot-input" name="quiz_title" maxlength="150" value="{{ old('quiz_title', $l->quiz_title ?? '') }}" placeholder="Quiz title">
+            </div>
+            <div class="col-md-6 mb-2">
+                <input class="form-control ot-input" name="quiz_link_url" maxlength="500" value="{{ old('quiz_link_url', $l->quiz_link_url ?? '') }}" placeholder="Link (optional)">
+            </div>
+            <div class="col-md-12 mb-2">
+                <textarea class="form-control ot-textarea" name="quiz_description" rows="2" placeholder="What the quiz covers">{{ old('quiz_description', $l->quiz_description ?? '') }}</textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="text-end mt-3">
     <button class="btn btn-lg ot-btn-primary"><span><i class="fa-solid fa-save"></i> </span>{{ ___('common.submit') }}</button>
 </div>
@@ -208,5 +244,7 @@
     .cc-form-section--materials { border-left-color: #2563eb33; }
     .cc-form-section--activities { border-left-color: #7c3aed33; }
     .cc-form-section--outcomes { border-left-color: #10b98133; }
+    .cc-form-section--project { border-left-color: #b4530933; }
+    .cc-form-section--quiz { border-left-color: #c026d333; }
 </style>
 @endpush

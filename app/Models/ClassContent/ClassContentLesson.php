@@ -32,4 +32,39 @@ class ClassContentLesson extends BaseModel
     {
         return $this->hasMany(ClassContentOutcome::class, 'lesson_id')->orderBy('sort_order');
     }
+
+    public function hasProject(): bool
+    {
+        return (bool) $this->project_title;
+    }
+
+    public function hasQuiz(): bool
+    {
+        return (bool) $this->quiz_title;
+    }
+
+    /** $map is a student's completions, keyed "type:id" (see
+     *  ClassContentCompletionRepository::mapForStudent()) - plain data, no
+     *  query here, so this is just as usable from a Blade view as from a
+     *  repository. A lesson is done once there's nothing left under it:
+     *  itself viewed, every activity done, and its project/quiz done if it
+     *  has one. */
+    public function isDoneFor(array $map): bool
+    {
+        if (!isset($map[ClassContentCompletion::LESSON . ':' . $this->id])) {
+            return false;
+        }
+        foreach ($this->activities as $activity) {
+            if (!isset($map[ClassContentCompletion::ACTIVITY . ':' . $activity->id])) {
+                return false;
+            }
+        }
+        if ($this->hasProject() && !isset($map[ClassContentCompletion::PROJECT . ':' . $this->id])) {
+            return false;
+        }
+        if ($this->hasQuiz() && !isset($map[ClassContentCompletion::QUIZ . ':' . $this->id])) {
+            return false;
+        }
+        return true;
+    }
 }

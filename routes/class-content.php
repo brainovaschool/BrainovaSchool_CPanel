@@ -5,6 +5,7 @@ use App\Http\Controllers\ClassContent\ClassContentAdminController;
 use App\Http\Controllers\ClassContent\ClassContentLessonController;
 use App\Http\Controllers\ClassContent\ClassContentModuleController;
 use App\Http\Controllers\ClassContent\ClassContentCoordinatorController;
+use App\Http\Controllers\ClassContent\ClassContentUnitController;
 
 Route::middleware(saasMiddleware())->group(function () {
     Route::group(['middleware' => ['XssSanitizer']], function () {
@@ -28,6 +29,12 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/edit/{id}',      'edit')->name('lessons.edit')->middleware('PermissionCheck:class_content_update');
                     Route::put('/update/{id}',    'update')->name('lessons.update')->middleware('PermissionCheck:class_content_update', 'DemoCheck');
                     Route::delete('/delete/{id}', 'delete')->name('lessons.delete')->middleware('PermissionCheck:class_content_delete', 'DemoCheck');
+                });
+
+                Route::controller(ClassContentUnitController::class)->prefix('class-content-units')->name('class-content-unit.')->group(function () {
+                    Route::post('/',               'store')->name('store')->middleware('PermissionCheck:class_content_create', 'DemoCheck');
+                    Route::put('/update/{id}',     'update')->name('update')->middleware('PermissionCheck:class_content_update', 'DemoCheck');
+                    Route::delete('/delete/{id}',  'destroy')->name('destroy')->middleware('PermissionCheck:class_content_delete', 'DemoCheck');
                 });
 
                 Route::controller(ClassContentCoordinatorController::class)->prefix('class-content-coordinator')->name('class-content-coordinator.')->group(function () {

@@ -70,6 +70,11 @@ class ClassContentModule extends BaseModel
         return $this->belongsTo(Staff::class, 'created_by');
     }
 
+    public function unit(): BelongsTo
+    {
+        return $this->belongsTo(ClassContentUnit::class, 'unit_id');
+    }
+
     public function coordinator(): BelongsTo
     {
         return $this->belongsTo(Staff::class, 'coordinator_id');

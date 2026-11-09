@@ -66,6 +66,8 @@ Route::middleware(saasMiddleware())->group(function () {
 
                     Route::controller(ClassContentController::class)->prefix('student-panel-class-content')->name('student-panel-class-content.')->group(function () {
                         Route::get('/', 'index')->name('index');
+                        Route::post('/complete', 'complete')->name('complete');
+                        Route::get('/lesson/{id}', 'lesson')->name('lesson');
                         Route::get('/{id}', 'show')->name('show');
                     });
 

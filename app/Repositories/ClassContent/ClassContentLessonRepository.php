@@ -41,6 +41,7 @@ class ClassContentLessonRepository
             $row->video_url  = trim((string) $request->video_url) ?: null;
             $row->class_date = $request->class_date ?: null;
             $row->sort_order = (int) $request->sort_order;
+            $this->fillProjectAndQuiz($row, $request);
             $row->save();
 
             $this->syncChildren($row, $request);
@@ -60,6 +61,7 @@ class ClassContentLessonRepository
             $row->video_url   = trim((string) $request->video_url) ?: null;
             $row->class_date  = $request->class_date ?: null;
             $row->sort_order  = (int) $request->sort_order;
+            $this->fillProjectAndQuiz($row, $request);
             $row->save();
 
             $this->syncChildren($row, $request);
@@ -78,6 +80,23 @@ class ClassContentLessonRepository
         } catch (\Throwable $th) {
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
+    }
+
+    /** Project/Quiz are plain columns on the lesson, not child rows - a
+     *  blank title means "this lesson has no project/quiz", so both halves
+     *  are cleared together rather than leaving an orphaned description
+     *  with no title behind it. */
+    private function fillProjectAndQuiz(ClassContentLesson $row, $request): void
+    {
+        $projectTitle = trim((string) $request->input('project_title'));
+        $row->project_title       = $projectTitle ?: null;
+        $row->project_description = $projectTitle ? $request->input('project_description') : null;
+        $row->project_link_url    = $projectTitle ? (trim((string) $request->input('project_link_url')) ?: null) : null;
+
+        $quizTitle = trim((string) $request->input('quiz_title'));
+        $row->quiz_title       = $quizTitle ?: null;
+        $row->quiz_description = $quizTitle ? $request->input('quiz_description') : null;
+        $row->quiz_link_url    = $quizTitle ? (trim((string) $request->input('quiz_link_url')) ?: null) : null;
     }
 
     /** Materials/Activities/Outcomes are always replaced whole on save —

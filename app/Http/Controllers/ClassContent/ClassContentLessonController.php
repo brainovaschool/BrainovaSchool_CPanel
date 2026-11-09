@@ -138,6 +138,12 @@ class ClassContentLessonController extends Controller
             'video_url'   => 'nullable|string|max:500',
             'class_date'  => 'nullable|date',
             'sort_order'  => 'nullable|integer',
+            'project_title'       => 'nullable|string|max:150',
+            'project_description' => 'nullable|string|max:3000',
+            'project_link_url'    => 'nullable|string|max:500',
+            'quiz_title'          => 'nullable|string|max:150',
+            'quiz_description'    => 'nullable|string|max:3000',
+            'quiz_link_url'       => 'nullable|string|max:500',
         ]);
     }
 }

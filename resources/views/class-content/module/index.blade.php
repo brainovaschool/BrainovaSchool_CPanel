@@ -14,8 +14,18 @@
                         <li class="breadcrumb-item">{{ $data['title'] }}</li>
                     </ol>
                 </div>
+                @if (hasPermission('class_content_create'))
+                    <div class="col-sm-6 text-sm-end">
+                        <a href="{{ route('class-content-module.create') }}" class="btn btn-lg ot-btn-primary">
+                            <span><i class="fa-solid fa-plus"></i> </span>
+                            <span>+ New module</span>
+                        </a>
+                    </div>
+                @endif
             </div>
         </div>
+
+        <p class="text-secondary mb-3">Your big picture: units, modules and lessons — a teacher builds it, a coordinator reviews it, and admin approves it before students ever see it.</p>
 
         @include('class-content._status-summary', [
             'counts' => $data['counts'],
@@ -27,119 +37,104 @@
             ],
         ])
 
-        <div class="table-content table-basic">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <div>
-                        <h4 class="mb-0">Class Content</h4>
-                        <p class="text-secondary mb-0" style="font-size:.85rem;">Modules, lessons, materials and activities for your classes — a teacher builds it, a coordinator reviews it, and admin approves it before students ever see it.</p>
-                    </div>
-                    @if (hasPermission('class_content_create'))
-                        <a href="{{ route('class-content-module.create') }}" class="btn btn-lg ot-btn-primary">
-                            <span><i class="fa-solid fa-plus"></i> </span>
-                            <span>{{ ___('common.add') }}</span>
-                        </a>
-                    @endif
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered class-table">
-                            <thead class="thead">
-                                <tr>
-                                    <th>Title</th>
-                                    <th>Class</th>
-                                    <th>Subject</th>
-                                    <th>Teacher</th>
-                                    <th>Status</th>
-                                    <th class="action">{{ ___('common.action') }}</th>
-                                </tr>
-                            </thead>
-                            <tbody class="tbody">
-                                @forelse ($data['modules'] as $row)
-                                    @php
-                                        $rowLocked = (int) auth()->user()->role_id === 5
-                                            && !in_array($row->review_status, [\App\Models\ClassContent\ClassContentModule::DRAFT, \App\Models\ClassContent\ClassContentModule::CHANGES_REQUESTED]);
-                                    @endphp
-                                    <tr id="row_{{ $row->id }}">
-                                        <td>{{ $row->title }}</td>
-                                        <td>{{ optional($row->class)->name }}{{ $row->section ? ' - ' . optional($row->section)->name : '' }}</td>
-                                        <td>{{ optional($row->subject)->name }}</td>
-                                        <td>{{ trim(optional($row->creator)->first_name . ' ' . optional($row->creator)->last_name) ?: '—' }}</td>
-                                        <td>@include('class-content._status-badge', ['status' => $row->review_status])</td>
-                                        <td class="action">
-                                            <div class="dropdown dropdown-action">
-                                                <button type="button" class="btn-dropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                                                    <i class="fa-solid fa-ellipsis"></i>
-                                                </button>
-                                                <ul class="dropdown-menu dropdown-menu-end">
-                                                    <li>
-                                                        <a class="dropdown-item" href="{{ route('class-content-module.lessons', $row->id) }}">
-                                                            <span class="icon mr-8"><i class="fa-solid fa-list"></i></span>Lessons ({{ $row->lessons_count }})
-                                                        </a>
-                                                    </li>
-                                                    @if (hasPermission('class_content_update') && !$rowLocked)
-                                                        <li>
-                                                            <a class="dropdown-item" href="{{ route('class-content-module.edit', $row->id) }}">
-                                                                <span class="icon mr-8"><i class="fa-solid fa-pen-to-square"></i></span>{{ ___('common.edit') }}
-                                                            </a>
-                                                        </li>
-                                                    @endif
-                                                    @if (hasPermission('class_content_submit') && !$rowLocked && in_array($row->review_status, [\App\Models\ClassContent\ClassContentModule::DRAFT, \App\Models\ClassContent\ClassContentModule::CHANGES_REQUESTED]))
-                                                        @if ($row->lessons_count > 0)
-                                                            <li>
-                                                                <a class="dropdown-item" href="javascript:void(0);" onclick="document.getElementById('submit-form-{{ $row->id }}').submit();">
-                                                                    <span class="icon mr-8"><i class="fa-solid fa-paper-plane"></i></span>Submit for review
-                                                                </a>
-                                                                <form id="submit-form-{{ $row->id }}" action="{{ route('class-content-module.submit', $row->id) }}" method="post" class="d-none">
-                                                                    @csrf
-                                                                </form>
-                                                            </li>
-                                                        @else
-                                                            <li>
-                                                                <span class="dropdown-item text-secondary" style="cursor:not-allowed;" title="Add at least one lesson first">
-                                                                    <span class="icon mr-8"><i class="fa-solid fa-paper-plane"></i></span>Submit for review
-                                                                </span>
-                                                            </li>
-                                                        @endif
-                                                    @endif
-                                                    @if (hasPermission('class_content_delete') && !$rowLocked)
-                                                        <li>
-                                                            <a class="dropdown-item" href="javascript:void(0);"
-                                                                onclick="delete_row('class-content/delete', {{ $row->id }})">
-                                                                <span class="icon mr-8"><i class="fa-solid fa-trash-can"></i></span>
-                                                                <span>{{ ___('common.delete') }}</span>
-                                                            </a>
-                                                        </li>
-                                                    @endif
-                                                </ul>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="100%" class="text-center gray-color">
-                                            <img src="{{ asset('images/no_data.svg') }}" alt="" class="mb-primary" width="100">
-                                            <p class="mb-0 text-center">{{ ___('common.no_data_available') }}</p>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+        <div class="cc-stat-row mb-24">
+            <div class="cc-stat"><div class="cc-stat-icon" style="border-color:#5e17eb;color:#5e17eb;"><i class="fa-solid fa-layer-group"></i></div><div class="cc-stat-label">Units</div><div class="cc-stat-value">{{ $data['dashboard']['unitsCount'] }}</div></div>
+            <div class="cc-stat"><div class="cc-stat-icon" style="border-color:#0097b2;color:#0097b2;"><i class="fa-solid fa-table-cells-large"></i></div><div class="cc-stat-label">Modules</div><div class="cc-stat-value">{{ $data['dashboard']['modulesCount'] }}</div></div>
+            <div class="cc-stat"><div class="cc-stat-icon" style="border-color:#16a34a;color:#16a34a;"><i class="fa-solid fa-book-open"></i></div><div class="cc-stat-label">Lessons</div><div class="cc-stat-value">{{ $data['dashboard']['lessonsCount'] }}</div></div>
+            <div class="cc-stat"><div class="cc-stat-icon" style="border-color:#b45309;color:#b45309;"><i class="fa-solid fa-trophy"></i></div><div class="cc-stat-label">Lessons with a project</div><div class="cc-stat-value">{{ $data['dashboard']['projectsDefinedCount'] }}<span class="cc-stat-of">/{{ $data['dashboard']['lessonsCount'] }}</span></div></div>
+            <div class="cc-stat"><div class="cc-stat-icon" style="border-color:#c026d3;color:#c026d3;"><i class="fa-solid fa-circle-question"></i></div><div class="cc-stat-label">Lessons with a quiz</div><div class="cc-stat-value">{{ $data['dashboard']['quizzesDefinedCount'] }}<span class="cc-stat-of">/{{ $data['dashboard']['lessonsCount'] }}</span></div></div>
+        </div>
 
-                    <div class="ot-pagination pagination-content d-flex justify-content-end align-content-center py-3">
-                        <nav>
-                            <ul class="pagination justify-content-between">
-                                {!! $data['modules']->links() !!}
-                            </ul>
-                        </nav>
-                    </div>
+        @if (hasPermission('class_content_create'))
+            <div class="card ot-card mb-16">
+                <div class="card-body">
+                    <details>
+                        <summary class="cc-add-unit-toggle">+ New unit</summary>
+                        <form action="{{ route('class-content-unit.store') }}" method="post" class="mt-3">
+                            @csrf
+                            @include('class-content.unit._fields', ['idSuffix' => 'new', 'options' => $data['options'], 'unit' => null])
+                        </form>
+                    </details>
                 </div>
             </div>
-        </div>
+        @endif
+
+        @forelse ($data['dashboard']['groups'] as $group)
+            <div class="mb-28">
+                <div class="cc-unit-head">
+                    <h3 class="cc-unit-title">{{ $group['unit']->title }}</h3>
+                    <span class="cc-unit-count">{{ $group['modules']->count() }} {{ \Illuminate\Support\Str::plural('module', $group['modules']->count()) }}</span>
+                    @if (hasPermission('class_content_update') || hasPermission('class_content_delete'))
+                        <details class="cc-unit-manage">
+                            <summary>Manage unit</summary>
+                            <div class="cc-unit-manage-body">
+                                @if (hasPermission('class_content_update'))
+                                    <form action="{{ route('class-content-unit.update', $group['unit']->id) }}" method="post">
+                                        @csrf
+                                        @method('PUT')
+                                        @include('class-content.unit._fields', ['idSuffix' => 'u' . $group['unit']->id, 'options' => $data['options'], 'unit' => $group['unit']])
+                                    </form>
+                                @endif
+                                @if (hasPermission('class_content_delete'))
+                                    <button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="delete_row('class-content-units/delete', {{ $group['unit']->id }})">Delete unit</button>
+                                @endif
+                            </div>
+                        </details>
+                    @endif
+                </div>
+
+                @forelse ($group['modules'] as $row)
+                    @include('class-content.module._dashboard-card', ['row' => $row])
+                @empty
+                    <p class="text-secondary" style="font-size:.85rem;">No modules in this unit yet — create one and pick it from the Unit dropdown.</p>
+                @endforelse
+            </div>
+        @empty
+        @endforelse
+
+        @if ($data['dashboard']['ungrouped']->isNotEmpty())
+            <div class="mb-28">
+                <div class="cc-unit-head">
+                    <h3 class="cc-unit-title">Other modules</h3>
+                    <span class="cc-unit-count">not in a unit</span>
+                </div>
+                @foreach ($data['dashboard']['ungrouped'] as $row)
+                    @include('class-content.module._dashboard-card', ['row' => $row])
+                @endforeach
+            </div>
+        @endif
+
+        @if ($data['dashboard']['unitsCount'] === 0 && $data['dashboard']['ungrouped']->isEmpty())
+            <div class="card ot-card">
+                <div class="card-body text-center gray-color">
+                    <img src="{{ asset('images/no_data.svg') }}" alt="" class="mb-primary" width="100">
+                    <p class="mb-0 text-center">{{ ___('common.no_data_available') }}</p>
+                </div>
+            </div>
+        @endif
     </div>
 @endsection
 
 @push('script')
     @include('backend.partials.delete-ajax')
+@endpush
+
+@push('css')
+<style>
+    .cc-stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; background: var(--ot-bg-table-card, #fff); border: 1px solid var(--ot-border-basic-table, #e4e7ec); border-radius: 16px; padding: 20px; }
+    .cc-stat { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; }
+    .cc-stat-icon { width: 46px; height: 46px; border-radius: 50%; border: 2px solid; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .cc-stat-label { font-size: 12px; color: var(--ot-text-secondary, #5b6472); }
+    .cc-stat-value { font-size: 15px; font-weight: 700; }
+    .cc-stat-of { color: var(--ot-text-secondary, #8b93a3); font-weight: 500; }
+
+    .cc-add-unit-toggle { cursor: pointer; font-weight: 600; color: #0097b2; }
+
+    .cc-unit-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding-left: 14px; border-left: 4px solid #5e17eb; margin-bottom: 12px; }
+    .cc-unit-title { margin: 0; font-size: 18px; font-weight: 700; }
+    .cc-unit-count { font-size: 13px; color: var(--ot-text-secondary, #8b93a3); }
+    .cc-unit-manage { margin-left: auto; font-size: 12px; }
+    .cc-unit-manage > summary { cursor: pointer; color: #5b6472; font-weight: 600; }
+    .cc-unit-manage-body { margin-top: 10px; max-width: 520px; }
+</style>
 @endpush

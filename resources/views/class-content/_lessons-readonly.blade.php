@@ -65,6 +65,24 @@
                     </ul>
                 </div>
             @endif
+
+            @if ($lesson->hasProject())
+                <div class="cc-section">
+                    <div class="cc-section__title"><i class="fa-solid fa-trophy"></i> Project</div>
+                    <strong>{{ $lesson->project_title }}</strong>
+                    @if ($lesson->project_description)<p class="mb-1">{{ $lesson->project_description }}</p>@endif
+                    @if ($lesson->project_link_url)<a href="{{ $lesson->project_link_url }}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open link</a>@endif
+                </div>
+            @endif
+
+            @if ($lesson->hasQuiz())
+                <div class="cc-section">
+                    <div class="cc-section__title"><i class="fa-solid fa-circle-question"></i> Quiz</div>
+                    <strong>{{ $lesson->quiz_title }}</strong>
+                    @if ($lesson->quiz_description)<p class="mb-1">{{ $lesson->quiz_description }}</p>@endif
+                    @if ($lesson->quiz_link_url)<a href="{{ $lesson->quiz_link_url }}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Open link</a>@endif
+                </div>
+            @endif
         </div>
     </div>
 @empty

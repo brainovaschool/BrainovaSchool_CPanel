@@ -4,6 +4,7 @@ namespace App\Repositories\ClassContent;
 
 use App\Enums\Settings;
 use App\Models\ClassContent\ClassContentModule;
+use App\Models\ClassContent\ClassContentUnit;
 use App\Models\StudentInfo\Student;
 use App\Traits\ReturnFormatTrait;
 
@@ -30,6 +31,42 @@ class ClassContentModuleRepository
         return matchAnyClassSectionPair($query, $pairs)->get();
     }
 
+    /** Same approved/enrolled scope as forStudent(), but grouped under Unit
+     *  for the student's own "big picture" dashboard, with everything
+     *  needed to derive each lesson's done/not-done state already loaded. */
+    public function dashboardForStudent(Student $student): array
+    {
+        $pairs = $student->enrolledClassSectionPairs();
+        if ($pairs->isEmpty()) {
+            return ['groups' => collect(), 'ungrouped' => collect(), 'unitsCount' => 0, 'modulesCount' => 0, 'lessonsCount' => 0];
+        }
+
+        $query = ClassContentModule::approved()
+            ->with(['class', 'section', 'subject', 'lessons.activities'])
+            ->where('session_id', setting('session'))
+            ->orderBy('sort_order')->orderBy('id');
+
+        $modules = matchAnyClassSectionPair($query, $pairs)->get();
+
+        $unitIds = $modules->pluck('unit_id')->filter()->unique();
+        $units = ClassContentUnit::whereIn('id', $unitIds)->orderBy('sort_order')->orderBy('id')->get();
+
+        $byUnit = $modules->groupBy('unit_id');
+
+        $groups = $units->map(fn ($unit) => [
+            'unit'    => $unit,
+            'modules' => $byUnit->get($unit->id, collect()),
+        ]);
+
+        return [
+            'groups'       => $groups,
+            'ungrouped'    => $byUnit->get(null, collect()),
+            'unitsCount'   => $units->count(),
+            'modulesCount' => $modules->count(),
+            'lessonsCount' => $modules->sum(fn ($m) => $m->lessons->count()),
+        ];
+    }
+
     /** A single approved module, but only if it's actually for one of this
      *  student's enrolled classes — a student can't view-by-ID their way
      *  into another class's content. */
@@ -45,6 +82,25 @@ class ClassContentModuleRepository
         return $belongs ? $this->show($id) : null;
     }
 
+    /** A single approved lesson, but only if its module is actually for one
+     *  of this student's enrolled classes - same ownership check as
+     *  showApprovedForStudent(), one level down. */
+    public function lessonForStudent(int $lessonId, Student $student): ?\App\Models\ClassContent\ClassContentLesson
+    {
+        $pairs = $student->enrolledClassSectionPairs();
+        if ($pairs->isEmpty()) {
+            return null;
+        }
+
+        $lesson = \App\Models\ClassContent\ClassContentLesson::with(['activities', 'outcomes', 'materials', 'module'])->find($lessonId);
+        if (!$lesson || !$lesson->module || !$lesson->module->isApproved()) {
+            return null;
+        }
+
+        $belongs = matchAnyClassSectionPair(ClassContentModule::where('id', $lesson->module->id), $pairs)->exists();
+        return $belongs ? $lesson : null;
+    }
+
     public function forTeacher(int $staffId)
     {
         return ClassContentModule::with(['class', 'section', 'subject', 'creator'])
@@ -52,6 +108,44 @@ class ClassContentModuleRepository
             ->where('created_by', $staffId)
             ->orderByDesc('id')
             ->paginate(Settings::PAGINATE);
+    }
+
+    /** The "big picture" dashboard: every one of this teacher's modules
+     *  (Admin: everyone's), grouped under its Unit - ungrouped modules
+     *  fall into a trailing "unitless" bucket rather than disappearing.
+     *  $staffId null = Admin, same "sees everything" rule as elsewhere. */
+    public function dashboardForTeacher(?int $staffId): array
+    {
+        $modules = ClassContentModule::with(['class', 'section', 'subject', 'lessons.activities'])
+            ->when($staffId !== null, fn ($q) => $q->where('created_by', $staffId))
+            ->orderBy('sort_order')->orderBy('id')
+            ->get();
+
+        $units = ClassContentUnit::with(['class', 'section', 'subject'])
+            ->when($staffId !== null, fn ($q) => $q->where('created_by', $staffId))
+            ->orderBy('sort_order')->orderBy('id')
+            ->get();
+
+        $byUnit = $modules->groupBy('unit_id');
+
+        // Units are always listed, even empty, so a teacher can see one
+        // they just created before adding a module to it.
+        $groups = $units->map(fn ($unit) => [
+            'unit'    => $unit,
+            'modules' => $byUnit->get($unit->id, collect()),
+        ]);
+
+        $ungrouped = $byUnit->get(null, collect());
+
+        return [
+            'groups'    => $groups,
+            'ungrouped' => $ungrouped,
+            'unitsCount'   => $units->count(),
+            'modulesCount' => $modules->count(),
+            'lessonsCount' => $modules->sum(fn ($m) => $m->lessons->count()),
+            'projectsDefinedCount' => $modules->sum(fn ($m) => $m->lessons->filter(fn ($l) => $l->hasProject())->count()),
+            'quizzesDefinedCount'  => $modules->sum(fn ($m) => $m->lessons->filter(fn ($l) => $l->hasQuiz())->count()),
+        ];
     }
 
     /** Coordinator's queue — defaults to what actually needs their
@@ -115,6 +209,7 @@ class ClassContentModuleRepository
             $row->classes_id    = $request->classes_id;
             $row->section_id    = $request->section_id ?: null;
             $row->subject_id    = $request->subject_id;
+            $row->unit_id       = $request->unit_id ?: null;
             $row->title         = $request->title;
             $row->description   = $request->description;
             $row->created_by    = $staffId;
@@ -138,6 +233,7 @@ class ClassContentModuleRepository
             $row->classes_id  = $request->classes_id;
             $row->section_id  = $request->section_id ?: null;
             $row->subject_id  = $request->subject_id;
+            $row->unit_id     = $request->unit_id ?: null;
             $row->title       = $request->title;
             $row->description = $request->description;
             $row->sort_order  = (int) $request->sort_order;

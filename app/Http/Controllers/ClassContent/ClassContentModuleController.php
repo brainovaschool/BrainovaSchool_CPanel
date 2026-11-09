@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\Academic\SubjectAssignChildren;
 use App\Models\ClassContent\ClassContentModule;
 use App\Repositories\ClassContent\ClassContentModuleRepository;
+use App\Repositories\ClassContent\ClassContentUnitRepository;
 
 /** Teacher authoring: create/edit a module (and, via
  *  ClassContentLessonController, its lessons) and submit it for review.
@@ -18,10 +19,12 @@ use App\Repositories\ClassContent\ClassContentModuleRepository;
 class ClassContentModuleController extends Controller
 {
     private $repo;
+    private $unitRepo;
 
-    public function __construct(ClassContentModuleRepository $repo)
+    public function __construct(ClassContentModuleRepository $repo, ClassContentUnitRepository $unitRepo)
     {
-        $this->repo = $repo;
+        $this->repo     = $repo;
+        $this->unitRepo = $unitRepo;
     }
 
     private function teacherStaffId(): ?int
@@ -101,11 +104,10 @@ class ClassContentModuleController extends Controller
     public function index()
     {
         $staffId = $this->teacherStaffId();
-        $data['modules'] = $staffId !== null
-            ? $this->repo->forTeacher($staffId)
-            : ClassContentModule::with(['class', 'section', 'subject', 'creator'])->withCount('lessons')->orderByDesc('id')->paginate(\App\Enums\Settings::PAGINATE);
-        $data['counts']  = $this->repo->statusCounts($staffId);
-        $data['title']   = 'Class Content';
+        $data['dashboard'] = $this->repo->dashboardForTeacher($staffId);
+        $data['counts']    = $this->repo->statusCounts($staffId);
+        $data['options']   = $this->comboOptions($staffId);
+        $data['title']     = 'Class Content';
         return view('class-content.module.index', compact('data'));
     }
 
@@ -113,6 +115,7 @@ class ClassContentModuleController extends Controller
     {
         $data['title']   = 'Add a Module';
         $data['options'] = $this->comboOptions($this->teacherStaffId());
+        $data['units']   = $this->unitRepo->forTeacher($this->teacherStaffId());
         return view('class-content.module.create', compact('data'));
     }
 
@@ -146,6 +149,7 @@ class ClassContentModuleController extends Controller
         }
         $this->authorizeModule($data['item'], true);
         $data['options'] = $this->comboOptions($this->teacherStaffId());
+        $data['units']   = $this->unitRepo->forTeacher($this->teacherStaffId());
         $data['title']   = 'Edit Module';
         return view('class-content.module.edit', compact('data'));
     }
@@ -211,6 +215,7 @@ class ClassContentModuleController extends Controller
             'classes_id'  => 'required|exists:classes,id',
             'section_id'  => 'nullable|exists:sections,id',
             'subject_id'  => 'required|exists:subjects,id',
+            'unit_id'     => 'nullable|exists:class_content_units,id',
             'title'       => 'required|string|max:150',
             'description' => 'nullable|string|max:3000',
             'sort_order'  => 'nullable|integer',

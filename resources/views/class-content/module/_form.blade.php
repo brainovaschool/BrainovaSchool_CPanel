@@ -42,6 +42,19 @@
     </div>
 
     <div class="col-md-4 mb-3">
+        <label class="form-label">Unit (optional)</label>
+        <select class="nice-select niceSelect bordered_style wide" name="unit_id">
+            <option value="">— No unit —</option>
+            @foreach ($data['units'] as $unit)
+                <option value="{{ $unit->id }}" {{ (string) old('unit_id', $m->unit_id ?? '') === (string) $unit->id ? 'selected' : '' }}>
+                    {{ $unit->title }} ({{ optional($unit->class)->name }}{{ $unit->section ? ' - ' . optional($unit->section)->name : '' }} — {{ optional($unit->subject)->name }})
+                </option>
+            @endforeach
+        </select>
+        <small class="text-secondary">Groups this module under a Unit on the Class Content dashboard. Create units from that dashboard.</small>
+    </div>
+
+    <div class="col-md-4 mb-3">
         <label class="form-label">{{ ___('common.Serial') }}</label>
         <input class="form-control ot-input" name="sort_order" type="number" min="0" value="{{ old('sort_order', $m->sort_order ?? 0) }}">
     </div>
