@@ -27,10 +27,17 @@ class ClassContentModuleController extends Controller
         $this->unitRepo = $unitRepo;
     }
 
+    /** Scoped to any staff-linked account that isn't the Super Admin (role
+     *  1) - not "role_id === 5", which only ever matched a role literally
+     *  named/seeded as id 5 on this tenant. A teacher whose actual role is
+     *  a custom one (e.g. "content creator+teacher") still has their own
+     *  Staff row and still must only see their own class content, same as
+     *  the doc comment above has always said: "Admin sees/edits everything
+     *  via its usual role-1 bypass". */
     private function teacherStaffId(): ?int
     {
         $user = Auth::user();
-        if ($user && (int) $user->role_id === 5 && $user->staff) {
+        if ($user && (int) $user->role_id !== 1 && $user->staff) {
             return (int) $user->staff->id;
         }
         return null;

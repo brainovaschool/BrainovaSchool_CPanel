@@ -22,10 +22,13 @@ class ClassContentUnitController extends Controller
         $this->repo = $repo;
     }
 
+    /** See ClassContentModuleController::teacherStaffId() - same fix, same
+     *  reason: scoped to any staff-linked account that isn't the Super
+     *  Admin, not just a role literally seeded as id 5. */
     private function teacherStaffId(): ?int
     {
         $user = Auth::user();
-        if ($user && (int) $user->role_id === 5 && $user->staff) {
+        if ($user && (int) $user->role_id !== 1 && $user->staff) {
             return (int) $user->staff->id;
         }
         return null;

@@ -1293,7 +1293,11 @@ if (!function_exists('classContentTeacherSubjects')) {
             return null;
         }
         $user = Auth::user();
-        if ((int) $user->role_id !== 5 || !$user->staff) {
+        // Same "any staff-linked account that isn't the Super Admin" rule
+        // as ClassContentModuleController::teacherStaffId() - not
+        // "role_id === 5", which only ever matched a role literally seeded
+        // as id 5 on this tenant, not every custom teacher-ish role.
+        if ((int) $user->role_id === 1 || !$user->staff) {
             return null;
         }
 

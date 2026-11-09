@@ -7,21 +7,13 @@
 
         <div class="page-header">
             <div class="row">
-                <div class="col-sm-6">
+                <div class="col-sm-12">
                     <h4 class="bradecrumb-title mb-1">{{ $data['title'] }}</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
                         <li class="breadcrumb-item">{{ $data['title'] }}</li>
                     </ol>
                 </div>
-                @if (hasPermission('class_content_create'))
-                    <div class="col-sm-6 text-sm-end">
-                        <a href="{{ route('class-content-module.create') }}" class="btn btn-lg ot-btn-primary">
-                            <span><i class="fa-solid fa-plus"></i> </span>
-                            <span>+ New module</span>
-                        </a>
-                    </div>
-                @endif
             </div>
         </div>
 
