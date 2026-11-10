@@ -85,6 +85,7 @@ class ReelCharacterController extends Controller
         $request->validate([
             'costume_image' => 'required|image|max:10240',
             'label'          => 'nullable|string|max:100',
+            'theme_value'    => 'nullable|string|max:100',
         ]);
 
         $result = $this->repo->storeCostume($request, (int) $id);

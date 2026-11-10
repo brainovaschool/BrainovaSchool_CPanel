@@ -222,10 +222,23 @@ class TaskController extends Controller
             $data['reelCharacters'] = $charNames
                 ? \App\Models\Portal\ReelCharacter::with(['portrait', 'descriptionUpload', 'costumes.upload'])->whereIn('name', $charNames)->get()
                 : collect();
-            // Which costume to wear for THIS reel, per character - set on
-            // the reel's edit form. Falls back to showing every costume
-            // (below) for a character with nothing chosen yet.
-            $data['chosenCostumeByCharacter'] = (array) ($task->reel->character_costumes ?? []);
+            // Which costume to wear for THIS reel, per character - picked
+            // automatically from the reel's own Theme value (e.g. "Mint"),
+            // matched against each costume's own theme_value (tagged once,
+            // on the character's own page - see ReelCharacterRepository).
+            // Falls back to showing every costume (below) when the reel
+            // has no Theme set, or a character has nothing tagged for it.
+            $themeFieldKey = \App\Models\Portal\PortalReelCustomField::whereRaw('LOWER(TRIM(label)) = ?', ['theme'])->value('key');
+            $reelTheme = $themeFieldKey ? ($task->reel->custom_fields[$themeFieldKey] ?? null) : null;
+            $data['chosenCostumeByCharacter'] = [];
+            if ($reelTheme) {
+                foreach ($data['reelCharacters'] as $char) {
+                    $match = $char->costumes->first(fn ($c) => $c->theme_value === $reelTheme);
+                    if ($match) {
+                        $data['chosenCostumeByCharacter'][$char->name] = $match->id;
+                    }
+                }
+            }
 
             // Any admin-defined File/Image custom field on the reel (e.g. a
             // "Cover" field) - shown generically by its own label so this

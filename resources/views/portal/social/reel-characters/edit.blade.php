@@ -32,10 +32,18 @@
             </div>
         </div>
 
+        @php($themeField = \App\Models\Portal\PortalReelCustomField::whereRaw('LOWER(TRIM(label)) = ?', ['theme'])->first())
+        @php($themeOptions = $themeField ? $themeField->options() : [])
+
         <div class="card ot-card">
             <div class="card-header"><h4 class="mb-0">Costume Images</h4></div>
             <div class="card-body">
                 <p class="text-secondary">Add as many outfit/costume reference images as this character needs — each can be downloaded any time.</p>
+                @if ($themeOptions)
+                    <p class="text-secondary" style="font-size:.85rem;">Tag each costume with the Theme colour it matches (e.g. "Mint") — a reel set to that Theme will then download this costume automatically, no need to pick one per reel.</p>
+                @else
+                    <p class="text-secondary" style="font-size:.85rem;">No field named "Theme" exists yet under Social Board Settings → Reel Fields — add one (type Dropdown) to tag costumes by colour and have them auto-match a reel's Theme.</p>
+                @endif
 
                 @if ($character->costumes->isNotEmpty())
                     <div class="d-flex flex-wrap gap-3 mb-4">
@@ -44,7 +52,12 @@
                                 @if ($costume->upload)
                                     <img src="{{ globalAsset($costume->upload->path) }}" style="width:100%;height:150px;object-fit:cover;" class="mb-1">
                                 @endif
-                                <p class="mb-1" style="font-size:12px;">{{ $costume->label ?: '—' }}</p>
+                                <p class="mb-0" style="font-size:12px;">{{ $costume->label ?: '—' }}</p>
+                                @if ($costume->theme_value)
+                                    <span class="badge-basic-info-text d-block mb-1" style="width:fit-content;margin:0 auto;">{{ $costume->theme_value }}</span>
+                                @else
+                                    <p class="mb-1"></p>
+                                @endif
                                 <div class="d-flex gap-1 justify-content-center">
                                     @if ($costume->upload)
                                         <a href="{{ globalAsset($costume->upload->path) }}" download class="btn btn-sm btn-outline-secondary">Download</a>
@@ -66,6 +79,19 @@
                     <div>
                         <label class="form-label">Label (optional)</label>
                         <input type="text" name="label" class="form-control ot-input" placeholder="e.g. Winter outfit" style="width:200px;">
+                    </div>
+                    <div>
+                        <label class="form-label">Theme colour</label>
+                        @if ($themeOptions)
+                            <select name="theme_value" class="nice-select niceSelect bordered_style wide" style="width:180px;">
+                                <option value="">—</option>
+                                @foreach ($themeOptions as $opt)
+                                    <option value="{{ $opt }}">{{ $opt }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <input type="text" name="theme_value" class="form-control ot-input" placeholder="e.g. Mint" style="width:180px;">
+                        @endif
                     </div>
                     <div class="ot_fileUploader left-side mb-0">
                         <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file chosen" readonly>

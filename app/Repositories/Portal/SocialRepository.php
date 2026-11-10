@@ -13,7 +13,6 @@ use App\Models\Portal\PortalResponsibility;
 use App\Models\Portal\PortalSetting;
 use App\Models\Portal\PortalSettingList;
 use App\Models\Portal\PortalTask;
-use App\Models\Portal\ReelCharacterCostume;
 use App\Models\Portal\ReelProject;
 use App\Models\Staff\Staff;
 use App\Services\Portal\PortalNotifier;
@@ -77,7 +76,6 @@ class SocialRepository
                 'thumb_upload_id'   => $thumbUploadId,
                 'note'              => $request->note,
                 'custom_fields'     => $customFields,
-                'character_costumes' => $this->collectCharacterCostumes($request),
                 'is_document_track' => $request->boolean('is_document_track'),
             ]);
 
@@ -117,7 +115,6 @@ class SocialRepository
         $reel->prompt_link  = $request->prompt_link;
         $reel->note         = $request->note;
         $reel->custom_fields = $customFields;
-        $reel->character_costumes = $this->collectCharacterCostumes($request);
         $reel->is_document_track = $request->boolean('is_document_track');
         $reel->save();
 
@@ -159,32 +156,6 @@ class SocialRepository
             $v = trim((string) ($submitted[$field->key] ?? ''));
             if ($v !== '') {
                 $values[$field->key] = $v;
-            }
-        }
-        return $values;
-    }
-
-    /** $request->character_costumes: [character name => reel_character_costumes.id] -
-     *  which costume to use, for this reel, for each character that has
-     *  one picked. Only kept when that costume id actually belongs to a
-     *  character with that exact name, so a stale/tampered id can't end
-     *  up pointing at a different character's image. */
-    private function collectCharacterCostumes($request): array
-    {
-        $submitted = (array) $request->input('character_costumes', []);
-        if (!$submitted) {
-            return [];
-        }
-        $costumeIds = array_filter(array_map('intval', $submitted));
-        if (!$costumeIds) {
-            return [];
-        }
-        $costumes = ReelCharacterCostume::with('character')->whereIn('id', $costumeIds)->get()->keyBy('id');
-        $values = [];
-        foreach ($submitted as $name => $costumeId) {
-            $costume = $costumeId ? ($costumes[(int) $costumeId] ?? null) : null;
-            if ($costume && optional($costume->character)->name === $name) {
-                $values[$name] = $costume->id;
             }
         }
         return $values;
@@ -1178,6 +1149,16 @@ class SocialRepository
     public function charactersFieldKey(): ?string
     {
         return PortalReelCustomField::where('list_key', PortalReelCustomField::SOURCE_REEL_CHARACTERS)->value('key');
+    }
+
+    /** The key of the admin-defined "Theme" field, matched by its label
+     *  since (unlike Characters) nothing marks it structurally - null if
+     *  no field is literally named "Theme". Used to auto-pick each
+     *  Character's matching costume for a reel (by Theme value) instead
+     *  of asking the admin to pick a costume on every single reel. */
+    public function themeFieldKey(): ?string
+    {
+        return PortalReelCustomField::whereRaw('LOWER(TRIM(label)) = ?', ['theme'])->value('key');
     }
 
     /** Global Instructions + the AI Scene Generation prompt template used

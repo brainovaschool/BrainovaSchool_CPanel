@@ -94,6 +94,7 @@ class ReelCharacterRepository
             'reel_character_id' => $characterId,
             'upload_id'         => $uploadId,
             'label'              => $request->label,
+            'theme_value'        => $request->theme_value ?: null,
             'sort_order'         => $nextSort,
         ]);
 
