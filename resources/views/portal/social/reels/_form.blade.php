@@ -62,9 +62,9 @@
         <div class="col-md-12">
             <div class="card ot-card bg-light-subtle mb-0">
                 <div class="card-body">
-                    <div class="form-check mb-2">
-                        <input type="checkbox" class="form-check-input" id="isDocumentTrack" name="is_document_track" value="1" {{ old('is_document_track', $reel->is_document_track ?? false) ? 'checked' : '' }}>
-                        <label class="form-check-label" for="isDocumentTrack"><strong>Document track</strong> — skip Reel Studio. The assignee downloads the prompt file/link below plus this reel's Characters (if set), creates the clips themselves (e.g. in Google Flow), and submits a video link directly. Only the Video stage needs your approval.</label>
+                    <div class="form-check mb-2 p-2" style="background:#fff3cd; border:1px solid #ffe69c; border-radius:8px; padding-left:2.5em !important;">
+                        <input type="checkbox" class="form-check-input" id="isDocumentTrack" name="is_document_track" value="1" style="width:22px; height:22px; border:2px solid #b45309; margin-left:-2em;" {{ old('is_document_track', $reel->is_document_track ?? false) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="isDocumentTrack" style="cursor:pointer;"><strong>☑ Document track</strong> — skip Reel Studio. The assignee downloads the prompt file/link below plus this reel's Characters (if set), creates the clips themselves (e.g. in Google Flow), and submits a video link directly. Only the Video stage needs your approval.</label>
                     </div>
                     <div class="row g-3">
                         <div class="col-md-6">
