@@ -34,6 +34,7 @@ class PortalReel extends Model
         'is_open_paid'       => 'boolean',
         'is_document_track'  => 'boolean',
         'custom_fields'      => 'array',
+        'character_costumes' => 'array',
     ];
 
     /** The moment a reel first leaves "suggested" (however that happens -

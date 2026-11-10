@@ -222,6 +222,10 @@ class TaskController extends Controller
             $data['reelCharacters'] = $charNames
                 ? \App\Models\Portal\ReelCharacter::with(['portrait', 'descriptionUpload', 'costumes.upload'])->whereIn('name', $charNames)->get()
                 : collect();
+            // Which costume to wear for THIS reel, per character - set on
+            // the reel's edit form. Falls back to showing every costume
+            // (below) for a character with nothing chosen yet.
+            $data['chosenCostumeByCharacter'] = (array) ($task->reel->character_costumes ?? []);
 
             // Any admin-defined File/Image custom field on the reel (e.g. a
             // "Cover" field) - shown generically by its own label so this

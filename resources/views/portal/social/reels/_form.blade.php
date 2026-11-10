@@ -136,6 +136,12 @@
                 @endif
             </div>
         @endforeach
+
+        <div class="col-md-12" id="costumeChoicesWrap"></div>
+        <script id="bnCharacterCostumeData" type="application/json">{!! json_encode(\App\Models\Portal\ReelCharacter::active()->with('costumes')->get()->mapWithKeys(function ($c) {
+            return [$c->name => $c->costumes->map(fn ($co) => ['id' => $co->id, 'label' => $co->label ?: 'Costume'])->values()];
+        })) !!}</script>
+        <script id="bnExistingCostumeChoices" type="application/json">{!! json_encode($reel->character_costumes ?? []) !!}</script>
     @endif
 </div>
 
@@ -232,6 +238,45 @@
             seriesSelect.addEventListener('change', applySeriesDefaults);
         }
         colorizeSeriesSelect();
+
+        // Per-character costume picker - every selected Character that has
+        // at least one costume uploaded gets its own "which costume for
+        // this reel" dropdown, rebuilt whenever the Characters selection
+        // changes. Options/current choice come from two <script
+        // type="application/json"> blocks rendered server-side rather
+        // than an AJAX round trip, since the character roster is small.
+        var costumeWrap = document.getElementById('costumeChoicesWrap');
+        if (charactersSelect && costumeWrap) {
+            var costumeData = {};
+            var existingChoices = {};
+            try { costumeData = JSON.parse(document.getElementById('bnCharacterCostumeData').textContent || '{}'); } catch (e) { /* ignore */ }
+            try { existingChoices = JSON.parse(document.getElementById('bnExistingCostumeChoices').textContent || '{}'); } catch (e) { /* ignore */ }
+
+            function renderCostumeChoices() {
+                var selected = Array.prototype.filter.call(charactersSelect.options, function (o) { return o.selected; })
+                    .map(function (o) { return o.value; });
+                var rows = selected.map(function (name) {
+                    var costumes = costumeData[name] || [];
+                    if (!costumes.length) return '';
+                    var current = existingChoices[name] != null ? String(existingChoices[name]) : '';
+                    var options = '<option value="">— none —</option>' + costumes.map(function (c) {
+                        return '<option value="' + c.id + '"' + (String(c.id) === current ? ' selected' : '') + '>' + c.label + '</option>';
+                    }).join('');
+                    return '<div class="col-md-6 bn-costume-pick"><label class="form-label">' + name + ' — costume for this reel</label>' +
+                        '<select name="character_costumes[' + name + ']" class="nice-select niceSelect bordered_style wide">' + options + '</select></div>';
+                }).join('');
+
+                costumeWrap.innerHTML = rows ? ('<div class="row g-3">' + rows + '</div>') : '';
+                if (window.jQuery && rows) { jQuery(costumeWrap).find('select').niceSelect(); }
+            }
+
+            renderCostumeChoices();
+            if (window.jQuery) {
+                jQuery(charactersSelect).on('change', renderCostumeChoices);
+            } else {
+                charactersSelect.addEventListener('change', renderCostumeChoices);
+            }
+        }
     })();
 
     // main.js hides every input[type=file] on every page - clicking the

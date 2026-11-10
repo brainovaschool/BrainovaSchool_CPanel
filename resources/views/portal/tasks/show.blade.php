@@ -77,16 +77,22 @@
                                             <strong class="d-block mb-2">Characters</strong>
                                             <div class="row g-3">
                                                 @foreach ($data['reelCharacters'] as $char)
+                                                    @php($chosenCostumeId = $data['chosenCostumeByCharacter'][$char->name] ?? null)
+                                                    @php($chosenCostume = $chosenCostumeId ? $char->costumes->firstWhere('id', $chosenCostumeId) : null)
                                                     <div class="col-md-6">
                                                         <div class="p-3" style="border:1px solid rgba(0,0,0,.08); border-radius:10px; background:#fff;">
                                                             <strong style="font-size:14px">{{ $char->name }}</strong>
                                                             <div class="d-flex flex-wrap gap-2 mt-2">
                                                                 @if ($char->portrait)<a href="{{ globalAsset($char->portrait->path) }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-image me-1"></i> Portrait</a>@endif
                                                                 @if ($char->descriptionUpload)<a href="{{ globalAsset($char->descriptionUpload->path) }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-note-sticky me-1"></i> Notes</a>@endif
-                                                                @foreach ($char->costumes as $i => $costume)
-                                                                    @if ($costume->upload)<a href="{{ globalAsset($costume->upload->path) }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-shirt me-1"></i> Costume {{ $i + 1 }}</a>@endif
-                                                                @endforeach
-                                                                @if (!$char->portrait && !$char->descriptionUpload && $char->costumes->every(fn ($c) => !$c->upload))
+                                                                @if ($chosenCostume && $chosenCostume->upload)
+                                                                    <a href="{{ globalAsset($chosenCostume->upload->path) }}" target="_blank" class="btn btn-sm ot-btn-primary"><i class="fa-solid fa-shirt me-1"></i> Costume for this reel{{ $chosenCostume->label ? ' — ' . $chosenCostume->label : '' }}</a>
+                                                                @else
+                                                                    @foreach ($char->costumes as $i => $costume)
+                                                                        @if ($costume->upload)<a href="{{ globalAsset($costume->upload->path) }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-shirt me-1"></i> Costume {{ $i + 1 }}</a>@endif
+                                                                    @endforeach
+                                                                @endif
+                                                                @if (!$char->portrait && !$char->descriptionUpload && !$chosenCostume && $char->costumes->every(fn ($c) => !$c->upload))
                                                                     <span class="text-secondary" style="font-size:12px">No reference files uploaded for this character.</span>
                                                                 @endif
                                                             </div>
