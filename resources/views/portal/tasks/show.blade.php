@@ -46,38 +46,43 @@
 
                         @if ($data['isDocumentTrackReel'])
                             <div class="card mb-3" style="border-left:4px solid var(--bn-turquoise-text, #007585); background:rgba(var(--bn-turquoise-rgb, 0,117,133), .06);">
-                                <div class="card-body">
+                                <div class="card-body p-4">
                                     <h5 class="mb-2">Document track — no Reel Studio for this one</h5>
-                                    <p class="text-secondary mb-2" style="font-size:.9rem;">Download the prompt and any Characters below, create the clips yourself (e.g. in Google Flow), then submit the finished video link using the form on the right.</p>
+                                    <p class="text-secondary mb-4" style="font-size:.9rem;">Download the prompt and any Characters below, create the clips yourself (e.g. in Google Flow), then submit the finished video link using the form on the right.</p>
 
-                                    <p class="mb-2">
-                                        <strong>Prompt:</strong>
+                                    <div class="mb-4">
+                                        <strong class="d-block mb-2">Prompt</strong>
                                         @if ($task->reel->promptUpload)
-                                            <a href="{{ globalAsset($task->reel->promptUpload->path) }}" target="_blank">Download prompt file</a>
+                                            <a href="{{ globalAsset($task->reel->promptUpload->path) }}" target="_blank" class="btn btn-sm ot-btn-primary"><i class="fa-solid fa-download me-1"></i> Download prompt file</a>
                                         @elseif ($task->reel->prompt_link)
-                                            <a href="{{ $task->reel->prompt_link }}" target="_blank">Open prompt link</a>
+                                            <a href="{{ $task->reel->prompt_link }}" target="_blank" class="btn btn-sm ot-btn-primary"><i class="fa-solid fa-up-right-from-square me-1"></i> Open prompt link</a>
                                         @else
                                             <span class="text-secondary">Not uploaded yet — check with whoever assigned this.</span>
                                         @endif
-                                    </p>
+                                    </div>
 
                                     @if ($data['reelCharacters']->isNotEmpty())
-                                        <strong>Characters:</strong>
-                                        <div class="row g-2 mt-1">
-                                            @foreach ($data['reelCharacters'] as $char)
-                                                <div class="col-md-6">
-                                                    <div class="p-2" style="border:1px solid rgba(0,0,0,.08); border-radius:8px;">
-                                                        <strong style="font-size:13px">{{ $char->name }}</strong><br>
-                                                        <span style="font-size:12px">
-                                                            @if ($char->portrait)<a href="{{ globalAsset($char->portrait->path) }}" target="_blank">Portrait</a>@endif
-                                                            @if ($char->descriptionUpload)@if($char->portrait) &middot; @endif<a href="{{ globalAsset($char->descriptionUpload->path) }}" target="_blank">Notes</a>@endif
-                                                            @foreach ($char->costumes as $i => $costume)
-                                                                @if ($costume->upload)@if($char->portrait || $char->descriptionUpload || $i > 0) &middot; @endif<a href="{{ globalAsset($costume->upload->path) }}" target="_blank">Costume {{ $i + 1 }}</a>@endif
-                                                            @endforeach
-                                                        </span>
+                                        <div>
+                                            <strong class="d-block mb-2">Characters</strong>
+                                            <div class="row g-3">
+                                                @foreach ($data['reelCharacters'] as $char)
+                                                    <div class="col-md-6">
+                                                        <div class="p-3" style="border:1px solid rgba(0,0,0,.08); border-radius:10px; background:#fff;">
+                                                            <strong style="font-size:14px">{{ $char->name }}</strong>
+                                                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                                                @if ($char->portrait)<a href="{{ globalAsset($char->portrait->path) }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-image me-1"></i> Portrait</a>@endif
+                                                                @if ($char->descriptionUpload)<a href="{{ globalAsset($char->descriptionUpload->path) }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-note-sticky me-1"></i> Notes</a>@endif
+                                                                @foreach ($char->costumes as $i => $costume)
+                                                                    @if ($costume->upload)<a href="{{ globalAsset($costume->upload->path) }}" target="_blank" class="btn btn-sm btn-outline-secondary"><i class="fa-solid fa-shirt me-1"></i> Costume {{ $i + 1 }}</a>@endif
+                                                                @endforeach
+                                                                @if (!$char->portrait && !$char->descriptionUpload && $char->costumes->every(fn ($c) => !$c->upload))
+                                                                    <span class="text-secondary" style="font-size:12px">No reference files uploaded for this character.</span>
+                                                                @endif
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            @endforeach
+                                                @endforeach
+                                            </div>
                                         </div>
                                     @endif
                                 </div>
