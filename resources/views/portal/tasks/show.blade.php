@@ -48,7 +48,7 @@
                             <div class="card mb-3" style="border-left:4px solid var(--bn-turquoise-text, #007585); background:rgba(var(--bn-turquoise-rgb, 0,117,133), .06);">
                                 <div class="card-body p-4">
                                     <h5 class="mb-2">Document track — no Reel Studio for this one</h5>
-                                    <p class="text-secondary mb-4" style="font-size:.9rem;">Download the prompt and any Characters below, create the clips yourself (e.g. in Google Flow), then submit the finished video link using the form on the right.</p>
+                                    <p class="text-secondary mb-4" style="font-size:.9rem;">Download the prompt, use the characters to create the Google Flow clips, use the reel cover as a template to create the reel cover, compile the clips in Canva, add the reel cover at the start for 1.5 sec, create the captions, add the hooks, and share the complete video link.</p>
 
                                     <div class="mb-4">
                                         <strong class="d-block mb-2">Prompt</strong>
