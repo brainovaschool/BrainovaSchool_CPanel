@@ -222,6 +222,19 @@ class TaskController extends Controller
             $data['reelCharacters'] = $charNames
                 ? \App\Models\Portal\ReelCharacter::with(['portrait', 'descriptionUpload', 'costumes.upload'])->whereIn('name', $charNames)->get()
                 : collect();
+
+            // Any admin-defined File/Image custom field on the reel (e.g. a
+            // "Cover" field) - shown generically by its own label so this
+            // keeps working whatever file fields the admin has set up,
+            // without hardcoding a particular field's key here.
+            $data['reelFileFields'] = \App\Models\Portal\PortalReelCustomField::where('type', \App\Models\Portal\PortalReelCustomField::TYPE_FILE)
+                ->get()
+                ->map(function ($field) use ($task) {
+                    $uploadId = $task->reel->custom_fields[$field->key] ?? null;
+                    $upload = $uploadId ? \App\Models\Upload::find($uploadId) : null;
+                    return $upload ? ['label' => $field->label, 'upload' => $upload] : null;
+                })
+                ->filter();
         }
 
         $data['title']      = $task->title;

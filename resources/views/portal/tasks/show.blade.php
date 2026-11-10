@@ -61,6 +61,17 @@
                                         @endif
                                     </div>
 
+                                    @if ($data['reelFileFields']->isNotEmpty())
+                                        <div class="mb-4">
+                                            <strong class="d-block mb-2">Files</strong>
+                                            <div class="d-flex flex-wrap gap-2">
+                                                @foreach ($data['reelFileFields'] as $f)
+                                                    <a href="{{ globalAsset($f['upload']->path) }}" target="_blank" class="btn btn-sm ot-btn-primary"><i class="fa-solid fa-download me-1"></i> {{ $f['label'] }}</a>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+
                                     @if ($data['reelCharacters']->isNotEmpty())
                                         <div>
                                             <strong class="d-block mb-2">Characters</strong>
