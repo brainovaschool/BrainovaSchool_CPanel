@@ -100,7 +100,7 @@ class TaskRepository
 
     public function show(int $id): ?PortalTask
     {
-        return PortalTask::with(['assignee', 'assignedBy', 'refUpload', 'submissions.submittedBy', 'submissions.reviewedBy', 'submissions.upload', 'comments.user'])->find($id);
+        return PortalTask::with(['assignee', 'assignedBy', 'refUpload', 'submissions.submittedBy', 'submissions.reviewedBy', 'submissions.upload', 'comments.user', 'reel.promptUpload'])->find($id);
     }
 
     public function store($request, int $assignedByUserId): array

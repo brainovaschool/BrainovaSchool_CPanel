@@ -35,7 +35,7 @@
                     <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <h4 class="mb-0">Details</h4>
                         <div class="d-flex align-items-center gap-2">
-                            @if ($task->reel_id)
+                            @if ($task->reel_id && !$data['isDocumentTrackReel'])
                                 <a href="{{ route('portal-social-reels.setup', $task->reel_id) }}" class="btn btn-sm ot-btn-primary">Open Reel Studio</a>
                             @endif
                             <span class="badge-basic-info-text">{{ str_replace('_', ' ', ucfirst($task->status)) }}</span>
@@ -43,6 +43,46 @@
                     </div>
                     <div class="card-body">
                         <p class="text-secondary">{!! $task->description ? linkify($task->description) : 'No description given.' !!}</p>
+
+                        @if ($data['isDocumentTrackReel'])
+                            <div class="card mb-3" style="border-left:4px solid var(--bn-turquoise-text, #007585); background:rgba(var(--bn-turquoise-rgb, 0,117,133), .06);">
+                                <div class="card-body">
+                                    <h5 class="mb-2">Document track — no Reel Studio for this one</h5>
+                                    <p class="text-secondary mb-2" style="font-size:.9rem;">Download the prompt and any Characters below, create the clips yourself (e.g. in Google Flow), then submit the finished video link using the form on the right.</p>
+
+                                    <p class="mb-2">
+                                        <strong>Prompt:</strong>
+                                        @if ($task->reel->promptUpload)
+                                            <a href="{{ globalAsset($task->reel->promptUpload->path) }}" target="_blank">Download prompt file</a>
+                                        @elseif ($task->reel->prompt_link)
+                                            <a href="{{ $task->reel->prompt_link }}" target="_blank">Open prompt link</a>
+                                        @else
+                                            <span class="text-secondary">Not uploaded yet — check with whoever assigned this.</span>
+                                        @endif
+                                    </p>
+
+                                    @if ($data['reelCharacters']->isNotEmpty())
+                                        <strong>Characters:</strong>
+                                        <div class="row g-2 mt-1">
+                                            @foreach ($data['reelCharacters'] as $char)
+                                                <div class="col-md-6">
+                                                    <div class="p-2" style="border:1px solid rgba(0,0,0,.08); border-radius:8px;">
+                                                        <strong style="font-size:13px">{{ $char->name }}</strong><br>
+                                                        <span style="font-size:12px">
+                                                            @if ($char->portrait)<a href="{{ globalAsset($char->portrait->path) }}" target="_blank">Portrait</a>@endif
+                                                            @if ($char->descriptionUpload)@if($char->portrait) &middot; @endif<a href="{{ globalAsset($char->descriptionUpload->path) }}" target="_blank">Notes</a>@endif
+                                                            @foreach ($char->costumes as $i => $costume)
+                                                                @if ($costume->upload)@if($char->portrait || $char->descriptionUpload || $i > 0) &middot; @endif<a href="{{ globalAsset($costume->upload->path) }}" target="_blank">Costume {{ $i + 1 }}</a>@endif
+                                                            @endforeach
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
                         @php($categorySop = optional($task->categoryModel))
                         @if ($categorySop->sop_text || $categorySop->sopUpload)
                             <div class="card mb-3" style="border-left:4px solid var(--bn-turquoise-text, #007585); background:rgba(var(--bn-turquoise-rgb, 0,117,133), .06);">

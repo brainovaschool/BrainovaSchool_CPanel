@@ -208,6 +208,22 @@ class TaskController extends Controller
         $data['claimBlocked']  = $data['claimBlockers']->count() >= \App\Models\Portal\PortalTask::MAX_OPEN_TASKS_FOR_CLAIM;
         $data['canMarkPaid'] = $isManager && $task->paid && $task->status === \App\Models\Portal\PortalTask::COMPLETED && $task->pay_status === 'due';
         $data['canUndoPayment'] = $isManager && $task->paid && $task->pay_status === 'paid';
+
+        // Document-track reels skip Reel Studio entirely - the assignee's
+        // prompt and reference Characters live here instead, same lookup
+        // SocialController::reels() already does for the Reels table's own
+        // Characters column (a reel's Characters field is a list of plain
+        // names, resolved against the real ReelCharacter rows for their
+        // downloadable files).
+        $data['isDocumentTrackReel'] = (bool) optional($task->reel)->is_document_track;
+        if ($data['isDocumentTrackReel']) {
+            $charactersFieldKey = \App\Models\Portal\PortalReelCustomField::where('list_key', \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS)->value('key');
+            $charNames = $charactersFieldKey ? array_values(array_filter((array) ($task->reel->custom_fields[$charactersFieldKey] ?? []))) : [];
+            $data['reelCharacters'] = $charNames
+                ? \App\Models\Portal\ReelCharacter::with(['portrait', 'descriptionUpload', 'costumes.upload'])->whereIn('name', $charNames)->get()
+                : collect();
+        }
+
         $data['title']      = $task->title;
         return view('portal.tasks.show', compact('data'));
     }
