@@ -260,6 +260,7 @@ Route::middleware(saasMiddleware())->group(function () {
             // auth routes
             Route::group(['middleware' => ['auth.routes']], function () {
                 Route::get('view-notification/{id}', [NotificaticaSettingController::class, 'viewNotification'])->name('viewNotification');
+                Route::post('clear-read-notifications', [NotificaticaSettingController::class, 'clearMyReadNotifications'])->name('notifications.clear-read');
 
 
 

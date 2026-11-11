@@ -75,6 +75,13 @@ class NotificaticaSettingController extends Controller
          return redirect()->back()->with('success', 'Notification Viewed');
     }
 
+    /** Self-service "Clear read" in the bell dropdown - anyone can wipe
+     *  their own already-read notifications, no admin involvement needed. */
+    public function clearMyReadNotifications(){
+        $this->system_notification_repo->deleteReadForUser((int) auth()->id());
+        return redirect()->back()->with('success', 'Read notifications cleared.');
+    }
+
 
     public function updateNotificationSetting(Request $request){
 

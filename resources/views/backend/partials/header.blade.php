@@ -299,8 +299,14 @@
                         @endif
                     </a>
                     <div class="notification_items position-absolute">
-                        <div class="notification_header">
-                            <h3>{{ ___('common.Notifications') }}</h3>
+                        <div class="notification_header d-flex align-items-center justify-content-between">
+                            <h3 class="mb-0">{{ ___('common.Notifications') }}</h3>
+                            @if (collect($notifications)->contains('is_read', 1))
+                                <form action="{{ route('notifications.clear-read') }}" method="post" onsubmit="return confirm('Clear all read notifications?');">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm p-0" style="color:#c9cbe0; font-size:12px; text-decoration:underline; background:transparent; border:0;">Clear read</button>
+                                </form>
+                            @endif
                         </div>
                         <div class="notification_body d-flex flex-column gap-2">
                             @foreach ($notifications as $notification)

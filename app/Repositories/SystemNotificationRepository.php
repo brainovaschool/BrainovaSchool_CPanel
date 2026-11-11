@@ -113,4 +113,12 @@ class SystemNotificationRepository implements SystemNotificationInterface{
         return (bool) $this->model->where('reciver_id', $userId)->delete();
     }
 
+    /** Self-service version of deleteAllForUser() - only the ones that
+     *  person has already opened (is_read), used by the bell dropdown's
+     *  own "Clear read" button rather than the admin-only settings page. */
+    public function deleteReadForUser(int $userId): int
+    {
+        return $this->model->where('reciver_id', $userId)->where('is_read', 1)->delete();
+    }
+
 }

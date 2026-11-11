@@ -20,11 +20,25 @@ class ClassContentCoordinatorController extends Controller
         $this->repo = $repo;
     }
 
+    /** A Coordinator only ever reviews their own assigned teachers'
+     *  submissions (via the staff_coordinators link) - Admin (role 1) is
+     *  never scoped, same bypass convention as
+     *  ClassContentModuleController::teacherStaffId(). */
+    private function coordinatorStaffId(): ?int
+    {
+        $user = Auth::user();
+        if ($user && (int) $user->role_id !== 1 && $user->staff) {
+            return (int) $user->staff->id;
+        }
+        return null;
+    }
+
     public function index(Request $request)
     {
-        $data['modules'] = $this->repo->forCoordinator($request->get('status'));
+        $staffId = $this->coordinatorStaffId();
+        $data['modules'] = $this->repo->forCoordinator($request->get('status'), $staffId);
         $data['status']  = $request->get('status');
-        $data['counts']  = $this->repo->statusCounts();
+        $data['counts']  = $this->repo->statusCounts(null, $staffId);
         $data['title']   = 'Coordinator Review';
         return view('class-content.coordinator.index', compact('data'));
     }
@@ -34,6 +48,9 @@ class ClassContentCoordinatorController extends Controller
         $data['item'] = $this->repo->show($id);
         if (!$data['item']) {
             return redirect()->route('class-content-coordinator.index')->with('danger', ___('alert.not_found'));
+        }
+        if ($this->repo->moduleOutsideCoordinatorScope($data['item'], $this->coordinatorStaffId())) {
+            abort(403, "This isn't one of your assigned teachers' submissions.");
         }
         $data['title'] = 'Review — ' . $data['item']->title;
         return view('class-content.coordinator.show', compact('data'));
@@ -46,8 +63,14 @@ class ClassContentCoordinatorController extends Controller
             'feedback' => 'nullable|string|max:2000',
         ]);
 
-        $coordinatorStaffId = Auth::user()->staff?->id;
-        $result = $this->repo->coordinatorDecision($request, (int) $id, $coordinatorStaffId !== null ? (int) $coordinatorStaffId : null);
+        $coordinatorStaffId = $this->coordinatorStaffId();
+
+        $module = \App\Models\ClassContent\ClassContentModule::find($id);
+        if ($module && $this->repo->moduleOutsideCoordinatorScope($module, $coordinatorStaffId)) {
+            abort(403, "This isn't one of your assigned teachers' submissions.");
+        }
+
+        $result = $this->repo->coordinatorDecision($request, (int) $id, $coordinatorStaffId);
 
         $message = $request->decision === 'request_changes'
             ? 'Sent back to the teacher with your feedback.'

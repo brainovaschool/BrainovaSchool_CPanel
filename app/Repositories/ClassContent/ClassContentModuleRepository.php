@@ -189,13 +189,38 @@ class ClassContentModuleRepository
     /** Coordinator's queue — defaults to what actually needs their
      *  attention (submitted / sent back for changes), but can show
      *  everything so they can also browse what's already moved on. */
-    public function forCoordinator(?string $status = null)
+    /** Null $coordinatorStaffId means "no scoping" (Admin's bypass, same
+     *  convention as ClassContentModuleController::teacherStaffId()) -
+     *  otherwise the list of staff ids this coordinator actually oversees,
+     *  via the same staff_coordinators link WorkLogRepository uses. */
+    private function coordinateeIds(?int $coordinatorStaffId): ?array
     {
+        if ($coordinatorStaffId === null) {
+            return null;
+        }
+        return \App\Models\Staff\Staff::find($coordinatorStaffId)?->coordinatees->pluck('id')->toArray() ?? [];
+    }
+
+    public function forCoordinator(?string $status = null, ?int $coordinatorStaffId = null)
+    {
+        $coordinateeIds = $this->coordinateeIds($coordinatorStaffId);
+
         return ClassContentModule::with(['class', 'section', 'subject', 'creator'])
+            ->when($coordinateeIds !== null, fn ($q) => $q->whereIn('created_by', $coordinateeIds))
             ->when($status, fn ($q) => $q->where('review_status', $status))
             ->when(!$status, fn ($q) => $q->whereIn('review_status', [ClassContentModule::SUBMITTED, ClassContentModule::CHANGES_REQUESTED]))
             ->orderByDesc('id')
             ->paginate(Settings::PAGINATE);
+    }
+
+    /** True once $coordinatorStaffId is scoped (not Admin's bypass) and the
+     *  module's teacher isn't one of their coordinatees - used to keep a
+     *  coordinator from viewing/deciding on a submission by typing another
+     *  teacher's module id into the URL. */
+    public function moduleOutsideCoordinatorScope(ClassContentModule $module, ?int $coordinatorStaffId): bool
+    {
+        $coordinateeIds = $this->coordinateeIds($coordinatorStaffId);
+        return $coordinateeIds !== null && !in_array((int) $module->created_by, $coordinateeIds, true);
     }
 
     /** Admin's approval queue — same idea, defaults to what's actually
@@ -213,10 +238,13 @@ class ClassContentModuleRepository
      *  "how many" next to each status filter. $createdBy scopes it to one
      *  teacher's own modules (used by their "Class Content" list); null
      *  gives the site-wide counts Coordinator/Admin see. */
-    public function statusCounts(?int $createdBy = null): array
+    public function statusCounts(?int $createdBy = null, ?int $coordinatorStaffId = null): array
     {
+        $coordinateeIds = $this->coordinateeIds($coordinatorStaffId);
+
         $rows = ClassContentModule::selectRaw('review_status, count(*) as total')
             ->when($createdBy, fn ($q) => $q->where('created_by', $createdBy))
+            ->when($coordinateeIds !== null, fn ($q) => $q->whereIn('created_by', $coordinateeIds))
             ->groupBy('review_status')
             ->pluck('total', 'review_status');
 
