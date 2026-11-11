@@ -1,6 +1,10 @@
 {{-- Expects $row: a ClassContentModule with class/section/subject/lessons.activities eager loaded (see ClassContentModuleRepository::dashboardForTeacher()), and $number: its display number (e.g. "1.2") --}}
 @php
-    $rowLocked = (int) auth()->user()->role_id === 5
+    // Any non-Admin role gets locked once the module is out of their hands
+    // for review - not "role_id === 5", which only ever matched a role
+    // literally seeded/named id 5 on this tenant (see the same fix already
+    // made in ClassContentModuleController::teacherStaffId()).
+    $rowLocked = (int) auth()->user()->role_id !== 1
         && !in_array($row->review_status, [\App\Models\ClassContent\ClassContentModule::DRAFT, \App\Models\ClassContent\ClassContentModule::CHANGES_REQUESTED]);
     $lessonsCount  = $row->lessons->count();
     $projectsCount = $row->lessons->filter(fn ($l) => $l->hasProject())->count();
@@ -30,6 +34,13 @@
                 <i class="fa-solid fa-ellipsis"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
+                @if ($rowLocked)
+                    <li>
+                        <span class="dropdown-item text-secondary" style="cursor:not-allowed;" title="Ask your coordinator to send it back if it needs changes">
+                            <span class="icon mr-8"><i class="fa-solid fa-lock"></i></span>Locked — submitted for review
+                        </span>
+                    </li>
+                @endif
                 @if (hasPermission('class_content_update') && !$rowLocked)
                     <li>
                         <a class="dropdown-item" href="{{ route('class-content-module.edit', $row->id) }}">
@@ -71,6 +82,9 @@
     <details class="cc-lesson-collapse">
         <summary class="cc-lesson-collapse-summary">{{ $lessonsCount }} {{ \Illuminate\Support\Str::plural('lesson', $lessonsCount) }}</summary>
         <div class="cc-lesson-collapse-body">
+            @if ($rowLocked)
+                <p class="text-secondary mb-1" style="font-size:12px;"><i class="fa-solid fa-lock me-1"></i>Locked while under review — ask your coordinator to send it back if it needs changes.</p>
+            @endif
             @foreach ($row->lessons as $li => $lesson)
                 <div class="cc-lesson-item">
                     <span class="cc-lesson-item-title">{{ $number }}.{{ $li + 1 }} {{ $lesson->title }}</span>
