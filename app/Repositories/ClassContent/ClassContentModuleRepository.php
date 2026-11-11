@@ -142,7 +142,7 @@ class ClassContentModuleRepository
               ->when($filters['subject_id'] ?? null, fn ($q2, $v) => $q2->where('subject_id', $v));
         };
 
-        $modules = ClassContentModule::with(['class', 'section', 'subject', 'lessons.activities'])
+        $modules = ClassContentModule::with(['class', 'section', 'subject', 'lessons.activities', 'coordinator', 'approver'])
             ->when($staffId !== null, fn ($q) => $q->where('created_by', $staffId))
             ->tap($applyFilters)
             ->orderBy('sort_order')->orderBy('id')
@@ -375,10 +375,20 @@ class ClassContentModuleRepository
         $row->coordinator_feedback   = $request->input('feedback');
         $row->coordinator_id         = $coordinatorStaffId;
         $row->coordinator_reviewed_at = now();
-        $row->review_status = $request->input('decision') === 'request_changes'
+        $decisionIsChanges = $request->input('decision') === 'request_changes';
+        $row->review_status = $decisionIsChanges
             ? ClassContentModule::CHANGES_REQUESTED
             : ClassContentModule::COORDINATOR_REVIEWED;
         $row->save();
+
+        if ($row->creator && $row->creator->user_id) {
+            \App\Services\Portal\PortalNotifier::send(
+                $row->creator->user_id,
+                $decisionIsChanges ? 'Changes requested' : 'Sent to admin for approval',
+                $row->title,
+                route('class-content-module.lessons', $row->id)
+            );
+        }
 
         return $this->responseWithSuccess('Saved.', []);
     }
@@ -417,6 +427,27 @@ class ClassContentModuleRepository
         }
 
         $row->save();
+
+        // Tell whoever needs to act next - the teacher for an approval or a
+        // changes-requested, the coordinator if admin bounced it back for
+        // another look instead.
+        if ($decision === 'back_to_coordinator') {
+            if ($row->coordinator && $row->coordinator->user_id) {
+                \App\Services\Portal\PortalNotifier::send(
+                    $row->coordinator->user_id,
+                    'Sent back for another look',
+                    $row->title,
+                    route('class-content-coordinator.show', $row->id)
+                );
+            }
+        } elseif ($row->creator && $row->creator->user_id) {
+            \App\Services\Portal\PortalNotifier::send(
+                $row->creator->user_id,
+                $decision === 'approve' ? 'Module approved' : 'Changes requested',
+                $row->title,
+                route('class-content-module.lessons', $row->id)
+            );
+        }
 
         return $this->responseWithSuccess('Saved.', []);
     }

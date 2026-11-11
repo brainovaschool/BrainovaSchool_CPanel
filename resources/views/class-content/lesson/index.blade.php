@@ -5,7 +5,7 @@
 @section('content')
     @php
         $module = $data['module'];
-        $isLocked = (int) auth()->user()->role_id === 5
+        $isLocked = (int) auth()->user()->role_id !== 1
             && !in_array($module->review_status, [\App\Models\ClassContent\ClassContentModule::DRAFT, \App\Models\ClassContent\ClassContentModule::CHANGES_REQUESTED]);
     @endphp
     <div class="page-content">

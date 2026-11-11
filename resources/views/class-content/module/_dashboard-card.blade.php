@@ -21,6 +21,7 @@
                 {{ optional($row->class)->name }}{{ $row->section ? ' - ' . optional($row->section)->name : '' }} — {{ optional($row->subject)->name }}
                 @if ($row->creator) &middot; {{ trim(optional($row->creator)->first_name . ' ' . optional($row->creator)->last_name) }} @endif
             </p>
+            @include('class-content._feedback-panel', ['item' => $row])
         </div>
 
         <div class="cc-module-card-stats">
