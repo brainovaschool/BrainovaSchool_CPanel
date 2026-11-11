@@ -88,6 +88,11 @@
                                                     <i class="fa-solid fa-ellipsis"></i>
                                                 </button>
                                                 <ul class="dropdown-menu dropdown-menu-end">
+                                                    <li>
+                                                        <a class="dropdown-item" href="{{ route('class-content-module.lessons.show', [$module->id, $row->id]) }}">
+                                                            <span class="icon mr-8"><i class="fa-solid fa-eye"></i></span>View
+                                                        </a>
+                                                    </li>
                                                     @if (hasPermission('class_content_update') && !$isLocked)
                                                         <li>
                                                             <a class="dropdown-item" href="{{ route('class-content-module.lessons.edit', [$module->id, $row->id]) }}">

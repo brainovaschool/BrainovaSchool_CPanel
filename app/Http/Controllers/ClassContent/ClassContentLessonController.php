@@ -61,6 +61,23 @@ class ClassContentLessonController extends Controller
         return view('class-content.lesson.index', compact('data'));
     }
 
+    /** Read-only lesson detail — same content a student eventually sees
+     *  (materials, video, activities, outcomes, project, quiz), so a
+     *  Teacher isn't limited to the title-only row on their dashboard/
+     *  lessons list. Allowed regardless of lock state since it's just a
+     *  view, not an edit. */
+    public function show($moduleId, $id)
+    {
+        $data['module'] = $this->moduleRepo->show($moduleId);
+        $data['item']   = $this->repo->show($id, (int) $moduleId);
+        if (!$data['module'] || !$data['item']) {
+            return redirect()->route('class-content-module.index')->with('danger', ___('alert.not_found'));
+        }
+        $this->authorizeModule($data['module']);
+        $data['title'] = $data['item']->title;
+        return view('class-content.lesson.show', compact('data'));
+    }
+
     public function create($moduleId)
     {
         $data['module'] = $this->moduleRepo->show($moduleId);

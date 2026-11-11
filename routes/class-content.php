@@ -24,6 +24,7 @@ Route::middleware(saasMiddleware())->group(function () {
 
                 Route::controller(ClassContentLessonController::class)->prefix('class-content/{moduleId}/lessons')->name('class-content-module.')->group(function () {
                     Route::get('/',               'index')->name('lessons')->middleware('PermissionCheck:class_content_read');
+                    Route::get('/view/{id}',      'show')->name('lessons.show')->middleware('PermissionCheck:class_content_read');
                     Route::get('/create',         'create')->name('lessons.create')->middleware('PermissionCheck:class_content_create');
                     Route::post('/store',         'store')->name('lessons.store')->middleware('PermissionCheck:class_content_create', 'DemoCheck');
                     Route::get('/edit/{id}',      'edit')->name('lessons.edit')->middleware('PermissionCheck:class_content_update');

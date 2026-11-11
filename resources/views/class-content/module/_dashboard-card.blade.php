@@ -90,6 +90,7 @@
                 <div class="cc-lesson-item">
                     <span class="cc-lesson-item-title">{{ $number }}.{{ $li + 1 }} {{ $lesson->title }}</span>
                     @if ($lesson->class_date)<span class="cc-lesson-item-date">{{ \Carbon\Carbon::parse($lesson->class_date)->format('d M Y') }}</span>@endif
+                    <a href="{{ route('class-content-module.lessons.show', [$row->id, $lesson->id]) }}" class="cc-lesson-item-action">View</a>
                     @if (hasPermission('class_content_update') && !$rowLocked)
                         <a href="{{ route('class-content-module.lessons.edit', [$row->id, $lesson->id]) }}" class="cc-lesson-item-action">{{ ___('common.edit') }}</a>
                     @endif
