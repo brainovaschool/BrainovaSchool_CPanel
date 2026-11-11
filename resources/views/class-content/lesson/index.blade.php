@@ -44,7 +44,7 @@
 
                 @include('class-content._status-stepper', ['status' => $module->review_status])
 
-                @include('class-content._feedback-panel', ['item' => $module])
+                @include('class-content._feedback-panel', ['item' => $module, 'forTeacher' => true])
             </div>
         </div>
 

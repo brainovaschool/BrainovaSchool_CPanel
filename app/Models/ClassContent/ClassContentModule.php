@@ -19,6 +19,7 @@ class ClassContentModule extends BaseModel
         'submitted_at'            => 'datetime',
         'coordinator_reviewed_at' => 'datetime',
         'approved_at'             => 'datetime',
+        'admin_feedback_to_coordinator' => 'boolean',
     ];
 
     public const DRAFT               = 'draft';

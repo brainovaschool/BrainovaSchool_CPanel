@@ -1,5 +1,11 @@
-{{-- Shows Coordinator's and Admin's latest notes side by side, correctly attributed — expects $item (a ClassContentModule). Renders nothing if neither exists. --}}
-@if ($item->coordinator_feedback || $item->admin_feedback)
+{{-- Shows Coordinator's and Admin's latest notes side by side, correctly attributed — expects $item (a ClassContentModule). Renders nothing if neither exists.
+     $forTeacher (optional, default false): pass true from a Teacher-facing view. When Admin's note was addressed to the
+     Coordinator only ("back to coordinator" — admin_feedback_to_coordinator), it stays hidden from the Teacher until the
+     Coordinator relays their own feedback; Coordinator/Admin views (the default) always see it. --}}
+@php
+    $showAdminNote = $item->admin_feedback && !(($forTeacher ?? false) && $item->admin_feedback_to_coordinator);
+@endphp
+@if ($item->coordinator_feedback || $showAdminNote)
     <div class="cc-feedback-panel">
         @if ($item->coordinator_feedback)
             <div class="cc-feedback cc-feedback--coordinator">
@@ -13,7 +19,7 @@
                 <p class="cc-feedback__body">{{ $item->coordinator_feedback }}</p>
             </div>
         @endif
-        @if ($item->admin_feedback)
+        @if ($showAdminNote)
             <div class="cc-feedback cc-feedback--admin">
                 <div class="cc-feedback__head">
                     <i class="fa-solid fa-shield-halved"></i>

@@ -390,6 +390,20 @@ class ClassContentModuleRepository
             );
         }
 
+        // The admin queue otherwise only surfaces a new submission if an
+        // admin happens to check it - notify every Super Admin the same way
+        // submit() already notifies coordinators.
+        if (!$decisionIsChanges) {
+            \App\Models\User::where('role_id', 1)->get(['id'])->each(function (\App\Models\User $admin) use ($row) {
+                \App\Services\Portal\PortalNotifier::send(
+                    $admin->id,
+                    'Module ready for approval',
+                    $row->title,
+                    route('class-content-admin.show', $row->id)
+                );
+            });
+        }
+
         return $this->responseWithSuccess('Saved.', []);
     }
 
@@ -413,6 +427,10 @@ class ClassContentModuleRepository
         // wherever it was displayed.
         if ($request->filled('feedback')) {
             $row->admin_feedback = $request->input('feedback');
+            // "Back to coordinator" is a note for the coordinator to act on
+            // before anything is final for the teacher - the feedback panel
+            // uses this to keep it off the teacher's own views until then.
+            $row->admin_feedback_to_coordinator = $decision === 'back_to_coordinator';
         }
 
         if ($decision === 'approve') {
@@ -447,6 +465,19 @@ class ClassContentModuleRepository
                 $row->title,
                 route('class-content-module.lessons', $row->id)
             );
+
+            // Admin went straight to the teacher, skipping the coordinator's
+            // own queue entirely - let the coordinator know it happened and
+            // what was recommended, even though they aren't the one acting
+            // on it next.
+            if ($decision === 'request_changes' && $row->coordinator && $row->coordinator->user_id) {
+                \App\Services\Portal\PortalNotifier::send(
+                    $row->coordinator->user_id,
+                    'Admin sent this directly to the teacher',
+                    $row->title,
+                    route('class-content-coordinator.show', $row->id)
+                );
+            }
         }
 
         return $this->responseWithSuccess('Saved.', []);
