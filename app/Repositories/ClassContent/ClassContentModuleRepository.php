@@ -343,6 +343,21 @@ class ClassContentModuleRepository
         $row->submitted_at  = now();
         $row->save();
 
+        // Otherwise a submission just sits silently in the queue until a
+        // coordinator happens to check - notify every coordinator this
+        // teacher is actually assigned to (same staff_coordinators link
+        // forCoordinator() is scoped by).
+        if ($row->creator) {
+            $row->creator->coordinators->each(function (\App\Models\Staff\Staff $coordinator) use ($row) {
+                \App\Services\Portal\PortalNotifier::send(
+                    $coordinator->user_id,
+                    'Module submitted for review',
+                    $row->title,
+                    route('class-content-coordinator.show', $row->id)
+                );
+            });
+        }
+
         return $this->responseWithSuccess('Submitted for review.', []);
     }
 

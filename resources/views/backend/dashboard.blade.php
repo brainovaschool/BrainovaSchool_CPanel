@@ -309,9 +309,17 @@
             <div class="ot-card mb-24 bn-dash-notifications">
                 <div class="d-flex align-items-center justify-content-between mb-20">
                     <h4 class="mb-0">{{ ___('common.Notifications') }}</h4>
-                    @if ($data['unreadNotificationsCount'] > 0)
-                        <span class="badge-basic-info-text">{{ $data['unreadNotificationsCount'] }} unread</span>
-                    @endif
+                    <div class="d-flex align-items-center gap-2">
+                        @if ($data['unreadNotificationsCount'] > 0)
+                            <span class="badge-basic-info-text">{{ $data['unreadNotificationsCount'] }} unread</span>
+                        @endif
+                        @if (collect($data['recentNotifications'])->contains('is_read', 1))
+                            <form action="{{ route('notifications.clear-read') }}" method="post" onsubmit="return confirm('Clear all read notifications?');">
+                                @csrf
+                                <button type="submit" class="btn btn-sm p-0 text-secondary" style="font-size:12px; text-decoration:underline; background:transparent; border:0;">Clear read</button>
+                            </form>
+                        @endif
+                    </div>
                 </div>
                 @forelse ($data['recentNotifications'] as $notification)
                     <a href="{{ route('viewNotification', $notification->id) }}" class="bn-dash-notification-item {{ $notification->is_read ? 'is-read' : 'is-unread' }}">
