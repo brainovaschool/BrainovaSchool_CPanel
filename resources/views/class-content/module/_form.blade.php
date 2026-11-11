@@ -3,6 +3,7 @@
     $selected = old('classes_id')
         ? old('classes_id') . '|' . old('section_id') . '|' . old('subject_id')
         : ($m ? $m->classes_id . '|' . $m->section_id . '|' . $m->subject_id : request('classes_id') . '|' . request('section_id') . '|' . request('subject_id'));
+    $selectedParts = explode('|', $selected);
 @endphp
 
 <div class="row">
@@ -17,9 +18,9 @@
                 </option>
             @endforeach
         </select>
-        <input type="hidden" name="classes_id" id="classesIdInput" value="{{ old('classes_id', $m->classes_id ?? '') }}">
-        <input type="hidden" name="section_id" id="sectionIdInput" value="{{ old('section_id', $m->section_id ?? '') }}">
-        <input type="hidden" name="subject_id" id="subjectIdInput" value="{{ old('subject_id', $m->subject_id ?? '') }}">
+        <input type="hidden" name="classes_id" id="classesIdInput" value="{{ $selectedParts[0] ?? '' }}">
+        <input type="hidden" name="section_id" id="sectionIdInput" value="{{ $selectedParts[1] ?? '' }}">
+        <input type="hidden" name="subject_id" id="subjectIdInput" value="{{ $selectedParts[2] ?? '' }}">
         @error('classes_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         @error('subject_id')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
         @if ($data['options']->isEmpty())
