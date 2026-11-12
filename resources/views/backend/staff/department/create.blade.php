@@ -67,7 +67,7 @@
                                         name="staff_user_id" id="manager_id">
                                         <option value="">{{ ___('common.Select One') }}</option>
                                         @foreach ($data['staffs'] ?? [] as $staff)
-                                            <option value="{{ $staff->id }}">{{ $staff->first_name }}
+                                            <option value="{{ $staff->user_id }}">{{ $staff->first_name }}
                                                 {{ $staff->last_name }}
                                             </option>
                                         @endforeach

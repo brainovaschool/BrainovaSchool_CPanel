@@ -33,9 +33,12 @@ class DepartmentRepository implements DepartmentInterface
         return $this->model->active()->pluck('name', 'id');
     }
 
+    /** Departments the logged-in user manages — staff_user_id holds the
+     *  manager's USER id (see Department::manager()), not their Staff id,
+     *  so this compares against Auth::id() directly. */
     public function staffDepartment()
     {
-        return $this->model->active()->where("staff_user_id", Auth::user()->staff->id)->pluck('name', 'id');
+        return $this->model->active()->where("staff_user_id", Auth::id())->pluck('name', 'id');
     }
 
     public function store($request)
@@ -43,7 +46,7 @@ class DepartmentRepository implements DepartmentInterface
         try {
             $row                = new $this->model;
             $row->name          = $request->name;
-            $row->staff_user_id = blank($request->staff_user_id) ? null : $request->staff_user;
+            $row->staff_user_id = blank($request->staff_user_id) ? null : $request->staff_user_id;
             $row->status        = $request->status;
             $row->save();
             return $this->responseWithSuccess(___('alert.created_successfully'), []);
@@ -62,7 +65,7 @@ class DepartmentRepository implements DepartmentInterface
         try {
             $row                = $this->model->findOrfail($id);
             $row->name          = $request->name;
-            $row->staff_user_id = blank($request->staff_user_id) ? null : $request->staff_user;
+            $row->staff_user_id = blank($request->staff_user_id) ? null : $request->staff_user_id;
             $row->status        = $request->status;
             $row->save();
             return $this->responseWithSuccess(___('alert.updated_successfully'), []);

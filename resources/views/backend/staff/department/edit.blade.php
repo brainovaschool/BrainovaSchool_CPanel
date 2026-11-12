@@ -77,8 +77,8 @@
                                         <option value="">{{ ___('common.Select One') }}</option>
                                         @foreach ($data['staffs'] ?? [] as $staff)
                                             <option
-                                                {{ @$data['department']->staff_user_id == $staff->id ? 'selected' : '' }}
-                                                value="{{ $staff->id }}">{{ $staff->first_name }}
+                                                {{ @$data['department']->staff_user_id == $staff->user_id ? 'selected' : '' }}
+                                                value="{{ $staff->user_id }}">{{ $staff->first_name }}
                                                 {{ $staff->last_name }}
                                             </option>
                                         @endforeach
