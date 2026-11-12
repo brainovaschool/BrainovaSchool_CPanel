@@ -156,6 +156,7 @@ class UserRepository implements UserInterface
             return 1;
         } catch (\Throwable $th) {
             DB::rollback();
+            \Log::error('UserRepository::store failed: ' . $th->getMessage(), ['exception' => $th]);
             return false;
         }
     }
