@@ -41,6 +41,18 @@
                                         </div>
                                     @enderror
                                 </div>
+                                <div class="col-md-12 mb-3">
+                                    <label for="basedOnSelect" class="form-label">Based on (optional)</label>
+                                    <select class="nice-select niceSelect bordered_style wide" id="basedOnSelect"
+                                        onchange="window.location = '{{ route('roles.create') }}' + (this.value ? ('?based_on=' + this.value) : '');">
+                                        <option value="">— Start from scratch —</option>
+                                        @foreach ($data['roles'] as $r)
+                                            <option value="{{ $r->id }}" {{ (string) $data['basedOnRoleId'] === (string) $r->id ? 'selected' : '' }}>{{ $r->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-secondary">Pre-checks the permissions below from that role, so you can start there and just add or remove a few.</small>
+                                </div>
+
                                 <div class="col-md-12">
 
                                     <label for="validationServer04" class="form-label">{{ ___('common.status') }} <span class="fillable">*</span></label>
@@ -62,7 +74,7 @@
                             </div>
                         </div>
                         <div class="col-lg-6">
-                            @include('backend.roles._permission-picker', ['permissionGroups' => $data['permissionGroups']])
+                            @include('backend.roles._permission-picker', ['permissionGroups' => $data['permissionGroups'], 'selectedPermissions' => $data['selectedPermissions'] ?? []])
                         </div>
                         <div class="col-md-12 mt-24">
                             <div class="text-end">

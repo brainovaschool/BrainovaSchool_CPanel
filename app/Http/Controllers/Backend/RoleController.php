@@ -33,10 +33,18 @@ class RoleController extends Controller
         return view('backend.roles.index', compact('data'));
     }
 
-    public function create()
+    /** $request->based_on (a Role id, optional) pre-checks the picker with
+     *  that role's own permissions, so a new role combining two sets
+     *  (e.g. "Teacher + Social Media") starts from one of them instead of
+     *  every box unchecked. */
+    public function create(Request $request)
     {
         $data['title']             = ___('common.create_role');
         $data['permissionGroups']  = group_permissions_by_category($this->permission->all());
+        $data['roles']             = $this->role->getAll();
+        $data['basedOnRoleId']     = $request->query('based_on');
+        $basedOnRole                = $data['basedOnRoleId'] ? $this->role->show($data['basedOnRoleId']) : null;
+        $data['selectedPermissions'] = $basedOnRole->permissions ?? [];
         return view('backend.roles.create', compact('data'));
     }
 
