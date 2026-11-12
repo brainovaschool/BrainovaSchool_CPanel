@@ -50,6 +50,22 @@ class TaskController extends Controller
         return view('portal.tasks.index', compact('data'));
     }
 
+    /** Single-task delete, for inline "delete this one task" actions (e.g.
+     *  the Planning Board) via the shared delete_row() JS helper — same
+     *  paid-task-with-a-payment-record guard as bulkDelete(), just over
+     *  one id. */
+    public function delete($id)
+    {
+        $result = $this->repo->bulkDelete([(int) $id]);
+        if ($result['deleted'] === 0) {
+            $message = $result['blocked'] > 0
+                ? "This is a paid task with a payment record — it can't be deleted."
+                : ___('alert.something_went_wrong_please_try_again');
+            return response()->json([$message, 'error', ___('alert.oops'), ___('alert.OK')]);
+        }
+        return response()->json([___('alert.deleted_successfully'), 'success', ___('alert.deleted'), ___('alert.OK')]);
+    }
+
     public function bulkDelete(Request $request)
     {
         $ids = array_filter((array) $request->input('ids', []));

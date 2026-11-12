@@ -24,8 +24,9 @@ class ClassesStoreRequest extends FormRequest
     public function rules()
     {
         return [
-            'name'   => 'required|max:255|unique:classes',
-            'status' => 'required'
+            'name'       => 'required|max:255|unique:classes',
+            'status'     => 'required',
+            'sort_order' => 'nullable|integer|min:0',
         ];
     }
 }

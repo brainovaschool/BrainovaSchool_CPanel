@@ -24,8 +24,9 @@ class ClassesUpdateRequest extends FormRequest
     public function rules()
     {
         return [
-            'name'   => 'required|max:255|unique:classes,name,'.Request()->id,
-            'status' => 'required'
+            'name'       => 'required|max:255|unique:classes,name,'.Request()->id,
+            'status'     => 'required',
+            'sort_order' => 'nullable|integer|min:0',
         ];
     }
 }

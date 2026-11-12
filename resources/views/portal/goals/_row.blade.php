@@ -50,7 +50,7 @@
             <div class="goal-tasks">
                 <div class="goal-details-label">Tasks assigned directly under this {{ strtolower($tierMeta['label']) }}</div>
                 @forelse ($goal->tasks as $task)
-                    <div class="goal-task-row">
+                    <div class="goal-task-row" id="row_{{ $task->id }}">
                         <a href="{{ route('portal-tasks.show', $task->id) }}">{{ $task->title }}</a>
                         <form action="{{ route('portal-tasks.reassign', $task->id) }}" method="post" class="goal-task-inline-form">
                             @csrf
@@ -65,6 +65,9 @@
                             <input type="date" name="due_date" class="form-control ot-input goal-task-date {{ $task->is_overdue ? 'is-overdue' : '' }}" value="{{ optional($task->due_date)->format('Y-m-d') }}" required onchange="this.form.submit()">
                         </form>
                         <span class="badge-basic-info-text">{{ str_replace('_', ' ', ucfirst($task->status)) }}</span>
+                        <button type="button" class="goal-task-delete" title="Delete this task" onclick="delete_row('portal/tasks/delete', {{ $task->id }})">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
                     </div>
                 @empty
                     <div class="goal-no-tasks">No tasks assigned yet.</div>

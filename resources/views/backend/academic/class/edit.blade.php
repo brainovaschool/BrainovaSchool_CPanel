@@ -67,6 +67,17 @@
                                     </div>
                                 @enderror
 
+                                <div class="col-md-6 mt-3">
+                                    <label for="sortOrderInput" class="form-label">{{ ___('common.Serial') }}</label>
+                                    <input class="form-control ot-input @error('sort_order') is-invalid @enderror" name="sort_order"
+                                        id="sortOrderInput" type="number" min="0"
+                                        value="{{ old('sort_order', @$data['class']->sort_order ?? 0) }}">
+                                    <small class="text-secondary">Controls where this class appears in the list — lower numbers come first.</small>
+                                    @error('sort_order')
+                                        <div class="invalid-feedback d-block">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
                                 <div class="col-md-12 mt-24">
                                     <div class="text-end">
                                         <button class="btn btn-lg ot-btn-primary"><span><i class="fa-solid fa-save"></i>

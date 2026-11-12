@@ -13,7 +13,7 @@ class Classes extends BaseModel
     use HasFactory;
 
     protected $fillable = [
-        'name','status'
+        'name','status','sort_order'
     ];
 
     protected $appends = ['class_tran'];

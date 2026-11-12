@@ -67,7 +67,7 @@ class ClassesRepository implements ClassesInterface
 
     public function getAll()
     {
-        return $this->classes->latest()->paginate(Settings::PAGINATE);
+        return $this->classes->orderBy('sort_order')->orderBy('id')->paginate(Settings::PAGINATE);
     }
 
     public function getAllForAssignedTeacher(int $staffId)
@@ -111,6 +111,7 @@ class ClassesRepository implements ClassesInterface
             $classesStore              = new $this->classes;
             $classesStore->name        = $request->name;
             $classesStore->status      = $request->status;
+            $classesStore->sort_order  = $request->filled('sort_order') ? (int) $request->sort_order : 0;
             $classesStore->save();
             return $this->responseWithSuccess(___('alert.created_successfully'), []);
         } catch (\Throwable $th) {
@@ -129,6 +130,7 @@ class ClassesRepository implements ClassesInterface
             $classesUpdate              = $this->classes->findOrfail($id);
             $classesUpdate->name        = $request->name;
             $classesUpdate->status      = $request->status;
+            $classesUpdate->sort_order  = $request->filled('sort_order') ? (int) $request->sort_order : 0;
             $classesUpdate->save();
             return $this->responseWithSuccess(___('alert.updated_successfully'), []);
         } catch (\Throwable $th) {

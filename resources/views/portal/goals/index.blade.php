@@ -166,6 +166,8 @@
     .goal-task-select { min-width: 130px; max-width: 160px; font-size: 12.5px; }
     .goal-task-date { min-width: 130px; font-size: 12.5px; padding: 4px 8px; }
     .goal-task-date.is-overdue { color: #b91c1c; font-weight: 600; }
+    .goal-task-delete { border: none; background: none; color: #b91c1c; font-size: 13px; padding: 4px 6px; cursor: pointer; margin-left: auto; }
+    .goal-task-delete:hover { color: #7f1d1d; }
     .goal-children { margin-top: 10px; }
     .goal-children > summary { color: var(--ot-text-secondary, #475065); }
     .goal-children > div { margin-top: 10px; }
