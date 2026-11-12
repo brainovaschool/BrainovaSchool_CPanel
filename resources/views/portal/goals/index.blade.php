@@ -158,17 +158,14 @@
     .goal-details-value { font-size: 13px; color: var(--ot-text-primary, #334058); line-height: 1.5; }
 
     .goal-task-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--ot-border-basic-table, #edeef1); font-size: 13px; }
-    .goal-task-due { color: var(--ot-text-secondary, #5b6472); }
-    .goal-task-due.is-overdue { color: #b91c1c; font-weight: 600; }
     .goal-no-tasks { font-size: 13px; color: var(--ot-text-secondary, #8b93a3); margin: 6px 0; }
 
     .goal-inline-form form { max-width: 520px; margin-top: 8px; }
 
-    .goal-task-edit { flex-basis: 100%; order: 99; font-size: 12px; }
-    .goal-task-edit > summary { cursor: pointer; color: #0097b2; font-weight: 600; }
-    .goal-task-edit-body { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
-    .goal-task-edit-body form { display: flex; gap: 8px; align-items: center; }
-    .goal-task-edit-body select, .goal-task-edit-body input[type="date"] { max-width: 220px; }
+    .goal-task-inline-form { margin: 0; }
+    .goal-task-select { min-width: 130px; max-width: 160px; font-size: 12.5px; }
+    .goal-task-date { min-width: 130px; font-size: 12.5px; padding: 4px 8px; }
+    .goal-task-date.is-overdue { color: #b91c1c; font-weight: 600; }
     .goal-children { margin-top: 10px; }
     .goal-children > summary { color: var(--ot-text-secondary, #475065); }
     .goal-children > div { margin-top: 10px; }

@@ -52,28 +52,19 @@
                 @forelse ($goal->tasks as $task)
                     <div class="goal-task-row">
                         <a href="{{ route('portal-tasks.show', $task->id) }}">{{ $task->title }}</a>
-                        <span class="goal-task-owner">{{ optional($task->assignee)->first_name }}</span>
-                        <span class="goal-task-due {{ $task->is_overdue ? 'is-overdue' : '' }}">Due {{ $task->due_date?->format('d M Y') }}</span>
+                        <form action="{{ route('portal-tasks.reassign', $task->id) }}" method="post" class="goal-task-inline-form">
+                            @csrf
+                            <select name="assigned_to" class="nice-select niceSelect bordered_style wide goal-task-select" required onchange="this.form.submit()">
+                                @foreach ($staffList as $s)
+                                    <option value="{{ $s->id }}" {{ (int) $task->assigned_to === $s->id ? 'selected' : '' }}>{{ trim($s->first_name . ' ' . $s->last_name) }}</option>
+                                @endforeach
+                            </select>
+                        </form>
+                        <form action="{{ route('portal-tasks.reschedule', $task->id) }}" method="post" class="goal-task-inline-form">
+                            @csrf
+                            <input type="date" name="due_date" class="form-control ot-input goal-task-date {{ $task->is_overdue ? 'is-overdue' : '' }}" value="{{ optional($task->due_date)->format('Y-m-d') }}" required onchange="this.form.submit()">
+                        </form>
                         <span class="badge-basic-info-text">{{ str_replace('_', ' ', ucfirst($task->status)) }}</span>
-                        <details class="goal-task-edit">
-                            <summary>Edit</summary>
-                            <div class="goal-task-edit-body">
-                                <form action="{{ route('portal-tasks.reassign', $task->id) }}" method="post">
-                                    @csrf
-                                    <select name="assigned_to" class="nice-select niceSelect bordered_style wide" required>
-                                        @foreach ($staffList as $s)
-                                            <option value="{{ $s->id }}" {{ (int) $task->assigned_to === $s->id ? 'selected' : '' }}>{{ trim($s->first_name . ' ' . $s->last_name) }}</option>
-                                        @endforeach
-                                    </select>
-                                    <button type="submit" class="btn btn-sm ot-btn-primary">Reassign</button>
-                                </form>
-                                <form action="{{ route('portal-tasks.reschedule', $task->id) }}" method="post">
-                                    @csrf
-                                    <input type="date" name="due_date" class="form-control ot-input" value="{{ optional($task->due_date)->format('Y-m-d') }}" required>
-                                    <button type="submit" class="btn btn-sm ot-btn-primary">Update date</button>
-                                </form>
-                            </div>
-                        </details>
                     </div>
                 @empty
                     <div class="goal-no-tasks">No tasks assigned yet.</div>
