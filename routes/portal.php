@@ -31,6 +31,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/{id}/edit',              'edit')->name('edit')->middleware('PermissionCheck:portal_manage');
                     Route::put('/{id}/update',            'update')->name('update')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::post('/{id}/reassign',        'reassign')->name('reassign')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
+                    Route::post('/{id}/reschedule',      'reschedule')->name('reschedule')->middleware('PermissionCheck:portal_manage', 'DemoCheck');
                     Route::post('/{id}/accept',          'accept')->name('accept')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/{id}/submit',          'submit')->name('submit')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/{id}/start-review',    'startReview')->name('start-review')->middleware('PermissionCheck:portal_manage', 'DemoCheck');

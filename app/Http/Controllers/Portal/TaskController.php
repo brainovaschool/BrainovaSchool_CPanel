@@ -331,6 +331,17 @@ class TaskController extends Controller
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    /** Companion to reassign() — a narrow "just the due date" edit for
+     *  inline forms (e.g. the Planning Board) that only ever show the
+     *  assignee and due date, not the full Edit Task form. */
+    public function reschedule(Request $request, $id)
+    {
+        $request->validate(['due_date' => 'required|date']);
+
+        $result = $this->repo->reschedule((int) $id, $request->due_date);
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
     public function accept($id)
     {
         $staffId = $this->actingStaffId();

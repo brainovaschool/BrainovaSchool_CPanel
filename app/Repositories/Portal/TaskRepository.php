@@ -357,6 +357,23 @@ class TaskRepository
         return $this->responseWithSuccess('Task reassigned.', []);
     }
 
+    /** Changes only the due date — unlike update(), which overwrites every
+     *  field from a full "Edit Task" form submission, this is for a quick
+     *  inline edit (e.g. from the Planning Board) that has no idea what
+     *  the task's description/category/output/etc. currently are. */
+    public function reschedule(int $id, string $dueDate): array
+    {
+        $task = PortalTask::find($id);
+        if (!$task) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+
+        $task->due_date = $dueDate;
+        $task->save();
+
+        return $this->responseWithSuccess('Due date updated.', []);
+    }
+
     /** Only the assignee may accept their own task. */
     public function accept(int $id, int $staffId): array
     {

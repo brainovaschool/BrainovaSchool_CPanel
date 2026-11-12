@@ -163,6 +163,12 @@
     .goal-no-tasks { font-size: 13px; color: var(--ot-text-secondary, #8b93a3); margin: 6px 0; }
 
     .goal-inline-form form { max-width: 520px; margin-top: 8px; }
+
+    .goal-task-edit { flex-basis: 100%; order: 99; font-size: 12px; }
+    .goal-task-edit > summary { cursor: pointer; color: #0097b2; font-weight: 600; }
+    .goal-task-edit-body { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; }
+    .goal-task-edit-body form { display: flex; gap: 8px; align-items: center; }
+    .goal-task-edit-body select, .goal-task-edit-body input[type="date"] { max-width: 220px; }
     .goal-children { margin-top: 10px; }
     .goal-children > summary { color: var(--ot-text-secondary, #475065); }
     .goal-children > div { margin-top: 10px; }
