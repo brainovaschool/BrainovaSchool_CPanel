@@ -3667,14 +3667,34 @@ class MigrationRunnerController extends Controller
         }
 
         // ---- Subject assignment, so Robotics (Demo) shows as a course the teacher teaches ----
-        $assign = SubjectAssign::firstOrCreate(
-            ['session_id' => setting('session'), 'classes_id' => $class->id, 'section_id' => $section->id],
-            ['status' => 1]
-        );
-        SubjectAssignChildren::firstOrCreate(
-            ['subject_assign_id' => $assign->id, 'subject_id' => $subject->id, 'staff_id' => $teacher->id],
-            ['status' => 1]
-        );
+        // SubjectAssign/SubjectAssignChildren have no $fillable, so they're
+        // built property-by-property (same as the other demo methods in
+        // this controller) rather than via mass-assignment create().
+        $assign = SubjectAssign::where('session_id', setting('session'))
+            ->where('classes_id', $class->id)
+            ->where('section_id', $section->id)
+            ->first();
+        if (!$assign) {
+            $assign             = new SubjectAssign();
+            $assign->session_id = setting('session');
+            $assign->classes_id = $class->id;
+            $assign->section_id = $section->id;
+            $assign->status     = 1;
+            $assign->save();
+        }
+
+        $assignChild = SubjectAssignChildren::where('subject_assign_id', $assign->id)
+            ->where('subject_id', $subject->id)
+            ->where('staff_id', $teacher->id)
+            ->first();
+        if (!$assignChild) {
+            $assignChild                    = new SubjectAssignChildren();
+            $assignChild->subject_assign_id = $assign->id;
+            $assignChild->subject_id        = $subject->id;
+            $assignChild->staff_id          = $teacher->id;
+            $assignChild->status            = 1;
+            $assignChild->save();
+        }
 
         // ---- Unit ----
         $unit = \App\Models\ClassContent\ClassContentUnit::firstOrCreate(
