@@ -19,6 +19,31 @@
 
         <p class="text-secondary mb-3">Your big picture: units, modules and lessons — a teacher builds it, a coordinator reviews it, and admin approves it before students ever see it.</p>
 
+        @if ($data['options']->isNotEmpty())
+            <div class="card ot-card mb-16">
+                <div class="card-body d-flex align-items-center gap-3 flex-wrap">
+                    <label class="form-label mb-0" for="classContentFilterSelect" style="font-weight:600;white-space:nowrap;">Showing:</label>
+                    <select class="form-control ot-input" id="classContentFilterSelect" style="max-width:420px;width:auto;" onchange="window.location = this.value;">
+                        <option value="{{ route('class-content-module.index') }}" {{ empty($data['filters']['classes_id']) ? 'selected' : '' }}>
+                            All classes &amp; subjects
+                        </option>
+                        @foreach ($data['options'] as $opt)
+                            @php
+                                $optUrl = route('class-content-module.index', ['classes_id' => $opt['classes_id'], 'section_id' => $opt['section_id'], 'subject_id' => $opt['subject_id']]);
+                                $isSelected = !empty($data['filters']['classes_id'])
+                                    && (string) $data['filters']['classes_id'] === (string) $opt['classes_id']
+                                    && (string) ($data['filters']['section_id'] ?? '') === (string) $opt['section_id']
+                                    && (string) $data['filters']['subject_id'] === (string) $opt['subject_id'];
+                            @endphp
+                            <option value="{{ $optUrl }}" {{ $isSelected ? 'selected' : '' }}>
+                                {{ $opt['class_name'] }}{{ $opt['section_name'] ? ' - ' . $opt['section_name'] : '' }} — {{ $opt['subject_name'] }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+            </div>
+        @endif
+
         @include('class-content._status-summary', [
             'counts' => $data['counts'],
             'tiles'  => [
