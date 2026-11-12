@@ -186,6 +186,41 @@ class ClassContentModuleRepository
         ];
     }
 
+    /** Every (classes_id, section_id, subject_id) combo that actually HAS
+     *  content (a Unit and/or a Module) — for the dashboard's filter
+     *  dropdown, which should only ever offer real, non-empty combos.
+     *  Deliberately NOT the same list as ClassContentModuleController's
+     *  comboOptions() (used by Add Module/Add Unit): that one is Admin's
+     *  full "what am I allowed to create for" list, which cross-joins
+     *  every active Subject onto every active Class/Section — exactly
+     *  right for "create something new", but it would flood this filter
+     *  with empty combinations no Unit or Module has ever actually used.
+     *  $createdBy scopes it to one teacher's own content; null (Admin)
+     *  sees every combo anyone has content in. */
+    public function existingCombos(?int $createdBy = null)
+    {
+        $fetch = fn ($query) => $query
+            ->when($createdBy, fn ($q) => $q->where('created_by', $createdBy))
+            ->with(['class', 'section', 'subject'])
+            ->select('classes_id', 'section_id', 'subject_id')
+            ->distinct()
+            ->get();
+
+        return $fetch(\App\Models\ClassContent\ClassContentUnit::query())
+            ->concat($fetch(ClassContentModule::query()))
+            ->unique(fn ($row) => $row->classes_id . '-' . $row->section_id . '-' . $row->subject_id)
+            ->map(fn ($row) => [
+                'classes_id'   => $row->classes_id,
+                'section_id'   => $row->section_id,
+                'subject_id'   => $row->subject_id,
+                'class_name'   => optional($row->class)->name,
+                'section_name' => optional($row->section)->name,
+                'subject_name' => optional($row->subject)->name,
+            ])
+            ->sortBy(fn ($c) => ($c['class_name'] ?? '') . ($c['section_name'] ?? '') . ($c['subject_name'] ?? ''))
+            ->values();
+    }
+
     /** Coordinator's queue — defaults to what actually needs their
      *  attention (submitted / sent back for changes), but can show
      *  everything so they can also browse what's already moved on. */

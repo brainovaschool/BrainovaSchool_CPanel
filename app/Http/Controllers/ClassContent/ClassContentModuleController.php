@@ -115,6 +115,7 @@ class ClassContentModuleController extends Controller
         $data['dashboard'] = $this->repo->dashboardForTeacher($staffId, $filters);
         $data['counts']    = $this->repo->statusCounts($staffId);
         $data['options']   = $this->comboOptions($staffId);
+        $data['filterOptions'] = $this->repo->existingCombos($staffId);
         $data['filters']   = $filters;
         $data['title']     = 'Class Content';
         return view('class-content.module.index', compact('data'));
