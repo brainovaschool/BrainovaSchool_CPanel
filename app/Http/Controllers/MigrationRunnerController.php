@@ -3633,7 +3633,7 @@ class MigrationRunnerController extends Controller
                 'email' => $coordinatorEmail, 'phone' => '03001234501',
                 'role' => $coordinatorRole->id, 'designation' => $designation->id,
                 'department' => $department->id, 'gender' => $gender->id,
-                'staff_id' => 70001, 'status' => 1,
+                'staff_id' => 70001, 'status' => 1, 'marital_status' => \App\Enums\MaritalStatus::UNMARRIED,
             ]);
             $result = $users->store($fake);
             if ($result !== 1) {
@@ -3653,7 +3653,7 @@ class MigrationRunnerController extends Controller
                 'email' => $teacherEmail, 'phone' => '03001234502',
                 'role' => $teacherRole->id, 'designation' => $designation->id,
                 'department' => $department->id, 'gender' => $gender->id,
-                'staff_id' => 70002, 'status' => 1,
+                'staff_id' => 70002, 'status' => 1, 'marital_status' => \App\Enums\MaritalStatus::UNMARRIED,
                 'coordinators' => [$coordinator->id],
             ]);
             $result = $users->store($fake);
