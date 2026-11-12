@@ -86,9 +86,16 @@ class UserRepository implements UserInterface
         }
     }
 
+    /** Who can be picked as a subject's teacher (Subject Assign) - any
+     *  role that actually grants class_content_create, not just the one
+     *  role literally named "Teacher". A custom role combining Teacher
+     *  with something else (e.g. "Teacher + Social Media") still has this
+     *  permission, so staff on it show up here too - "role_id === 5" would
+     *  have silently excluded them. */
     public function all()
     {
-        return $this->model->active()->where('role_id', 5)->get(); // Teacher role id 5
+        $roleIds = Role::whereJsonContains('permissions', 'class_content_create')->pluck('id');
+        return $this->model->active()->whereIn('role_id', $roleIds)->get();
     }
 
     public function getAll()
