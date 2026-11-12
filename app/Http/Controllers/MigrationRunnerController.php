@@ -3569,6 +3569,240 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . $message . "\n\nTeam Portal growth pay will now show up in Accounts -> Expenses under this category." . '</pre>');
     }
 
+    /** One-off: a complete, self-contained Class Content worked example —
+     *  a demo Department/Class/Subject, a Teacher and the Coordinator
+     *  assigned over them (via staff_coordinators, same as a real
+     *  assignment), one Unit holding one Module already Approved (full
+     *  lessons/materials/activities/outcomes/project/quiz) and one Module
+     *  still Submitted (so there's always something live sitting in the
+     *  Coordinator's queue to act on), and three Students enrolled in that
+     *  class/section so the Approved module is actually visible to
+     *  someone. Every login uses password 123456 — Staff accounts get
+     *  that by default (see UserRepository::store()), Students are told
+     *  to use it explicitly. Fixed emails/titles, so revisiting this URL
+     *  updates the same rows instead of creating duplicates. */
+    public function seedClassContentCourseDemo(string $key, StudentRepository $studentRepo, UserRepository $users)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $report = [];
+
+        $department  = Department::firstOrCreate(['name' => 'Computer Science (Demo)'], ['status' => 1]);
+        $class       = Classes::firstOrCreate(['name' => 'Grade 7 (Demo)'], ['status' => 1]);
+        $subject     = Subject::firstOrCreate(['name' => 'Robotics (Demo)'], ['status' => 1]);
+        $section     = Section::first() ?: Section::create(['name' => 'A', 'status' => 1]);
+        $designation = Designation::firstOrCreate(['name' => 'Teacher'], ['status' => 1]);
+        $gender      = Gender::first() ?: Gender::create(['name' => 'Male']);
+
+        // Same definition seedCoordinatorRole() uses — created here too so
+        // this one URL is enough on a tenant that hasn't run that yet.
+        $coordinatorRole = Role::where('name', 'Coordinator')->first();
+        if (!$coordinatorRole) {
+            $coordinatorRole = Role::create([
+                'name' => 'Coordinator',
+                'slug' => 'coordinator',
+                'permissions' => [
+                    'class_content_coordinator_review',
+                    'student_read',
+                    'report_attendance_read',
+                    'report_marksheet_read',
+                    'report_merit_list_read',
+                    'report_progress_card_read',
+                ],
+            ]);
+            $report[] = 'Created the Coordinator role.';
+        }
+        $teacherRole = Role::where('name', 'Teacher')->first();
+        if (!$teacherRole) {
+            return response('No "Teacher" role found on this tenant — check Settings -> Roles before running this.', 422);
+        }
+
+        // ---- Coordinator staff ----
+        $coordinatorEmail = 'demo.robotics.coordinator@brainovaschool.com';
+        $coordinator = Staff::where('email', $coordinatorEmail)->first();
+        if (!$coordinator) {
+            $fake = new \Illuminate\Http\Request();
+            $fake->merge([
+                'first_name' => 'Sana', 'last_name' => 'Malik',
+                'email' => $coordinatorEmail, 'phone' => '03001234501',
+                'role' => $coordinatorRole->id, 'designation' => $designation->id,
+                'department' => $department->id, 'gender' => $gender->id,
+                'staff_id' => 70001, 'status' => 1,
+            ]);
+            $result = $users->store($fake);
+            if ($result !== 1) {
+                return response('Could not create the demo coordinator (code ' . var_export($result, true) . ' — 2 means the staff subscription limit was reached).', 422);
+            }
+            $coordinator = Staff::where('email', $coordinatorEmail)->latest('id')->first();
+            $report[] = 'Created coordinator: Sana Malik';
+        }
+
+        // ---- Teacher staff, assigned to that coordinator ----
+        $teacherEmail = 'demo.robotics.teacher@brainovaschool.com';
+        $teacher = Staff::where('email', $teacherEmail)->first();
+        if (!$teacher) {
+            $fake = new \Illuminate\Http\Request();
+            $fake->merge([
+                'first_name' => 'Imran', 'last_name' => 'Qureshi',
+                'email' => $teacherEmail, 'phone' => '03001234502',
+                'role' => $teacherRole->id, 'designation' => $designation->id,
+                'department' => $department->id, 'gender' => $gender->id,
+                'staff_id' => 70002, 'status' => 1,
+                'coordinators' => [$coordinator->id],
+            ]);
+            $result = $users->store($fake);
+            if ($result !== 1) {
+                return response('Coordinator created, but could not create the demo teacher (code ' . var_export($result, true) . ').', 422);
+            }
+            $teacher = Staff::where('email', $teacherEmail)->latest('id')->first();
+            $report[] = 'Created teacher: Imran Qureshi (coordinator: Sana Malik)';
+        } else {
+            $teacher->coordinators()->syncWithoutDetaching([$coordinator->id]);
+        }
+
+        // ---- Subject assignment, so Robotics (Demo) shows as a course the teacher teaches ----
+        $assign = SubjectAssign::firstOrCreate(
+            ['session_id' => setting('session'), 'classes_id' => $class->id, 'section_id' => $section->id],
+            ['status' => 1]
+        );
+        SubjectAssignChildren::firstOrCreate(
+            ['subject_assign_id' => $assign->id, 'subject_id' => $subject->id, 'staff_id' => $teacher->id],
+            ['status' => 1]
+        );
+
+        // ---- Unit ----
+        $unit = \App\Models\ClassContent\ClassContentUnit::firstOrCreate(
+            ['classes_id' => $class->id, 'section_id' => $section->id, 'subject_id' => $subject->id, 'title' => 'Unit 1: Getting Started With Robotics'],
+            ['session_id' => setting('session'), 'description' => 'An introduction to robotics for beginners.', 'created_by' => $teacher->id, 'sort_order' => 0]
+        );
+
+        // ---- Module 1: Approved, full content ----
+        $module1 = \App\Models\ClassContent\ClassContentModule::where('unit_id', $unit->id)->where('title', 'Module 1.1 — Introduction to Robotics')->first();
+        if (!$module1) {
+            $module1 = \App\Models\ClassContent\ClassContentModule::create([
+                'session_id' => setting('session'), 'classes_id' => $class->id, 'section_id' => $section->id,
+                'subject_id' => $subject->id, 'unit_id' => $unit->id,
+                'title' => 'Module 1.1 — Introduction to Robotics',
+                'description' => 'The basics every student should know before building anything.',
+                'created_by' => $teacher->id, 'sort_order' => 0,
+                'review_status' => \App\Models\ClassContent\ClassContentModule::APPROVED,
+                'coordinator_id' => $coordinator->id,
+                'coordinator_feedback' => 'Looks great — clear and age-appropriate. Approved to send on.',
+                'coordinator_reviewed_at' => now()->subDays(2),
+                'approved_at' => now()->subDay(),
+            ]);
+
+            $lesson1 = \App\Models\ClassContent\ClassContentLesson::create([
+                'module_id' => $module1->id, 'title' => 'What is Robotics?',
+                'description' => 'Robotics is the branch of technology that deals with designing, building and programming robots — machines that can sense their surroundings and act on their own.',
+                'sort_order' => 0,
+            ]);
+            \App\Models\ClassContent\ClassContentMaterial::create(['lesson_id' => $lesson1->id, 'label' => 'School homepage (placeholder link)', 'url' => 'https://brainovaschool.com', 'sort_order' => 0]);
+            \App\Models\ClassContent\ClassContentActivity::create(['lesson_id' => $lesson1->id, 'title' => 'Spot the robot', 'description' => 'List three robots you have seen in real life, in movies, or at home (e.g. a robot vacuum).', 'sort_order' => 0]);
+            \App\Models\ClassContent\ClassContentOutcome::create(['lesson_id' => $lesson1->id, 'outcome_text' => 'Define what a robot is in your own words.', 'sort_order' => 0]);
+            \App\Models\ClassContent\ClassContentOutcome::create(['lesson_id' => $lesson1->id, 'outcome_text' => 'Name two places robots are used in everyday life.', 'sort_order' => 1]);
+
+            $lesson2 = \App\Models\ClassContent\ClassContentLesson::create([
+                'module_id' => $module1->id, 'title' => 'Parts of a Robot',
+                'description' => 'Every robot has three basic parts: sensors (to sense the world), a controller (to decide what to do), and actuators (to act — move, grip, etc.).',
+                'sort_order' => 1,
+                'project_title' => 'Label a Robot',
+                'project_description' => 'Draw a simple robot and label its sensor, controller and actuator.',
+                'project_link_url' => 'https://brainovaschool.com',
+                'quiz_title' => 'Parts of a Robot — Quick Check',
+                'quiz_description' => '5 short questions on sensors, controllers and actuators.',
+                'quiz_link_url' => 'https://brainovaschool.com',
+            ]);
+            \App\Models\ClassContent\ClassContentMaterial::create(['lesson_id' => $lesson2->id, 'label' => 'School homepage (placeholder link)', 'url' => 'https://brainovaschool.com', 'sort_order' => 0]);
+            \App\Models\ClassContent\ClassContentActivity::create(['lesson_id' => $lesson2->id, 'title' => 'Build with blocks', 'description' => 'Using any blocks/Lego at home, build a simple "robot" and point out its three parts.', 'sort_order' => 0]);
+            \App\Models\ClassContent\ClassContentOutcome::create(['lesson_id' => $lesson2->id, 'outcome_text' => 'Identify the sensor, controller and actuator on a given robot diagram.', 'sort_order' => 0]);
+            \App\Models\ClassContent\ClassContentOutcome::create(['lesson_id' => $lesson2->id, 'outcome_text' => 'Explain why a robot needs all three parts to work.', 'sort_order' => 1]);
+
+            $report[] = 'Created Module 1.1 (Approved) with 2 lessons.';
+        }
+
+        // ---- Module 2: Submitted, waiting in the Coordinator's queue ----
+        $module2 = \App\Models\ClassContent\ClassContentModule::where('unit_id', $unit->id)->where('title', 'Module 1.2 — Building Your First Robot')->first();
+        if (!$module2) {
+            $module2 = \App\Models\ClassContent\ClassContentModule::create([
+                'session_id' => setting('session'), 'classes_id' => $class->id, 'section_id' => $section->id,
+                'subject_id' => $subject->id, 'unit_id' => $unit->id,
+                'title' => 'Module 1.2 — Building Your First Robot',
+                'description' => 'A hands-on first build, ready for your review.',
+                'created_by' => $teacher->id, 'sort_order' => 1,
+                'review_status' => \App\Models\ClassContent\ClassContentModule::SUBMITTED,
+                'submitted_at' => now(),
+            ]);
+            $lesson3 = \App\Models\ClassContent\ClassContentLesson::create([
+                'module_id' => $module2->id, 'title' => 'Building a Simple Line-Follower',
+                'description' => 'Step-by-step build of a basic robot that follows a line drawn on paper.',
+                'sort_order' => 0,
+            ]);
+            \App\Models\ClassContent\ClassContentMaterial::create(['lesson_id' => $lesson3->id, 'label' => 'Build sheet (placeholder link)', 'url' => 'https://brainovaschool.com', 'sort_order' => 0]);
+            \App\Models\ClassContent\ClassContentActivity::create(['lesson_id' => $lesson3->id, 'title' => 'Build & test', 'description' => 'Build the line-follower and test it on a hand-drawn track.', 'sort_order' => 0]);
+            \App\Models\ClassContent\ClassContentOutcome::create(['lesson_id' => $lesson3->id, 'outcome_text' => 'Assemble a simple robot from a kit following written steps.', 'sort_order' => 0]);
+
+            $report[] = 'Created Module 1.2 (Submitted — waiting in Coordinator Review).';
+
+            if ($coordinator->user_id) {
+                \App\Services\Portal\PortalNotifier::send(
+                    $coordinator->user_id,
+                    'Module submitted for review',
+                    $module2->title,
+                    route('class-content-coordinator.show', $module2->id)
+                );
+            }
+        }
+
+        // ---- Students, enrolled in the same class/section ----
+        $studentDefs = [
+            ['first' => 'Ali',   'last' => 'Demo', 'email' => 'demo.robotics.student1@brainovaschool.com'],
+            ['first' => 'Zara',  'last' => 'Demo', 'email' => 'demo.robotics.student2@brainovaschool.com'],
+            ['first' => 'Bilal', 'last' => 'Demo', 'email' => 'demo.robotics.student3@brainovaschool.com'],
+        ];
+        $studentLogins = [];
+        foreach ($studentDefs as $i => $s) {
+            $student = Student::where('email', $s['email'])->first();
+            if (!$student) {
+                $fake = new \Illuminate\Http\Request();
+                $fake->merge([
+                    'first_name' => $s['first'], 'last_name' => $s['last'], 'email' => $s['email'],
+                    'mobile' => '0300888800' . $i, 'admission_no' => 'DEMO-ROBOTICS-' . ($i + 1),
+                    'password_type' => 'custom', 'password' => '123456',
+                    'date_of_birth' => '2013-01-01', 'admission_date' => now()->format('Y-m-d'),
+                    'status' => 1, 'class' => $class->id, 'section' => $section->id, 'siblings_discount' => 0,
+                ]);
+                $result = $studentRepo->store($fake);
+                if (!$result['status']) {
+                    return response('Everything else is done, but could not create student ' . $s['email'] . ': ' . $result['message'], 422);
+                }
+                $report[] = "Created student: {$s['first']} {$s['last']} ({$s['email']})";
+            }
+            $studentLogins[] = "{$s['first']} {$s['last']} — {$s['email']}";
+        }
+
+        return response(
+            '<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">'
+            . implode("\n", $report)
+            . "\n\n=== LOGINS (every password is 123456) ===\n\n"
+            . "COORDINATOR\n  Sana Malik — {$coordinatorEmail}\n\n"
+            . "TEACHER\n  Imran Qureshi — {$teacherEmail}\n\n"
+            . "STUDENTS\n  " . implode("\n  ", $studentLogins) . "\n\n"
+            . "Class: {$class->name}  |  Subject: {$subject->name}  |  Section: {$section->name}\n"
+            . "Unit: {$unit->title}\n"
+            . "  - {$module1->title} — Approved, visible to the 3 students above\n"
+            . "  - {$module2->title} — Submitted, open it as Sana Malik under Class Content -> Coordinator Review\n"
+            . "\nMaterial/project/quiz links are placeholders pointing at the school homepage — replace them with real links any time from Edit."
+            . '</pre>'
+        );
+    }
+
     /** Read-only: dumps every "Coordinator"-named Role row (in case more
      *  than one exists) and every User whose role_id matches one of them —
      *  their raw role permissions, their raw personal permissions snapshot,

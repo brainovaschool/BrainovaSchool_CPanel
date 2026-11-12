@@ -247,6 +247,9 @@ Route::middleware(saasMiddleware())->group(function () {
             // One-off: credit every demo student with 5000 test coins to try out the avatar shop's buy flow (admin-only + key).
             Route::get('/db/grant-test-coins/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'grantTestCoins']);
 
+            // One-off: full Class Content worked example from scratch — demo Department/Class/Subject, a Teacher + their Coordinator, a Unit with one Approved and one Submitted module (full lessons/materials/activities/outcomes), and 3 students enrolled to see the Approved one. Every login: 123456 (admin-only + key).
+            Route::get('/db/seed-class-content-course-demo/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedClassContentCourseDemo']);
+
             Route::controller(LanguageController::class)->prefix('languages')->group(function () {
                 Route::get('/change',                   'changeLanguage')->name('languages.change');
             });
