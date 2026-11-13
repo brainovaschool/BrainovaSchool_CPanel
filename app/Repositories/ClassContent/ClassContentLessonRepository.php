@@ -123,9 +123,7 @@ class ClassContentLessonRepository
 
         ClassContentMaterial::where('lesson_id', $lesson->id)->delete();
         foreach ((array) $request->input('materials.label', []) as $i => $label) {
-            if (trim((string) $label) === '') {
-                continue;
-            }
+            $label = trim((string) $label);
 
             $storageKey = $request->input("materials.existing_storage_key.{$i}") ?: null;
             $originalFilename = $request->input("materials.existing_original_filename.{$i}") ?: null;
@@ -133,7 +131,7 @@ class ClassContentLessonRepository
 
             $file = $request->file("materials.file.{$i}");
             if ($file && !$file->isValid()) {
-                $warnings[] = "\"{$label}\": the file didn't upload properly (code {$file->getError()}) - try again.";
+                $warnings[] = "\"" . ($label ?: 'Untitled material') . "\": the file didn't upload properly (code {$file->getError()}) - try again.";
             } elseif ($file && $file->isValid()) {
                 $uploaded = $this->storage->upload($file, 'class-content-materials');
                 if ($uploaded['ok']) {
@@ -141,12 +139,20 @@ class ClassContentLessonRepository
                     $originalFilename = $uploaded['original_filename'];
                     $url = '';
                 } else {
-                    $warnings[] = "\"{$label}\": " . $uploaded['message'];
+                    $warnings[] = "\"" . ($label ?: 'Untitled material') . "\": " . $uploaded['message'];
                 }
             }
 
-            if (!$storageKey && $url === '') {
+            if ($label === '' && !$storageKey && $url === '') {
                 continue;
+            }
+
+            // A blank label with a real file/link attached is a minor
+            // oversight, not a reason to throw the whole thing away - fall
+            // back to the filename (or just "Link") rather than silently
+            // dropping it, which is what used to happen here.
+            if ($label === '') {
+                $label = $originalFilename ?: 'Link';
             }
 
             ClassContentMaterial::create([
