@@ -120,7 +120,7 @@
                     </div>
                 </div>
             @endforelse
-            <p class="text-secondary mt-3" style="font-size: 13px;">Click "Details & tasks" on any goal for its output, prerequisites and assigned tasks (each with its own deadline). "Assign a task here" creates a real Task Board task linked to that goal — it shows up in My Tasks, where it's edited with full details, same as any other task.</p>
+            <p class="text-secondary mt-3" style="font-size: 13px;">Click "Details & tasks" on any goal for its assigned tasks (each with its own deadline). "Assign a task here" creates a real Task Board task linked to that goal — it shows up in My Tasks, where it's edited with full details, same as any other task.</p>
         @endif
 
     </div>
@@ -142,6 +142,8 @@
     .goal-node-main { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
     .goal-tier-badge { font-size: 10px; font-weight: 700; letter-spacing: .04em; padding: 3px 8px; border-radius: 999px; }
     .goal-timeline, .goal-progress-text, .goal-owner { font-size: 12px; color: var(--ot-text-secondary, #5b6472); }
+    .goal-delete { border: none; background: none; color: #b91c1c; font-size: 13px; padding: 4px 6px; cursor: pointer; margin-left: auto; }
+    .goal-delete:hover { color: #7f1d1d; }
 
     .goal-details > summary,
     .goal-children > summary,
@@ -153,7 +155,6 @@
         margin-top: 10px;
     }
     .goal-details-body { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--ot-border-basic-table, #e4e7ec); }
-    .goal-details-label { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ot-text-secondary, #8b93a3); margin-bottom: 4px; }
     .goal-description { font-size: 13px; color: var(--ot-text-primary, #334058); line-height: 1.5; margin: 2px 0 8px; white-space: pre-wrap; }
 
     .goal-task-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--ot-border-basic-table, #edeef1); font-size: 13px; }

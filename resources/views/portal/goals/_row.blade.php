@@ -31,6 +31,9 @@
         @if ($goal->owner)
             <span class="goal-owner">{{ trim($goal->owner->first_name . ' ' . $goal->owner->last_name) }}</span>
         @endif
+        <button type="button" class="goal-delete" title="Delete this {{ strtolower($tierMeta['label']) }}" onclick="delete_row('portal/goals', {{ $goal->id }})">
+            <i class="fa-solid fa-trash-can"></i>
+        </button>
     </div>
 
     @if ($goal->description)
@@ -41,7 +44,6 @@
         <summary>Details &amp; tasks</summary>
         <div class="goal-details-body">
             <div class="goal-tasks">
-                <div class="goal-details-label">Tasks assigned directly under this {{ strtolower($tierMeta['label']) }}</div>
                 @forelse ($goal->tasks as $task)
                     <div class="goal-task-row" id="row_{{ $task->id }}">
                         <a href="{{ route('portal-tasks.show', $task->id) }}">{{ $task->title }}</a>
@@ -120,7 +122,6 @@
                         </div>
                     </div>
                     <button type="submit" class="btn btn-sm ot-btn-primary">Save changes</button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="delete_row('portal/goals', {{ $goal->id }})">Delete</button>
                 </form>
             </details>
 
