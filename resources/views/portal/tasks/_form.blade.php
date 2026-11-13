@@ -145,7 +145,9 @@
                 <label class="btn btn-lg ot-btn-primary" for="refFileInput">Browse</label>
                 <input type="file" class="d-none bn-file-input" id="refFileInput" name="ref_file">
             </button>
+            <button type="button" class="btn btn-lg btn-outline-secondary bn-file-clear" title="Remove the selected file">Remove</button>
         </div>
+        <small class="text-secondary">Picking a file again after Browse — or just closing the picker without choosing one — does not clear it; use Remove instead.</small>
     </div>
     <div class="col-md-6">
         <label class="form-label">Internal notes (not shown to employee unless you say so)</label>
@@ -171,6 +173,18 @@
         if (placeholder) {
             placeholder.value = e.target.files.length ? e.target.files[0].name : '';
         }
+    });
+
+    // Re-opening the Browse dialog and cancelling it leaves the previous
+    // selection in place (normal browser behaviour) - this is the only
+    // way to actually clear it before submitting.
+    document.addEventListener('click', function (e) {
+        if (!e.target.classList.contains('bn-file-clear')) return;
+        var wrapper = e.target.closest('.ot_fileUploader');
+        var fileInput = wrapper ? wrapper.querySelector('.bn-file-input') : null;
+        var placeholder = wrapper ? wrapper.querySelector('.bn-file-placeholder') : null;
+        if (fileInput) fileInput.value = '';
+        if (placeholder) placeholder.value = '';
     });
 </script>
 @endpush
