@@ -21,7 +21,7 @@
 
         <div class="card ot-card">
             <div class="card-body">
-                <form action="{{ route('class-content-module.lessons.update', [$data['module']->id, $data['item']->id]) }}" method="post">
+                <form action="{{ route('class-content-module.lessons.update', [$data['module']->id, $data['item']->id]) }}" method="post" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     @include('class-content.lesson._form')

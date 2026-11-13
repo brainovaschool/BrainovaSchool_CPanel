@@ -6,11 +6,19 @@ use App\Models\ClassContent\ClassContentActivity;
 use App\Models\ClassContent\ClassContentLesson;
 use App\Models\ClassContent\ClassContentMaterial;
 use App\Models\ClassContent\ClassContentOutcome;
+use App\Services\B2Storage;
 use App\Traits\ReturnFormatTrait;
 
 class ClassContentLessonRepository
 {
     use ReturnFormatTrait;
+
+    private B2Storage $storage;
+
+    public function __construct(B2Storage $storage)
+    {
+        $this->storage = $storage;
+    }
 
     public function forModule(int $moduleId)
     {
@@ -102,20 +110,44 @@ class ClassContentLessonRepository
     /** Materials/Activities/Outcomes are always replaced whole on save —
      *  simpler and safer than diffing individual rows, and the teacher's
      *  one form already shows everything at once, so nothing is ever
-     *  edited blind. */
+     *  edited blind. A material's file can't be resubmitted by the browser
+     *  on edit (file inputs never carry a previous selection), so the form
+     *  echoes the existing storage_key/original_filename back as hidden
+     *  fields and this carries them forward untouched unless a new file
+     *  was actually chosen. */
     private function syncChildren(ClassContentLesson $lesson, $request): void
     {
         ClassContentMaterial::where('lesson_id', $lesson->id)->delete();
         foreach ((array) $request->input('materials.label', []) as $i => $label) {
-            $url = $request->input("materials.url.{$i}");
-            if (trim((string) $label) === '' || trim((string) $url) === '') {
+            if (trim((string) $label) === '') {
                 continue;
             }
+
+            $storageKey = $request->input("materials.existing_storage_key.{$i}") ?: null;
+            $originalFilename = $request->input("materials.existing_original_filename.{$i}") ?: null;
+            $url = trim((string) $request->input("materials.url.{$i}"));
+
+            $file = $request->file("materials.file.{$i}");
+            if ($file && $file->isValid()) {
+                $uploaded = $this->storage->upload($file, 'class-content-materials');
+                if ($uploaded['ok']) {
+                    $storageKey = $uploaded['storage_key'];
+                    $originalFilename = $uploaded['original_filename'];
+                    $url = '';
+                }
+            }
+
+            if (!$storageKey && $url === '') {
+                continue;
+            }
+
             ClassContentMaterial::create([
-                'lesson_id'  => $lesson->id,
-                'label'      => $label,
-                'url'        => $url,
-                'sort_order' => $i,
+                'lesson_id'         => $lesson->id,
+                'label'             => $label,
+                'url'               => $storageKey ? null : $url,
+                'storage_key'       => $storageKey,
+                'original_filename' => $originalFilename,
+                'sort_order'        => $i,
             ]);
         }
 

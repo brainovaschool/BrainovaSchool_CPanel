@@ -26,7 +26,7 @@
                 <div class="cc-section__title"><i class="fa-solid fa-paperclip"></i> Materials</div>
                 <ul class="cc-link-list">
                     @foreach ($lesson->materials as $mat)
-                        <li><a href="{{ $mat->url }}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> {{ $mat->label }}</a></li>
+                        <li><a href="{{ $mat->downloadUrl() }}" target="_blank" rel="noopener"><i class="fa-solid {{ $mat->storage_key ? 'fa-file-arrow-down' : 'fa-arrow-up-right-from-square' }}"></i> {{ $mat->label }}</a></li>
                     @endforeach
                 </ul>
             </div>

@@ -91,7 +91,7 @@
                             <div class="cc-section-label">Materials</div>
                             <ul class="cc-link-list">
                                 @foreach ($lesson->materials as $mat)
-                                    <li><a href="{{ $mat->url }}" target="_blank" rel="noopener">{{ $mat->label }}</a></li>
+                                    <li><a href="{{ $mat->downloadUrl() }}" target="_blank" rel="noopener">{{ $mat->label }}</a></li>
                                 @endforeach
                             </ul>
                         </div>

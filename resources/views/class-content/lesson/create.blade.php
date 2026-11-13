@@ -21,7 +21,7 @@
 
         <div class="card ot-card">
             <div class="card-body">
-                <form action="{{ route('class-content-module.lessons.store', $data['module']->id) }}" method="post">
+                <form action="{{ route('class-content-module.lessons.store', $data['module']->id) }}" method="post" enctype="multipart/form-data">
                     @csrf
                     @include('class-content.lesson._form')
                 </form>

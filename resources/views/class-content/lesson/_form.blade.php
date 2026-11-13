@@ -2,8 +2,13 @@
     $l = $data['item'] ?? null;
 
     $materialRows = old('materials.label') !== null
-        ? collect(old('materials.label'))->map(fn ($label, $i) => ['label' => $label, 'url' => old("materials.url.$i")])
-        : ($l ? $l->materials->map(fn ($mat) => ['label' => $mat->label, 'url' => $mat->url]) : collect());
+        ? collect(old('materials.label'))->map(fn ($label, $i) => [
+            'label' => $label,
+            'url' => old("materials.url.$i"),
+            'storage_key' => old("materials.existing_storage_key.$i"),
+            'original_filename' => old("materials.existing_original_filename.$i"),
+        ])
+        : ($l ? $l->materials->map(fn ($mat) => ['label' => $mat->label, 'url' => $mat->url, 'storage_key' => $mat->storage_key, 'original_filename' => $mat->original_filename]) : collect());
 
     $activityRows = old('activities.title') !== null
         ? collect(old('activities.title'))->map(fn ($title, $i) => [
@@ -56,15 +61,23 @@
             <h5 class="mb-0"><i class="fa-solid fa-paperclip me-1"></i> Materials</h5>
             <button type="button" class="btn btn-sm ot-btn-primary" id="addMaterialRow"><i class="fa-solid fa-plus"></i> Add material</button>
         </div>
-        <p class="text-secondary mb-2" style="font-size:.85rem;">Worksheets, slides, reference links — anything the student can open.</p>
+        <p class="text-secondary mb-2" style="font-size:.85rem;">Worksheets, slides, presentations — upload a file, or paste a link instead. If both are given, the uploaded file is used.</p>
         <div id="materialsWrap">
             @foreach ($materialRows as $mat)
                 <div class="row repeater-row align-items-center">
-                    <div class="col-md-5 mb-2">
-                        <input class="form-control ot-input" name="materials[label][]" value="{{ $mat['label'] }}" placeholder="Label, e.g. Worksheet PDF">
+                    <div class="col-md-3 mb-2">
+                        <input class="form-control ot-input" name="materials[label][]" value="{{ $mat['label'] }}" placeholder="Label, e.g. Unit 3 Slides">
                     </div>
-                    <div class="col-md-6 mb-2">
-                        <input class="form-control ot-input" name="materials[url][]" value="{{ $mat['url'] }}" placeholder="Link">
+                    <div class="col-md-3 mb-2">
+                        <input class="form-control ot-input" name="materials[url][]" value="{{ $mat['url'] }}" placeholder="Link (optional)">
+                    </div>
+                    <div class="col-md-5 mb-2">
+                        <input type="file" class="form-control ot-input" name="materials[file][]">
+                        @if (!empty($mat['original_filename']))
+                            <small class="text-secondary d-block">Current file: {{ $mat['original_filename'] }} — choose a new one to replace it.</small>
+                        @endif
+                        <input type="hidden" name="materials[existing_storage_key][]" value="{{ $mat['storage_key'] }}">
+                        <input type="hidden" name="materials[existing_original_filename][]" value="{{ $mat['original_filename'] }}">
                     </div>
                     <div class="col-md-1 mb-2">
                         <button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="fa-solid fa-trash-can"></i></button>
@@ -74,11 +87,16 @@
         </div>
         <template id="materialRowTemplate">
             <div class="row repeater-row align-items-center">
-                <div class="col-md-5 mb-2">
-                    <input class="form-control ot-input" name="materials[label][]" value="" placeholder="Label, e.g. Worksheet PDF">
+                <div class="col-md-3 mb-2">
+                    <input class="form-control ot-input" name="materials[label][]" value="" placeholder="Label, e.g. Unit 3 Slides">
                 </div>
-                <div class="col-md-6 mb-2">
-                    <input class="form-control ot-input" name="materials[url][]" value="" placeholder="Link">
+                <div class="col-md-3 mb-2">
+                    <input class="form-control ot-input" name="materials[url][]" value="" placeholder="Link (optional)">
+                </div>
+                <div class="col-md-5 mb-2">
+                    <input type="file" class="form-control ot-input" name="materials[file][]">
+                    <input type="hidden" name="materials[existing_storage_key][]" value="">
+                    <input type="hidden" name="materials[existing_original_filename][]" value="">
                 </div>
                 <div class="col-md-1 mb-2">
                     <button type="button" class="btn btn-sm btn-outline-danger remove-row"><i class="fa-solid fa-trash-can"></i></button>

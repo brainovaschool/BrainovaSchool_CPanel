@@ -164,6 +164,7 @@ class ClassContentLessonController extends Controller
             'quiz_title'          => 'nullable|string|max:150',
             'quiz_description'    => 'nullable|string|max:3000',
             'quiz_link_url'       => 'nullable|string|max:500',
+            'materials.file.*'    => 'nullable|file|max:51200',
         ]);
     }
 }
