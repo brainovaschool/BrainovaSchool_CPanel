@@ -33,20 +33,13 @@
         @endif
     </div>
 
+    @if ($goal->description)
+        <div class="goal-description">{{ $goal->description }}</div>
+    @endif
+
     <details class="goal-details">
         <summary>Details &amp; tasks</summary>
         <div class="goal-details-body">
-            <div class="goal-details-grid">
-                <div>
-                    <div class="goal-details-label">Output / deliverable</div>
-                    <div class="goal-details-value">{{ $goal->output ?: 'Not defined yet.' }}</div>
-                </div>
-                <div>
-                    <div class="goal-details-label">Prerequisites</div>
-                    <div class="goal-details-value">{{ $goal->prerequisites ?: 'None.' }}</div>
-                </div>
-            </div>
-
             <div class="goal-tasks">
                 <div class="goal-details-label">Tasks assigned directly under this {{ strtolower($tierMeta['label']) }}</div>
                 @forelse ($goal->tasks as $task)
@@ -96,8 +89,7 @@
                     @csrf
                     @method('PUT')
                     <input type="text" name="title" value="{{ $goal->title }}" class="form-control ot-input mb-2" required maxlength="150">
-                    <textarea name="output" class="form-control ot-input mb-2" rows="2" placeholder="Output / deliverable">{{ $goal->output }}</textarea>
-                    <textarea name="prerequisites" class="form-control ot-input mb-2" rows="2" placeholder="Prerequisites">{{ $goal->prerequisites }}</textarea>
+                    <textarea name="description" class="form-control ot-input mb-2" rows="2" placeholder="Description">{{ $goal->description }}</textarea>
                     <div class="row g-2 mb-2">
                         <div class="col-6">
                             <label class="form-label small mb-1">Start date</label>
@@ -138,8 +130,7 @@
                     @csrf
                     <input type="hidden" name="parent_id" value="{{ $goal->id }}">
                     <input type="text" name="title" class="form-control ot-input mb-2" placeholder="Title" required maxlength="150">
-                    <textarea name="output" class="form-control ot-input mb-2" rows="2" placeholder="Output / deliverable"></textarea>
-                    <textarea name="prerequisites" class="form-control ot-input mb-2" rows="2" placeholder="Prerequisites"></textarea>
+                    <textarea name="description" class="form-control ot-input mb-2" rows="2" placeholder="Description"></textarea>
                     <div class="row g-2 mb-2">
                         <div class="col-6">
                             <label class="form-label small mb-1">Start date</label>

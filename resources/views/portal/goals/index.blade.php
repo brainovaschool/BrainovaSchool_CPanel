@@ -153,9 +153,8 @@
         margin-top: 10px;
     }
     .goal-details-body { margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--ot-border-basic-table, #e4e7ec); }
-    .goal-details-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 12px; }
     .goal-details-label { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ot-text-secondary, #8b93a3); margin-bottom: 4px; }
-    .goal-details-value { font-size: 13px; color: var(--ot-text-primary, #334058); line-height: 1.5; }
+    .goal-description { font-size: 13px; color: var(--ot-text-primary, #334058); line-height: 1.5; margin: 2px 0 8px; white-space: pre-wrap; }
 
     .goal-task-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px dashed var(--ot-border-basic-table, #edeef1); font-size: 13px; }
     .goal-no-tasks { font-size: 13px; color: var(--ot-text-secondary, #8b93a3); margin: 6px 0; }

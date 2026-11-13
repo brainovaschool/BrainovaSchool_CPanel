@@ -61,8 +61,7 @@ class PortalGoalRepository
             PortalGoal::create([
                 'parent_id'      => $request->filled('parent_id') ? $request->parent_id : null,
                 'title'          => $request->title,
-                'output'         => $request->output,
-                'prerequisites'  => $request->prerequisites,
+                'description'    => $request->description,
                 'owner_staff_id' => $request->owner_staff_id ?: null,
                 'status'         => $request->status ?: PortalGoal::NOT_STARTED,
                 'start_date'     => $request->start_date ?: null,
@@ -84,8 +83,7 @@ class PortalGoalRepository
 
         try {
             $goal->title          = $request->title;
-            $goal->output         = $request->output;
-            $goal->prerequisites  = $request->prerequisites;
+            $goal->description    = $request->description;
             $goal->owner_staff_id = $request->owner_staff_id ?: null;
             $goal->status         = $request->status ?: PortalGoal::NOT_STARTED;
             $goal->start_date     = $request->start_date ?: null;
