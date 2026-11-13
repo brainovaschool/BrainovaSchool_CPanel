@@ -24,6 +24,17 @@
         : ($l ? $l->outcomes->pluck('outcome_text') : collect());
 @endphp
 
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <strong>Please fix the following before saving:</strong>
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <div class="row">
     <div class="col-md-6 mb-3">
         <label class="form-label">Lesson Title <span class="fillable">*</span></label>
