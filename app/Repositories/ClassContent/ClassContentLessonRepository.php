@@ -52,11 +52,12 @@ class ClassContentLessonRepository
             $this->fillProjectAndQuiz($row, $request);
             $row->save();
 
-            $this->syncChildren($row, $request);
+            $warnings = $this->syncChildren($row, $request);
 
-            return $this->responseWithSuccess(___('alert.created_successfully'), ['id' => $row->id]);
+            $message = ___('alert.created_successfully') . ($warnings ? ' — but: ' . implode(' ', $warnings) : '');
+            return $this->responseWithSuccess($message, ['id' => $row->id]);
         } catch (\Throwable $th) {
-            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again') . ' (' . $th->getMessage() . ')', []);
         }
     }
 
@@ -72,11 +73,12 @@ class ClassContentLessonRepository
             $this->fillProjectAndQuiz($row, $request);
             $row->save();
 
-            $this->syncChildren($row, $request);
+            $warnings = $this->syncChildren($row, $request);
 
-            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+            $message = ___('alert.updated_successfully') . ($warnings ? ' — but: ' . implode(' ', $warnings) : '');
+            return $this->responseWithSuccess($message, []);
         } catch (\Throwable $th) {
-            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again') . ' (' . $th->getMessage() . ')', []);
         }
     }
 
@@ -115,8 +117,10 @@ class ClassContentLessonRepository
      *  echoes the existing storage_key/original_filename back as hidden
      *  fields and this carries them forward untouched unless a new file
      *  was actually chosen. */
-    private function syncChildren(ClassContentLesson $lesson, $request): void
+    private function syncChildren(ClassContentLesson $lesson, $request): array
     {
+        $warnings = [];
+
         ClassContentMaterial::where('lesson_id', $lesson->id)->delete();
         foreach ((array) $request->input('materials.label', []) as $i => $label) {
             if (trim((string) $label) === '') {
@@ -128,12 +132,16 @@ class ClassContentLessonRepository
             $url = trim((string) $request->input("materials.url.{$i}"));
 
             $file = $request->file("materials.file.{$i}");
-            if ($file && $file->isValid()) {
+            if ($file && !$file->isValid()) {
+                $warnings[] = "\"{$label}\": the file didn't upload properly (code {$file->getError()}) - try again.";
+            } elseif ($file && $file->isValid()) {
                 $uploaded = $this->storage->upload($file, 'class-content-materials');
                 if ($uploaded['ok']) {
                     $storageKey = $uploaded['storage_key'];
                     $originalFilename = $uploaded['original_filename'];
                     $url = '';
+                } else {
+                    $warnings[] = "\"{$label}\": " . $uploaded['message'];
                 }
             }
 
@@ -177,5 +185,7 @@ class ClassContentLessonRepository
                 'sort_order'   => $i,
             ]);
         }
+
+        return $warnings;
     }
 }
