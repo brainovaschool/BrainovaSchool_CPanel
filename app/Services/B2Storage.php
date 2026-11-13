@@ -20,12 +20,22 @@ use Illuminate\Support\Facades\Log;
  */
 class B2Storage
 {
+    /** Reads straight from env() rather than config('services.b2.*') -
+     *  config() went stale on this host (a copy of config/services.php
+     *  with no 'b2' key kept being served from PHP's opcode cache even
+     *  after clearing Laravel's own config cache and resetting opcache),
+     *  while env() read the real, current .env value every time. */
+    private function credential(string $key): string
+    {
+        return (string) env($key);
+    }
+
     public function isConfigured(): bool
     {
-        return (bool) config('services.b2.key_id')
-            && (bool) config('services.b2.application_key')
-            && (bool) config('services.b2.bucket_id')
-            && (bool) config('services.b2.bucket_name');
+        return $this->credential('B2_KEY_ID') !== ''
+            && $this->credential('B2_APPLICATION_KEY') !== ''
+            && $this->credential('B2_BUCKET_ID') !== ''
+            && $this->credential('B2_BUCKET_NAME') !== '';
     }
 
     /** Never caches a failure - only ever caches a successful session, so
@@ -38,8 +48,8 @@ class B2Storage
             return $cached;
         }
 
-        $keyId = config('services.b2.key_id');
-        $appKey = config('services.b2.application_key');
+        $keyId = $this->credential('B2_KEY_ID');
+        $appKey = $this->credential('B2_APPLICATION_KEY');
 
         $session = (function () use ($keyId, $appKey) {
             $response = Http::withBasicAuth($keyId, $appKey)
@@ -80,7 +90,7 @@ class B2Storage
         try {
             $getUploadUrl = Http::withToken($session['authorizationToken'])
                 ->post($session['apiUrl'] . '/b2api/v3/b2_get_upload_url', [
-                    'bucketId' => config('services.b2.bucket_id'),
+                    'bucketId' => $this->credential('B2_BUCKET_ID'),
                 ]);
 
             if (!$getUploadUrl->successful()) {
@@ -121,7 +131,7 @@ class B2Storage
         try {
             $auth = Http::withToken($session['authorizationToken'])
                 ->post($session['apiUrl'] . '/b2api/v3/b2_get_download_authorization', [
-                    'bucketId' => config('services.b2.bucket_id'),
+                    'bucketId' => $this->credential('B2_BUCKET_ID'),
                     'fileNamePrefix' => $storageKey,
                     'validDurationInSeconds' => $ttlSeconds,
                 ]);
@@ -131,7 +141,7 @@ class B2Storage
                 return null;
             }
 
-            $bucketName = config('services.b2.bucket_name');
+            $bucketName = $this->credential('B2_BUCKET_NAME');
             return $session['downloadUrl'] . '/file/' . $bucketName . '/' . implode('/', array_map('rawurlencode', explode('/', $storageKey)))
                 . '?Authorization=' . $auth->json('authorizationToken');
         } catch (\Throwable $th) {

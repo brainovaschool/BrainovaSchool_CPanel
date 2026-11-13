@@ -3315,20 +3315,13 @@ class MigrationRunnerController extends Controller
         return response(
             '<div style="font:14px/1.6 monospace;padding:24px;max-width:700px;">'
             . '<h3>Backblaze B2 upload test</h3>'
-            . '<p>B2 credentials configured in .env: <strong>' . ($storage->isConfigured() ? 'yes' : 'NO - the B2_... lines are missing') . '</strong></p>'
-            . '<p style="color:#666;">config() sees -'
-            . ' key_id: ' . $mask(config('services.b2.key_id'))
-            . ' | application_key: ' . $mask(config('services.b2.application_key'))
-            . ' | bucket_id: ' . $mask(config('services.b2.bucket_id'))
-            . ' | bucket_name: ' . $mask(config('services.b2.bucket_name'))
-            . '</p>'
-            . '<p style="color:#666;">env() sees (bypasses any cached config) -'
+            . '<p>B2 credentials seen via env(): <strong>' . ($storage->isConfigured() ? 'yes' : 'NO - the B2_... lines are missing') . '</strong></p>'
+            . '<p style="color:#666;">'
             . ' key_id: ' . $mask(env('B2_KEY_ID'))
             . ' | application_key: ' . $mask(env('B2_APPLICATION_KEY'))
             . ' | bucket_id: ' . $mask(env('B2_BUCKET_ID'))
             . ' | bucket_name: ' . $mask(env('B2_BUCKET_NAME'))
             . '</p>'
-            . '<p style="color:#666;">Config cache file exists: <strong>' . (file_exists(base_path('bootstrap/cache/config.php')) ? 'YES - this is very likely the problem' : 'no') . '</strong></p>'
             . '<form method="post" enctype="multipart/form-data">'
             . csrf_field()
             . '<input type="file" name="test_file" required> '
