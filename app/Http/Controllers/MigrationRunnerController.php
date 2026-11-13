@@ -3267,6 +3267,60 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /** Isolated test of the Backblaze B2 upload path, with nothing else in
+     *  the way (no lesson form, no validation, no materials array) - pick
+     *  a file, see exactly what B2Storage says, and if it worked, a link
+     *  to actually open the file back from Backblaze (admin-only + key). */
+    public function b2Test(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $storage = app(\App\Services\B2Storage::class);
+        $result  = null;
+
+        if (request()->isMethod('post')) {
+            $file = request()->file('test_file');
+            if (!$file) {
+                $result = ['ok' => false, 'message' => 'No file was received - choose one and submit again.'];
+            } elseif (!$file->isValid()) {
+                $result = ['ok' => false, 'message' => 'The file did not upload properly (error code ' . $file->getError() . ').'];
+            } else {
+                $result = $storage->upload($file, 'b2-test');
+                if ($result['ok']) {
+                    $result['download_url'] = $storage->temporaryDownloadUrl($result['storage_key']);
+                }
+            }
+        }
+
+        $resultHtml = '';
+        if ($result) {
+            $resultHtml = $result['ok']
+                ? '<p style="color:green;font-weight:bold;">Upload succeeded.</p>'
+                    . '<p>Storage key: ' . e($result['storage_key']) . '</p>'
+                    . '<p><a href="' . e($result['download_url']) . '" target="_blank">Click here to view/download the file back from Backblaze</a> (link expires in 10 minutes).</p>'
+                : '<p style="color:#b91c1c;font-weight:bold;">Upload failed: ' . e($result['message']) . '</p>';
+        }
+
+        return response(
+            '<div style="font:14px/1.6 monospace;padding:24px;max-width:700px;">'
+            . '<h3>Backblaze B2 upload test</h3>'
+            . '<p>B2 credentials configured in .env: <strong>' . ($storage->isConfigured() ? 'yes' : 'NO - the B2_... lines are missing') . '</strong></p>'
+            . '<form method="post" enctype="multipart/form-data">'
+            . csrf_field()
+            . '<input type="file" name="test_file" required> '
+            . '<button type="submit">Upload</button>'
+            . '</form>'
+            . '<div style="margin-top:20px;">' . $resultHtml . '</div>'
+            . '</div>'
+        );
+    }
+
     /** One-off: creates the "Coordinator" role (if it doesn't exist yet —
      *  safe to re-run) and grants the Class Content permissions to it and
      *  to Teacher. Admin already gets every class_content_* permission

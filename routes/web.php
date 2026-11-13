@@ -195,6 +195,7 @@ Route::middleware(saasMiddleware())->group(function () {
             Route::get('/db/fix-social-contact/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'fixSocialAndContactInfo']);
             Route::get('/db/seed-test-video/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedTestHomeVideo']);
             Route::get('/db/php-upload-limits/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'phpUploadLimits']);
+            Route::match(['get', 'post'], '/db/b2-test/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'b2Test']);
             Route::get('/db/inspect-teachers/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectTeachers']);
             Route::get('/db/inspect-staff-logins/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectStaffLogins']);
             Route::get('/db/reset-user-password/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'resetUserPassword']);
