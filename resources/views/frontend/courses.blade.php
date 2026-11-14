@@ -57,21 +57,30 @@
 
     <section class="fe-courses-filters section_padding pt-4 pb-0">
         <div class="container">
-            <div class="fe-filter-pills" role="tablist" aria-label="Course categories">
+            <div class="fe-category-cards" role="tablist" aria-label="Course categories">
                 @foreach ($categories as $cat)
                     @php
                         $slug = $cat['slug'] ?? 'all';
                         $isActive = $activeCategory === $slug;
-                        // Category pills go to the full category page (with its sub-focuses),
-                        // the same URL the "Our Programs" nav menu uses.
                         $filterUrl = $slug === 'all'
                             ? route('frontend.courses')
-                            : route('frontend.program-category', $slug);
+                            : route('frontend.courses', ['category' => $slug]);
                     @endphp
                     <a href="{{ $filterUrl }}"
-                        class="fe-filter-pill {{ $isActive ? 'fe-is-active' : '' }}"
+                        class="fe-category-card {{ $isActive ? 'fe-is-active' : '' }} {{ $slug === 'all' ? 'fe-category-card--all' : '' }}"
                         role="tab"
-                        aria-selected="{{ $isActive ? 'true' : 'false' }}">{{ $cat['label'] ?? $slug }}</a>
+                        aria-selected="{{ $isActive ? 'true' : 'false' }}">
+                        @if ($slug === 'all')
+                            <span class="fe-category-card-media fe-category-card-media--all"><i class="fas fa-border-all"></i></span>
+                        @else
+                            <span class="fe-category-card-media fe-accent-{{ $cat['accent'] ?? 'indigo' }} {{ empty($cat['image']) ? 'fe-category-card-media--placeholder' : '' }}">
+                                @if (!empty($cat['image']))
+                                    <img src="{{ $cat['image'] }}" alt="">
+                                @endif
+                            </span>
+                        @endif
+                        <span class="fe-category-card-label">{{ $cat['label'] ?? $slug }}</span>
+                    </a>
                 @endforeach
             </div>
         </div>

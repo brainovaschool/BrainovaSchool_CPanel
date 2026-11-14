@@ -257,8 +257,8 @@ class FrontendController extends Controller
             'secondary_cta' => ['label' => 'Start online admission', 'route' => 'frontend.online-admission'],
         ];
         $data['categories'] = array_merge(
-            [['slug' => 'all', 'label' => 'All programs']],
-            $categories->map(fn ($c) => ['slug' => $c->slug, 'label' => $c->name])->all()
+            [['slug' => 'all', 'label' => 'All programs', 'image' => null, 'accent' => null]],
+            $categories->map(fn ($c) => ['slug' => $c->slug, 'label' => $c->name, 'image' => $c->image, 'accent' => $c->accent ?: 'indigo'])->all()
         );
         $data['courses']         = $paginator->getCollection();
         $data['active_category'] = $activeCategory;

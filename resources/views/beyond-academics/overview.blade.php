@@ -74,23 +74,6 @@
             @endif
         </div>
 
-        {{-- Each category just opens the public Our Programs page already
-             filtered to it - that page already shows every course in the
-             category properly (images, pagination, full cards), so there's
-             no reason to rebuild a smaller version of it here. --}}
-        <div class="ba-category-grid">
-            @foreach ($data['categories'] as $cat)
-                <a href="{{ route('frontend.courses', ['category' => $cat->slug]) }}" target="_blank" rel="noopener" class="ba-category-btn">
-                    @if ($cat->image)
-                        <span class="ba-category-thumb" style="background-image: url('{{ $cat->image }}');"></span>
-                    @else
-                        <span class="ba-category-thumb ba-category-thumb--empty"><i class="las la-graduation-cap"></i></span>
-                    @endif
-                    <span class="ba-category-label">{{ $cat->name }}</span>
-                </a>
-            @endforeach
-        </div>
-
     </div>
 @endsection
 
@@ -220,51 +203,6 @@
         color: #007585;
         padding: 3px 10px;
         border-radius: 999px;
-    }
-
-    .ba-category-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-        gap: 16px;
-    }
-    .ba-category-btn {
-        width: 100%;
-        border: 1px solid var(--ot-border-basic-table, #e4e7ec);
-        background: var(--ot-bg-table-card, #fff);
-        border-radius: 16px;
-        padding: 14px;
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-        cursor: pointer;
-        text-decoration: none;
-        color: inherit;
-        transition: transform .12s ease;
-    }
-    .ba-category-btn:hover {
-        transform: translateY(-2px);
-    }
-    .ba-category-thumb {
-        width: 100%;
-        height: 80px;
-        border-radius: 10px;
-        background-size: cover;
-        background-position: center;
-        background-color: #eef1f6;
-    }
-    .ba-category-thumb--empty {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 22px;
-        color: #8b93a3;
-    }
-    .ba-category-label {
-        font-size: 14px;
-        font-weight: 700;
-        color: #1f2430;
-        text-align: left;
     }
 
     @media (max-width: 575px) {

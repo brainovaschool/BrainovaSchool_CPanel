@@ -5,7 +5,6 @@ namespace App\Http\Controllers\BeyondAcademics;
 use App\Http\Controllers\Controller;
 use App\Models\WebsiteSetup\PageSections;
 use App\Models\WebsiteSetup\Program;
-use App\Models\WebsiteSetup\ProgramCategory;
 use Illuminate\Support\Facades\Auth;
 
 class OverviewController extends Controller
@@ -36,14 +35,6 @@ class OverviewController extends Controller
             ->orderBy('sort_order')
             ->with('upload')
             ->take(8)
-            ->get();
-
-        // Each category is just a link out to the public Our Programs page,
-        // filtered to it - that page is public, so it isn't scoped to the
-        // viewer's own enrollment/teaching the way Featured Courses above is.
-        $data['categories'] = ProgramCategory::where('status', 1)
-            ->orderBy('sort_order')
-            ->with('upload')
             ->get();
 
         $data['title'] = 'Beyond Academics — Overview';
