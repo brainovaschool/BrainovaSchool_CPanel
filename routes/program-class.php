@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\WebsiteSetup\ProgramClassAdminController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassCoordinatorController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMaterialController;
@@ -39,6 +40,9 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/show/{id}',    'show')->name('show')->middleware('PermissionCheck:class_content_coordinator_review');
                     Route::post('/decide/{id}', 'decide')->name('decide')->middleware('PermissionCheck:class_content_coordinator_review', 'DemoCheck');
                 });
+
+                Route::post('/program-class-admin/decide/{id}', [ProgramClassAdminController::class, 'decide'])
+                    ->name('program-class-admin.decide')->middleware('DemoCheck');
 
             });
         });

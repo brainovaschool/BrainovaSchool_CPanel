@@ -189,22 +189,29 @@
                         <span class="cc-cd-lesson-chev">&#9662;</span>
                     </summary>
                     <div class="cc-cd-lesson-body">
-                        @if ($cd_can_manage && ($cd_is_admin || (int) $pc->created_by === (int) $cd_viewer_staff_id))
+                        @php
+                            $cd_admin_can_decide = $cd_is_admin && in_array($pc->review_status, [\App\Models\WebsiteSetup\ProgramClass::SUBMITTED, \App\Models\WebsiteSetup\ProgramClass::COORDINATOR_REVIEWED], true);
+                            $cd_is_owner_or_admin = $cd_is_admin || (int) $pc->created_by === (int) $cd_viewer_staff_id;
+                        @endphp
+                        @if ($cd_admin_can_decide)
                             <div class="cc-cd-manage-row">
-                                @if ($pc->review_status === \App\Models\WebsiteSetup\ProgramClass::CHANGES_REQUESTED && $pc->coordinator_feedback)
-                                    <p class="cc-cd-empty-sub" style="color:#b45309;"><strong>Coordinator's feedback:</strong> {{ $pc->coordinator_feedback }}</p>
-                                @endif
-                                <div class="d-flex gap-2 flex-wrap">
-                                    @if ($pc->isEditableByTeacher())
-                                        <a href="{{ route('program-class.edit', $pc->id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                        <form action="{{ route('program-class.submit', $pc->id) }}" method="post" class="d-inline" onsubmit="return confirm('Submit this lesson for review?');">
-                                            @csrf
-                                            <button type="submit" class="btn btn-sm ot-btn-primary">Submit for review</button>
-                                        </form>
-                                    @else
-                                        <span class="cc-cd-empty-sub">Submitted — editing reopens once it's reviewed.</span>
+                                <p class="cc-cd-empty-sub">
+                                    Submitted by {{ trim(optional($pc->creator)->first_name . ' ' . optional($pc->creator)->last_name) ?: 'the teacher' }}
+                                    @if ($pc->review_status === \App\Models\WebsiteSetup\ProgramClass::COORDINATOR_REVIEWED)
+                                        &middot; reviewed by {{ trim(optional($pc->coordinator)->first_name . ' ' . optional($pc->coordinator)->last_name) ?: 'the coordinator' }}
                                     @endif
-                                </div>
+                                </p>
+                                @if ($pc->coordinator_feedback)
+                                    <p class="cc-cd-empty-sub" style="color:#6d28d9;"><strong>Coordinator's note:</strong> {{ $pc->coordinator_feedback }}</p>
+                                @endif
+                                <form action="{{ route('program-class-admin.decide', $pc->id) }}" method="post">
+                                    @csrf
+                                    <textarea name="feedback" class="form-control form-control-sm mb-2" rows="2" placeholder="Feedback for the teacher (optional, required if sending back)"></textarea>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button type="submit" name="decision" value="approve" class="btn btn-sm ot-btn-primary">Approve</button>
+                                        <button type="submit" name="decision" value="request_changes" class="btn btn-sm btn-outline-danger" onclick="return confirm('Send this back to the teacher with your feedback?');">Request changes</button>
+                                    </div>
+                                </form>
                             </div>
                         @elseif ($cd_coord_can_decide)
                             <div class="cc-cd-manage-row">
@@ -216,13 +223,43 @@
                                     @csrf
                                     <textarea name="feedback" class="form-control form-control-sm mb-2" rows="2" placeholder="Feedback for the teacher (optional, required if sending back)"></textarea>
                                     <div class="d-flex gap-2 flex-wrap">
-                                        <button type="submit" name="decision" value="approve" class="btn btn-sm ot-btn-primary">Approve</button>
+                                        <button type="submit" name="decision" value="send_to_admin" class="btn btn-sm ot-btn-primary">Accept &amp; send to admin</button>
                                         <button type="submit" name="decision" value="request_changes" class="btn btn-sm btn-outline-danger" onclick="return confirm('Send this back to the teacher with your feedback?');">Request changes</button>
                                     </div>
                                 </form>
                             </div>
+                        @elseif ($cd_can_manage && $cd_is_owner_or_admin && $pc->isEditableByTeacher())
+                            <div class="cc-cd-manage-row">
+                                @if ($pc->review_status === \App\Models\WebsiteSetup\ProgramClass::CHANGES_REQUESTED)
+                                    @if ($pc->coordinator_feedback)
+                                        <p class="cc-cd-empty-sub" style="color:#b45309;"><strong>Coordinator's feedback:</strong> {{ $pc->coordinator_feedback }}</p>
+                                    @endif
+                                    @if ($pc->admin_feedback)
+                                        <p class="cc-cd-empty-sub" style="color:#b45309;"><strong>Admin's feedback:</strong> {{ $pc->admin_feedback }}</p>
+                                    @endif
+                                @endif
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <a href="{{ route('program-class.edit', $pc->id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                    <form action="{{ route('program-class.submit', $pc->id) }}" method="post" class="d-inline" onsubmit="return confirm('Submit this lesson for review?');">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm ot-btn-primary">Submit for review</button>
+                                    </form>
+                                </div>
+                            </div>
+                        @elseif ($cd_can_manage && $cd_is_owner_or_admin)
+                            <p class="cc-cd-empty-sub">
+                                @if ($pc->review_status === \App\Models\WebsiteSetup\ProgramClass::SUBMITTED)
+                                    Submitted — waiting on a coordinator or admin to review it.
+                                @elseif ($pc->review_status === \App\Models\WebsiteSetup\ProgramClass::COORDINATOR_REVIEWED)
+                                    Reviewed by the coordinator — waiting on admin's final approval.
+                                @elseif ($pc->review_status === \App\Models\WebsiteSetup\ProgramClass::APPROVED)
+                                    Approved{{ $pc->approved_at ? ' ' . $pc->approved_at->diffForHumans() : '' }} — live on Course Details.
+                                @endif
+                            </p>
+                        @elseif ($cd_is_coordinator && $pc->review_status === \App\Models\WebsiteSetup\ProgramClass::COORDINATOR_REVIEWED)
+                            <p class="cc-cd-empty-sub">Sent to admin — awaiting their decision.</p>
                         @elseif ($cd_is_coordinator && $pc->review_status === \App\Models\WebsiteSetup\ProgramClass::APPROVED)
-                            <p class="cc-cd-empty-sub">You approved this {{ $pc->approved_at?->diffForHumans() }}.</p>
+                            <p class="cc-cd-empty-sub">Approved by admin.</p>
                         @endif
 
                         @if ($pc->description)
@@ -507,6 +544,7 @@
         .cc-cd-status-tag--draft { background: #f1f5f9; color: #64748b; }
         .cc-cd-status-tag--submitted { background: #dbeafe; color: #1d4ed8; }
         .cc-cd-status-tag--changes_requested { background: #fef3c7; color: #92400e; }
+        .cc-cd-status-tag--coordinator_reviewed { background: #f3e8ff; color: #7e22ce; }
         .cc-cd-status-tag--approved { background: #dcfce7; color: #15803d; }
         .cc-cd-manage-row { background: #f8f9fb; border: 1px dashed var(--ot-border-basic-table, #e4e7ec); border-radius: 10px; padding: 0.65rem 0.75rem; margin-bottom: 0.75rem; }
         .cc-cd-manage-link { font-size: 0.82rem; font-weight: 600; color: #6366f1; text-decoration: none; white-space: nowrap; }
@@ -521,6 +559,7 @@
         .cc-cd-lesson:last-child { margin-bottom: 0; }
         .cc-cd-lesson--submitted { border-left-color: #3b82f6; }
         .cc-cd-lesson--changes_requested { border-left-color: #f59e0b; }
+        .cc-cd-lesson--coordinator_reviewed { border-left-color: #a855f7; }
         .cc-cd-lesson--approved { border-left-color: #22c55e; }
         .cc-cd-lesson-summary { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem; cursor: pointer; list-style: none; font-size: 0.9rem; font-weight: 600; color: #0f172a; }
         .cc-cd-lesson-summary::-webkit-details-marker { display: none; }
@@ -531,6 +570,7 @@
         }
         .cc-cd-lesson-num--submitted { background: #dbeafe; color: #1d4ed8; }
         .cc-cd-lesson-num--changes_requested { background: #fef3c7; color: #92400e; }
+        .cc-cd-lesson-num--coordinator_reviewed { background: #f3e8ff; color: #7e22ce; }
         .cc-cd-lesson-num--approved { background: #dcfce7; color: #15803d; }
         .cc-cd-lesson-title { flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
         .cc-cd-lesson-title small { display: block; width: 100%; font-weight: 500; color: #8b93a3; font-size: 0.74rem; }

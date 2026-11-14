@@ -166,8 +166,9 @@ class ProgramClassRepository
         ];
     }
 
-    /** Coordinator's decision is final here - approve makes it live on
-     *  Course Details immediately, no separate Admin sign-off tier. */
+    /** Same two-tier flow as Class Content: Coordinator doesn't approve
+     *  outright, they send it on to Admin (or send it back to the
+     *  teacher). Admin's decision below is what actually makes it live. */
     public function coordinatorDecision($request, int $id, ?int $coordinatorStaffId): array
     {
         $row = ProgramClass::find($id);
@@ -180,12 +181,49 @@ class ProgramClassRepository
         $row->coordinator_feedback    = $request->input('feedback');
         $row->coordinator_id          = $coordinatorStaffId;
         $row->coordinator_reviewed_at = now();
+        $row->review_status = $decisionIsChanges
+            ? ProgramClass::CHANGES_REQUESTED
+            : ProgramClass::COORDINATOR_REVIEWED;
+        $row->save();
+
+        if ($decisionIsChanges) {
+            if ($row->creator && $row->creator->user_id) {
+                \App\Services\Portal\PortalNotifier::send(
+                    $row->creator->user_id,
+                    'Changes requested',
+                    $row->title,
+                    $this->courseDetailsUrl($row->program)
+                );
+            }
+        } else {
+            $this->notifyAdmins('Lesson ready for your approval', $row);
+        }
+
+        return $this->responseWithSuccess('Saved.', []);
+    }
+
+    /** Admin's decision is final: Approve makes it live on Course Details,
+     *  Request changes sends it straight back to the teacher. Admin can
+     *  act on a lesson that's merely Submitted too (not just
+     *  Coordinator-reviewed) - same "sees/edits everything" bypass used
+     *  everywhere else in this app, and it keeps a lesson from getting
+     *  stuck forever on a program with no coordinator assigned yet. */
+    public function adminDecision($request, int $id, ?int $adminStaffId): array
+    {
+        $row = ProgramClass::find($id);
+        if (!$row) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+
+        $decisionIsChanges = $request->input('decision') === 'request_changes';
+
+        $row->admin_feedback = $request->input('feedback');
 
         if ($decisionIsChanges) {
             $row->review_status = ProgramClass::CHANGES_REQUESTED;
         } else {
             $row->review_status = ProgramClass::APPROVED;
-            $row->approved_by   = $coordinatorStaffId;
+            $row->approved_by   = $adminStaffId;
             $row->approved_at   = now();
         }
         $row->save();
@@ -200,6 +238,21 @@ class ProgramClassRepository
         }
 
         return $this->responseWithSuccess('Saved.', []);
+    }
+
+    /** No single "the admin" user to notify - send to every User whose
+     *  role_id is 1 (Super Admin), same bypass role used everywhere else
+     *  in this app. */
+    private function notifyAdmins(string $title, ProgramClass $row): void
+    {
+        \App\Models\User::where('role_id', 1)->get()->each(function ($admin) use ($title, $row) {
+            \App\Services\Portal\PortalNotifier::send(
+                $admin->id,
+                $title,
+                $row->title,
+                $this->courseDetailsUrl($row->program)
+            );
+        });
     }
 
     /** The Teacher this notification goes to doesn't have program_update

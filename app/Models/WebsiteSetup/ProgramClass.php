@@ -17,16 +17,18 @@ class ProgramClass extends BaseModel
         'approved_at'             => 'datetime',
     ];
 
-    public const DRAFT             = 'draft';
-    public const SUBMITTED         = 'submitted';
-    public const CHANGES_REQUESTED = 'changes_requested';
-    public const APPROVED          = 'approved';
+    public const DRAFT               = 'draft';
+    public const SUBMITTED           = 'submitted';
+    public const CHANGES_REQUESTED   = 'changes_requested';
+    public const COORDINATOR_REVIEWED = 'coordinator_reviewed';
+    public const APPROVED            = 'approved';
 
     public const REVIEW_STATUSES = [
-        self::DRAFT             => 'Draft',
-        self::SUBMITTED         => 'Submitted for review',
-        self::CHANGES_REQUESTED => 'Changes requested',
-        self::APPROVED          => 'Approved — live on Course Details',
+        self::DRAFT                => 'Draft',
+        self::SUBMITTED            => 'Submitted for review',
+        self::CHANGES_REQUESTED    => 'Changes requested',
+        self::COORDINATOR_REVIEWED => 'Reviewed — awaiting admin approval',
+        self::APPROVED             => 'Approved — live on Course Details',
     ];
 
     public function scopeApproved($query)
