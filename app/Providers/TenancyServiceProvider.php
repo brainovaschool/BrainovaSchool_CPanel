@@ -162,6 +162,8 @@ class TenancyServiceProvider extends ServiceProvider
         Route::middleware('web')
             ->group(base_path('routes/class-content.php'));
         Route::middleware('web')
+            ->group(base_path('routes/program-class.php'));
+        Route::middleware('web')
             ->group(base_path('routes/portal.php'));
 
     }

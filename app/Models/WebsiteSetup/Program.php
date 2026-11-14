@@ -113,6 +113,15 @@ class Program extends Model
             ->get();
     }
 
+    /** The newer, simpler way to add a course's classes (materials, PPTs,
+     *  activities, outcomes, project, quiz) - a teacher fills these in
+     *  directly against the Program, no Class/Section/Subject link
+     *  required, unlike Class Content. */
+    public function programClasses()
+    {
+        return $this->hasMany(ProgramClass::class, 'program_id')->orderBy('sort_order');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('status', 1);

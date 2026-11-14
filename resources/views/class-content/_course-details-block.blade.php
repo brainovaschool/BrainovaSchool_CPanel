@@ -30,6 +30,15 @@
     $cd_modules  = $data['contentModules'] ?? collect();
     $cd_stats    = $data['homeworkStats'] ?? [];
     $cd_typeKey  = ['homework' => 'hw', 'quiz' => 'quiz', 'project' => 'project', 'activity' => 'activity', 'game' => 'game', 'assignment' => 'assignment'];
+
+    // Program Classes: the newer, simpler way to add a course's classes
+    // (teacher fills them in directly, no Class/Section/Subject link
+    // needed) - meant to eventually replace the Class Content list above.
+    $cd_viewer = auth()->user();
+    $cd_is_admin = (int) ($cd_viewer->role_id ?? 0) === 1;
+    $cd_viewer_staff_id = !$cd_is_admin ? ($cd_viewer->staff->id ?? null) : null;
+    $cd_can_manage = $cd_selected && ($cd_is_admin || ($cd_viewer_staff_id && $cd_selected->teachers->contains('id', $cd_viewer_staff_id)));
+    $cd_program_classes = $cd_selected ? $cd_selected->programClasses : collect();
 @endphp
 
 <div class="cc-cd">
@@ -100,31 +109,135 @@
         <div class="cc-cd-card">
             <div class="cc-cd-head-row">
                 <p class="cc-cd-label mb-0">Classes in this course</p>
-                @if (auth()->user()?->role_id == 1)
-                    <a class="cc-cd-manage-link" href="{{ route('program.edit', $cd_selected->id) }}">Manage in Website Setup <i class="fa-solid fa-arrow-right"></i></a>
-                @endif
-            </div>
-
-            @if (!$cd_selected->isLinkedToClassContent())
-                <div class="cc-cd-empty">
-                    <p class="mb-1"><strong>{{ $cd_selected->title }}</strong> isn't linked to Class Content yet.</p>
-                    @if (auth()->user()?->role_id == 1)
-                        <p class="text-secondary mb-0" style="font-size: 13px;">
-                            Open this program in <a href="{{ route('program.edit', $cd_selected->id) }}">Website Setup &rarr; Course Catalogue &rarr; Program</a>
-                            and set "Link to Class Content" (Class / Section / Subject) to show its real classes, materials and homework here.
-                        </p>
-                    @else
-                        <p class="text-secondary mb-0" style="font-size: 13px;">Ask an admin to link this program to its Class Content (Class / Section / Subject) in Website Setup.</p>
+                <div class="d-flex align-items-center gap-3">
+                    @if ($cd_can_manage)
+                        <a class="cc-cd-manage-link" href="{{ route('program-class.create', $cd_selected->id) }}"><i class="fa-solid fa-plus"></i> Add a class</a>
+                    @endif
+                    @if ($cd_is_admin)
+                        <a class="cc-cd-manage-link" href="{{ route('program.edit', $cd_selected->id) }}">Manage in Website Setup <i class="fa-solid fa-arrow-right"></i></a>
                     @endif
                 </div>
-            @elseif ($cd_modules->isEmpty())
-                <p class="text-secondary mb-0" style="font-size: 13px;">Linked, but there's no approved Class Content module yet for this class, section and subject.</p>
-            @else
+            </div>
+
+            @php $cd_num = 0; @endphp
+
+            @forelse ($cd_program_classes as $pc)
+                @php $cd_num++; @endphp
+                <details class="cc-cd-lesson" {{ $cd_num === 1 ? 'open' : '' }}>
+                    <summary class="cc-cd-lesson-summary">
+                        <span class="cc-cd-lesson-num">{{ $cd_num }}</span>
+                        <span class="cc-cd-lesson-title">{{ $pc->title }}</span>
+                        @if ($cd_can_manage)
+                            <span class="cc-cd-status-tag cc-cd-status-tag--{{ $pc->review_status }}">{{ \App\Models\WebsiteSetup\ProgramClass::REVIEW_STATUSES[$pc->review_status] ?? $pc->review_status }}</span>
+                        @endif
+                        <span class="cc-cd-lesson-chev">&#9662;</span>
+                    </summary>
+                    <div class="cc-cd-lesson-body">
+                        @if ($cd_can_manage && ($cd_is_admin || (int) $pc->created_by === (int) $cd_viewer_staff_id))
+                            <div class="cc-cd-manage-row">
+                                @if ($pc->review_status === \App\Models\WebsiteSetup\ProgramClass::CHANGES_REQUESTED && $pc->coordinator_feedback)
+                                    <p class="cc-cd-empty-sub" style="color:#b45309;"><strong>Coordinator's feedback:</strong> {{ $pc->coordinator_feedback }}</p>
+                                @endif
+                                <div class="d-flex gap-2 flex-wrap">
+                                    @if ($pc->isEditableByTeacher())
+                                        <a href="{{ route('program-class.edit', $pc->id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                        <form action="{{ route('program-class.submit', $pc->id) }}" method="post" class="d-inline" onsubmit="return confirm('Submit this class for review?');">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm ot-btn-primary">Submit for review</button>
+                                        </form>
+                                    @else
+                                        <span class="cc-cd-empty-sub">Submitted — editing reopens once it's reviewed.</span>
+                                    @endif
+                                </div>
+                            </div>
+                        @endif
+
+                        @if ($pc->description)
+                            <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->description }}</p>
+                        @endif
+
+                        @if ($pc->materials->isNotEmpty())
+                            <div class="cc-cd-sub">
+                                <h5>Resources</h5>
+                                <ul class="cc-cd-res-list">
+                                    @foreach ($pc->materials as $m)
+                                        <li>
+                                            <span class="cc-cd-ico">{{ $m->storage_key ? '📄' : '🔗' }}</span>
+                                            <a href="{{ $m->downloadUrl() }}" target="_blank" rel="noopener">{{ $m->label }}</a>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        @if ($pc->hasQuiz())
+                            <div class="cc-cd-sub">
+                                <h5>Quiz (self check)</h5>
+                                <div class="cc-cd-pill-row"><span class="hw-type-pill hw-type-pill--quiz">Quiz</span><span class="cc-cd-hwtitle">{{ $pc->quiz_title }}</span></div>
+                                @if ($pc->quiz_description)
+                                    <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->quiz_description }}</p>
+                                @endif
+                            </div>
+                        @endif
+
+                        @if ($pc->hasProject())
+                            <div class="cc-cd-sub">
+                                <h5>Project</h5>
+                                <div class="cc-cd-pill-row"><span class="hw-type-pill hw-type-pill--project">Project</span><span class="cc-cd-hwtitle">{{ $pc->project_title }}</span></div>
+                                @if ($pc->project_description)
+                                    <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->project_description }}</p>
+                                @endif
+                            </div>
+                        @endif
+
+                        @if ($pc->activities->isNotEmpty())
+                            <div class="cc-cd-sub">
+                                <h5>Activities</h5>
+                                <ul class="cc-cd-out-list">
+                                    @foreach ($pc->activities as $a)
+                                        <li><strong>{{ $a->title }}.</strong> {{ $a->description }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
+                        @if ($pc->outcomes->isNotEmpty())
+                            <div class="cc-cd-sub">
+                                <h5>Learning outcomes</h5>
+                                <ul class="cc-cd-out-list">
+                                    @foreach ($pc->outcomes as $o)
+                                        <li>{{ $o->outcome_text }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @endif
+                    </div>
+                </details>
+            @empty
+            @endforelse
+
+            @if ($cd_program_classes->isEmpty() && (!$cd_selected->isLinkedToClassContent() || $cd_modules->isEmpty()))
+                <div class="cc-cd-empty">
+                    <p class="mb-1">No classes added yet for <strong>{{ $cd_selected->title }}</strong>.</p>
+                    @if ($cd_can_manage)
+                        <p class="text-secondary mb-0" style="font-size: 13px;">Use "Add a class" above to get started.</p>
+                    @elseif ($cd_is_admin && !$cd_selected->isLinkedToClassContent())
+                        <p class="text-secondary mb-0" style="font-size: 13px;">
+                            This program also isn't linked to Class Content - open it in <a href="{{ route('program.edit', $cd_selected->id) }}">Website Setup &rarr; Course Catalogue &rarr; Program</a> if you'd rather use that instead.
+                        </p>
+                    @else
+                        <p class="text-secondary mb-0" style="font-size: 13px;">Ask the assigned teacher to add classes here.</p>
+                    @endif
+                </div>
+            @endif
+
+            @if ($cd_selected->isLinkedToClassContent() && $cd_modules->isNotEmpty())
                 @foreach ($cd_modules as $module)
                     @foreach ($module->lessons as $lesson)
-                        <details class="cc-cd-lesson" {{ $loop->parent->first && $loop->first ? 'open' : '' }}>
+                        @php $cd_num++; @endphp
+                        <details class="cc-cd-lesson" {{ $cd_num === 1 ? 'open' : '' }}>
                             <summary class="cc-cd-lesson-summary">
-                                <span class="cc-cd-lesson-num">{{ $loop->parent->iteration }}.{{ $loop->iteration }}</span>
+                                <span class="cc-cd-lesson-num">{{ $cd_num }}</span>
                                 <span class="cc-cd-lesson-title">
                                     {{ $lesson->title }}
                                     <small>{{ $module->title }}</small>
@@ -269,6 +382,12 @@
         .cc-cd-highlights { margin: 0; padding-left: 1.1rem; }
         .cc-cd-highlights li { font-size: 0.88rem; color: #475569; line-height: 1.6; }
         .cc-cd-head-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
+        .cc-cd-status-tag { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.15rem 0.5rem; border-radius: 999px; flex-shrink: 0; }
+        .cc-cd-status-tag--draft { background: #f1f5f9; color: #64748b; }
+        .cc-cd-status-tag--submitted { background: #dbeafe; color: #1d4ed8; }
+        .cc-cd-status-tag--changes_requested { background: #fef3c7; color: #92400e; }
+        .cc-cd-status-tag--approved { background: #dcfce7; color: #15803d; }
+        .cc-cd-manage-row { background: #f8f9fb; border: 1px dashed var(--ot-border-basic-table, #e4e7ec); border-radius: 10px; padding: 0.65rem 0.75rem; margin-bottom: 0.75rem; }
         .cc-cd-manage-link { font-size: 0.82rem; font-weight: 600; color: #6366f1; text-decoration: none; white-space: nowrap; }
         .cc-cd-empty { border: 1.5px dashed var(--ot-border-basic-table, #e4e7ec); border-radius: 14px; padding: 1.2rem 1.4rem; }
         .cc-cd-lesson { border: 1px solid var(--ot-border-basic-table, #e4e7ec); border-radius: 14px; margin-bottom: 0.65rem; overflow: hidden; }

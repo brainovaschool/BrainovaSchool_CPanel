@@ -53,7 +53,7 @@ class OverviewController extends Controller
         $selectedOption = $data['courseOptions']->firstWhere('id', $selectedId) ?? $data['courseOptions']->first();
 
         $data['selectedProgram'] = $selectedOption
-            ? Program::with('teachers')->find($selectedOption->id)
+            ? Program::with(['teachers', 'programClasses.materials', 'programClasses.activities', 'programClasses.outcomes'])->find($selectedOption->id)
             : null;
 
         $data['contentModules'] = $data['selectedProgram'] ? $data['selectedProgram']->contentModules() : collect();

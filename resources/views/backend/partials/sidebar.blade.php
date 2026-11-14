@@ -488,6 +488,9 @@
                                             <li class="sidebar-menu-item {{ set_menu(['class-content-coordinator*']) }}">
                                                 <a href="{{ route('class-content-coordinator.index') }}">Coordinator Review</a>
                                             </li>
+                                            <li class="sidebar-menu-item {{ set_menu(['program-class-coordinator*']) }}">
+                                                <a href="{{ route('program-class-coordinator.index') }}">Course Classes Review</a>
+                                            </li>
                                         @endif
                                         @if (hasPermission('class_content_approve'))
                                             <li class="sidebar-menu-item {{ set_menu(['class-content-admin*']) }}">
