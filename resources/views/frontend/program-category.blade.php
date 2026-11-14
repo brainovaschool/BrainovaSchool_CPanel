@@ -135,6 +135,10 @@
                                         @if ($program->duration)<span><i class="far fa-clock"></i>{{ $program->duration }}</span>@endif
                                     </div>
 
+                                    @if ($program->status_label_text)
+                                        <span class="fe-status-pill fe-status-pill--{{ $program->status_label }}">{{ $program->status_label_text }}</span>
+                                    @endif
+
                                     @if ($program->enrolled)
                                         <div class="fe-course-enrolled"><i class="fas fa-users me-1"></i>{{ $program->enrolled }}</div>
                                     @endif
