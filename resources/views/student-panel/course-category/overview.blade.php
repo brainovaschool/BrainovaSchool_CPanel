@@ -7,81 +7,70 @@
 @section('content')
 <div class="page-content">
     <div class="sp-cat-page">
-        <section id="overview">
-            @php($cat = $data['category'] ?? null)
-            <div class="sp-cat-hero">
-                <span class="sp-cat-hero-badge">Overview</span>
-                <div class="sp-cat-hero-grid">
-                    <div class="sp-cat-hero-copy">
-                        @if ($cat?->tagline)
-                            <p class="sp-cat-hero-eyebrow">{{ $cat->tagline }}</p>
-                        @endif
-                        <h2>{{ $cat?->hero_title ?: $data['categoryTitle'] }}</h2>
-                        @if ($cat?->hero_subtitle)
-                            <p>{{ $cat->hero_subtitle }}</p>
-                        @endif
-                    </div>
-                    @if ($cat?->image)
-                        <div class="sp-cat-hero-art">
-                            <img src="{{ $cat->image }}" alt="">
-                        </div>
+        @php($cat = $data['category'] ?? null)
+        <div class="sp-cat-hero">
+            <span class="sp-cat-hero-badge">Overview</span>
+            <div class="sp-cat-hero-grid">
+                <div class="sp-cat-hero-copy">
+                    @if ($cat?->tagline)
+                        <p class="sp-cat-hero-eyebrow">{{ $cat->tagline }}</p>
+                    @endif
+                    <h2>{{ $cat?->hero_title ?: $data['categoryTitle'] }}</h2>
+                    @if ($cat?->hero_subtitle)
+                        <p>{{ $cat->hero_subtitle }}</p>
                     @endif
                 </div>
-                @if (!$cat)
-                    <p class="sp-cat-hero-missing">No "{{ $data['categoryTitle'] }}" category found.</p>
-                @endif
-            </div>
-
-            {{-- Featured Courses: a live reflection of every active Program
-                 in this category, exactly like the admin/teacher page's
-                 own Featured Courses - a catalog to browse, not limited to
-                 what this student happens to be enrolled in already. --}}
-            <div class="sp-cat-featured">
-                <div class="sp-cat-featured-head">
-                    <h4>Featured Courses</h4>
-                </div>
-                @if ($data['featured']->isEmpty())
-                    <p class="text-secondary mb-0" style="font-size: 13px;">No courses added yet in this category.</p>
-                @else
-                    <div class="sp-cat-course-grid">
-                        @foreach ($data['featured'] as $program)
-                            <a href="{{ route('frontend.course-detail', $program->slug) }}" target="_blank" rel="noopener" class="sp-cat-course-card">
-                                <div class="sp-cat-course-card-media">
-                                    @if ($program->image)
-                                        <img src="{{ $program->image }}" alt="{{ $program->title }}">
-                                    @endif
-                                </div>
-                                <div class="sp-cat-course-card-body">
-                                    <h5>{{ $program->title }}</h5>
-                                    <p class="sp-cat-course-meta">
-                                        @if ($program->age_range)<span>{{ $program->age_range }}</span>@endif
-                                        @if ($program->age_range && $program->lessons) <span>&bull;</span> @endif
-                                        @if ($program->lessons)<span>{{ $program->lessons }}</span>@endif
-                                    </p>
-                                    <div class="sp-cat-course-pills">
-                                        @if ($program->badge)
-                                            <span class="sp-cat-course-badge">{{ $program->badge }}</span>
-                                        @endif
-                                        @if ($program->status_label_text)
-                                            <span class="sp-cat-status-pill sp-cat-status-pill--{{ $program->status_label }}">{{ $program->status_label_text }}</span>
-                                        @endif
-                                    </div>
-                                </div>
-                            </a>
-                        @endforeach
+                @if ($cat?->image)
+                    <div class="sp-cat-hero-art">
+                        <img src="{{ $cat->image }}" alt="">
                     </div>
                 @endif
             </div>
-        </section>
+            @if (!$cat)
+                <p class="sp-cat-hero-missing">No "{{ $data['categoryTitle'] }}" category found.</p>
+            @endif
+        </div>
 
-        <section id="course-details">
-            @include('student-panel.course-category._course-details-block')
-        </section>
-
-        <section id="progress-report">
-            <h4>Progress &amp; Report</h4>
-            @include('student-panel.course-category._progress-report-block')
-        </section>
+        {{-- Featured Courses: a live reflection of every active Program
+             in this category, exactly like the admin/teacher page's
+             own Featured Courses - a catalog to browse, not limited to
+             what this student happens to be enrolled in already. --}}
+        <div class="sp-cat-featured">
+            <div class="sp-cat-featured-head">
+                <h4>Featured Courses</h4>
+            </div>
+            @if ($data['featured']->isEmpty())
+                <p class="text-secondary mb-0" style="font-size: 13px;">No courses added yet in this category.</p>
+            @else
+                <div class="sp-cat-course-grid">
+                    @foreach ($data['featured'] as $program)
+                        <a href="{{ route('frontend.course-detail', $program->slug) }}" target="_blank" rel="noopener" class="sp-cat-course-card">
+                            <div class="sp-cat-course-card-media">
+                                @if ($program->image)
+                                    <img src="{{ $program->image }}" alt="{{ $program->title }}">
+                                @endif
+                            </div>
+                            <div class="sp-cat-course-card-body">
+                                <h5>{{ $program->title }}</h5>
+                                <p class="sp-cat-course-meta">
+                                    @if ($program->age_range)<span>{{ $program->age_range }}</span>@endif
+                                    @if ($program->age_range && $program->lessons) <span>&bull;</span> @endif
+                                    @if ($program->lessons)<span>{{ $program->lessons }}</span>@endif
+                                </p>
+                                <div class="sp-cat-course-pills">
+                                    @if ($program->badge)
+                                        <span class="sp-cat-course-badge">{{ $program->badge }}</span>
+                                    @endif
+                                    @if ($program->status_label_text)
+                                        <span class="sp-cat-status-pill sp-cat-status-pill--{{ $program->status_label }}">{{ $program->status_label_text }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+        </div>
     </div>
 </div>
 @endsection
@@ -89,10 +78,6 @@
 @push('css')
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap">
 <style>
-    #overview, #course-details, #progress-report { scroll-margin-top: 100px; display: block; }
-    #course-details, #progress-report { margin-top: 1.25rem; }
-    #progress-report h4 { margin: 0 0 0.75rem; font-size: 1.15rem; font-weight: 700; color: #0f172a; }
-
     {{-- Same hero look as the admin/teacher category pages (resources/
          views/beyond-academics/overview.blade.php etc.), and the same
          real public-site heading font (Libre Baskerville, loaded above)

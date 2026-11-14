@@ -73,7 +73,9 @@ Route::middleware(saasMiddleware())->group(function () {
                     });
 
                     Route::controller(CourseCategoryController::class)->prefix('student-panel-course')->name('student-panel-course.')->group(function () {
-                        Route::get('/{category}', 'index')->name('index')->where('category', 'homeschooling|academics-boost|beyond-academics|beyond-screens');
+                        Route::get('/{category}/overview', 'overview')->name('overview')->where('category', 'homeschooling|academics-boost|beyond-academics|beyond-screens');
+                        Route::get('/{category}/course-details', 'courseDetails')->name('course-details')->where('category', 'homeschooling|academics-boost|beyond-academics|beyond-screens');
+                        Route::get('/{category}/progress-report', 'progressReport')->name('progress-report')->where('category', 'homeschooling|academics-boost|beyond-academics|beyond-screens');
                         Route::post('/submit', 'submit')->name('submit')->middleware('DemoCheck');
                     });
 

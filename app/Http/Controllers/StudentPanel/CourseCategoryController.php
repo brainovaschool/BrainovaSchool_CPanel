@@ -7,11 +7,13 @@ use App\Repositories\StudentPanel\CourseCategoryRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-/** One controller for all 4 category pages (Homeschooling, Academics
- *  Boost, Beyond Academics, Beyond Screens) rather than 4 near-identical
- *  ones - the admin side duplicates per category because each of those
- *  pages existed before this feature and evolved independently; these
- *  are brand new, so there's nothing to avoid consolidating. */
+/** One controller for all 4 categories (Homeschooling, Academics Boost,
+ *  Beyond Academics, Beyond Screens) rather than 4 near-identical ones -
+ *  the admin side duplicates per category because each of those pages
+ *  existed before this feature and evolved independently; these are
+ *  brand new, so there's nothing to avoid consolidating. Split into 3
+ *  actions/pages (Overview / Course Details / Progress & Report), same
+ *  split the admin/teacher side uses, rather than 1 page with 3 anchors. */
 class CourseCategoryController extends Controller
 {
     private $repo;
@@ -21,29 +23,67 @@ class CourseCategoryController extends Controller
         $this->repo = $repo;
     }
 
-    public function index(Request $request, string $category)
+    private function assertCategory(string $category): void
     {
         if (!array_key_exists($category, CourseCategoryRepository::CATEGORIES)) {
             abort(404);
         }
+    }
+
+    public function overview(string $category)
+    {
+        $this->assertCategory($category);
+
+        $result = $this->repo->overviewData($category);
+
+        $data['categorySlug']  = $category;
+        $data['categoryTitle'] = CourseCategoryRepository::CATEGORIES[$category];
+        $data['category']      = $result['category'];
+        $data['featured']      = $result['featured'];
+        $data['title']         = $data['categoryTitle'];
+
+        return view('student-panel.course-category.overview', compact('data'));
+    }
+
+    public function courseDetails(Request $request, string $category)
+    {
+        $this->assertCategory($category);
 
         $student   = Auth::user()->student;
         $programId = (int) $request->query('program') ?: null;
 
-        $dashboard = $student
-            ? $this->repo->dashboardForStudent($student, $category, $programId)
-            : ['category' => null, 'featured' => collect(), 'programs' => collect(), 'selectedProgram' => null, 'progress' => null];
+        $result = $student
+            ? $this->repo->courseDetailsData($student, $category, $programId)
+            : ['programs' => collect(), 'selectedProgram' => null];
 
         $data['categorySlug']    = $category;
         $data['categoryTitle']   = CourseCategoryRepository::CATEGORIES[$category];
-        $data['category']        = $dashboard['category'];
-        $data['featured']        = $dashboard['featured'];
-        $data['courseOptions']   = $dashboard['programs'];
-        $data['selectedProgram'] = $dashboard['selectedProgram'];
-        $data['progress']        = $dashboard['progress'];
-        $data['title']           = $data['categoryTitle'];
+        $data['courseOptions']   = $result['programs'];
+        $data['selectedProgram'] = $result['selectedProgram'];
+        $data['title']           = $data['categoryTitle'] . ' — Course Details';
 
-        return view('student-panel.course-category.index', compact('data'));
+        return view('student-panel.course-category.course-details', compact('data'));
+    }
+
+    public function progressReport(Request $request, string $category)
+    {
+        $this->assertCategory($category);
+
+        $student   = Auth::user()->student;
+        $programId = (int) $request->query('program') ?: null;
+
+        $result = $student
+            ? $this->repo->progressReportData($student, $category, $programId)
+            : ['programs' => collect(), 'selectedProgram' => null, 'progress' => null];
+
+        $data['categorySlug']    = $category;
+        $data['categoryTitle']   = CourseCategoryRepository::CATEGORIES[$category];
+        $data['courseOptions']   = $result['programs'];
+        $data['selectedProgram'] = $result['selectedProgram'];
+        $data['progress']        = $result['progress'];
+        $data['title']           = $data['categoryTitle'] . ' — Progress & Report';
+
+        return view('student-panel.course-category.progress-report', compact('data'));
     }
 
     public function submit(Request $request)
@@ -64,7 +104,7 @@ class CourseCategoryController extends Controller
 
         $result = $this->repo->submit($student, $request);
 
-        $redirectUrl = route('student-panel-course.index', $request->input('category')) . '?program=' . $request->input('program_id') . '#course-details';
+        $redirectUrl = route('student-panel-course.course-details', $request->input('category')) . '?program=' . $request->input('program_id');
 
         return redirect($redirectUrl)->with($result['status'] ? 'success' : 'danger', $result['message']);
     }

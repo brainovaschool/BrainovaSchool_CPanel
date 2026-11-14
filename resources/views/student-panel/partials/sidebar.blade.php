@@ -33,14 +33,14 @@
                                 <span class="on-half-expanded">{{ $spCategoryName === 'Beyond Acedamics' ? 'Beyond Academics' : $spCategoryName }}</span>
                             </a>
                             <ul class="child-menu-list">
-                                <li class="sidebar-menu-item {{ set_menu(["student-panel-course/{$spSlug}"]) }}">
-                                    <a href="{{ route('student-panel-course.index', $spSlug) }}#overview">Overview</a>
+                                <li class="sidebar-menu-item {{ set_menu(["student-panel-course/{$spSlug}/overview"]) }}">
+                                    <a href="{{ route('student-panel-course.overview', $spSlug) }}">Overview</a>
                                 </li>
-                                <li class="sidebar-menu-item {{ set_menu(["student-panel-course/{$spSlug}"]) }}">
-                                    <a href="{{ route('student-panel-course.index', $spSlug) }}#course-details">Course Details</a>
+                                <li class="sidebar-menu-item {{ set_menu(["student-panel-course/{$spSlug}/course-details"]) }}">
+                                    <a href="{{ route('student-panel-course.course-details', $spSlug) }}">Course Details</a>
                                 </li>
-                                <li class="sidebar-menu-item {{ set_menu(["student-panel-course/{$spSlug}"]) }}">
-                                    <a href="{{ route('student-panel-course.index', $spSlug) }}#progress-report">Progress &amp; Report</a>
+                                <li class="sidebar-menu-item {{ set_menu(["student-panel-course/{$spSlug}/progress-report"]) }}">
+                                    <a href="{{ route('student-panel-course.progress-report', $spSlug) }}">Progress &amp; Report</a>
                                 </li>
                             </ul>
                         </li>
