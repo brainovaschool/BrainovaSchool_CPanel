@@ -45,6 +45,24 @@
         <small class="text-secondary">Who teaches this program — controls which teacher sees it under Beyond Academics.</small>
     </div>
 
+    <div class="col-md-12 mb-3">
+        <label class="form-label">Students</label>
+        <input type="text" class="form-control ot-input mb-2" id="programStudentSearch" placeholder="Search students by name...">
+        <div class="border rounded p-2" id="programStudentList" style="max-height: 220px; overflow-y: auto;">
+            @php $selectedStudentIds = old('student_ids', $p?->students->pluck('id')->all() ?? []); @endphp
+            @forelse ($data['students'] as $student)
+                <div class="form-check program-student-row" data-name="{{ \Illuminate\Support\Str::lower(trim($student->first_name . ' ' . $student->last_name)) }}">
+                    <input class="form-check-input" type="checkbox" name="student_ids[]" value="{{ $student->id }}"
+                        id="student{{ $student->id }}" {{ in_array($student->id, $selectedStudentIds) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="student{{ $student->id }}">{{ trim($student->first_name . ' ' . $student->last_name) }}</label>
+                </div>
+            @empty
+                <p class="text-secondary mb-0" style="font-size: 13px;">No students found.</p>
+            @endforelse
+        </div>
+        <small class="text-secondary">Who's enrolled in this program — the student list Progress &amp; Report is built on.</small>
+    </div>
+
     <div class="col-md-12 mb-2">
         <label class="form-label mb-0">Link to Class Content <small class="text-muted">(optional)</small></label>
         <small class="text-secondary d-block mb-2">Connects this program to the real Class / Section / Subject where its lessons, materials and homework already live in Class Content — once set, Course Details can show them here. Leave blank if this program isn't being taught in Class Content yet.</small>
@@ -296,6 +314,22 @@
     }
     cat.addEventListener('change', sync);
     sync();
+})();
+</script>
+@endpush
+
+@push('script')
+<script>
+(function () {
+    var search = document.getElementById('programStudentSearch');
+    var list = document.getElementById('programStudentList');
+    if (!search || !list) return;
+    search.addEventListener('input', function () {
+        var term = search.value.trim().toLowerCase();
+        list.querySelectorAll('.program-student-row').forEach(function (row) {
+            row.style.display = row.getAttribute('data-name').indexOf(term) !== -1 ? '' : 'none';
+        });
+    });
 })();
 </script>
 @endpush

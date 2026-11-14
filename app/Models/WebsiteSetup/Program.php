@@ -73,6 +73,14 @@ class Program extends Model
         return $this->belongsToMany(Staff::class, 'staff_program_enrollments', 'program_id', 'staff_id');
     }
 
+    /** Which students are enrolled in this program - set from the Program
+     *  edit form's "Students" field. The real student list Progress &
+     *  Report is built on. */
+    public function students()
+    {
+        return $this->belongsToMany(\App\Models\StudentInfo\Student::class, 'student_program_enrollments', 'program_id', 'student_id');
+    }
+
     /** Optional - the real academic Class/Section/Subject this program is
      *  taught under, set from the Program edit form's "Link to Class
      *  Content" fields. Null until someone sets it; the Course Details

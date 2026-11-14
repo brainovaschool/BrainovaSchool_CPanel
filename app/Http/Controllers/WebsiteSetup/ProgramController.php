@@ -7,6 +7,7 @@ use App\Http\Requests\WebsiteSetup\Program\ProgramRequest;
 use App\Models\Academic\Classes;
 use App\Models\Role;
 use App\Models\Staff\Staff;
+use App\Models\StudentInfo\Student;
 use App\Models\WebsiteSetup\ProgramFocus;
 use App\Repositories\WebsiteSetup\ProgramCategoryRepository;
 use App\Repositories\WebsiteSetup\ProgramRepository;
@@ -39,6 +40,7 @@ class ProgramController extends Controller
         $data['categories'] = $this->categoryRepo->all();
         $data['focuses']    = $this->focusOptions();
         $data['teachers']   = $this->teacherOptions();
+        $data['students']   = $this->studentOptions();
         $data['classesList'] = $this->classesOptions();
         $data['title']      = ___('settings.add_program');
         return view('website-setup.program.create', compact('data'));
@@ -62,6 +64,7 @@ class ProgramController extends Controller
         $data['categories'] = $this->categoryRepo->all();
         $data['focuses']    = $this->focusOptions();
         $data['teachers']   = $this->teacherOptions();
+        $data['students']   = $this->studentOptions();
         $data['classesList'] = $this->classesOptions();
         $data['title']      = ___('settings.edit_program');
         return view('website-setup.program.edit', compact('data'));
@@ -125,6 +128,11 @@ class ProgramController extends Controller
     {
         $roleIds = Role::whereJsonContains('permissions', 'class_content_create')->pluck('id');
         return Staff::active()->whereIn('role_id', $roleIds)->orderBy('first_name')->get();
+    }
+
+    private function studentOptions()
+    {
+        return Student::active()->orderBy('first_name')->get();
     }
 
     /** For the optional "Link to Class Content" fields - Section and

@@ -81,6 +81,11 @@ class ProgramClass extends BaseModel
         return $this->hasMany(ProgramClassOutcome::class, 'program_class_id')->orderBy('sort_order');
     }
 
+    public function marks(): HasMany
+    {
+        return $this->hasMany(ProgramClassMark::class, 'program_class_id');
+    }
+
     public function hasProject(): bool
     {
         return (bool) $this->project_title;
@@ -89,5 +94,37 @@ class ProgramClass extends BaseModel
     public function hasQuiz(): bool
     {
         return (bool) $this->quiz_title;
+    }
+
+    public function hasWorksheet(): bool
+    {
+        return (bool) $this->worksheet_title;
+    }
+
+    public function hasAssignment(): bool
+    {
+        return (bool) $this->assignment_title;
+    }
+
+    /** Every gradable item this lesson actually has, keyed by
+     *  ProgramClassMark::TYPE - title + max marks for whichever of
+     *  Quiz/Project/Worksheet/Assignment were filled in. Empty array if
+     *  the lesson has none (nothing for Progress & Report to grade). */
+    public function gradableItems(): array
+    {
+        $items = [];
+        if ($this->hasQuiz()) {
+            $items[ProgramClassMark::QUIZ] = ['title' => $this->quiz_title, 'max_marks' => $this->quiz_max_marks];
+        }
+        if ($this->hasProject()) {
+            $items[ProgramClassMark::PROJECT] = ['title' => $this->project_title, 'max_marks' => $this->project_max_marks];
+        }
+        if ($this->hasWorksheet()) {
+            $items[ProgramClassMark::WORKSHEET] = ['title' => $this->worksheet_title, 'max_marks' => $this->worksheet_max_marks];
+        }
+        if ($this->hasAssignment()) {
+            $items[ProgramClassMark::ASSIGNMENT] = ['title' => $this->assignment_title, 'max_marks' => $this->assignment_max_marks];
+        }
+        return $items;
     }
 }
