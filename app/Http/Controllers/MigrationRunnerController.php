@@ -4203,6 +4203,39 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
     }
 
+    /** Read-only, and deliberately NOT admin-gated (only reveals the
+     *  CURRENTLY logged-in user's own data) - meant to be opened while
+     *  actually logged in as the student in question, to test the exact
+     *  live condition the "My Courses" sidebar link uses. If this shows
+     *  the right answer but the sidebar still doesn't, the sidebar itself
+     *  is stale (a deploy/cache problem) rather than the underlying data
+     *  or logic. */
+    public function inspectMySidebarCheck(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check()) {
+            return response('Not logged in.');
+        }
+
+        $user = Auth::user();
+        $lines = [];
+        $lines[] = "Logged in as User #{$user->id} <{$user->email}> role_id={$user->role_id}";
+
+        $student = $user->student;
+        $lines[] = 'auth()->user()->student: ' . ($student ? "Student #{$student->id} \"{$student->first_name} {$student->last_name}\"" : 'NULL — this is why the sidebar link is hidden.');
+
+        if ($student) {
+            $activePrograms = $student->programs()->active()->get(['programs.id', 'programs.title']);
+            $lines[] = 'programs()->active()->exists(): ' . ($activePrograms->isNotEmpty() ? 'TRUE' : 'FALSE — this is why the sidebar link is hidden.');
+            $lines[] = 'Active enrolled programs: ' . ($activePrograms->isEmpty() ? '(none)' : $activePrograms->map(fn ($p) => "#{$p->id} {$p->title}")->implode(', '));
+        }
+
+        return response('<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
+    }
+
     public function inspectCoordinatorPermissions(string $key)
     {
         if (!hash_equals(self::KEY, $key)) {

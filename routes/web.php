@@ -204,6 +204,7 @@ Route::middleware(saasMiddleware())->group(function () {
             Route::get('/db/inspect-coordinator-permissions/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectCoordinatorPermissions']);
             Route::get('/db/inspect-coordinator-links/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectCoordinatorLinks']);
             Route::get('/db/inspect-student-programs/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectStudentPrograms']);
+            Route::get('/db/inspect-my-sidebar-check/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectMySidebarCheck']);
             Route::get('/db/inspect-class-content-state/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectClassContentState']);
             Route::get('/db/seed-hr-role/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedHrRole']);
             Route::get('/db/seed-portal-duties/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedPortalDuties']);
