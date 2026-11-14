@@ -14,6 +14,29 @@
                     </a>
                 </li>
 
+                {{-- Core Academics / Beyond Academics: new top-level
+                     categories, admin-only for now - no sub-items yet,
+                     those are coming next. --}}
+                @if (auth()->user()?->role_id == 1)
+                    <li class="sidebar-menu-item {{ set_menu(['core-academics*']) }}">
+                        <a class="parent-item-content has-arrow">
+                            <i class="las la-school"></i>
+                            <span class="on-half-expanded">Core Academics</span>
+                        </a>
+                        <ul class="child-menu-list">
+                        </ul>
+                    </li>
+
+                    <li class="sidebar-menu-item {{ set_menu(['beyond-academics*']) }}">
+                        <a class="parent-item-content has-arrow">
+                            <i class="las la-rocket"></i>
+                            <span class="on-half-expanded">Beyond Academics</span>
+                        </a>
+                        <ul class="child-menu-list">
+                        </ul>
+                    </li>
+                @endif
+
                 @if (hasModule('MultiBranch'))
                     @include('multibranch::layouts.menu')
                 @endif
