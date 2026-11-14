@@ -4104,6 +4104,53 @@ class MigrationRunnerController extends Controller
      *  and the actual computed intersection authEffectivePermissions()
      *  would return — so a "still doesn't see it" report can be diagnosed
      *  without guessing. */
+    /** Read-only: dumps every staff_coordinators pivot row with both
+     *  staff members' names resolved, plus every Program <-> Teacher
+     *  link (staff_program_enrollments) - so "is X actually set as Y's
+     *  coordinator" and "is X actually assigned to teach Program Y" can
+     *  be answered directly instead of guessed at. */
+    public function inspectCoordinatorLinks(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $lines = [];
+
+        $lines[] = '=== staff_coordinators (who coordinates whom) ===';
+        $pivotRows = DB::table('staff_coordinators')->get();
+        if ($pivotRows->isEmpty()) {
+            $lines[] = 'No rows at all — nobody is set as anybody\'s coordinator yet.';
+        }
+        foreach ($pivotRows as $row) {
+            $staff = Staff::find($row->staff_id);
+            $coordinator = Staff::find($row->coordinator_staff_id);
+            $staffName = $staff ? trim($staff->first_name . ' ' . $staff->last_name) . " (id {$staff->id})" : "missing staff id {$row->staff_id}";
+            $coordinatorName = $coordinator ? trim($coordinator->first_name . ' ' . $coordinator->last_name) . " (id {$coordinator->id})" : "missing staff id {$row->coordinator_staff_id}";
+            $lines[] = "{$staffName}  is coordinated by  {$coordinatorName}";
+        }
+
+        $lines[] = '';
+        $lines[] = '=== staff_program_enrollments (who teaches which Program) ===';
+        $teachRows = DB::table('staff_program_enrollments')->get();
+        if ($teachRows->isEmpty()) {
+            $lines[] = 'No rows at all — nobody is assigned to teach any Program yet.';
+        }
+        foreach ($teachRows as $row) {
+            $staff = Staff::find($row->staff_id);
+            $program = \App\Models\WebsiteSetup\Program::find($row->program_id);
+            $staffName = $staff ? trim($staff->first_name . ' ' . $staff->last_name) . " (id {$staff->id})" : "missing staff id {$row->staff_id}";
+            $programTitle = $program ? $program->title . " (id {$program->id})" : "missing program id {$row->program_id}";
+            $lines[] = "{$staffName}  teaches  {$programTitle}";
+        }
+
+        return response('<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . implode("\n", $lines) . '</pre>');
+    }
+
     public function inspectCoordinatorPermissions(string $key)
     {
         if (!hash_equals(self::KEY, $key)) {

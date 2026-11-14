@@ -38,8 +38,19 @@ class OverviewController extends Controller
         if ($isTeacher) {
             $programIds = $user->staff->programs()->pluck('programs.id')->all();
         } elseif ($isCoordinator) {
-            $coordinateeIds = $user->staff->coordinatees->pluck('id');
-            $programIds = Program::whereHas('teachers', fn ($q) => $q->whereIn('staff.id', $coordinateeIds))->pluck('id')->all();
+            // Direct pivot-table query rather than whereHas(), to rule out
+            // any table-aliasing surprise in the belongsToMany subquery -
+            // this is the exact same staff_program_enrollments table
+            // Program::teachers() itself reads from.
+            $coordinateeIds = $user->staff->coordinatees->pluck('id')->all();
+            $programIds = $coordinateeIds
+                ? \Illuminate\Support\Facades\DB::table('staff_program_enrollments')
+                    ->whereIn('staff_id', $coordinateeIds)
+                    ->pluck('program_id')
+                    ->unique()
+                    ->values()
+                    ->all()
+                : [];
         }
 
         /** Same category record the public Our Programs page reads for
