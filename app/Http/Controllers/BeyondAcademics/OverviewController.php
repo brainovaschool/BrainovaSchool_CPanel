@@ -22,35 +22,42 @@ class OverviewController extends Controller
         $user = Auth::user();
         $isAdmin = $user && (int) $user->role_id === 1;
         $isTeacher = $user && !$isAdmin && isTeachingStaff();
-        $isCoordinator = $user && !$isAdmin && !$isTeacher && hasPermission('class_content_coordinator_review');
+        // Not "!$isTeacher" - a staff member can carry both signals at once
+        // (e.g. a Coordinator role that also has class_content_create for
+        // unrelated reasons), and they still need their full Coordinator
+        // scope, not just their own taught programs.
+        $isCoordinator = $user && !$isAdmin && hasPermission('class_content_coordinator_review');
 
         if (!$isAdmin && !$isTeacher && !$isCoordinator) {
             abort(403, ___('alert.You are not authorized to access this page'));
         }
 
-        // null = no restriction (admin sees every active program). A
-        // teacher only sees the programs they're actually assigned to
-        // teach, set from the Program edit form's "Teachers" field. A
-        // coordinator sees the programs taught by whichever teachers they
-        // oversee (Staff::coordinatees()) - students aren't on this page
+        // null = no restriction (admin sees every active program).
+        // Otherwise the union of: programs they personally teach (Program
+        // edit form's "Teachers" field) and - if they're also a
+        // Coordinator - programs taught by whichever teachers they
+        // oversee (Staff::coordinatees()). Students aren't on this page
         // yet, that's a separate follow-up.
         $programIds = null;
-        if ($isTeacher) {
-            $programIds = $user->staff->programs()->pluck('programs.id')->all();
-        } elseif ($isCoordinator) {
-            // Direct pivot-table query rather than whereHas(), to rule out
-            // any table-aliasing surprise in the belongsToMany subquery -
-            // this is the exact same staff_program_enrollments table
-            // Program::teachers() itself reads from.
-            $coordinateeIds = $user->staff->coordinatees->pluck('id')->all();
-            $programIds = $coordinateeIds
-                ? \Illuminate\Support\Facades\DB::table('staff_program_enrollments')
-                    ->whereIn('staff_id', $coordinateeIds)
-                    ->pluck('program_id')
-                    ->unique()
-                    ->values()
-                    ->all()
-                : [];
+        if (!$isAdmin) {
+            $idSet = [];
+            if ($isTeacher) {
+                $idSet = array_merge($idSet, $user->staff->programs()->pluck('programs.id')->all());
+            }
+            if ($isCoordinator) {
+                // Direct pivot-table query rather than whereHas(), to rule
+                // out any table-aliasing surprise in the belongsToMany
+                // subquery - this is the exact same staff_program_enrollments
+                // table Program::teachers() itself reads from.
+                $coordinateeIds = $user->staff->coordinatees->pluck('id')->all();
+                if ($coordinateeIds) {
+                    $idSet = array_merge($idSet, \Illuminate\Support\Facades\DB::table('staff_program_enrollments')
+                        ->whereIn('staff_id', $coordinateeIds)
+                        ->pluck('program_id')
+                        ->all());
+                }
+            }
+            $programIds = array_values(array_unique($idSet));
         }
 
         /** Same category record the public Our Programs page reads for
