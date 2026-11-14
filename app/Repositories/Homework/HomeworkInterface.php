@@ -58,4 +58,6 @@ public function getSectionsByClass(int $classId): array;
 public function getSubjectsByClassSection(int $classId, int $sectionId): array;
 
 public function getLessonsByClassSectionSubject(int $classId, int $sectionId, int $subjectId): array;
+
+public function getSubmissionStatsForHomeworks($homeworks): array;
 }

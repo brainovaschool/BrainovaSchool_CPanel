@@ -92,9 +92,8 @@
             </div>
         </section>
 
-        <section id="course-details" class="bs-placeholder-section">
-            <h4>Course Details</h4>
-            <p class="text-secondary mb-0" style="font-size: 13px;">Content coming soon — lesson plans, materials, recordings, assignments and the end-of-course project for each class.</p>
+        <section id="course-details">
+            @include('class-content._course-details-block')
         </section>
 
         <section id="progress-report" class="bs-placeholder-section">

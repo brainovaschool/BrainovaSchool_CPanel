@@ -638,6 +638,18 @@ class HomeworkRepository implements HomeworkInterface
      * Respects teacher permissions (if not admin, only returns assigned classes/sections).
      * Returns: table_html, chart_data (donut + line), statistics.
      */
+    /**
+     * Thin public wrapper around getEvaluationMarkingStatusForFilters() for
+     * callers outside the filtered-report flow (Course Details) that just
+     * want submitted/awaiting_marks/graded counts for a set of homework
+     * rows, keyed by homework id - the exact numbers the "quest log" table
+     * and its Grade button already use, reused rather than recomputed.
+     */
+    public function getSubmissionStatsForHomeworks($homeworks): array
+    {
+        return $this->getEvaluationMarkingStatusForFilters($homeworks)['per_homework'] ?? [];
+    }
+
     public function getFilteredHomeworkReport($filters): array
     {
         $sessionId = setting('session');
