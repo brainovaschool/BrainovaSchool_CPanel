@@ -257,6 +257,22 @@
 @once
     @push('css')
     <style>
+        {{-- Progress & Report is now its own page (not included alongside
+             Course Details anymore after the 3-page split), but still
+             reuses Course Details' .cc-cd-card/.cc-cd-label class names -
+             so it needs its own copy of them rather than relying on
+             Course Details happening to be on the same page to supply the
+             styling. Adds a visible shadow too, so cards read as distinct
+             blocks instead of blending into the page background. --}}
+        .cc-cd-card {
+            background: #ffffff;
+            border: 1px solid var(--ot-border-basic-table, #e4e7ec);
+            border-radius: 20px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, .05);
+        }
+        .cc-cd-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #8b93a3; margin: 0 0 0.6rem; }
         .cc-pr-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
         .cc-pr-stat {
             background: #ffffff;
@@ -264,6 +280,7 @@
             border-radius: 16px;
             padding: 1rem 1.1rem;
             position: relative;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, .05);
         }
         .cc-pr-stat-icon {
             display: inline-flex; align-items: center; justify-content: center;
@@ -290,15 +307,18 @@
         .cc-pr-seglegend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.9rem; font-size: 0.82rem; color: #475569; }
         .cc-pr-seglegend-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 0.4rem; }
         .cc-pr-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .cc-pr-table th { text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #8b93a3; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--ot-border-basic-table, #e4e7ec); }
-        .cc-pr-table td { padding: 0.55rem 0.6rem; border-bottom: 1px solid #f1f3f6; color: #334155; }
+        .cc-pr-table th { text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #8b93a3; padding: 0.6rem; border-bottom: 2px solid var(--ot-border-basic-table, #e4e7ec); }
+        .cc-pr-table td { padding: 0.65rem 0.6rem; border-bottom: 1px solid #e4e7ec; color: #334155; }
         .cc-pr-table tbody tr:last-child td { border-bottom: none; }
+        .cc-pr-table tbody tr:nth-child(even) { background: #f8f9fb; }
         .cc-pr-pill { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px; }
         .cc-pr-row-meter { display: flex; align-items: center; gap: 0.5rem; min-width: 120px; }
         .cc-pr-row-meter .cc-pr-meter { flex: 1; }
         .cc-pr-row-meter span { font-size: 0.78rem; font-weight: 700; color: #334155; white-space: nowrap; }
-        .cc-pr-activity { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.7rem; }
-        .cc-pr-activity li { display: flex; align-items: flex-start; gap: 0.6rem; }
+        .cc-pr-activity { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+        .cc-pr-activity li { display: flex; align-items: flex-start; gap: 0.6rem; padding: 0.6rem 0; border-bottom: 1px solid #f1f3f6; }
+        .cc-pr-activity li:last-child { border-bottom: none; padding-bottom: 0; }
+        .cc-pr-activity li:first-child { padding-top: 0; }
         .cc-pr-activity-icon {
             display: inline-flex; align-items: center; justify-content: center;
             width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0; font-size: 0.75rem; margin-top: 0.1rem;
