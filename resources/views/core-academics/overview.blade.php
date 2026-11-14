@@ -98,9 +98,9 @@
             @include('class-content._course-details-block')
         </section>
 
-        <section id="progress-report" class="ca-placeholder-section">
+        <section id="progress-report">
             <h4>Progress &amp; Report</h4>
-            <p class="text-secondary mb-0" style="font-size: 13px;">Content coming soon.</p>
+            @include('class-content._progress-report-block')
         </section>
         </div>
 
@@ -291,14 +291,8 @@
     #course-details, #progress-report {
         margin-top: 1.25rem;
     }
-    .ca-placeholder-section {
-        background: #ffffff;
-        border: 1px solid var(--ot-border-basic-table, #e4e7ec);
-        border-radius: 20px;
-        padding: 1.5rem 1.75rem;
-    }
-    .ca-placeholder-section h4 {
-        margin: 0 0 0.5rem;
+    #progress-report h4 {
+        margin: 0 0 0.75rem;
         font-size: 1.15rem;
         font-weight: 700;
         color: #0f172a;

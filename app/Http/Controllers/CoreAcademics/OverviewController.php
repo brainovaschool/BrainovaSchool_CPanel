@@ -6,15 +6,18 @@ use App\Http\Controllers\Controller;
 use App\Models\WebsiteSetup\Program;
 use App\Models\WebsiteSetup\ProgramCategory;
 use App\Repositories\Homework\HomeworkRepository;
+use App\Repositories\WebsiteSetup\ProgramClassMarkRepository;
 use Illuminate\Support\Facades\Auth;
 
 class OverviewController extends Controller
 {
     private $homeworkRepo;
+    private $markRepo;
 
-    public function __construct(HomeworkRepository $homeworkRepo)
+    public function __construct(HomeworkRepository $homeworkRepo, ProgramClassMarkRepository $markRepo)
     {
         $this->homeworkRepo = $homeworkRepo;
+        $this->markRepo     = $markRepo;
     }
 
     public function index()
@@ -53,7 +56,7 @@ class OverviewController extends Controller
         $selectedOption = $data['courseOptions']->firstWhere('id', $selectedId) ?? $data['courseOptions']->first();
 
         $data['selectedProgram'] = $selectedOption
-            ? Program::with(['teachers', 'programClasses.materials', 'programClasses.activities', 'programClasses.outcomes'])->find($selectedOption->id)
+            ? Program::with(['teachers', 'students', 'programClasses.materials', 'programClasses.activities', 'programClasses.outcomes', 'programClasses.marks'])->find($selectedOption->id)
             : null;
 
         $data['contentModules'] = $data['selectedProgram'] ? $data['selectedProgram']->contentModules() : collect();
@@ -62,6 +65,10 @@ class OverviewController extends Controller
         $data['homeworkStats'] = $allHomeworks->isNotEmpty()
             ? $this->homeworkRepo->getSubmissionStatsForHomeworks($allHomeworks)
             : [];
+
+        // Progress & Report is deliberately auto-linked to whichever
+        // course is selected above, not a separate dropdown.
+        $data['progress'] = $data['selectedProgram'] ? $this->markRepo->progressForProgram($data['selectedProgram']) : null;
 
         $data['title'] = 'Academics Boost — Overview';
 
