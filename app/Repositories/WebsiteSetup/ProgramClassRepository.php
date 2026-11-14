@@ -119,6 +119,11 @@ class ProgramClassRepository
             });
         }
 
+        // Admin can act on a freshly-Submitted lesson directly too (not
+        // just once a coordinator forwards it), so they should hear about
+        // it immediately as well - not only after that second step.
+        $this->notifyAdmins('Lesson submitted for review', $row);
+
         return $this->responseWithSuccess('Submitted for review.', []);
     }
 
