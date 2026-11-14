@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap");
 
 .notification_wrapper .notification_items {
   background-color: b;
@@ -495,17 +496,27 @@ input.form-check-input:checked {
   min-width: 0;
 }
 
-/* Dashboard-wide: same system-font stack as the public website, in place
-   of the theme's own "Lexend" everywhere - not just the Overview pages.
-   Only "Lexend" rules need beating; everywhere but a few (headings,
-   strong, and two ApexCharts labels) it's set without !important, so a
-   plain tag list with !important here outranks it regardless of the
-   original selector's own specificity. <i> (every icon in this theme -
-   Font Awesome, Line Awesome) is deliberately left out: icons set their
-   own font-family to their icon font the same way, and this would break
-   every icon glyph in the dashboard if it applied there too. */
+/* Dashboard-wide: the same pairing the public website actually uses -
+   "Libre Baskerville" (a real Google Font, loaded above) for headings,
+   a plain system stack for everything else - in place of the theme's
+   own "Lexend" everywhere, not just the Overview pages. The public
+   site's own body font, "Cerebri Sans", is self-hosted under
+   mismatched-case filenames (cerebrisans-regular.woff vs the real
+   CerebriSans-Regular.woff) that won't resolve on this host's
+   case-sensitive filesystem, so it isn't worth depending on here
+   either - the system stack is what actually renders there in
+   practice. Only "Lexend" rules need beating; everywhere but a few
+   (headings, strong, and two ApexCharts labels) it's set without
+   !important, so a plain tag list with !important here outranks it
+   regardless of the original selector's own specificity. <i> (every
+   icon in this theme - Font Awesome, Line Awesome) is deliberately
+   left out: icons set their own font-family to their icon font the
+   same way, and this would break every icon glyph in the dashboard if
+   it applied there too. */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Libre Baskerville", Georgia, serif !important;
+}
 body,
-h1, h2, h3, h4, h5, h6,
 p, span, div, a, button,
 input, textarea, select, label,
 td, th, li, strong, em, small, blockquote, caption {
