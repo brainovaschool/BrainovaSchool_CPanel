@@ -93,6 +93,7 @@ class ProgramClassMarkRepository
         $lessonRows  = [];
         $totalGraded = 0;
         $totalSlots  = 0;
+        $pendingSubmissions = [];
 
         foreach ($classes as $class) {
             $items = $class->gradableItems();
@@ -109,6 +110,14 @@ class ProgramClassMarkRepository
                 foreach ($students as $student) {
                     $mark = $class->marks->first(fn ($m) => (int) $m->student_id === $student->id && $m->assessment_type === $type);
                     if (!$mark || $mark->marks === null) {
+                        if ($mark && $mark->isSubmitted()) {
+                            $pendingSubmissions[] = [
+                                'student'   => $student,
+                                'class'     => $class,
+                                'itemTitle' => $item['title'],
+                                'mark'      => $mark,
+                            ];
+                        }
                         continue;
                     }
 
@@ -148,15 +157,16 @@ class ProgramClassMarkRepository
         $classAvgPct = $lessonPcts->isNotEmpty() ? round($lessonPcts->avg(), 1) : null;
 
         return [
-            'students'        => $students,
-            'lessonRows'      => $lessonRows,
-            'studentRows'     => $studentRows,
-            'totalGraded'     => $totalGraded,
-            'totalSlots'      => $totalSlots,
-            'classAvgPct'     => $classAvgPct,
-            'lessonsWithItems' => count($lessonRows),
-            'approvedLessons' => $classes->where('review_status', ProgramClass::APPROVED)->count(),
-            'totalLessons'    => $classes->count(),
+            'students'           => $students,
+            'lessonRows'         => $lessonRows,
+            'studentRows'        => $studentRows,
+            'totalGraded'        => $totalGraded,
+            'totalSlots'         => $totalSlots,
+            'classAvgPct'        => $classAvgPct,
+            'lessonsWithItems'   => count($lessonRows),
+            'approvedLessons'    => $classes->where('review_status', ProgramClass::APPROVED)->count(),
+            'totalLessons'       => $classes->count(),
+            'pendingSubmissions' => $pendingSubmissions,
         ];
     }
 
@@ -250,6 +260,14 @@ class ProgramClassMarkRepository
             'assessment_type'  => $type,
             'student_id'       => $student->id,
         ]);
+
+        // A student can change their mind and resubmit (wrong link pasted
+        // by accident, say) right up until it's graded - once marks exist
+        // the submission is the record a mark was given against, so it's
+        // locked from here on.
+        if ($mark->exists && $mark->isGraded()) {
+            return $this->responseWithError('This has already been graded - ask your teacher if you need to change it.', []);
+        }
 
         if ($file) {
             if (!$file->isValid()) {

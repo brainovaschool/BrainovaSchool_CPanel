@@ -46,6 +46,36 @@
                 <p class="text-secondary mb-0" style="font-size: 13px;">No students are enrolled in <strong>{{ $pr_selected->title }}</strong> yet — add them from Website Setup &rarr; Programs.</p>
             </div>
         @else
+            @if (!empty($pr_progress['pendingSubmissions']))
+                <div class="cc-cd-card">
+                    <p class="cc-cd-label">Pending submissions &mdash; waiting on you to grade</p>
+                    <div class="table-responsive">
+                        <table class="cc-pr-table">
+                            <thead>
+                                <tr>
+                                    <th>Student</th>
+                                    <th>Lesson</th>
+                                    <th>Item</th>
+                                    <th>Submitted</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach ($pr_progress['pendingSubmissions'] as $pending)
+                                    <tr>
+                                        <td><a href="{{ route('program-student-progress.show', [$pr_selected->id, $pending['student']->id]) }}">{{ $pending['student']->full_name }}</a></td>
+                                        <td><a href="{{ route('program-class.grade.edit', $pending['class']->id) }}">{{ $pending['class']->title }}</a></td>
+                                        <td>{{ $pending['itemTitle'] }}</td>
+                                        <td>{{ $pending['mark']->submitted_at->diffForHumans() }}</td>
+                                        <td><a href="{{ $pending['mark']->downloadUrl() }}" target="_blank" rel="noopener">View &rarr;</a></td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
+
             <div class="cc-cd-card">
                 <p class="cc-cd-label">Lesson-wise progress</p>
                 @if (empty($pr_progress['lessonRows']))

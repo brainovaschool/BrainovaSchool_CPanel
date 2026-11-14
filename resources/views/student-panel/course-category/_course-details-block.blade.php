@@ -157,6 +157,23 @@
                                             <i class="fa-solid fa-circle-check" style="color:#16a34a;"></i> Submitted {{ $sp_mark->submitted_at->diffForHumans() }} &mdash; waiting to be graded.
                                             <a href="{{ $sp_mark->downloadUrl() }}" target="_blank" rel="noopener">View what you submitted &rarr;</a>
                                         </p>
+                                        <details class="cc-cd-resubmit">
+                                            <summary>Submitted the wrong thing? Change it</summary>
+                                            <form action="{{ route('student-panel-course.submit') }}" method="post" enctype="multipart/form-data" class="cc-cd-submit-form">
+                                                @csrf
+                                                <input type="hidden" name="program_class_id" value="{{ $pc->id }}">
+                                                <input type="hidden" name="assessment_type" value="{{ $sp_type }}">
+                                                <input type="hidden" name="category" value="{{ $data['categorySlug'] }}">
+                                                <input type="hidden" name="program_id" value="{{ $sp_selected->id }}">
+                                                <p class="cc-cd-submit-label">Replace your submission &mdash; paste a new link, or upload a new photo/file:</p>
+                                                <div class="cc-cd-submit-row">
+                                                    <input type="text" name="link_url" class="form-control form-control-sm" placeholder="Paste a link to your work" value="{{ $sp_mark->submission_link_url }}">
+                                                    <span class="cc-cd-submit-or">or</span>
+                                                    <input type="file" name="file" class="form-control form-control-sm" accept="image/*,.pdf,.doc,.docx">
+                                                </div>
+                                                <button type="submit" class="btn btn-sm ot-btn-primary mt-2">Replace submission</button>
+                                            </form>
+                                        </details>
                                     @else
                                         <form action="{{ route('student-panel-course.submit') }}" method="post" enctype="multipart/form-data" class="cc-cd-submit-form">
                                             @csrf
@@ -300,6 +317,9 @@
         .cc-cd-submit-row input[type="text"] { flex: 1 1 220px; min-width: 180px; }
         .cc-cd-submit-row input[type="file"] { flex: 1 1 220px; min-width: 180px; }
         .cc-cd-submit-or { font-size: 0.78rem; color: #94a3b8; font-weight: 600; }
+        .cc-cd-resubmit { margin-top: 0.4rem; }
+        .cc-cd-resubmit summary { font-size: 0.78rem; font-weight: 600; color: #6366f1; cursor: pointer; }
+        .cc-cd-resubmit[open] summary { margin-bottom: 0.3rem; }
     </style>
     @endpush
 @endonce
