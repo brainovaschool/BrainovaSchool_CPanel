@@ -2,6 +2,7 @@
 
 namespace App\Repositories\WebsiteSetup;
 
+use App\Models\StudentInfo\Student;
 use App\Models\WebsiteSetup\Program;
 use App\Models\WebsiteSetup\ProgramClass;
 use App\Models\WebsiteSetup\ProgramClassMark;
@@ -147,6 +148,61 @@ class ProgramClassMarkRepository
             'lessonsWithItems' => count($lessonRows),
             'approvedLessons' => $classes->where('review_status', ProgramClass::APPROVED)->count(),
             'totalLessons'    => $classes->count(),
+        ];
+    }
+
+    /** The single-student counterpart to progressForProgram() above - what
+     *  a student's own "My Courses" page reads. Only Approved lessons,
+     *  and only this one student's own marks (the eager load itself is
+     *  scoped to them, so a classmate's mark row never even loads into
+     *  memory here). Keyed by program_class_id rather than a plain list,
+     *  since the student view looks a lesson's row up by id while walking
+     *  the same program->programClasses() list Course Details shows. */
+    public function progressForStudent(Program $program, Student $student): array
+    {
+        $classes = $program->programClasses()
+            ->approved()
+            ->with(['marks' => fn ($q) => $q->where('student_id', $student->id)])
+            ->orderBy('sort_order')
+            ->get();
+
+        $lessonRows = [];
+        $obtained   = 0.0;
+        $possible   = 0.0;
+        $graded     = 0;
+        $totalSlots = 0;
+
+        foreach ($classes as $class) {
+            $items = $class->gradableItems();
+            if (empty($items)) {
+                continue;
+            }
+
+            $itemRows = [];
+            foreach ($items as $type => $item) {
+                $mark  = $class->marks->firstWhere('assessment_type', $type);
+                $value = $mark?->marks;
+
+                if ($value !== null) {
+                    $graded++;
+                    if ($item['max_marks']) {
+                        $obtained += $value;
+                        $possible += $item['max_marks'];
+                    }
+                }
+
+                $itemRows[$type] = ['title' => $item['title'], 'max_marks' => $item['max_marks'], 'marks' => $value];
+            }
+
+            $totalSlots += count($items);
+            $lessonRows[$class->id] = ['items' => $itemRows];
+        }
+
+        return [
+            'lessonRows' => $lessonRows,
+            'graded'     => $graded,
+            'totalSlots' => $totalSlots,
+            'pct'        => $possible > 0 ? round($obtained / $possible * 100, 1) : null,
         ];
     }
 }

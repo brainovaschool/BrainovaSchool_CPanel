@@ -103,6 +103,14 @@ class Student extends BaseModel
         return $this->belongsTo(User::class, 'user_id', 'id');
     }
 
+    /** The Programs (Website Setup > Course Catalogue) this student is
+     *  enrolled in - the inverse of Program::students(), and what the
+     *  student's own "My Courses" page is built on. */
+    public function programs()
+    {
+        return $this->belongsToMany(\App\Models\WebsiteSetup\Program::class, 'student_program_enrollments', 'student_id', 'program_id');
+    }
+
     public function department()
     {
         return $this->belongsTo(Department::class, 'department_id', 'id');

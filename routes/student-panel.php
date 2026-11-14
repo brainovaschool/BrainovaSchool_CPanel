@@ -11,6 +11,7 @@ use App\Http\Controllers\StudentPanel\AiHelpController;
 use App\Http\Controllers\StudentPanel\AvatarController;
 use App\Http\Controllers\StudentPanel\ClassContentController;
 use App\Http\Controllers\StudentPanel\IslandController;
+use App\Http\Controllers\StudentPanel\MyCoursesController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use App\Http\Controllers\StudentPanel\HomeworkController;
 use App\Http\Controllers\StudentPanel\DashboardController;
@@ -69,6 +70,10 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::post('/complete', 'complete')->name('complete');
                         Route::get('/lesson/{id}', 'lesson')->name('lesson');
                         Route::get('/{id}', 'show')->name('show');
+                    });
+
+                    Route::controller(MyCoursesController::class)->prefix('student-panel-my-courses')->name('student-panel-my-courses.')->group(function () {
+                        Route::get('/', 'index')->name('index');
                     });
 
                     Route::controller(ProfileController::class)->prefix('student-panel')->group(function () {

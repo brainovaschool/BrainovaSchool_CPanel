@@ -153,6 +153,15 @@
                     </li>
                 @endif
 
+                @if (auth()->user()->student && auth()->user()->student->programs()->active()->exists())
+                    <li class="sidebar-menu-item {{ set_menu(['student-panel-my-courses*']) }}">
+                        <a href="{{ route('student-panel-my-courses.index') }}" class="parent-item-content">
+                            <i class="las la-book-open"></i>
+                            <span class="on-half-expanded">My Courses</span>
+                        </a>
+                    </li>
+                @endif
+
                 @if (hasModule('StudyMaterial'))
                     <li class="sidebar-menu-item {{ set_menu(['student.study-material*']) }}">
                         <a href="{{ route('student.study-material.index') }}" class="parent-item-content">
