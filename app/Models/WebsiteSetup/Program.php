@@ -18,6 +18,22 @@ class Program extends Model
         'highlights' => 'array',
     ];
 
+    /** The fixed set of lifecycle stages a program can show as its status
+     *  pill - kept to a short list so each one has a predictable colour,
+     *  rather than free text like "badge" (a different field - that one's
+     *  the subject/provider label, e.g. "Maths" or "CODENOVA"). */
+    public const STATUS_LABELS = [
+        'ongoing'     => 'Ongoing',
+        'upcoming'    => 'Upcoming',
+        'coming_soon' => 'Coming Soon',
+        'enrolling'   => 'Enrolling',
+    ];
+
+    public function getStatusLabelTextAttribute(): ?string
+    {
+        return self::STATUS_LABELS[$this->status_label] ?? null;
+    }
+
     public function category()
     {
         return $this->belongsTo(ProgramCategory::class, 'program_category_id', 'id');

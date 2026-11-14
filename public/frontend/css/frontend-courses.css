@@ -481,6 +481,19 @@ a.fe-filter-pill:hover {
   margin-bottom: 1rem;
 }
 
+.fe-status-pill {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  margin-bottom: 0.75rem;
+}
+.fe-status-pill--ongoing { background: #dcfce7; color: #15803d; }
+.fe-status-pill--upcoming { background: #dbeafe; color: #1d4ed8; }
+.fe-status-pill--coming_soon { background: #f1f5f9; color: #64748b; }
+.fe-status-pill--enrolling { background: #ece4fd; color: #5e17eb; }
+
 .fe-course-actions {
   display: flex;
   flex-wrap: wrap;

@@ -149,6 +149,10 @@
                                     <span><i class="far fa-clock"></i>{{ $course['duration'] ?? '' }}</span>
                                 </div>
 
+                                @if(!empty($course['status_label_text']))
+                                    <span class="fe-status-pill fe-status-pill--{{ $course['status_label'] }}">{{ $course['status_label_text'] }}</span>
+                                @endif
+
                                 @if(!empty($course['enrolled']))
                                     <div class="fe-course-enrolled">
                                         <i class="fas fa-users me-1"></i>{{ $course['enrolled'] }}

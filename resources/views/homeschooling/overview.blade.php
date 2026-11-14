@@ -76,9 +76,14 @@
                                         @if ($program->age_range && $program->lessons) <span>&bull;</span> @endif
                                         @if ($program->lessons)<span>{{ $program->lessons }}</span>@endif
                                     </p>
-                                    @if ($program->badge)
-                                        <span class="hs-course-badge">{{ $program->badge }}</span>
-                                    @endif
+                                    <div class="hs-course-pills">
+                                        @if ($program->badge)
+                                            <span class="hs-course-badge">{{ $program->badge }}</span>
+                                        @endif
+                                        @if ($program->status_label_text)
+                                            <span class="hs-status-pill hs-status-pill--{{ $program->status_label }}">{{ $program->status_label_text }}</span>
+                                        @endif
+                                    </div>
                                 </div>
                             </a>
                         @endforeach
@@ -237,6 +242,11 @@
         color: #8b93a3;
         margin: 0 0 0.5rem;
     }
+    .hs-course-pills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+    }
     .hs-course-badge {
         display: inline-block;
         font-size: 0.72rem;
@@ -246,6 +256,17 @@
         padding: 0.2rem 0.65rem;
         border-radius: 999px;
     }
+    .hs-status-pill {
+        display: inline-block;
+        font-size: 0.72rem;
+        font-weight: 700;
+        padding: 0.2rem 0.65rem;
+        border-radius: 999px;
+    }
+    .hs-status-pill--ongoing { background: #dcfce7; color: #15803d; }
+    .hs-status-pill--upcoming { background: #dbeafe; color: #1d4ed8; }
+    .hs-status-pill--coming_soon { background: #f1f5f9; color: #64748b; }
+    .hs-status-pill--enrolling { background: #ece4fd; color: #5e17eb; }
 
     @media (max-width: 767px) {
         .hs-hero {

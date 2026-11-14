@@ -59,6 +59,18 @@
         @error('badge')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
 
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Status</label>
+        <select class="nice-select niceSelect bordered_style wide @error('status_label') is-invalid @enderror" name="status_label">
+            <option value="">— None —</option>
+            @foreach (\App\Models\WebsiteSetup\Program::STATUS_LABELS as $value => $label)
+                <option value="{{ $value }}" {{ old('status_label', $p->status_label ?? '') == $value ? 'selected' : '' }}>{{ $label }}</option>
+            @endforeach
+        </select>
+        <small class="text-secondary">Shown as a coloured pill on this course's card.</small>
+        @error('status_label')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+    </div>
+
     <div class="col-md-12 mb-3">
         <label class="form-label">{{ ___('common.Description') }}</label>
         <textarea class="form-control ot-textarea @error('description') is-invalid @enderror" name="description" rows="2"

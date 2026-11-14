@@ -127,6 +127,7 @@ class ProgramRepository
         $row->program_focus_id    = $request->program_focus_id ?: null;
         $row->title               = $request->title;
         $row->badge               = $request->badge;
+        $row->status_label        = $request->status_label ?: null;
         $row->description         = $request->description;
         $row->age_range           = $request->age_range;
         $row->grade               = $request->grade;
