@@ -3888,6 +3888,216 @@ class MigrationRunnerController extends Controller
         );
     }
 
+    /** Creates (or re-links) a real Program row for the Robotics demo under
+     *  Beyond Academics, pointed at the Class/Section/Subject
+     *  seedClassContentCourseDemo() already built - this is what makes it
+     *  show up in that category's Course Details dropdown at all, since
+     *  the dropdown lists Programs, not Subjects on their own. Also adds a
+     *  Quiz, an Assignment and a Project homework, each linked to a
+     *  specific lesson, with a deliberate mix of submission states (some
+     *  graded, some awaiting marks, one with no submissions yet) so the
+     *  "Homework & Assignments" block has every state to show instead of
+     *  every lesson's empty state. */
+    public function linkRoboticsProgramDemo(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $report = [];
+
+        $class   = Classes::where('name', 'Grade 7 (Demo)')->first();
+        $section = Section::first();
+        $subject = Subject::where('name', 'Robotics (Demo)')->first();
+        $teacher = Staff::where('email', 'demo.robotics.teacher@brainovaschool.com')->first();
+
+        if (!$class || !$subject || !$teacher) {
+            return response('Run /db/seed-class-content-demo/{key} first — the Robotics (Demo) class, subject and teacher need to exist before this can link a Program to them.', 422);
+        }
+
+        $category = ProgramCategory::where('name', 'Beyond Acedamics')->first();
+        if (!$category) {
+            return response('No "Beyond Acedamics" program category found.', 422);
+        }
+
+        $program = Program::where('slug', 'robotics-explorers-demo')->first();
+        if (!$program) {
+            $program = Program::create([
+                'program_category_id' => $category->id,
+                'title'        => 'Robotics Explorers (Demo)',
+                'slug'         => 'robotics-explorers-demo',
+                'badge'        => 'Robotics',
+                'status_label' => 'ongoing',
+                'description'  => 'A hands-on introduction to robotics — what robots are, their parts, and building a first simple robot that follows a line.',
+                'age_range'    => '11-13',
+                'grade'        => 'Grade 7',
+                'lessons'      => '3 classes',
+                'duration'     => '2 weeks',
+                'accent'       => 'indigo',
+                'overview'     => ['Students explore what robots are and how they sense, decide and act, then build and test a simple line-following robot of their own.'],
+                'highlights'   => ['Robotics fundamentals', 'Hands-on building', 'Problem solving'],
+                'format'       => 'In person, small group',
+                'sort_order'   => 0,
+                'status'       => 1,
+                'classes_id'   => $class->id,
+                'section_id'   => $section->id,
+                'subject_id'   => $subject->id,
+            ]);
+            $report[] = 'Created Program: Robotics Explorers (Demo), linked to ' . $class->name . ' / ' . ($section->name ?? '') . ' / ' . $subject->name . '.';
+        } else {
+            $program->classes_id = $class->id;
+            $program->section_id = $section->id;
+            $program->subject_id = $subject->id;
+            $program->program_category_id = $category->id;
+            $program->save();
+            $report[] = 'Program already existed — re-linked it to the demo Class/Section/Subject.';
+        }
+
+        $program->teachers()->syncWithoutDetaching([$teacher->id]);
+        $report[] = 'Teacher Imran Qureshi assigned to the program.';
+
+        $students = Student::whereIn('email', [
+            'demo.robotics.student1@brainovaschool.com',
+            'demo.robotics.student2@brainovaschool.com',
+            'demo.robotics.student3@brainovaschool.com',
+        ])->get()->keyBy('email');
+
+        foreach ($students as $student) {
+            StudentProgramEnrollment::firstOrCreate([
+                'student_id' => $student->id,
+                'program_id' => $program->id,
+            ]);
+        }
+        $report[] = $students->count() . ' demo student(s) enrolled in the program.';
+
+        $ali  = $students['demo.robotics.student1@brainovaschool.com'] ?? null;
+        $zara = $students['demo.robotics.student2@brainovaschool.com'] ?? null;
+
+        $lesson2 = \App\Models\ClassContent\ClassContentLesson::where('title', 'Parts of a Robot')->first();
+        $lesson3 = \App\Models\ClassContent\ClassContentLesson::where('title', 'Building a Simple Line-Follower')->first();
+
+        $today = now()->format('Y-m-d');
+
+        // Direct property assignment + save() throughout below, never
+        // Homework::create()/HomeworkStudent::create() - neither model
+        // declares $fillable, and HomeworkRepository::store() itself
+        // always builds rows this way for exactly that reason.
+        if ($lesson2) {
+            $quiz = \App\Models\Homework::where('class_content_lesson_id', $lesson2->id)->where('task_type', 'quiz')->first();
+            if (!$quiz) {
+                $quiz = new \App\Models\Homework();
+                $quiz->session_id             = setting('session');
+                $quiz->classes_id             = $class->id;
+                $quiz->section_id             = $section->id;
+                $quiz->subject_id             = $subject->id;
+                $quiz->class_content_lesson_id = $lesson2->id;
+                $quiz->title                  = 'parts_of_a_robot_quick_check_quiz_' . $today;
+                $quiz->topic                  = 'Parts of a Robot';
+                $quiz->task_type              = 'quiz';
+                $quiz->date                   = $today;
+                $quiz->submission_date        = now()->addDays(5)->format('Y-m-d');
+                $quiz->marks                  = 10;
+                $quiz->status                 = 1;
+                $quiz->description            = '5 short questions on sensors, controllers and actuators.';
+                $quiz->created_by             = $teacher->user_id ?? null;
+                $quiz->save();
+                $report[] = 'Created demo Quiz homework on "Parts of a Robot".';
+
+                if ($ali) {
+                    $row = new \App\Models\HomeworkStudent();
+                    $row->student_id = $ali->id;
+                    $row->homework_id = $quiz->id;
+                    $row->date = $today;
+                    $row->marks = 8;
+                    $row->save();
+                }
+                if ($zara) {
+                    $row = new \App\Models\HomeworkStudent();
+                    $row->student_id = $zara->id;
+                    $row->homework_id = $quiz->id;
+                    $row->date = $today;
+                    $row->marks = 6;
+                    $row->save();
+                }
+                $report[] = 'Ali and Zara "submitted" the quiz — auto-graded 8/10 and 6/10, so it shows as fully graded.';
+            }
+
+            $assignment = \App\Models\Homework::where('class_content_lesson_id', $lesson2->id)->where('task_type', 'assignment')->first();
+            if (!$assignment) {
+                $assignment = new \App\Models\Homework();
+                $assignment->session_id             = setting('session');
+                $assignment->classes_id             = $class->id;
+                $assignment->section_id             = $section->id;
+                $assignment->subject_id             = $subject->id;
+                $assignment->class_content_lesson_id = $lesson2->id;
+                $assignment->title                  = 'label_a_robot_worksheet_assignment_' . $today;
+                $assignment->topic                  = 'Label a Robot';
+                $assignment->task_type              = 'assignment';
+                $assignment->date                   = $today;
+                $assignment->submission_date        = now()->addDays(5)->format('Y-m-d');
+                $assignment->marks                  = 10;
+                $assignment->status                 = 1;
+                $assignment->description            = 'Draw a simple robot and label its sensor, controller and actuator.';
+                $assignment->created_by             = $teacher->user_id ?? null;
+                $assignment->save();
+                $report[] = 'Created demo Assignment homework on "Parts of a Robot".';
+
+                if ($ali) {
+                    $row = new \App\Models\HomeworkStudent();
+                    $row->student_id = $ali->id;
+                    $row->homework_id = $assignment->id;
+                    $row->date = $today;
+                    $row->marks = null;
+                    $row->save();
+                }
+                if ($zara) {
+                    $row = new \App\Models\HomeworkStudent();
+                    $row->student_id = $zara->id;
+                    $row->homework_id = $assignment->id;
+                    $row->date = $today;
+                    $row->marks = null;
+                    $row->save();
+                }
+                $report[] = 'Ali and Zara submitted the assignment — both still awaiting teacher marks, so it shows "2 in, 2 waiting".';
+            }
+        }
+
+        if ($lesson3) {
+            $project = \App\Models\Homework::where('class_content_lesson_id', $lesson3->id)->where('task_type', 'project')->first();
+            if (!$project) {
+                $project = new \App\Models\Homework();
+                $project->session_id             = setting('session');
+                $project->classes_id             = $class->id;
+                $project->section_id             = $section->id;
+                $project->subject_id             = $subject->id;
+                $project->class_content_lesson_id = $lesson3->id;
+                $project->title                  = 'line_follower_build_log_project_' . $today;
+                $project->topic                  = 'Line-Follower Build Log';
+                $project->task_type              = 'project';
+                $project->date                   = $today;
+                $project->submission_date        = now()->addDays(10)->format('Y-m-d');
+                $project->marks                  = 20;
+                $project->status                 = 1;
+                $project->description            = "Document your line-follower build: photos of each step and a short note on what you'd improve.";
+                $project->created_by             = $teacher->user_id ?? null;
+                $project->save();
+                $report[] = 'Created demo Project homework on "Building a Simple Line-Follower" — no submissions yet, shows the "None yet" state.';
+            }
+        }
+
+        return response(
+            '<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">'
+            . implode("\n", $report)
+            . "\n\nProgram: {$program->title}  (id {$program->id}, category: Beyond Academics)\n"
+            . "Now open Beyond Academics -> Overview -> Course Details and pick \"{$program->title}\" from the Course dropdown.\n"
+            . '</pre>'
+        );
+    }
+
     /** Read-only: dumps every "Coordinator"-named Role row (in case more
      *  than one exists) and every User whose role_id matches one of them —
      *  their raw role permissions, their raw personal permissions snapshot,
