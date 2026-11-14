@@ -288,6 +288,9 @@ Route::middleware(saasMiddleware())->group(function () {
                     // Beyond Academics (Super Admin only for now, same as its sidebar entry -
                     // guarded inside the controller, not by a role middleware).
                     Route::get('beyond-academics/overview', [\App\Http\Controllers\BeyondAcademics\OverviewController::class, 'index'])->name('beyond-academics.overview');
+
+                    // Core Academics (Super Admin only for now - same reasoning).
+                    Route::get('core-academics/overview', [\App\Http\Controllers\CoreAcademics\OverviewController::class, 'index'])->name('core-academics.overview');
                     Route::get('fees-collection-monthly',      [DashboardController::class, 'feesCollectionMonthly']);
                     Route::get('revenue',                      [DashboardController::class, 'revenueYearly']);
                     Route::get('fees-collection-current-month', [DashboardController::class, 'feesCollectionCurrentMonth']);

@@ -14,7 +14,7 @@
                     </a>
                 </li>
 
-                {{-- Core Academics: still admin-only, no sub-items yet. --}}
+                {{-- Core Academics: still admin-only for now. --}}
                 @if (auth()->user()?->role_id == 1)
                     <li class="sidebar-menu-item {{ set_menu(['core-academics*']) }}">
                         <a class="parent-item-content has-arrow">
@@ -22,6 +22,9 @@
                             <span class="on-half-expanded">Core Academics</span>
                         </a>
                         <ul class="child-menu-list">
+                            <li class="sidebar-menu-item {{ set_menu(['core-academics/overview']) }}">
+                                <a href="{{ route('core-academics.overview') }}">Overview</a>
+                            </li>
                         </ul>
                     </li>
                 @endif

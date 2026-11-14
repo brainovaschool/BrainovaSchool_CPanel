@@ -266,6 +266,10 @@ class FrontendController extends Controller
         $data['faqs']            = $this->programFaqs();
         $data['trust']           = $this->programTrust();
 
+        // Same banner as Beyond Academics' admin Overview page - same
+        // image and copy, editable in one place (Website Setup > Sections).
+        $data['mascot_banner'] = \App\Models\WebsiteSetup\PageSections::where('key', 'beyond_academics_overview_hero')->first();
+
         return view('frontend.courses', compact('data', 'paginator'));
     }
 

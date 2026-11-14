@@ -29,8 +29,11 @@ class OverviewController extends Controller
 
         /** Pulled straight from the same Programs the public Course
          *  Catalogue already shows - nothing new to maintain here, this
-         *  page just reflects whatever's set up in Website Setup. */
+         *  page just reflects whatever's set up in Website Setup. Scoped
+         *  to the "Beyond Acedamics" category specifically - coding,
+         *  Canva, AI, robotics etc - not every program in the catalogue. */
         $data['featured'] = Program::active()
+            ->whereHas('category', fn ($q) => $q->where('name', 'Beyond Acedamics'))
             ->when($programIds !== null, fn ($q) => $q->whereIn('id', $programIds))
             ->orderBy('sort_order')
             ->with('upload')

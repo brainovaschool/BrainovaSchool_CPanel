@@ -29,6 +29,7 @@
             ['slug' => 'skills', 'label' => 'Life skills'],
         ];
     }
+    $mascotBanner = $data['mascot_banner'] ?? null;
 @endphp
 
 <div class="fe-courses-page">
@@ -82,6 +83,25 @@
                         <span class="fe-category-card-label">{{ $cat['label'] ?? $slug }}</span>
                     </a>
                 @endforeach
+            </div>
+        </div>
+    </section>
+
+    <section class="fe-mascot-banner-section section_padding pt-0 pb-0">
+        <div class="container">
+            <div class="fe-mascot-banner">
+                <span class="fe-mascot-banner-badge">Overview</span>
+                <div class="fe-mascot-banner-grid">
+                    <div class="fe-mascot-banner-copy">
+                        <h2>{{ $mascotBanner->name ?? 'Learn New Skills, Explore New Possibilities' }}</h2>
+                        <p>{{ $mascotBanner->description ?? 'Short courses • Practical Skills • Lifelong Learning' }}</p>
+                    </div>
+                    @if ($mascotBanner?->upload)
+                        <div class="fe-mascot-banner-art">
+                            <img src="{{ globalAsset($mascotBanner->upload->path) }}" alt="">
+                        </div>
+                    @endif
+                </div>
             </div>
         </div>
     </section>

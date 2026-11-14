@@ -220,6 +220,65 @@ a.fe-filter-pill:hover {
   font-size: 1.4rem;
 }
 
+.fe-mascot-banner-section {
+  margin-top: 1.5rem;
+}
+
+.fe-mascot-banner {
+  position: relative;
+  background: linear-gradient(120deg, #efe7ff 0%, #e4ecff 60%, #eef2ff 100%);
+  border-radius: 20px;
+  padding: 1.75rem 2rem 2rem;
+  overflow: hidden;
+}
+
+.fe-mascot-banner-badge {
+  display: inline-block;
+  background: #5e17eb;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+}
+
+.fe-mascot-banner-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.fe-mascot-banner-copy h2 {
+  font-size: clamp(1.4rem, 3vw, 1.75rem);
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 0.6rem;
+  line-height: 1.25;
+}
+
+.fe-mascot-banner-copy p {
+  font-size: 0.95rem;
+  color: #475569;
+  margin: 0;
+}
+
+.fe-mascot-banner-art {
+  flex: 0 0 auto;
+}
+
+.fe-mascot-banner-art img {
+  max-height: 150px;
+  width: auto;
+  display: block;
+}
+
+@media (max-width: 575px) {
+  .fe-mascot-banner-art { display: none; }
+}
+
 .fe-category-card-label {
   font-size: 0.85rem;
   font-weight: 700;
