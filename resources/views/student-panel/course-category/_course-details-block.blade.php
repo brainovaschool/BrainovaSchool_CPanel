@@ -164,11 +164,13 @@
                                             <input type="hidden" name="assessment_type" value="{{ $sp_type }}">
                                             <input type="hidden" name="category" value="{{ $data['categorySlug'] }}">
                                             <input type="hidden" name="program_id" value="{{ $sp_selected->id }}">
+                                            <p class="cc-cd-submit-label">Submit your work &mdash; paste a link, or upload a photo/file:</p>
                                             <div class="cc-cd-submit-row">
                                                 <input type="text" name="link_url" class="form-control form-control-sm" placeholder="Paste a link to your work">
-                                                <input type="file" name="file" class="form-control form-control-sm">
-                                                <button type="submit" class="btn btn-sm ot-btn-primary">Submit</button>
+                                                <span class="cc-cd-submit-or">or</span>
+                                                <input type="file" name="file" class="form-control form-control-sm" accept="image/*,.pdf,.doc,.docx">
                                             </div>
+                                            <button type="submit" class="btn btn-sm ot-btn-primary mt-2">Submit</button>
                                         </form>
                                     @endif
                                 </div>
@@ -292,10 +294,12 @@
         .cc-cd-out-list li { font-size: 0.85rem; color: #475569; line-height: 1.5; }
         .cc-cd-ico { flex-shrink: 0; }
         .cc-cd-score { font-size: 0.85rem; font-weight: 700; color: #0f172a; margin: 0.5rem 0 0; }
-        .cc-cd-submit-form { margin-top: 0.5rem; }
-        .cc-cd-submit-row { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
-        .cc-cd-submit-row input[type="text"] { flex: 1; min-width: 160px; }
-        .cc-cd-submit-row input[type="file"] { flex: 1; min-width: 160px; }
+        .cc-cd-submit-form { margin-top: 0.5rem; background: #f8f9fb; border: 1px dashed var(--ot-border-basic-table, #e4e7ec); border-radius: 10px; padding: 0.75rem; }
+        .cc-cd-submit-label { font-size: 0.78rem; font-weight: 600; color: #475569; margin: 0 0 0.5rem; }
+        .cc-cd-submit-row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
+        .cc-cd-submit-row input[type="text"] { flex: 1 1 220px; min-width: 180px; }
+        .cc-cd-submit-row input[type="file"] { flex: 1 1 220px; min-width: 180px; }
+        .cc-cd-submit-or { font-size: 0.78rem; color: #94a3b8; font-weight: 600; }
     </style>
     @endpush
 @endonce

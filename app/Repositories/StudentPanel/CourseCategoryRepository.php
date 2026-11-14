@@ -86,7 +86,14 @@ class CourseCategoryRepository
             ? Program::with(['teachers', 'programClasses' => fn ($q) => $q->approved()->with(['materials', 'activities', 'outcomes'])])->find($selectedOption->id)
             : null;
 
-        return ['programs' => $programs, 'selectedProgram' => $selectedProgram];
+        // Course Details shows each gradable item's submission/grade status
+        // (and is where the student submits from), so it needs this
+        // student's own mark data just as much as Progress & Report does -
+        // missing this left every item looking un-submitted even right
+        // after a successful submission.
+        $progress = $selectedProgram ? $this->markRepo->progressForStudent($selectedProgram, $student) : null;
+
+        return ['programs' => $programs, 'selectedProgram' => $selectedProgram, 'progress' => $progress];
     }
 
     public function progressReportData(Student $student, string $slug, ?int $programId): array

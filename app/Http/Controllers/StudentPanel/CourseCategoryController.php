@@ -54,12 +54,13 @@ class CourseCategoryController extends Controller
 
         $result = $student
             ? $this->repo->courseDetailsData($student, $category, $programId)
-            : ['programs' => collect(), 'selectedProgram' => null];
+            : ['programs' => collect(), 'selectedProgram' => null, 'progress' => null];
 
         $data['categorySlug']    = $category;
         $data['categoryTitle']   = CourseCategoryRepository::CATEGORIES[$category];
         $data['courseOptions']   = $result['programs'];
         $data['selectedProgram'] = $result['selectedProgram'];
+        $data['progress']        = $result['progress'];
         $data['title']           = $data['categoryTitle'] . ' — Course Details';
 
         return view('student-panel.course-category.course-details', compact('data'));
