@@ -11,7 +11,7 @@
                     <h4 class="bradecrumb-title mb-1">Overview</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
-                        <li class="breadcrumb-item">Academic Boost</li>
+                        <li class="breadcrumb-item">Academics Boost</li>
                         <li class="breadcrumb-item">Overview</li>
                     </ol>
                 </div>
@@ -46,7 +46,7 @@
                     @endif
                 </div>
                 @if (!$cat)
-                    <p class="ca-hero-missing">No "Academic Boost" category found in Website Setup &rarr; Course Catalogue &rarr; Program Category.</p>
+                    <p class="ca-hero-missing">No "Academics Boost" category found yet — add it in Website Setup &rarr; Course Catalogue &rarr; Program Category.</p>
                 @endif
             </div>
 
@@ -59,7 +59,7 @@
                     <a href="{{ route('program.index') }}">Manage in Website Setup <i class="fa-solid fa-arrow-right"></i></a>
                 </div>
                 @if ($data['featured']->isEmpty())
-                    <p class="text-secondary mb-0" style="font-size: 13px;">No courses added yet — add one under Website Setup &rarr; Course Catalogue &rarr; Program, in the Academic Boost category.</p>
+                    <p class="text-secondary mb-0" style="font-size: 13px;">No courses added yet — add one under Website Setup &rarr; Course Catalogue &rarr; Program, in the Academics Boost category.</p>
                 @else
                     <div class="ca-course-grid">
                         @foreach ($data['featured'] as $program)
@@ -118,7 +118,7 @@
     }
     .ca-hero-grid {
         display: flex;
-        align-items: center;
+        align-items: stretch;
         gap: 2.5rem;
         flex-wrap: wrap;
         flex: 1 1 auto;
@@ -151,21 +151,19 @@
     }
     .ca-hero-missing {
         font-size: 0.85rem;
-        color: #8b5a00;
-        background: #fff7e6;
-        border-radius: 8px;
-        padding: 0.5rem 0.75rem;
+        color: #8b93a3;
         margin: 0.75rem 0 0;
     }
     .ca-hero-art {
         flex: 0 0 42%;
         max-width: 460px;
         width: 100%;
+        min-height: 140px;
     }
     .ca-hero-art img {
         display: block;
         width: 100%;
-        aspect-ratio: 1920 / 700;
+        height: 100%;
         object-fit: cover;
         border-radius: 14px;
     }
@@ -261,6 +259,8 @@
         .ca-hero-art {
             flex: none;
             max-width: none;
+            height: 200px;
+            min-height: 0;
         }
     }
 </style>

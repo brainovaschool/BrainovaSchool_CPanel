@@ -16,7 +16,7 @@
 
                 {{-- The five Course Catalogue categories, each its own
                      top-level section - same order as Our Programs:
-                     Homeschooling, Academic Boost (was "Core Academics" -
+                     Homeschooling, Academics Boost (was "Core Academics" -
                      route/controller keep the old internal name, only the
                      category name changed), Beyond Academics, Beyond
                      Screens. Social Clubs doesn't have one yet. All
@@ -38,7 +38,7 @@
                     <li class="sidebar-menu-item {{ set_menu(['core-academics*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-school"></i>
-                            <span class="on-half-expanded">Academic Boost</span>
+                            <span class="on-half-expanded">Academics Boost</span>
                         </a>
                         <ul class="child-menu-list">
                             <li class="sidebar-menu-item {{ set_menu(['core-academics/overview']) }}">

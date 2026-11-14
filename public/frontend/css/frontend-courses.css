@@ -184,17 +184,18 @@ a.fe-filter-pill:hover {
   color: #3730a3;
 }
 
-/* The category's own image is a 1920x700 banner graphic (set in Website
-   Setup > Course Catalogue > Program Category), not a small icon - this
-   section exists only when a specific category is selected, and is sized
-   to that real proportion rather than cropping or shrinking it. */
+/* The category's own image is set in Website Setup > Course Catalogue >
+   Program Category - this section exists only when a specific category
+   is selected. The image fills the full height of the banner (however
+   tall the text makes it) rather than being boxed to a fixed ratio that
+   leaves empty space above/below it when the text column is taller. */
 .fe-category-banner-section {
   margin-top: 0.25rem;
 }
 
 .fe-category-banner {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 2.5rem;
   background: #ffffff;
   border: 1px solid rgba(226, 232, 240, 0.9);
@@ -236,12 +237,13 @@ a.fe-filter-pill:hover {
   flex: 0 0 42%;
   max-width: 460px;
   width: 100%;
+  min-height: 140px;
 }
 
 .fe-category-banner-art img {
   display: block;
   width: 100%;
-  aspect-ratio: 1920 / 700;
+  height: 100%;
   object-fit: cover;
   border-radius: 14px;
 }
@@ -256,6 +258,8 @@ a.fe-filter-pill:hover {
   .fe-category-banner-art {
     flex: none;
     max-width: none;
+    height: 200px;
+    min-height: 0;
   }
 }
 

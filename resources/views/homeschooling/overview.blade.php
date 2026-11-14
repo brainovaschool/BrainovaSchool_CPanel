@@ -118,7 +118,7 @@
     }
     .hs-hero-grid {
         display: flex;
-        align-items: center;
+        align-items: stretch;
         gap: 2.5rem;
         flex-wrap: wrap;
         flex: 1 1 auto;
@@ -151,21 +151,19 @@
     }
     .hs-hero-missing {
         font-size: 0.85rem;
-        color: #8b5a00;
-        background: #fff7e6;
-        border-radius: 8px;
-        padding: 0.5rem 0.75rem;
+        color: #8b93a3;
         margin: 0.75rem 0 0;
     }
     .hs-hero-art {
         flex: 0 0 42%;
         max-width: 460px;
         width: 100%;
+        min-height: 140px;
     }
     .hs-hero-art img {
         display: block;
         width: 100%;
-        aspect-ratio: 1920 / 700;
+        height: 100%;
         object-fit: cover;
         border-radius: 14px;
     }
@@ -261,6 +259,8 @@
         .hs-hero-art {
             flex: none;
             max-width: none;
+            height: 200px;
+            min-height: 0;
         }
     }
 </style>
