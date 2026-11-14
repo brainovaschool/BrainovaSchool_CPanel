@@ -95,7 +95,7 @@
         <div class="cc-cd-card">
             <div class="cc-cd-head-row">
                 <p class="cc-cd-label mb-0">Classes in this course</p>
-                @if (hasPermission('program_update'))
+                @if (auth()->user()?->role_id == 1)
                     <a class="cc-cd-manage-link" href="{{ route('program.edit', $cd_selected->id) }}">Manage in Website Setup <i class="fa-solid fa-arrow-right"></i></a>
                 @endif
             </div>
@@ -103,7 +103,7 @@
             @if (!$cd_selected->isLinkedToClassContent())
                 <div class="cc-cd-empty">
                     <p class="mb-1"><strong>{{ $cd_selected->title }}</strong> isn't linked to Class Content yet.</p>
-                    @if (hasPermission('program_update'))
+                    @if (auth()->user()?->role_id == 1)
                         <p class="text-secondary mb-0" style="font-size: 13px;">
                             Open this program in <a href="{{ route('program.edit', $cd_selected->id) }}">Website Setup &rarr; Course Catalogue &rarr; Program</a>
                             and set "Link to Class Content" (Class / Section / Subject) to show its real classes, materials and homework here.

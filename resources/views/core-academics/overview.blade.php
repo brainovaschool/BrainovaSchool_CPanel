@@ -56,7 +56,9 @@
             <div class="ca-featured">
                 <div class="ca-featured-head">
                     <h4>Featured Courses</h4>
-                    <a href="{{ route('program.index') }}">Manage in Website Setup <i class="fa-solid fa-arrow-right"></i></a>
+                    @if (auth()->user()?->role_id == 1)
+                        <a href="{{ route('program.index') }}">Manage in Website Setup <i class="fa-solid fa-arrow-right"></i></a>
+                    @endif
                 </div>
                 @if ($data['featured']->isEmpty())
                     <p class="text-secondary mb-0" style="font-size: 13px;">No courses added yet — add one under Website Setup &rarr; Course Catalogue &rarr; Program, in the Academics Boost category.</p>
