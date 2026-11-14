@@ -478,3 +478,19 @@ input.form-check-input:checked {
 .ot-basic-table.ot-table-bg tbody td:first-child:not(:has(input[type="checkbox"])) {
   min-width: 280px;
 }
+
+/* A top-level sidebar label long enough to reach the dropdown arrow
+   (metisMenu positions it absolutely, so it never pushes away from text
+   the way a normal inline element would - e.g. "Beyond Academics") ran
+   straight into it instead of leaving room. Reserve that space and, if a
+   label is ever longer still, fade it out with an ellipsis rather than
+   let it collide with the arrow. */
+.sidebar .sidebar-menu .sidebar-menu-section .sidebar-menu-item>a.has-arrow {
+  padding-right: 2em;
+}
+.sidebar .sidebar-menu .sidebar-menu-section .sidebar-menu-item>a.has-arrow .on-half-expanded {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
