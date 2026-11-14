@@ -20,10 +20,15 @@
 @endonce
 
 @php
-    $cd_options  = $courseOptions ?? collect();
-    $cd_selected = $selectedProgram ?? null;
-    $cd_modules  = $contentModules ?? collect();
-    $cd_stats    = $homeworkStats ?? [];
+    // The 4 parent Overview controllers put everything into $data (e.g.
+    // $data['courseOptions']) rather than passing bare variables, and
+    // @include shares the parent view's scope as-is - so this reads
+    // straight from $data rather than from top-level variables that were
+    // never actually set.
+    $cd_options  = $data['courseOptions'] ?? collect();
+    $cd_selected = $data['selectedProgram'] ?? null;
+    $cd_modules  = $data['contentModules'] ?? collect();
+    $cd_stats    = $data['homeworkStats'] ?? [];
     $cd_typeKey  = ['homework' => 'hw', 'quiz' => 'quiz', 'project' => 'project', 'activity' => 'activity', 'game' => 'game', 'assignment' => 'assignment'];
 @endphp
 
