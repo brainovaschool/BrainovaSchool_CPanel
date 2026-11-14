@@ -274,14 +274,14 @@ class ProgramClassRepository
         }
 
         $routeName = match ($program->category?->name) {
-            'Homeschooling'    => 'homeschooling.overview',
-            'Academics Boost'  => 'core-academics.overview',
-            'Beyond Acedamics' => 'beyond-academics.overview',
-            'Beyond Screens'   => 'beyond-screens.overview',
+            'Homeschooling'    => 'homeschooling.course-details',
+            'Academics Boost'  => 'core-academics.course-details',
+            'Beyond Acedamics' => 'beyond-academics.course-details',
+            'Beyond Screens'   => 'beyond-screens.course-details',
             default            => 'dashboard',
         };
 
-        return route($routeName) . '?program=' . $program->id . '#course-details';
+        return route($routeName) . '?program=' . $program->id;
     }
 
     private function fillProjectAndQuiz(ProgramClass $row, $request): void

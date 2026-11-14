@@ -26,7 +26,6 @@
 
         @php($cat = $data['category'] ?? null)
         <div class="ba-overview-page">
-        <section id="overview">
             <div class="ba-hero">
                 <span class="ba-hero-badge">Overview</span>
                 <div class="ba-hero-grid">
@@ -92,16 +91,6 @@
                     </div>
                 @endif
             </div>
-        </section>
-
-        <section id="course-details">
-            @include('class-content._course-details-block')
-        </section>
-
-        <section id="progress-report">
-            <h4>Progress &amp; Report</h4>
-            @include('class-content._progress-report-block')
-        </section>
         </div>
 
     </div>
@@ -283,24 +272,6 @@
     .ba-status-pill--upcoming { background: #dbeafe; color: #1d4ed8; }
     .ba-status-pill--coming_soon { background: #f1f5f9; color: #64748b; }
     .ba-status-pill--enrolling { background: #ece4fd; color: #5e17eb; }
-
-    /* Overview, Course Details and Progress & Report are one page - the
-       sidebar's sub-items are just anchor links into it, not separate
-       pages. scroll-margin-top keeps the fixed header from covering the
-       section heading when a link jumps here. */
-    #overview, #course-details, #progress-report {
-        scroll-margin-top: 100px;
-        display: block;
-    }
-    #course-details, #progress-report {
-        margin-top: 1.25rem;
-    }
-    #progress-report h4 {
-        margin: 0 0 0.75rem;
-        font-size: 1.15rem;
-        font-weight: 700;
-        color: #0f172a;
-    }
 
     @media (max-width: 767px) {
         .ba-hero {

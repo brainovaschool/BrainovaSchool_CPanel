@@ -7,8 +7,14 @@ use App\Models\WebsiteSetup\Program;
 use App\Models\WebsiteSetup\ProgramCategory;
 use App\Repositories\Homework\HomeworkRepository;
 use App\Repositories\WebsiteSetup\ProgramClassMarkRepository;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
+/** Split into 3 pages (Overview / Course Details / Progress & Report)
+ *  rather than one page with 3 anchor sections - same split the student
+ *  side uses, reached from 3 separate sidebar links now instead of 3
+ *  anchors into the same page. */
 class OverviewController extends Controller
 {
     private $homeworkRepo;
@@ -20,7 +26,12 @@ class OverviewController extends Controller
         $this->markRepo     = $markRepo;
     }
 
-    public function index()
+    /** null = no restriction (admin sees every active program). Otherwise
+     *  the union of: programs they personally teach (Program edit form's
+     *  "Teachers" field) and - if they're also a Coordinator - programs
+     *  taught by whichever teachers they oversee (Staff::coordinatees()).
+     *  Students aren't on this page yet, that's a separate follow-up. */
+    private function scopedProgramIds(): ?array
     {
         $user = Auth::user();
         $isAdmin = $user && (int) $user->role_id === 1;
@@ -35,39 +46,53 @@ class OverviewController extends Controller
             abort(403, ___('alert.You are not authorized to access this page'));
         }
 
-        // null = no restriction (admin sees every active program).
-        // Otherwise the union of: programs they personally teach (Program
-        // edit form's "Teachers" field) and - if they're also a
-        // Coordinator - programs taught by whichever teachers they
-        // oversee (Staff::coordinatees()). Students aren't on this page
-        // yet, that's a separate follow-up.
-        $programIds = null;
-        if (!$isAdmin) {
-            $idSet = [];
-            if ($isTeacher) {
-                $idSet = array_merge($idSet, $user->staff->programs()->pluck('programs.id')->all());
-            }
-            if ($isCoordinator) {
-                // Direct pivot-table query rather than whereHas(), to rule
-                // out any table-aliasing surprise in the belongsToMany
-                // subquery - this is the exact same staff_program_enrollments
-                // table Program::teachers() itself reads from.
-                $coordinateeIds = $user->staff->coordinatees->pluck('id')->all();
-                if ($coordinateeIds) {
-                    $idSet = array_merge($idSet, \Illuminate\Support\Facades\DB::table('staff_program_enrollments')
-                        ->whereIn('staff_id', $coordinateeIds)
-                        ->pluck('program_id')
-                        ->all());
-                }
-            }
-            $programIds = array_values(array_unique($idSet));
+        if ($isAdmin) {
+            return null;
         }
 
-        /** Same category record the public Our Programs page reads for
-         *  its own banner - one place (Website Setup > Course Catalogue >
-         *  Program Category > Edit) to set tagline/title/subtitle/image
-         *  for this category everywhere it's shown. */
-        $category = ProgramCategory::where('name', 'Beyond Acedamics')->with('upload')->first();
+        $idSet = [];
+        if ($isTeacher) {
+            $idSet = array_merge($idSet, $user->staff->programs()->pluck('programs.id')->all());
+        }
+        if ($isCoordinator) {
+            // Direct pivot-table query rather than whereHas(), to rule
+            // out any table-aliasing surprise in the belongsToMany
+            // subquery - this is the exact same staff_program_enrollments
+            // table Program::teachers() itself reads from.
+            $coordinateeIds = $user->staff->coordinatees->pluck('id')->all();
+            if ($coordinateeIds) {
+                $idSet = array_merge($idSet, DB::table('staff_program_enrollments')
+                    ->whereIn('staff_id', $coordinateeIds)
+                    ->pluck('program_id')
+                    ->all());
+            }
+        }
+
+        return array_values(array_unique($idSet));
+    }
+
+    /** Same category record the public Our Programs page reads for its
+     *  own banner - one place (Website Setup > Course Catalogue > Program
+     *  Category > Edit) to set tagline/title/subtitle/image for this
+     *  category everywhere it's shown. */
+    private function category(): ?ProgramCategory
+    {
+        return ProgramCategory::where('name', 'Beyond Acedamics')->with('upload')->first();
+    }
+
+    private function courseOptions(?ProgramCategory $category, ?array $programIds)
+    {
+        return Program::active()
+            ->when($category, fn ($q) => $q->where('program_category_id', $category->id))
+            ->when($programIds !== null, fn ($q) => $q->whereIn('id', $programIds))
+            ->orderBy('sort_order')
+            ->get(['id', 'title']);
+    }
+
+    public function overview()
+    {
+        $programIds = $this->scopedProgramIds();
+        $category   = $this->category();
         $data['category'] = $category;
 
         /** Pulled straight from the same Programs the public Course
@@ -83,16 +108,19 @@ class OverviewController extends Controller
             ->take(8)
             ->get();
 
-        // Course Details: same category + role scope as Featured Courses
-        // above, but every matching program (not capped to 8) and with the
-        // full model + relations the lessons/homework block needs.
-        $data['courseOptions'] = Program::active()
-            ->when($category, fn ($q) => $q->where('program_category_id', $category->id))
-            ->when($programIds !== null, fn ($q) => $q->whereIn('id', $programIds))
-            ->orderBy('sort_order')
-            ->get(['id', 'title']);
+        $data['title'] = 'Beyond Academics — Overview';
 
-        $selectedId = (int) request()->query('program');
+        return view('beyond-academics.overview', compact('data'));
+    }
+
+    public function courseDetails(Request $request)
+    {
+        $programIds = $this->scopedProgramIds();
+        $category   = $this->category();
+
+        $data['courseOptions'] = $this->courseOptions($category, $programIds);
+
+        $selectedId     = (int) $request->query('program');
         $selectedOption = $data['courseOptions']->firstWhere('id', $selectedId) ?? $data['courseOptions']->first();
 
         $data['selectedProgram'] = $selectedOption
@@ -106,12 +134,29 @@ class OverviewController extends Controller
             ? $this->homeworkRepo->getSubmissionStatsForHomeworks($allHomeworks)
             : [];
 
-        // Progress & Report is deliberately auto-linked to whichever
-        // course is selected above, not a separate dropdown.
+        $data['title'] = 'Beyond Academics — Course Details';
+
+        return view('beyond-academics.course-details', compact('data'));
+    }
+
+    public function progressReport(Request $request)
+    {
+        $programIds = $this->scopedProgramIds();
+        $category   = $this->category();
+
+        $data['courseOptions'] = $this->courseOptions($category, $programIds);
+
+        $selectedId     = (int) $request->query('program');
+        $selectedOption = $data['courseOptions']->firstWhere('id', $selectedId) ?? $data['courseOptions']->first();
+
+        $data['selectedProgram'] = $selectedOption
+            ? Program::with(['students', 'programClasses.marks'])->find($selectedOption->id)
+            : null;
+
         $data['progress'] = $data['selectedProgram'] ? $this->markRepo->progressForProgram($data['selectedProgram']) : null;
 
-        $data['title'] = 'Beyond Academics — Overview';
+        $data['title'] = 'Beyond Academics — Progress & Report';
 
-        return view('beyond-academics.overview', compact('data'));
+        return view('beyond-academics.progress-report', compact('data'));
     }
 }

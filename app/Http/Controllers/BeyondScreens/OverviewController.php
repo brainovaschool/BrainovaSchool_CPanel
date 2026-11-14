@@ -7,8 +7,11 @@ use App\Models\WebsiteSetup\Program;
 use App\Models\WebsiteSetup\ProgramCategory;
 use App\Repositories\Homework\HomeworkRepository;
 use App\Repositories\WebsiteSetup\ProgramClassMarkRepository;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+/** Split into 3 pages (Overview / Course Details / Progress & Report)
+ *  rather than one page with 3 anchor sections. */
 class OverviewController extends Controller
 {
     private $homeworkRepo;
@@ -20,17 +23,32 @@ class OverviewController extends Controller
         $this->markRepo     = $markRepo;
     }
 
-    public function index()
+    private function guard(): void
     {
         if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
             abort(403, ___('alert.You are not authorized to access this page'));
         }
+    }
 
-        /** Same category record the public Our Programs page reads for
-         *  its own banner - one place (Website Setup > Course Catalogue >
-         *  Program Category > Edit) to set tagline/title/subtitle/image
-         *  for this category everywhere it's shown. */
-        $category = ProgramCategory::where('name', 'Beyond Screens')->with('upload')->first();
+    /** Same category record the public Our Programs page reads for its
+     *  own banner. */
+    private function category(): ?ProgramCategory
+    {
+        return ProgramCategory::where('name', 'Beyond Screens')->with('upload')->first();
+    }
+
+    private function courseOptions(?ProgramCategory $category)
+    {
+        return Program::active()
+            ->when($category, fn ($q) => $q->where('program_category_id', $category->id))
+            ->orderBy('sort_order')
+            ->get(['id', 'title']);
+    }
+
+    public function overview()
+    {
+        $this->guard();
+        $category = $this->category();
         $data['category'] = $category;
 
         /** Scoped to the "Beyond Screens" category - screen-free hands-on
@@ -42,15 +60,19 @@ class OverviewController extends Controller
             ->take(8)
             ->get();
 
-        // Course Details: every program in this category (admin-only page,
-        // so no teacher/coordinator scoping needed here), with the full
-        // model + relations the lessons/homework block needs.
-        $data['courseOptions'] = Program::active()
-            ->when($category, fn ($q) => $q->where('program_category_id', $category->id))
-            ->orderBy('sort_order')
-            ->get(['id', 'title']);
+        $data['title'] = 'Beyond Screens — Overview';
 
-        $selectedId = (int) request()->query('program');
+        return view('beyond-screens.overview', compact('data'));
+    }
+
+    public function courseDetails(Request $request)
+    {
+        $this->guard();
+        $category = $this->category();
+
+        $data['courseOptions'] = $this->courseOptions($category);
+
+        $selectedId     = (int) $request->query('program');
         $selectedOption = $data['courseOptions']->firstWhere('id', $selectedId) ?? $data['courseOptions']->first();
 
         $data['selectedProgram'] = $selectedOption
@@ -64,12 +86,29 @@ class OverviewController extends Controller
             ? $this->homeworkRepo->getSubmissionStatsForHomeworks($allHomeworks)
             : [];
 
-        // Progress & Report is deliberately auto-linked to whichever
-        // course is selected above, not a separate dropdown.
+        $data['title'] = 'Beyond Screens — Course Details';
+
+        return view('beyond-screens.course-details', compact('data'));
+    }
+
+    public function progressReport(Request $request)
+    {
+        $this->guard();
+        $category = $this->category();
+
+        $data['courseOptions'] = $this->courseOptions($category);
+
+        $selectedId     = (int) $request->query('program');
+        $selectedOption = $data['courseOptions']->firstWhere('id', $selectedId) ?? $data['courseOptions']->first();
+
+        $data['selectedProgram'] = $selectedOption
+            ? Program::with(['students', 'programClasses.marks'])->find($selectedOption->id)
+            : null;
+
         $data['progress'] = $data['selectedProgram'] ? $this->markRepo->progressForProgram($data['selectedProgram']) : null;
 
-        $data['title'] = 'Beyond Screens — Overview';
+        $data['title'] = 'Beyond Screens — Progress & Report';
 
-        return view('beyond-screens.overview', compact('data'));
+        return view('beyond-screens.progress-report', compact('data'));
     }
 }

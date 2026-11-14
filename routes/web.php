@@ -290,19 +290,29 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('manage-school-features/reset-password', [\App\Http\Controllers\SchoolFeatureManagerController::class, 'resetPassword'])->name('school-features.reset-password');
 
                     // Homeschooling (Super Admin only for now - guarded inside the
-                    // controller, not by a role middleware).
-                    Route::get('homeschooling/overview', [\App\Http\Controllers\Homeschooling\OverviewController::class, 'index'])->name('homeschooling.overview');
+                    // controller, not by a role middleware). Split into 3 separate
+                    // pages rather than 1 page with 3 anchor sections.
+                    Route::get('homeschooling/overview', [\App\Http\Controllers\Homeschooling\OverviewController::class, 'overview'])->name('homeschooling.overview');
+                    Route::get('homeschooling/course-details', [\App\Http\Controllers\Homeschooling\OverviewController::class, 'courseDetails'])->name('homeschooling.course-details');
+                    Route::get('homeschooling/progress-report', [\App\Http\Controllers\Homeschooling\OverviewController::class, 'progressReport'])->name('homeschooling.progress-report');
 
                     // Core Academics / "Academic Boost" category (Super Admin only for now
                     // - same reasoning). Route/controller keep the old internal name.
-                    Route::get('core-academics/overview', [\App\Http\Controllers\CoreAcademics\OverviewController::class, 'index'])->name('core-academics.overview');
+                    Route::get('core-academics/overview', [\App\Http\Controllers\CoreAcademics\OverviewController::class, 'overview'])->name('core-academics.overview');
+                    Route::get('core-academics/course-details', [\App\Http\Controllers\CoreAcademics\OverviewController::class, 'courseDetails'])->name('core-academics.course-details');
+                    Route::get('core-academics/progress-report', [\App\Http\Controllers\CoreAcademics\OverviewController::class, 'progressReport'])->name('core-academics.progress-report');
 
                     // Beyond Academics (Super Admin only for now, same as its sidebar entry -
-                    // guarded inside the controller, not by a role middleware).
-                    Route::get('beyond-academics/overview', [\App\Http\Controllers\BeyondAcademics\OverviewController::class, 'index'])->name('beyond-academics.overview');
+                    // guarded inside the controller, not by a role middleware). Split into
+                    // 3 separate pages rather than 1 page with 3 anchor sections.
+                    Route::get('beyond-academics/overview', [\App\Http\Controllers\BeyondAcademics\OverviewController::class, 'overview'])->name('beyond-academics.overview');
+                    Route::get('beyond-academics/course-details', [\App\Http\Controllers\BeyondAcademics\OverviewController::class, 'courseDetails'])->name('beyond-academics.course-details');
+                    Route::get('beyond-academics/progress-report', [\App\Http\Controllers\BeyondAcademics\OverviewController::class, 'progressReport'])->name('beyond-academics.progress-report');
 
                     // Beyond Screens (Super Admin only for now - same reasoning).
-                    Route::get('beyond-screens/overview', [\App\Http\Controllers\BeyondScreens\OverviewController::class, 'index'])->name('beyond-screens.overview');
+                    Route::get('beyond-screens/overview', [\App\Http\Controllers\BeyondScreens\OverviewController::class, 'overview'])->name('beyond-screens.overview');
+                    Route::get('beyond-screens/course-details', [\App\Http\Controllers\BeyondScreens\OverviewController::class, 'courseDetails'])->name('beyond-screens.course-details');
+                    Route::get('beyond-screens/progress-report', [\App\Http\Controllers\BeyondScreens\OverviewController::class, 'progressReport'])->name('beyond-screens.progress-report');
                     Route::get('fees-collection-monthly',      [DashboardController::class, 'feesCollectionMonthly']);
                     Route::get('revenue',                      [DashboardController::class, 'revenueYearly']);
                     Route::get('fees-collection-current-month', [DashboardController::class, 'feesCollectionCurrentMonth']);
