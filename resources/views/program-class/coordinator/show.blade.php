@@ -50,7 +50,7 @@
         <div class="card ot-card mb-3">
             <div class="card-body">
                 @if ($item->video_url)
-                    <p><i class="fa-solid fa-video me-1"></i> <a href="{{ $item->video_url }}" target="_blank" rel="noopener">Class video</a></p>
+                    <p><i class="fa-solid fa-video me-1"></i> <a href="{{ $item->video_url }}" target="_blank" rel="noopener">Lesson video</a></p>
                 @endif
 
                 @if ($item->materials->isNotEmpty())

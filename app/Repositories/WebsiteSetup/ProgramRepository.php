@@ -137,8 +137,8 @@ class ProgramRepository
         $row->skill_level         = $request->skill_level ?: null;
         $row->lessons             = $request->lessons;
         $row->classes_per_week    = $request->classes_per_week ?: null;
-        $row->class_days          = $request->class_days;
-        $row->class_time          = $request->class_time;
+        $row->class_days          = $request->class_days ? implode(', ', (array) $request->class_days) : null;
+        $row->class_time          = $this->formatTimeRange($request->class_time_start, $request->class_time_end);
         $row->duration            = $request->duration;
         $row->enrolled            = $request->enrolled;
         $row->price               = $request->price;
@@ -150,6 +150,22 @@ class ProgramRepository
         $row->format              = $request->format;
         $row->sort_order          = (int) $request->sort_order;
         $row->status              = $request->status;
+    }
+
+    /** The Class time picker submits two 24h HH:MM values; this composes
+     *  them into the same plain display string ("4:00 PM to 5:00 PM") the
+     *  class_time column has always held, so nothing downstream needs to
+     *  know the picker exists. */
+    private function formatTimeRange(?string $start, ?string $end): ?string
+    {
+        $format = fn ($t) => $t ? \Carbon\Carbon::createFromFormat('H:i', $t)->format('g:i A') : null;
+        $startFmt = $format($start);
+        $endFmt   = $format($end);
+
+        if ($startFmt && $endFmt) {
+            return "{$startFmt} to {$endFmt}";
+        }
+        return $startFmt ?: $endFmt;
     }
 
     /** Textarea -> array: one item per non-empty line. */

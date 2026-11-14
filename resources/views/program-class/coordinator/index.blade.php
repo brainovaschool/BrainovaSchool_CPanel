@@ -21,8 +21,8 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                     <div>
-                        <h4 class="mb-0">Course Classes — Coordinator Review</h4>
-                        <p class="text-secondary mb-0" style="font-size:.85rem;">Check a teacher's course class in detail, leave feedback, and approve it to make it live on Course Details.</p>
+                        <h4 class="mb-0">Course Lessons — Coordinator Review</h4>
+                        <p class="text-secondary mb-0" style="font-size:.85rem;">Check a teacher's course lesson in detail, leave feedback, and approve it to make it live on Course Details.</p>
                     </div>
                     @php
                         $needsAttention = $data['counts'][\App\Models\WebsiteSetup\ProgramClass::SUBMITTED] + $data['counts'][\App\Models\WebsiteSetup\ProgramClass::CHANGES_REQUESTED];
@@ -37,7 +37,7 @@
                         <table class="table table-bordered class-table">
                             <thead class="thead">
                                 <tr>
-                                    <th>Class</th>
+                                    <th>Lesson</th>
                                     <th>Course</th>
                                     <th>Teacher</th>
                                     <th>Status</th>

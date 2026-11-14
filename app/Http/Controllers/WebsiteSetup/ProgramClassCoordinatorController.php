@@ -35,7 +35,7 @@ class ProgramClassCoordinatorController extends Controller
         $data['classes'] = $this->repo->forCoordinator($request->get('status'), $staffId);
         $data['status']  = $request->get('status');
         $data['counts']  = $this->repo->statusCounts(null, $staffId);
-        $data['title']   = 'Course Classes — Coordinator Review';
+        $data['title']   = 'Course Lessons — Coordinator Review';
         return view('program-class.coordinator.index', compact('data'));
     }
 

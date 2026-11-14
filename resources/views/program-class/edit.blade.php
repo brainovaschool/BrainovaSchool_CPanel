@@ -18,7 +18,7 @@
                     <div class="col-sm-6 text-sm-end">
                         <form action="{{ route('program-class.submit', $data['item']->id) }}" method="post" class="d-inline">
                             @csrf
-                            <button type="submit" class="btn btn-sm btn-outline-primary" onclick="return confirm('Submit this class for review? You won\'t be able to edit it until a coordinator reviews it.');">
+                            <button type="submit" class="btn btn-sm btn-outline-primary" onclick="return confirm('Submit this lesson for review? You won\'t be able to edit it until a coordinator reviews it.');">
                                 <i class="fa-solid fa-paper-plane"></i> Submit for review
                             </button>
                         </form>

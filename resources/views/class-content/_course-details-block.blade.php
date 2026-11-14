@@ -48,7 +48,7 @@
             <p class="text-secondary mb-0" style="font-size: 13px;">No courses in this category yet.</p>
         @else
             <form method="GET" class="cc-cd-select-form">
-                <select name="program" class="nice-select niceSelect bordered_style" onchange="this.form.submit()">
+                <select name="program" class="cc-cd-select" onchange="this.form.submit()">
                     @foreach ($cd_options as $opt)
                         <option value="{{ $opt->id }}" {{ $cd_selected && (int) $cd_selected->id === (int) $opt->id ? 'selected' : '' }}>{{ $opt->title }}</option>
                     @endforeach
@@ -87,31 +87,12 @@
             </div>
         </div>
 
-        @if ($cd_selected->description || !empty($cd_selected->overview) || !empty($cd_selected->highlights))
-            <div class="cc-cd-card">
-                <p class="cc-cd-label">Course overview</p>
-                @if ($cd_selected->description)
-                    <p class="cc-cd-desc">{{ $cd_selected->description }}</p>
-                @endif
-                @foreach (($cd_selected->overview ?? []) as $para)
-                    <p class="cc-cd-desc">{{ $para }}</p>
-                @endforeach
-                @if (!empty($cd_selected->highlights))
-                    <ul class="cc-cd-highlights">
-                        @foreach ($cd_selected->highlights as $point)
-                            <li>{{ $point }}</li>
-                        @endforeach
-                    </ul>
-                @endif
-            </div>
-        @endif
-
         <div class="cc-cd-card">
             <div class="cc-cd-head-row">
-                <p class="cc-cd-label mb-0">Classes in this course</p>
+                <p class="cc-cd-label mb-0">Lessons in this course</p>
                 <div class="d-flex align-items-center gap-3">
                     @if ($cd_can_manage)
-                        <a class="cc-cd-manage-link" href="{{ route('program-class.create', $cd_selected->id) }}"><i class="fa-solid fa-plus"></i> Add a class</a>
+                        <a class="cc-cd-manage-link" href="{{ route('program-class.create', $cd_selected->id) }}"><i class="fa-solid fa-plus"></i> Add a lesson</a>
                     @endif
                     @if ($cd_is_admin)
                         <a class="cc-cd-manage-link" href="{{ route('program.edit', $cd_selected->id) }}">Manage in Website Setup <i class="fa-solid fa-arrow-right"></i></a>
@@ -122,13 +103,30 @@
             @php $cd_num = 0; @endphp
 
             @forelse ($cd_program_classes as $pc)
-                @php $cd_num++; @endphp
-                <details class="cc-cd-lesson" {{ $cd_num === 1 ? 'open' : '' }}>
+                @php
+                    $cd_num++;
+                    $cd_chips = [];
+                    if ($pc->materials->isNotEmpty()) { $cd_chips[] = ['📎', $pc->materials->count()]; }
+                    if ($pc->hasQuiz()) { $cd_chips[] = ['❓', 1]; }
+                    if ($pc->hasProject()) { $cd_chips[] = ['🏆', 1]; }
+                    if ($pc->activities->isNotEmpty()) { $cd_chips[] = ['✏️', $pc->activities->count()]; }
+                    if ($pc->outcomes->isNotEmpty()) { $cd_chips[] = ['🎯', $pc->outcomes->count()]; }
+                @endphp
+                <details class="cc-cd-lesson cc-cd-lesson--{{ $pc->review_status }}" {{ $cd_num === 1 ? 'open' : '' }}>
                     <summary class="cc-cd-lesson-summary">
-                        <span class="cc-cd-lesson-num">{{ $cd_num }}</span>
-                        <span class="cc-cd-lesson-title">{{ $pc->title }}</span>
+                        <span class="cc-cd-lesson-num cc-cd-lesson-num--{{ $pc->review_status }}">{{ $cd_num }}</span>
+                        <span class="cc-cd-lesson-title">
+                            {{ $pc->title }}
+                            @if ($cd_chips)
+                                <span class="cc-cd-chip-row">
+                                    @foreach ($cd_chips as [$icon, $count])
+                                        <span class="cc-cd-chip">{{ $icon }}@if($count > 1) {{ $count }}@endif</span>
+                                    @endforeach
+                                </span>
+                            @endif
+                        </span>
                         @if ($cd_can_manage)
-                            <span class="cc-cd-status-tag cc-cd-status-tag--{{ $pc->review_status }}">{{ \App\Models\WebsiteSetup\ProgramClass::REVIEW_STATUSES[$pc->review_status] ?? $pc->review_status }}</span>
+                            <span class="cc-cd-status-tag cc-cd-status-tag--{{ $pc->review_status }}"><i></i>{{ \App\Models\WebsiteSetup\ProgramClass::REVIEW_STATUSES[$pc->review_status] ?? $pc->review_status }}</span>
                         @endif
                         <span class="cc-cd-lesson-chev">&#9662;</span>
                     </summary>
@@ -141,7 +139,7 @@
                                 <div class="d-flex gap-2 flex-wrap">
                                     @if ($pc->isEditableByTeacher())
                                         <a href="{{ route('program-class.edit', $pc->id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                        <form action="{{ route('program-class.submit', $pc->id) }}" method="post" class="d-inline" onsubmit="return confirm('Submit this class for review?');">
+                                        <form action="{{ route('program-class.submit', $pc->id) }}" method="post" class="d-inline" onsubmit="return confirm('Submit this lesson for review?');">
                                             @csrf
                                             <button type="submit" class="btn btn-sm ot-btn-primary">Submit for review</button>
                                         </form>
@@ -158,7 +156,7 @@
 
                         @if ($pc->materials->isNotEmpty())
                             <div class="cc-cd-sub">
-                                <h5>Resources</h5>
+                                <h5>📎 Resources</h5>
                                 <ul class="cc-cd-res-list">
                                     @foreach ($pc->materials as $m)
                                         <li>
@@ -172,7 +170,7 @@
 
                         @if ($pc->hasQuiz())
                             <div class="cc-cd-sub">
-                                <h5>Quiz (self check)</h5>
+                                <h5>❓ Quiz (self check)</h5>
                                 <div class="cc-cd-pill-row"><span class="hw-type-pill hw-type-pill--quiz">Quiz</span><span class="cc-cd-hwtitle">{{ $pc->quiz_title }}</span></div>
                                 @if ($pc->quiz_description)
                                     <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->quiz_description }}</p>
@@ -182,7 +180,7 @@
 
                         @if ($pc->hasProject())
                             <div class="cc-cd-sub">
-                                <h5>Project</h5>
+                                <h5>🏆 Project</h5>
                                 <div class="cc-cd-pill-row"><span class="hw-type-pill hw-type-pill--project">Project</span><span class="cc-cd-hwtitle">{{ $pc->project_title }}</span></div>
                                 @if ($pc->project_description)
                                     <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->project_description }}</p>
@@ -192,7 +190,7 @@
 
                         @if ($pc->activities->isNotEmpty())
                             <div class="cc-cd-sub">
-                                <h5>Activities</h5>
+                                <h5>✏️ Activities</h5>
                                 <ul class="cc-cd-out-list">
                                     @foreach ($pc->activities as $a)
                                         <li><strong>{{ $a->title }}.</strong> {{ $a->description }}</li>
@@ -203,7 +201,7 @@
 
                         @if ($pc->outcomes->isNotEmpty())
                             <div class="cc-cd-sub">
-                                <h5>Learning outcomes</h5>
+                                <h5>🎯 Learning outcomes</h5>
                                 <ul class="cc-cd-out-list">
                                     @foreach ($pc->outcomes as $o)
                                         <li>{{ $o->outcome_text }}</li>
@@ -218,15 +216,15 @@
 
             @if ($cd_program_classes->isEmpty() && (!$cd_selected->isLinkedToClassContent() || $cd_modules->isEmpty()))
                 <div class="cc-cd-empty">
-                    <p class="mb-1">No classes added yet for <strong>{{ $cd_selected->title }}</strong>.</p>
+                    <p class="mb-1">No lessons added yet for <strong>{{ $cd_selected->title }}</strong>.</p>
                     @if ($cd_can_manage)
-                        <p class="text-secondary mb-0" style="font-size: 13px;">Use "Add a class" above to get started.</p>
+                        <p class="text-secondary mb-0" style="font-size: 13px;">Use "Add a lesson" above to get started.</p>
                     @elseif ($cd_is_admin && !$cd_selected->isLinkedToClassContent())
                         <p class="text-secondary mb-0" style="font-size: 13px;">
                             This program also isn't linked to Class Content - open it in <a href="{{ route('program.edit', $cd_selected->id) }}">Website Setup &rarr; Course Catalogue &rarr; Program</a> if you'd rather use that instead.
                         </p>
                     @else
-                        <p class="text-secondary mb-0" style="font-size: 13px;">Ask the assigned teacher to add classes here.</p>
+                        <p class="text-secondary mb-0" style="font-size: 13px;">Ask the assigned teacher to add lessons here.</p>
                     @endif
                 </div>
             @endif
@@ -251,7 +249,7 @@
 
                                 @if ($lesson->materials->isNotEmpty())
                                     <div class="cc-cd-sub">
-                                        <h5>Resources</h5>
+                                        <h5>📎 Resources</h5>
                                         <ul class="cc-cd-res-list">
                                             @foreach ($lesson->materials as $m)
                                                 <li>
@@ -265,7 +263,7 @@
 
                                 @if ($lesson->hasQuiz())
                                     <div class="cc-cd-sub">
-                                        <h5>Quiz (self check)</h5>
+                                        <h5>❓ Quiz (self check)</h5>
                                         <div class="cc-cd-pill-row"><span class="hw-type-pill hw-type-pill--quiz">Quiz</span><span class="cc-cd-hwtitle">{{ $lesson->quiz_title }}</span></div>
                                         @if ($lesson->quiz_description)
                                             <p class="cc-cd-desc cc-cd-desc--sm">{{ $lesson->quiz_description }}</p>
@@ -275,7 +273,7 @@
 
                                 @if ($lesson->hasProject())
                                     <div class="cc-cd-sub">
-                                        <h5>Project</h5>
+                                        <h5>🏆 Project</h5>
                                         <div class="cc-cd-pill-row"><span class="hw-type-pill hw-type-pill--project">Project</span><span class="cc-cd-hwtitle">{{ $lesson->project_title }}</span></div>
                                         @if ($lesson->project_description)
                                             <p class="cc-cd-desc cc-cd-desc--sm">{{ $lesson->project_description }}</p>
@@ -285,7 +283,7 @@
 
                                 @if ($lesson->activities->isNotEmpty())
                                     <div class="cc-cd-sub">
-                                        <h5>Activities</h5>
+                                        <h5>✏️ Activities</h5>
                                         <ul class="cc-cd-out-list">
                                             @foreach ($lesson->activities as $a)
                                                 <li><strong>{{ $a->title }}.</strong> {{ $a->description }}</li>
@@ -296,7 +294,7 @@
 
                                 @if ($lesson->outcomes->isNotEmpty())
                                     <div class="cc-cd-sub">
-                                        <h5>Learning outcomes</h5>
+                                        <h5>🎯 Learning outcomes</h5>
                                         <ul class="cc-cd-out-list">
                                             @foreach ($lesson->outcomes as $o)
                                                 <li>{{ $o->outcome_text }}</li>
@@ -306,7 +304,7 @@
                                 @endif
 
                                 <div class="cc-cd-sub hw-gamified">
-                                    <h5>Homework &amp; assignments</h5>
+                                    <h5>📚 Homework &amp; assignments</h5>
                                     @if ($lesson->homeworks->isEmpty())
                                         <p class="cc-cd-empty-sub">No homework task linked to this class yet.</p>
                                     @else
@@ -367,7 +365,22 @@
         }
         .cc-cd-card:last-child { margin-bottom: 0; }
         .cc-cd-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #8b93a3; margin: 0 0 0.6rem; }
-        .cc-cd-select-form select { max-width: 420px; }
+        .cc-cd-select {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            max-width: 420px;
+            font: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #0f172a;
+            background: #f8f9fb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%235e17eb' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 1rem center;
+            border: 1px solid var(--ot-border-basic-table, #e4e7ec);
+            border-radius: 12px;
+            padding: 0.7rem 2.5rem 0.7rem 1rem;
+            cursor: pointer;
+        }
+        .cc-cd-select:focus { outline: none; border-color: #5e17eb; box-shadow: 0 0 0 3px rgba(94, 23, 235, .12); }
         .cc-cd-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem 1.25rem; }
         .cc-cd-meta-label { font-size: 0.72rem; color: #8b93a3; margin: 0 0 0.15rem; }
         .cc-cd-meta-value { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; }
@@ -382,7 +395,12 @@
         .cc-cd-highlights { margin: 0; padding-left: 1.1rem; }
         .cc-cd-highlights li { font-size: 0.88rem; color: #475569; line-height: 1.6; }
         .cc-cd-head-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
-        .cc-cd-status-tag { font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.15rem 0.5rem; border-radius: 999px; flex-shrink: 0; }
+        .cc-cd-status-tag {
+            display: inline-flex; align-items: center; gap: 0.35rem;
+            font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+            padding: 0.25rem 0.65rem; border-radius: 999px; flex-shrink: 0;
+        }
+        .cc-cd-status-tag i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
         .cc-cd-status-tag--draft { background: #f1f5f9; color: #64748b; }
         .cc-cd-status-tag--submitted { background: #dbeafe; color: #1d4ed8; }
         .cc-cd-status-tag--changes_requested { background: #fef3c7; color: #92400e; }
@@ -390,13 +408,31 @@
         .cc-cd-manage-row { background: #f8f9fb; border: 1px dashed var(--ot-border-basic-table, #e4e7ec); border-radius: 10px; padding: 0.65rem 0.75rem; margin-bottom: 0.75rem; }
         .cc-cd-manage-link { font-size: 0.82rem; font-weight: 600; color: #6366f1; text-decoration: none; white-space: nowrap; }
         .cc-cd-empty { border: 1.5px dashed var(--ot-border-basic-table, #e4e7ec); border-radius: 14px; padding: 1.2rem 1.4rem; }
-        .cc-cd-lesson { border: 1px solid var(--ot-border-basic-table, #e4e7ec); border-radius: 14px; margin-bottom: 0.65rem; overflow: hidden; }
+        .cc-cd-lesson {
+            border: 1px solid var(--ot-border-basic-table, #e4e7ec);
+            border-left: 4px solid #cbd5e1;
+            border-radius: 14px; margin-bottom: 0.65rem; overflow: hidden;
+            transition: box-shadow .15s ease, border-color .15s ease;
+        }
+        .cc-cd-lesson:hover { box-shadow: 0 6px 18px rgba(15, 23, 42, .06); }
         .cc-cd-lesson:last-child { margin-bottom: 0; }
+        .cc-cd-lesson--submitted { border-left-color: #3b82f6; }
+        .cc-cd-lesson--changes_requested { border-left-color: #f59e0b; }
+        .cc-cd-lesson--approved { border-left-color: #22c55e; }
         .cc-cd-lesson-summary { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem; cursor: pointer; list-style: none; font-size: 0.9rem; font-weight: 600; color: #0f172a; }
         .cc-cd-lesson-summary::-webkit-details-marker { display: none; }
-        .cc-cd-lesson-num { width: 24px; height: 24px; border-radius: 50%; background: #ece4fd; color: #5e17eb; font-size: 0.76rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-        .cc-cd-lesson-title { flex: 1; min-width: 0; }
-        .cc-cd-lesson-title small { display: block; font-weight: 500; color: #8b93a3; font-size: 0.74rem; margin-top: 0.1rem; }
+        .cc-cd-lesson-num {
+            width: 26px; height: 26px; border-radius: 50%;
+            background: #ece4fd; color: #5e17eb;
+            font-size: 0.76rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .cc-cd-lesson-num--submitted { background: #dbeafe; color: #1d4ed8; }
+        .cc-cd-lesson-num--changes_requested { background: #fef3c7; color: #92400e; }
+        .cc-cd-lesson-num--approved { background: #dcfce7; color: #15803d; }
+        .cc-cd-lesson-title { flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .cc-cd-lesson-title small { display: block; width: 100%; font-weight: 500; color: #8b93a3; font-size: 0.74rem; }
+        .cc-cd-chip-row { display: inline-flex; gap: 0.3rem; }
+        .cc-cd-chip { font-size: 0.72rem; background: #f1f5f9; color: #475569; border-radius: 999px; padding: 0.08rem 0.4rem; font-weight: 600; }
         .cc-cd-lesson-chev { color: #8b93a3; transition: transform .15s ease; flex-shrink: 0; }
         details[open] .cc-cd-lesson-chev { transform: rotate(180deg); }
         .cc-cd-lesson-body { padding: 0 1rem 1rem 3.25rem; border-top: 1px solid var(--ot-border-basic-table, #e4e7ec); }

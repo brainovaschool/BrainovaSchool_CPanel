@@ -137,13 +137,53 @@
         <input class="form-control ot-input" name="classes_per_week" type="number" min="1" max="14"
             value="{{ old('classes_per_week', $p->classes_per_week ?? '') }}" placeholder="1">
     </div>
-    <div class="col-md-5 mb-3">
+    @php
+        $dayDefs = ['sun' => 'Sun', 'mon' => 'Mon', 'tue' => 'Tue', 'wed' => 'Wed', 'thu' => 'Thu', 'fri' => 'Fri', 'sat' => 'Sat'];
+        $existingDays = strtolower($p->class_days ?? '');
+        $oldDays = old('class_days');
+        $checkedDays = $oldDays !== null
+            ? (array) $oldDays
+            : array_values(array_filter($dayDefs, fn ($key) => str_contains($existingDays, $key), ARRAY_FILTER_USE_KEY));
+
+        // Best-effort parse of a saved display string like "4:00 to 5:00 PM"
+        // into two 24h HH:MM values for the time pickers below - existing
+        // programs saved before this change may not parse cleanly, in which
+        // case the pickers are just left blank to re-set once.
+        $parseTimeRange = function (?string $text) {
+            if (!$text || !preg_match('/(\d{1,2}):(\d{2})\s*(am|pm)?\s*(?:to|-|–|&)\s*(\d{1,2}):(\d{2})\s*(am|pm)?/i', $text, $m)) {
+                return [null, null];
+            }
+            $period2 = strtolower($m[6] ?? '') ?: strtolower($m[3] ?? '');
+            $period1 = strtolower($m[3] ?? '') ?: $period2;
+            $to24 = function ($h, $period) {
+                $h = (int) $h;
+                if ($period === 'pm' && $h < 12) { $h += 12; }
+                if ($period === 'am' && $h === 12) { $h = 0; }
+                return $h;
+            };
+            return [sprintf('%02d:%s', $to24($m[1], $period1), $m[2]), sprintf('%02d:%s', $to24($m[4], $period2), $m[5])];
+        };
+        [$parsedStart, $parsedEnd] = $parseTimeRange($p->class_time ?? null);
+    @endphp
+    <div class="col-md-7 mb-3">
         <label class="form-label">Class days</label>
-        <input class="form-control ot-input" name="class_days" value="{{ old('class_days', $p->class_days ?? '') }}" placeholder="Tue & Thu">
+        <div class="d-flex flex-wrap gap-3 border rounded p-2">
+            @foreach ($dayDefs as $key => $label)
+                <div class="form-check mb-0">
+                    <input class="form-check-input" type="checkbox" name="class_days[]" value="{{ $label }}" id="day_{{ $key }}"
+                        {{ in_array($label, $checkedDays) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="day_{{ $key }}">{{ $label }}</label>
+                </div>
+            @endforeach
+        </div>
     </div>
-    <div class="col-md-4 mb-3">
+    <div class="col-md-5 mb-3">
         <label class="form-label">Class time</label>
-        <input class="form-control ot-input" name="class_time" value="{{ old('class_time', $p->class_time ?? '') }}" placeholder="4:00–5:00 PM">
+        <div class="d-flex align-items-center gap-2">
+            <input type="time" class="form-control ot-input" name="class_time_start" value="{{ old('class_time_start', $parsedStart) }}">
+            <span class="text-secondary">to</span>
+            <input type="time" class="form-control ot-input" name="class_time_end" value="{{ old('class_time_end', $parsedEnd) }}">
+        </div>
     </div>
 
     <div class="col-md-6 mb-3">

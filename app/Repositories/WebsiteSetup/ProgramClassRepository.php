@@ -111,7 +111,7 @@ class ProgramClassRepository
                 if ($coordinator->user_id) {
                     \App\Services\Portal\PortalNotifier::send(
                         $coordinator->user_id,
-                        'Class submitted for review',
+                        'Lesson submitted for review',
                         $row->title,
                         route('program-class-coordinator.show', $row->id)
                     );
@@ -193,7 +193,7 @@ class ProgramClassRepository
         if ($row->creator && $row->creator->user_id) {
             \App\Services\Portal\PortalNotifier::send(
                 $row->creator->user_id,
-                $decisionIsChanges ? 'Changes requested' : 'Class approved',
+                $decisionIsChanges ? 'Changes requested' : 'Lesson approved',
                 $row->title,
                 $this->courseDetailsUrl($row->program)
             );

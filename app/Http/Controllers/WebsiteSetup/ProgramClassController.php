@@ -51,7 +51,7 @@ class ProgramClassController extends Controller
             return;
         }
         if ((int) $class->created_by !== $staffId) {
-            abort(403, "This isn't your class.");
+            abort(403, "This isn't your lesson.");
         }
         if ($forEdit && !$class->isEditableByTeacher()) {
             abort(403, "This has already been submitted for review — you can't edit it until it's sent back to you.");
@@ -84,7 +84,7 @@ class ProgramClassController extends Controller
         }
         $this->authorizeProgram($program);
         $data['program'] = $program;
-        $data['title']   = 'Add a Class — ' . $program->title;
+        $data['title']   = 'Add a Lesson — ' . $program->title;
         return view('program-class.create', compact('data'));
     }
 
@@ -102,7 +102,7 @@ class ProgramClassController extends Controller
         $result  = $this->repo->store($request, (int) $programId, $staffId !== null ? (int) $staffId : null);
 
         if ($result['status']) {
-            return $this->redirectToCourseDetails($program)->with('success', 'Class added.');
+            return $this->redirectToCourseDetails($program)->with('success', 'Lesson added.');
         }
         return back()->withInput()->with('danger', $result['message']);
     }
@@ -115,7 +115,7 @@ class ProgramClassController extends Controller
         }
         $this->authorizeClass($data['item'], true);
         $data['program'] = $data['item']->program;
-        $data['title']   = 'Edit Class';
+        $data['title']   = 'Edit Lesson';
         return view('program-class.edit', compact('data'));
     }
 

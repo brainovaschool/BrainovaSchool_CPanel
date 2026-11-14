@@ -44,13 +44,13 @@
 
 <div class="row">
     <div class="col-md-6 mb-3">
-        <label class="form-label">Class Title <span class="fillable">*</span></label>
+        <label class="form-label">Lesson Title <span class="fillable">*</span></label>
         <input class="form-control ot-input @error('title') is-invalid @enderror" name="title" maxlength="150"
-            value="{{ old('title', $l->title ?? '') }}" placeholder="e.g. Class 1 — Meet the Coder">
+            value="{{ old('title', $l->title ?? '') }}" placeholder="e.g. Lesson 1 — Meet the Coder">
         @error('title')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-3 mb-3">
-        <label class="form-label">Class Date (optional)</label>
+        <label class="form-label">Lesson Date (optional)</label>
         <input type="date" class="form-control ot-input" name="class_date"
             value="{{ old('class_date', $l && $l->class_date ? \Carbon\Carbon::parse($l->class_date)->format('Y-m-d') : '') }}">
     </div>
@@ -61,11 +61,11 @@
     <div class="col-md-12 mb-3">
         <label class="form-label">Description / Outline (optional)</label>
         <textarea class="form-control ot-textarea" name="description" rows="3" maxlength="3000"
-            placeholder="What's covered in this class">{{ old('description', $l->description ?? '') }}</textarea>
+            placeholder="What's covered in this lesson">{{ old('description', $l->description ?? '') }}</textarea>
         @error('description')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-8 mb-3">
-        <label class="form-label">Class Video (optional)</label>
+        <label class="form-label">Lesson Video (optional)</label>
         <input class="form-control ot-input" name="video_url" maxlength="500"
             value="{{ old('video_url', $l->video_url ?? '') }}" placeholder="YouTube / Facebook / Instagram / Canva link">
         <small class="text-secondary">Shown on Course Details as an embedded recap video.</small>
@@ -84,7 +84,7 @@
             @foreach ($materialRows as $mat)
                 <div class="row repeater-row align-items-center">
                     <div class="col-md-3 mb-2">
-                        <input class="form-control ot-input" name="materials[label][]" value="{{ $mat['label'] }}" placeholder="Label, e.g. Class 1 Slides">
+                        <input class="form-control ot-input" name="materials[label][]" value="{{ $mat['label'] }}" placeholder="Label, e.g. Lesson 1 Slides">
                     </div>
                     <div class="col-md-3 mb-2">
                         <input class="form-control ot-input" name="materials[url][]" value="{{ $mat['url'] }}" placeholder="Link (optional)">
@@ -106,7 +106,7 @@
         <template id="materialRowTemplate">
             <div class="row repeater-row align-items-center">
                 <div class="col-md-3 mb-2">
-                    <input class="form-control ot-input" name="materials[label][]" value="" placeholder="Label, e.g. Class 1 Slides">
+                    <input class="form-control ot-input" name="materials[label][]" value="" placeholder="Label, e.g. Lesson 1 Slides">
                 </div>
                 <div class="col-md-3 mb-2">
                     <input class="form-control ot-input" name="materials[url][]" value="" placeholder="Link (optional)">
@@ -180,7 +180,7 @@
             <h5 class="mb-0"><i class="fa-solid fa-bullseye me-1"></i> Learning Outcomes</h5>
             <button type="button" class="btn btn-sm ot-btn-primary" id="addOutcomeRow"><i class="fa-solid fa-plus"></i> Add outcome</button>
         </div>
-        <p class="text-secondary mb-2" style="font-size:.85rem;">"By the end of this class, the student can..." — one line each.</p>
+        <p class="text-secondary mb-2" style="font-size:.85rem;">"By the end of this lesson, the student can..." — one line each.</p>
         <div id="outcomesWrap">
             @foreach ($outcomeRows as $text)
                 <div class="row repeater-row align-items-center">
@@ -209,7 +209,7 @@
 <div class="card mt-2 mb-3 cc-form-section cc-form-section--project">
     <div class="card-body">
         <h5 class="mb-1"><i class="fa-solid fa-trophy me-1"></i> Project (optional)</h5>
-        <p class="text-secondary mb-2" style="font-size:.85rem;">One deliverable the student submits for this class — leave the title blank for no project.</p>
+        <p class="text-secondary mb-2" style="font-size:.85rem;">One deliverable the student submits for this lesson — leave the title blank for no project.</p>
         <div class="row">
             <div class="col-md-6 mb-2">
                 <input class="form-control ot-input" name="project_title" maxlength="150" value="{{ old('project_title', $l->project_title ?? '') }}" placeholder="Project title">
@@ -227,7 +227,7 @@
 <div class="card mt-2 mb-3 cc-form-section cc-form-section--quiz">
     <div class="card-body">
         <h5 class="mb-1"><i class="fa-solid fa-circle-question me-1"></i> Quiz (optional)</h5>
-        <p class="text-secondary mb-2" style="font-size:.85rem;">One quiz the student completes for this class — leave the title blank for no quiz.</p>
+        <p class="text-secondary mb-2" style="font-size:.85rem;">One quiz the student completes for this lesson — leave the title blank for no quiz.</p>
         <div class="row">
             <div class="col-md-6 mb-2">
                 <input class="form-control ot-input" name="quiz_title" maxlength="150" value="{{ old('quiz_title', $l->quiz_title ?? '') }}" placeholder="Quiz title">
