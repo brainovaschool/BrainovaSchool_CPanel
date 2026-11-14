@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\CoreAcademics;
 
 use App\Http\Controllers\Controller;
-use App\Models\WebsiteSetup\PageSections;
 use App\Models\WebsiteSetup\Program;
+use App\Models\WebsiteSetup\ProgramCategory;
 use Illuminate\Support\Facades\Auth;
 
 class OverviewController extends Controller
@@ -15,12 +15,17 @@ class OverviewController extends Controller
             abort(403, ___('alert.You are not authorized to access this page'));
         }
 
-        $data['hero'] = PageSections::where('key', 'core_academics_overview_hero')->first();
+        /** Same category record the public Our Programs page reads for
+         *  its own banner - one place (Website Setup > Course Catalogue >
+         *  Program Category > Edit) to set tagline/title/subtitle/image
+         *  for this category everywhere it's shown. */
+        $category = ProgramCategory::where('name', 'Core Academics')->with('upload')->first();
+        $data['category'] = $category;
 
         /** Scoped to the "Core Academics" category - the academic subjects
          *  themselves, not the Beyond Academics skills catalogue. */
         $data['featured'] = Program::active()
-            ->whereHas('category', fn ($q) => $q->where('name', 'Core Academics'))
+            ->when($category, fn ($q) => $q->where('program_category_id', $category->id))
             ->orderBy('sort_order')
             ->with('upload')
             ->take(8)

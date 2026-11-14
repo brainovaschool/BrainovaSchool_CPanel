@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\BeyondAcademics;
 
 use App\Http\Controllers\Controller;
-use App\Models\WebsiteSetup\PageSections;
 use App\Models\WebsiteSetup\Program;
+use App\Models\WebsiteSetup\ProgramCategory;
 use Illuminate\Support\Facades\Auth;
 
 class OverviewController extends Controller
@@ -25,7 +25,12 @@ class OverviewController extends Controller
         // students aren't on this page yet, that's a separate follow-up.
         $programIds = $isAdmin ? null : $user->staff->programs()->pluck('programs.id')->all();
 
-        $data['hero'] = PageSections::where('key', 'beyond_academics_overview_hero')->first();
+        /** Same category record the public Our Programs page reads for
+         *  its own banner - one place (Website Setup > Course Catalogue >
+         *  Program Category > Edit) to set tagline/title/subtitle/image
+         *  for this category everywhere it's shown. */
+        $category = ProgramCategory::where('name', 'Beyond Acedamics')->with('upload')->first();
+        $data['category'] = $category;
 
         /** Pulled straight from the same Programs the public Course
          *  Catalogue already shows - nothing new to maintain here, this
@@ -33,7 +38,7 @@ class OverviewController extends Controller
          *  to the "Beyond Acedamics" category specifically - coding,
          *  Canva, AI, robotics etc - not every program in the catalogue. */
         $data['featured'] = Program::active()
-            ->whereHas('category', fn ($q) => $q->where('name', 'Beyond Acedamics'))
+            ->when($category, fn ($q) => $q->where('program_category_id', $category->id))
             ->when($programIds !== null, fn ($q) => $q->whereIn('id', $programIds))
             ->orderBy('sort_order')
             ->with('upload')

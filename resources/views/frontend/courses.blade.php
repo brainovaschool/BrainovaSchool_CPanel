@@ -29,7 +29,7 @@
             ['slug' => 'skills', 'label' => 'Life skills'],
         ];
     }
-    $mascotBanner = $data['mascot_banner'] ?? null;
+    $activeCategoryModel = $data['active_category_model'] ?? null;
 @endphp
 
 <div class="fe-courses-page">
@@ -68,18 +68,9 @@
                             : route('frontend.courses', ['category' => $slug]);
                     @endphp
                     <a href="{{ $filterUrl }}"
-                        class="fe-category-card {{ $isActive ? 'fe-is-active' : '' }} {{ $slug === 'all' ? 'fe-category-card--all' : '' }}"
+                        class="fe-category-card {{ $isActive ? 'fe-is-active' : '' }}"
                         role="tab"
                         aria-selected="{{ $isActive ? 'true' : 'false' }}">
-                        @if ($slug === 'all')
-                            <span class="fe-category-card-media fe-category-card-media--all"><i class="fas fa-border-all"></i></span>
-                        @else
-                            <span class="fe-category-card-media fe-accent-{{ $cat['accent'] ?? 'indigo' }} {{ empty($cat['image']) ? 'fe-category-card-media--placeholder' : '' }}">
-                                @if (!empty($cat['image']))
-                                    <img src="{{ $cat['image'] }}" alt="">
-                                @endif
-                            </span>
-                        @endif
                         <span class="fe-category-card-label">{{ $cat['label'] ?? $slug }}</span>
                     </a>
                 @endforeach
@@ -87,24 +78,28 @@
         </div>
     </section>
 
-    <section class="fe-mascot-banner-section section_padding pt-0 pb-0">
-        <div class="container">
-            <div class="fe-mascot-banner">
-                <span class="fe-mascot-banner-badge">Overview</span>
-                <div class="fe-mascot-banner-grid">
-                    <div class="fe-mascot-banner-copy">
-                        <h2>{{ $mascotBanner->name ?? 'Learn New Skills, Explore New Possibilities' }}</h2>
-                        <p>{{ $mascotBanner->description ?? 'Short courses • Practical Skills • Lifelong Learning' }}</p>
+    @if ($activeCategoryModel)
+        <section class="fe-category-banner-section section_padding pt-4 pb-0">
+            <div class="container">
+                <div class="fe-category-banner">
+                    <div class="fe-category-banner-copy">
+                        @if ($activeCategoryModel->tagline)
+                            <p class="fe-category-banner-eyebrow">{{ $activeCategoryModel->tagline }}</p>
+                        @endif
+                        <h2>{{ $activeCategoryModel->hero_title ?: $activeCategoryModel->name }}</h2>
+                        @if ($activeCategoryModel->hero_subtitle)
+                            <p class="fe-category-banner-subtitle">{{ $activeCategoryModel->hero_subtitle }}</p>
+                        @endif
                     </div>
-                    @if ($mascotBanner?->upload)
-                        <div class="fe-mascot-banner-art">
-                            <img src="{{ globalAsset($mascotBanner->upload->path) }}" alt="">
+                    @if ($activeCategoryModel->image)
+                        <div class="fe-category-banner-art">
+                            <img src="{{ $activeCategoryModel->image }}" alt="{{ $activeCategoryModel->name }}">
                         </div>
                     @endif
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
+    @endif
 
     <section class="fe-courses-grid section_padding pt-4">
         <div class="container">

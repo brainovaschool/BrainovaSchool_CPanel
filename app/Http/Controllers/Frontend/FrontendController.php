@@ -231,9 +231,11 @@ class FrontendController extends Controller
     public function courses(Request $request)
     {
         $categories = \App\Models\WebsiteSetup\ProgramCategory::where('status', 1)
+            ->with('upload')
             ->orderBy('sort_order')->orderBy('name')->get();
 
         $activeCategory = trim((string) $request->query('category', 'all')) ?: 'all';
+        $activeCategoryModel = null;
 
         $query = \App\Models\WebsiteSetup\Program::query()->active()
             ->with(['category', 'focus'])
@@ -243,6 +245,7 @@ class FrontendController extends Controller
             $cat = $categories->firstWhere('slug', $activeCategory);
             if ($cat) {
                 $query->where('program_category_id', $cat->id);
+                $activeCategoryModel = $cat;
             } else {
                 $activeCategory = 'all';
             }
@@ -257,18 +260,15 @@ class FrontendController extends Controller
             'secondary_cta' => ['label' => 'Start online admission', 'route' => 'frontend.online-admission'],
         ];
         $data['categories'] = array_merge(
-            [['slug' => 'all', 'label' => 'All programs', 'image' => null, 'accent' => null]],
-            $categories->map(fn ($c) => ['slug' => $c->slug, 'label' => $c->name, 'image' => $c->image, 'accent' => $c->accent ?: 'indigo'])->all()
+            [['slug' => 'all', 'label' => 'All programs']],
+            $categories->map(fn ($c) => ['slug' => $c->slug, 'label' => $c->name])->all()
         );
-        $data['courses']         = $paginator->getCollection();
-        $data['active_category'] = $activeCategory;
-        $data['catalog_total']   = \App\Models\WebsiteSetup\Program::query()->active()->count();
-        $data['faqs']            = $this->programFaqs();
-        $data['trust']           = $this->programTrust();
-
-        // Same banner as Beyond Academics' admin Overview page - same
-        // image and copy, editable in one place (Website Setup > Sections).
-        $data['mascot_banner'] = \App\Models\WebsiteSetup\PageSections::where('key', 'beyond_academics_overview_hero')->first();
+        $data['courses']             = $paginator->getCollection();
+        $data['active_category']     = $activeCategory;
+        $data['active_category_model'] = $activeCategoryModel;
+        $data['catalog_total']        = \App\Models\WebsiteSetup\Program::query()->active()->count();
+        $data['faqs']                 = $this->programFaqs();
+        $data['trust']                = $this->programTrust();
 
         return view('frontend.courses', compact('data', 'paginator'));
     }

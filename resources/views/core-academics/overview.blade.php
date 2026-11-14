@@ -16,26 +16,37 @@
                     </ol>
                 </div>
                 <div class="col-sm-6 text-sm-end">
-                    <a href="{{ route('sections.index') }}" class="btn btn-sm btn-outline-secondary">
-                        <i class="fa-solid fa-pen"></i> Edit this banner in Website Setup
-                    </a>
+                    @if ($data['category'])
+                        <a href="{{ route('program-category.edit', $data['category']->id) }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="fa-solid fa-pen"></i> Edit this banner in Website Setup
+                        </a>
+                    @endif
                 </div>
             </div>
         </div>
 
+        @php($cat = $data['category'] ?? null)
         <div class="ca-hero">
             <span class="ca-hero-badge">Overview</span>
             <div class="ca-hero-grid">
                 <div class="ca-hero-copy">
-                    <h2>{{ $data['hero']->name ?? 'Strong Foundations, Real Results' }}</h2>
-                    <p>{{ $data['hero']->description ?? 'Core Subjects • Structured Curriculum • Measurable Progress' }}</p>
+                    @if ($cat?->tagline)
+                        <p class="ca-hero-eyebrow">{{ $cat->tagline }}</p>
+                    @endif
+                    <h2>{{ $cat?->hero_title ?: ($cat?->name ?: 'Strong Foundations, Real Results') }}</h2>
+                    @if ($cat?->hero_subtitle)
+                        <p>{{ $cat->hero_subtitle }}</p>
+                    @endif
                 </div>
-                @if ($data['hero']?->upload)
+                @if ($cat?->image)
                     <div class="ca-hero-art">
-                        <img src="{{ globalAsset($data['hero']->upload->path) }}" alt="">
+                        <img src="{{ $cat->image }}" alt="">
                     </div>
                 @endif
             </div>
+            @if (!$cat)
+                <p class="ca-hero-missing">No "Core Academics" category found in Website Setup &rarr; Course Catalogue &rarr; Program Category.</p>
+            @endif
         </div>
 
         {{-- Featured Courses: a live reflection of Website Setup > Course
@@ -104,6 +115,18 @@
         gap: 24px;
         flex-wrap: wrap;
     }
+    .ca-hero-eyebrow {
+        font-size: 12px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #5e17eb;
+        margin: 0 0 8px;
+    }
+    .ca-hero-copy {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
     .ca-hero-copy h2 {
         font-size: 28px;
         font-weight: 800;
@@ -115,14 +138,27 @@
         font-size: 15px;
         color: #475065;
         margin: 0;
+        max-width: 48ch;
+    }
+    .ca-hero-missing {
+        font-size: 13px;
+        color: #8b5a00;
+        background: #fff7e6;
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin: 12px 0 0;
     }
     .ca-hero-art {
-        flex: 0 0 auto;
+        flex: 0 0 38%;
+        max-width: 380px;
+        width: 100%;
     }
     .ca-hero-art img {
-        max-height: 160px;
-        width: auto;
         display: block;
+        width: 100%;
+        aspect-ratio: 1920 / 700;
+        object-fit: cover;
+        border-radius: 14px;
     }
 
     .ca-featured {
