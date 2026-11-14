@@ -202,7 +202,7 @@
 
                         @if ($pc->materials->isNotEmpty())
                             <div class="cc-cd-sub" data-section="materials">
-                                <h5>📎 Resources</h5>
+                                <span class="cc-cd-section-pill cc-cd-section-pill--resources">Resources</span>
                                 <ul class="cc-cd-res-list">
                                     @foreach ($pc->materials as $m)
                                         <li>
@@ -242,7 +242,7 @@
 
                         @if ($pc->activities->isNotEmpty())
                             <div class="cc-cd-sub" data-section="activities">
-                                <h5>✏️ Activities</h5>
+                                <span class="cc-cd-section-pill cc-cd-section-pill--activities">Activities</span>
                                 <ul class="cc-cd-out-list">
                                     @foreach ($pc->activities as $a)
                                         <li>
@@ -261,7 +261,7 @@
 
                         @if ($pc->outcomes->isNotEmpty())
                             <div class="cc-cd-sub" data-section="outcomes">
-                                <h5>🎯 Learning outcomes</h5>
+                                <span class="cc-cd-section-pill cc-cd-section-pill--outcomes">Learning outcomes</span>
                                 <ul class="cc-cd-out-list">
                                     @foreach ($pc->outcomes as $o)
                                         <li>{{ $o->outcome_text }}</li>
@@ -309,7 +309,7 @@
 
                                 @if ($lesson->materials->isNotEmpty())
                                     <div class="cc-cd-sub">
-                                        <h5>📎 Resources</h5>
+                                        <span class="cc-cd-section-pill cc-cd-section-pill--resources">Resources</span>
                                         <ul class="cc-cd-res-list">
                                             @foreach ($lesson->materials as $m)
                                                 <li>
@@ -349,7 +349,7 @@
 
                                 @if ($lesson->activities->isNotEmpty())
                                     <div class="cc-cd-sub">
-                                        <h5>✏️ Activities</h5>
+                                        <span class="cc-cd-section-pill cc-cd-section-pill--activities">Activities</span>
                                         <ul class="cc-cd-out-list">
                                             @foreach ($lesson->activities as $a)
                                                 <li>
@@ -368,7 +368,7 @@
 
                                 @if ($lesson->outcomes->isNotEmpty())
                                     <div class="cc-cd-sub">
-                                        <h5>🎯 Learning outcomes</h5>
+                                        <span class="cc-cd-section-pill cc-cd-section-pill--outcomes">Learning outcomes</span>
                                         <ul class="cc-cd-out-list">
                                             @foreach ($lesson->outcomes as $o)
                                                 <li>{{ $o->outcome_text }}</li>
@@ -512,6 +512,14 @@
         .cc-cd-lesson-body { padding: 0 1rem 1rem 3.25rem; border-top: 1px solid var(--ot-border-basic-table, #e4e7ec); }
         .cc-cd-sub { margin-top: 0.9rem; }
         .cc-cd-sub h5 { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #8b93a3; margin: 0 0 0.5rem; }
+        .cc-cd-section-pill {
+            display: inline-block;
+            font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+            padding: 0.2rem 0.55rem; border-radius: 999px; margin-bottom: 0.55rem;
+        }
+        .cc-cd-section-pill--resources { background: #ccfbf1; color: #0f766e; }
+        .cc-cd-section-pill--activities { background: #ede9fe; color: #5b21b6; }
+        .cc-cd-section-pill--outcomes { background: #e0e7ff; color: #4338ca; }
         .cc-cd-res-list, .cc-cd-out-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
         .cc-cd-out-list { list-style: disc; padding-left: 1.1rem; }
         .cc-cd-res-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
