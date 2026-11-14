@@ -49,11 +49,17 @@
                 @if ($cd_selected->age_range)
                     <div class="cc-cd-meta-item"><p class="cc-cd-meta-label">Ages</p><p class="cc-cd-meta-value">{{ $cd_selected->age_range }}</p></div>
                 @endif
+                @if ($cd_selected->skill_level_text)
+                    <div class="cc-cd-meta-item"><p class="cc-cd-meta-label">Skill level</p><p class="cc-cd-meta-value">{{ $cd_selected->skill_level_text }}</p></div>
+                @endif
                 @if ($cd_selected->duration)
                     <div class="cc-cd-meta-item"><p class="cc-cd-meta-label">Duration</p><p class="cc-cd-meta-value">{{ $cd_selected->duration }}</p></div>
                 @endif
+                @if ($cd_selected->class_days || $cd_selected->class_time)
+                    <div class="cc-cd-meta-item"><p class="cc-cd-meta-label">Schedule</p><p class="cc-cd-meta-value">{{ trim(($cd_selected->class_days ?? '') . ' ' . ($cd_selected->class_time ?? '')) }}</p></div>
+                @endif
                 @if ($cd_selected->lessons)
-                    <div class="cc-cd-meta-item"><p class="cc-cd-meta-label">Classes</p><p class="cc-cd-meta-value">{{ $cd_selected->lessons }}</p></div>
+                    <div class="cc-cd-meta-item"><p class="cc-cd-meta-label">Classes</p><p class="cc-cd-meta-value">{{ $cd_selected->lessons }}{{ $cd_selected->classes_per_week ? ' · ' . $cd_selected->classes_per_week . '/week' : '' }}</p></div>
                 @endif
                 @if ($cd_selected->teachers->isNotEmpty())
                     <div class="cc-cd-meta-item"><p class="cc-cd-meta-label">Instructor</p><p class="cc-cd-meta-value">{{ $cd_selected->teachers->map(fn ($t) => trim($t->first_name . ' ' . $t->last_name))->join(', ') }}</p></div>

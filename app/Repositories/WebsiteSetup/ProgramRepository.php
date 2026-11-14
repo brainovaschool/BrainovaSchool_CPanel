@@ -134,7 +134,11 @@ class ProgramRepository
         $row->description         = $request->description;
         $row->age_range           = $request->age_range;
         $row->grade               = $request->grade;
+        $row->skill_level         = $request->skill_level ?: null;
         $row->lessons             = $request->lessons;
+        $row->classes_per_week    = $request->classes_per_week ?: null;
+        $row->class_days          = $request->class_days;
+        $row->class_time          = $request->class_time;
         $row->duration            = $request->duration;
         $row->enrolled            = $request->enrolled;
         $row->price               = $request->price;

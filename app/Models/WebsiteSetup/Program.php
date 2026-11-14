@@ -38,6 +38,18 @@ class Program extends Model
         return self::STATUS_LABELS[$this->status_label] ?? null;
     }
 
+    /** 1/2/3, set from the Program edit form's "Level" field. */
+    public const SKILL_LEVELS = [
+        1 => 'Beginner',
+        2 => 'Intermediate',
+        3 => 'Advance',
+    ];
+
+    public function getSkillLevelTextAttribute(): ?string
+    {
+        return self::SKILL_LEVELS[$this->skill_level] ?? null;
+    }
+
     public function category()
     {
         return $this->belongsTo(ProgramCategory::class, 'program_category_id', 'id');

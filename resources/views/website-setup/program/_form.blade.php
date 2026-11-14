@@ -97,6 +97,17 @@
         @error('status_label')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
 
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Level</label>
+        <select class="nice-select niceSelect bordered_style wide @error('skill_level') is-invalid @enderror" name="skill_level">
+            <option value="">— None —</option>
+            @foreach (\App\Models\WebsiteSetup\Program::SKILL_LEVELS as $value => $label)
+                <option value="{{ $value }}" {{ old('skill_level', $p->skill_level ?? '') == $value ? 'selected' : '' }}>{{ $value }} — {{ $label }}</option>
+            @endforeach
+        </select>
+        @error('skill_level')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
+    </div>
+
     <div class="col-md-12 mb-3">
         <label class="form-label">{{ ___('common.Description') }}</label>
         <textarea class="form-control ot-textarea @error('description') is-invalid @enderror" name="description" rows="2"
@@ -119,6 +130,20 @@
     <div class="col-md-3 mb-3">
         <label class="form-label">{{ ___('settings.duration') }}</label>
         <input class="form-control ot-input" name="duration" value="{{ old('duration', $p->duration ?? '') }}" placeholder="6 weeks">
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <label class="form-label">Classes per week</label>
+        <input class="form-control ot-input" name="classes_per_week" type="number" min="1" max="14"
+            value="{{ old('classes_per_week', $p->classes_per_week ?? '') }}" placeholder="1">
+    </div>
+    <div class="col-md-5 mb-3">
+        <label class="form-label">Class days</label>
+        <input class="form-control ot-input" name="class_days" value="{{ old('class_days', $p->class_days ?? '') }}" placeholder="Tue & Thu">
+    </div>
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Class time</label>
+        <input class="form-control ot-input" name="class_time" value="{{ old('class_time', $p->class_time ?? '') }}" placeholder="4:00–5:00 PM">
     </div>
 
     <div class="col-md-6 mb-3">
