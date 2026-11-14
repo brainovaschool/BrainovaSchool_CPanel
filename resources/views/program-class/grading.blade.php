@@ -141,7 +141,7 @@
                                     @endif
                                 </td>
                                 <td class="action text-end">
-                                    <a href="{{ route('program-class.grade.edit', $pc->id) }}"
+                                    <a href="{{ route('program-class.grade.edit', $pc->program_id) }}"
                                        class="btn btn-sm {{ $row['needMarks'] > 0 ? 'hw-btn-grade hw-btn-grade--pending' : 'btn-outline-secondary hw-btn-grade' }}"
                                        title="{{ $row['needMarks'] > 0 ? 'Grade ' . $row['needMarks'] . ' submission(s)' : 'View or grade' }}">
                                         <i class="fa-solid fa-pen-to-square me-1"></i>Grade

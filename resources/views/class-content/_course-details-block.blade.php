@@ -210,7 +210,7 @@
                             <span class="cc-cd-status-tag cc-cd-status-tag--{{ $pc->review_status }}"><i></i>{{ \App\Models\WebsiteSetup\ProgramClass::REVIEW_STATUSES[$pc->review_status] ?? $pc->review_status }}</span>
                         @endif
                         @if ($cd_can_manage && !empty($pc->gradableItems()))
-                            <a href="{{ route('program-class.grade.edit', $pc->id) }}" class="cc-cd-grade-btn" title="Grade marks" onclick="event.stopPropagation();">
+                            <a href="{{ route('program-class.grade.edit', $pc->program_id) }}" class="cc-cd-grade-btn" title="Grade marks" onclick="event.stopPropagation();">
                                 <i class="fa-solid fa-marker"></i>
                             </a>
                         @endif

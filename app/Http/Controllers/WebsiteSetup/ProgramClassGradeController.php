@@ -3,15 +3,19 @@
 namespace App\Http\Controllers\WebsiteSetup;
 
 use App\Http\Controllers\Controller;
-use App\Models\WebsiteSetup\ProgramClass;
+use App\Models\StudentInfo\Student;
+use App\Models\WebsiteSetup\Program;
 use App\Repositories\WebsiteSetup\ProgramClassMarkRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
-/** Teacher/Admin-only marks entry for a lesson's gradable items - the
- *  "develop the checking by teachers, marks addition" piece Progress &
- *  Report is built on. Coordinators see the results in Progress & Report
- *  but don't grade here, same split as everywhere else in this feature. */
+/** Teacher/Admin-only marks entry - every lesson in a Program, filtered
+ *  down to one student at a time (a dropdown, not a separate page),
+ *  since that's what actually scales once a course has more than a
+ *  couple of students: a wide "everyone x every item" grid stops being
+ *  readable fast, one student's own row at a time doesn't. Coordinators
+ *  see results in Progress & Report but don't grade here, same split as
+ *  everywhere else in this feature. */
 class ProgramClassGradeController extends Controller
 {
     private ProgramClassMarkRepository $repo;
@@ -30,56 +34,61 @@ class ProgramClassGradeController extends Controller
         return null;
     }
 
-    private function guardAccess(ProgramClass $class): void
+    private function guardAccess(Program $program): void
     {
         $staffId = $this->staffId();
         if ($staffId === null) {
             return;
         }
-        if (!$class->program->teachers()->where('staff.id', $staffId)->exists()) {
+        if (!$program->teachers()->where('staff.id', $staffId)->exists()) {
             abort(403, "You're not assigned to teach this program.");
         }
     }
 
-    public function edit($id)
+    public function edit(Request $request, $programId)
     {
-        $class = ProgramClass::with('program')->find($id);
-        if (!$class) {
+        $program = Program::with('students')->find($programId);
+        if (!$program) {
             return redirect()->route('dashboard')->with('danger', ___('alert.not_found'));
         }
-        $this->guardAccess($class);
+        $this->guardAccess($program);
 
-        if (empty($class->gradableItems())) {
-            return redirect($this->courseDetailsUrl($class))->with('danger', 'This lesson has no quiz, project, worksheet, or assignment to grade.');
-        }
+        $students = $program->students()->orderBy('first_name')->get();
 
-        $data['class']   = $class;
-        $data['program'] = $class->program;
-        $data['grid']    = $this->repo->gridFor($class);
-        $data['title']   = 'Grade — ' . $class->title;
+        $selectedStudentId = (int) $request->query('student') ?: null;
+        $selectedStudent = $selectedStudentId ? $students->firstWhere('id', $selectedStudentId) : null;
+        $selectedStudent = $selectedStudent ?? $students->first();
+
+        $data['program']         = $program;
+        $data['students']        = $students;
+        $data['selectedStudent'] = $selectedStudent;
+        $data['breakdown']       = $selectedStudent ? $this->repo->studentBreakdownForTeacher($program, $selectedStudent) : null;
+        $data['title']           = 'Grade — ' . $program->title;
+
         return view('program-class.grade', compact('data'));
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, $programId)
     {
-        $class = ProgramClass::with('program')->find($id);
-        if (!$class) {
+        $program = Program::find($programId);
+        if (!$program) {
             return redirect()->route('dashboard')->with('danger', ___('alert.not_found'));
         }
-        $this->guardAccess($class);
+        $this->guardAccess($program);
 
         $request->validate([
-            'marks.*.*' => 'nullable|numeric|min:0',
+            'student_id' => 'required|integer',
+            'marks.*.*'  => 'nullable|numeric|min:0',
         ]);
 
-        $result = $this->repo->save($class, $request, $this->staffId());
+        $student = Student::find($request->input('student_id'));
+        if (!$student) {
+            return back()->with('danger', ___('alert.not_found'));
+        }
 
-        return redirect()->route('program-class.grade.edit', $class->id)
+        $result = $this->repo->saveForStudent($program, $student, $request, $this->staffId());
+
+        return redirect(route('program-class.grade.edit', $program->id) . '?student=' . $student->id)
             ->with($result['status'] ? 'success' : 'danger', $result['message']);
-    }
-
-    private function courseDetailsUrl(ProgramClass $class): string
-    {
-        return app(\App\Repositories\WebsiteSetup\ProgramClassRepository::class)->courseDetailsUrl($class->program);
     }
 }

@@ -8,7 +8,6 @@ use App\Http\Controllers\WebsiteSetup\ProgramClassGradeController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassGradingController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMarkSubmissionController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMaterialController;
-use App\Http\Controllers\WebsiteSetup\ProgramStudentProgressController;
 
 /** The newer, simpler alternative to routes/class-content.php for
  *  program-based courses - a teacher adds/edits their own Program's
@@ -46,15 +45,15 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/submit/{id}',             'submit')->name('submit')->middleware('DemoCheck');
                 });
 
+                // Grade is scoped to a Program (every lesson in it,
+                // filterable by student), not a single lesson - the
+                // {programId} here is a program_id.
                 Route::controller(ProgramClassGradeController::class)->prefix('program-class')->name('program-class.')->group(function () {
-                    Route::get('/{id}/grade',  'edit')->name('grade.edit');
-                    Route::post('/{id}/grade', 'update')->name('grade.update')->middleware('DemoCheck');
+                    Route::get('/{programId}/grade',  'edit')->name('grade.edit');
+                    Route::post('/{programId}/grade', 'update')->name('grade.update')->middleware('DemoCheck');
                 });
 
                 Route::get('/program-class-grading', [ProgramClassGradingController::class, 'index'])->name('program-class-grading.index');
-
-                Route::get('/program-class-progress/{program}/{student}', [ProgramStudentProgressController::class, 'show'])
-                    ->name('program-student-progress.show');
 
                 Route::controller(ProgramClassCoordinatorController::class)->prefix('program-class-coordinator')->name('program-class-coordinator.')->group(function () {
                     Route::get('/',             'index')->name('index')->middleware('PermissionCheck:class_content_coordinator_review');

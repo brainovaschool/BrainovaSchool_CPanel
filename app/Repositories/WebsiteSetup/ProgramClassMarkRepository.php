@@ -25,44 +25,38 @@ class ProgramClassMarkRepository
         $this->storage = $storage;
     }
 
-    /** Every enrolled student x every gradable item on this lesson, with
-     *  whatever mark already exists slotted in - exactly what the
-     *  grading table needs to render. */
-    public function gridFor(ProgramClass $class): array
+    /** Upserts one ProgramClassMark per (lesson, gradable item) posted for
+     *  THIS one student - the Grade page's own save, scoped by student
+     *  rather than by lesson, since that's how the page itself is now
+     *  filtered. A blank input clears that mark back to ungraded (null)
+     *  rather than leaving a stale value behind. $input is keyed
+     *  program_class_id => assessment_type => raw value, exactly how the
+     *  Grade page names its "marks[...][...]" inputs. Re-derives each
+     *  lesson's real gradable items rather than trusting posted keys, so
+     *  a stray/tampered key can't create a mark for something that was
+     *  never actually gradable. */
+    public function saveForStudent(Program $program, Student $student, $request, ?int $gradedByStaffId): array
     {
-        $students = $class->program->students()->orderBy('first_name')->get();
-        $items    = $class->gradableItems();
+        $input = (array) $request->input('marks', []);
 
-        $existing = ProgramClassMark::where('program_class_id', $class->id)->get()
-            ->groupBy('student_id')
-            ->map(fn ($rows) => $rows->keyBy('assessment_type'));
+        $classes = $program->programClasses()->whereIn('id', array_keys($input))->get();
 
-        return [
-            'students' => $students,
-            'items'    => $items,
-            'marks'    => $existing,
-        ];
-    }
+        foreach ($classes as $class) {
+            $validTypes  = array_keys($class->gradableItems());
+            $postedTypes = (array) ($input[$class->id] ?? []);
 
-    /** Upserts one ProgramClassMark per (student, gradable item) that was
-     *  posted - a blank input clears that mark back to ungraded (null)
-     *  rather than leaving a stale value behind. */
-    public function save(ProgramClass $class, $request, ?int $gradedByStaffId): array
-    {
-        $items    = array_keys($class->gradableItems());
-        $students = $class->program->students()->pluck('id');
-        $input    = (array) $request->input('marks', []);
+            foreach ($postedTypes as $type => $raw) {
+                if (!in_array($type, $validTypes, true)) {
+                    continue;
+                }
 
-        foreach ($students as $studentId) {
-            foreach ($items as $type) {
-                $raw = $input[$studentId][$type] ?? null;
                 $value = ($raw === null || $raw === '') ? null : (float) $raw;
 
                 ProgramClassMark::updateOrCreate(
                     [
                         'program_class_id' => $class->id,
                         'assessment_type'  => $type,
-                        'student_id'       => $studentId,
+                        'student_id'       => $student->id,
                     ],
                     [
                         'marks'     => $value,
