@@ -113,7 +113,7 @@ class ProgramClassRepository
                         $coordinator->user_id,
                         'Lesson submitted for review',
                         $row->title,
-                        route('program-class-coordinator.show', $row->id)
+                        $this->courseDetailsUrl($row->program)
                     );
                 }
             });

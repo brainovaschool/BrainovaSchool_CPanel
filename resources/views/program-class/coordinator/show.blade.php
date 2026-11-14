@@ -96,7 +96,7 @@
             <div class="card ot-card cc-decision-card">
                 <div class="card-body">
                     <h5 class="mb-1"><i class="fa-solid fa-circle-check text-primary me-1"></i> Your decision</h5>
-                    <p class="text-secondary mb-3" style="font-size:.85rem;">Checked everything? Approve it to make it live on Course Details, or kick it back to the teacher with a note on what to fix.</p>
+                    <p class="text-secondary mb-3" style="font-size:.85rem;">Checked everything? Send it on to admin for final approval, or kick it back to the teacher with a note on what to fix.</p>
                     <form action="{{ route('program-class-coordinator.decide', $item->id) }}" method="post">
                         @csrf
                         <div class="mb-3">
@@ -106,8 +106,8 @@
                             @error('feedback')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="d-flex gap-2 flex-wrap">
-                            <button type="submit" name="decision" value="approve" class="btn btn-lg ot-btn-primary">
-                                <i class="fa-solid fa-check"></i> Approve
+                            <button type="submit" name="decision" value="send_to_admin" class="btn btn-lg ot-btn-primary">
+                                <i class="fa-solid fa-paper-plane"></i> Accept &amp; send to admin
                             </button>
                             <button type="submit" name="decision" value="request_changes" class="btn btn-lg btn-outline-danger"
                                 onclick="return confirm('Send this back to the teacher with your feedback?');">
