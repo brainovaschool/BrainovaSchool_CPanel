@@ -52,6 +52,9 @@ class ProgramClassCoordinatorController extends Controller
         return view('program-class.coordinator.show', compact('data'));
     }
 
+    /** Decided inline from Course Details now (same page the teacher
+     *  uses), not the standalone review queue - so this redirects back
+     *  there instead of to program-class-coordinator.index. */
     public function decide(Request $request, $id)
     {
         $request->validate([
@@ -62,7 +65,10 @@ class ProgramClassCoordinatorController extends Controller
         $coordinatorStaffId = $this->coordinatorStaffId();
 
         $class = ProgramClass::find($id);
-        if ($class && $this->repo->outsideCoordinatorScope($class, $coordinatorStaffId)) {
+        if (!$class) {
+            return redirect()->route('dashboard')->with('danger', ___('alert.not_found'));
+        }
+        if ($this->repo->outsideCoordinatorScope($class, $coordinatorStaffId)) {
             abort(403, "This isn't one of your assigned teachers' submissions.");
         }
 
@@ -72,7 +78,7 @@ class ProgramClassCoordinatorController extends Controller
             ? 'Sent back to the teacher with your feedback.'
             : 'Approved — now live on Course Details.';
 
-        return redirect()->route('program-class-coordinator.index')
+        return redirect($this->repo->courseDetailsUrl($class->program))
             ->with($result['status'] ? 'success' : 'danger', $result['status'] ? $message : $result['message']);
     }
 }

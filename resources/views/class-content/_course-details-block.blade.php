@@ -85,6 +85,13 @@
     $cd_viewer_staff_id = !$cd_is_admin ? ($cd_viewer->staff->id ?? null) : null;
     $cd_can_manage = $cd_selected && ($cd_is_admin || ($cd_viewer_staff_id && $cd_selected->teachers->contains('id', $cd_viewer_staff_id)));
     $cd_program_classes = $cd_selected ? $cd_selected->programClasses : collect();
+
+    // A Coordinator reviews inline right here instead of a separate page -
+    // same format the teacher sees, just with Approve / Request changes
+    // instead of Edit / Submit. Scoped to lessons created by teachers this
+    // coordinator actually oversees (Staff::coordinatees()).
+    $cd_is_coordinator = !$cd_is_admin && $cd_viewer_staff_id && hasPermission('class_content_coordinator_review');
+    $cd_coordinatee_ids = $cd_is_coordinator ? $cd_viewer->staff->coordinatees->pluck('id')->all() : [];
 @endphp
 
 <div class="cc-cd">
@@ -171,7 +178,12 @@
                                 </span>
                             @endif
                         </span>
-                        @if ($cd_can_manage)
+                        @php
+                            $cd_coord_can_decide = $cd_is_coordinator
+                                && in_array((int) $pc->created_by, $cd_coordinatee_ids, true)
+                                && in_array($pc->review_status, [\App\Models\WebsiteSetup\ProgramClass::SUBMITTED, \App\Models\WebsiteSetup\ProgramClass::CHANGES_REQUESTED], true);
+                        @endphp
+                        @if ($cd_can_manage || $cd_is_coordinator)
                             <span class="cc-cd-status-tag cc-cd-status-tag--{{ $pc->review_status }}"><i></i>{{ \App\Models\WebsiteSetup\ProgramClass::REVIEW_STATUSES[$pc->review_status] ?? $pc->review_status }}</span>
                         @endif
                         <span class="cc-cd-lesson-chev">&#9662;</span>
@@ -194,6 +206,23 @@
                                     @endif
                                 </div>
                             </div>
+                        @elseif ($cd_coord_can_decide)
+                            <div class="cc-cd-manage-row">
+                                <p class="cc-cd-empty-sub">
+                                    Submitted by {{ trim(optional($pc->creator)->first_name . ' ' . optional($pc->creator)->last_name) ?: 'the teacher' }}
+                                    @if ($pc->submitted_at) &middot; {{ $pc->submitted_at->diffForHumans() }} @endif
+                                </p>
+                                <form action="{{ route('program-class-coordinator.decide', $pc->id) }}" method="post">
+                                    @csrf
+                                    <textarea name="feedback" class="form-control form-control-sm mb-2" rows="2" placeholder="Feedback for the teacher (optional, required if sending back)"></textarea>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button type="submit" name="decision" value="approve" class="btn btn-sm ot-btn-primary">Approve</button>
+                                        <button type="submit" name="decision" value="request_changes" class="btn btn-sm btn-outline-danger" onclick="return confirm('Send this back to the teacher with your feedback?');">Request changes</button>
+                                    </div>
+                                </form>
+                            </div>
+                        @elseif ($cd_is_coordinator && $pc->review_status === \App\Models\WebsiteSetup\ProgramClass::APPROVED)
+                            <p class="cc-cd-empty-sub">You approved this {{ $pc->approved_at?->diffForHumans() }}.</p>
                         @endif
 
                         @if ($pc->description)
@@ -216,8 +245,8 @@
 
                         @if ($pc->hasQuiz())
                             <div class="cc-cd-sub" data-section="quiz">
-                                <h5>❓ Quiz (self check)</h5>
-                                <div class="cc-cd-pill-row"><span class="hw-type-pill hw-type-pill--quiz">Quiz</span><span class="cc-cd-hwtitle">{{ $pc->quiz_title }}</span></div>
+                                <span class="cc-cd-section-pill cc-cd-section-pill--quiz">Quiz</span>
+                                <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->quiz_title }}</p>
                                 @if ($pc->quiz_description)
                                     <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->quiz_description }}</p>
                                 @endif
@@ -229,8 +258,8 @@
 
                         @if ($pc->hasProject())
                             <div class="cc-cd-sub" data-section="project">
-                                <h5>🏆 Project</h5>
-                                <div class="cc-cd-pill-row"><span class="hw-type-pill hw-type-pill--project">Project</span><span class="cc-cd-hwtitle">{{ $pc->project_title }}</span></div>
+                                <span class="cc-cd-section-pill cc-cd-section-pill--project">Project</span>
+                                <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->project_title }}</p>
                                 @if ($pc->project_description)
                                     <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->project_description }}</p>
                                 @endif
@@ -323,8 +352,8 @@
 
                                 @if ($lesson->hasQuiz())
                                     <div class="cc-cd-sub">
-                                        <h5>❓ Quiz (self check)</h5>
-                                        <div class="cc-cd-pill-row"><span class="hw-type-pill hw-type-pill--quiz">Quiz</span><span class="cc-cd-hwtitle">{{ $lesson->quiz_title }}</span></div>
+                                        <span class="cc-cd-section-pill cc-cd-section-pill--quiz">Quiz</span>
+                                        <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $lesson->quiz_title }}</p>
                                         @if ($lesson->quiz_description)
                                             <p class="cc-cd-desc cc-cd-desc--sm">{{ $lesson->quiz_description }}</p>
                                         @endif
@@ -336,8 +365,8 @@
 
                                 @if ($lesson->hasProject())
                                     <div class="cc-cd-sub">
-                                        <h5>🏆 Project</h5>
-                                        <div class="cc-cd-pill-row"><span class="hw-type-pill hw-type-pill--project">Project</span><span class="cc-cd-hwtitle">{{ $lesson->project_title }}</span></div>
+                                        <span class="cc-cd-section-pill cc-cd-section-pill--project">Project</span>
+                                        <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $lesson->project_title }}</p>
                                         @if ($lesson->project_description)
                                             <p class="cc-cd-desc cc-cd-desc--sm">{{ $lesson->project_description }}</p>
                                         @endif
@@ -520,6 +549,9 @@
         .cc-cd-section-pill--resources { background: #ccfbf1; color: #0f766e; }
         .cc-cd-section-pill--activities { background: #ede9fe; color: #5b21b6; }
         .cc-cd-section-pill--outcomes { background: #e0e7ff; color: #4338ca; }
+        .cc-cd-section-pill--quiz { background: #dbeafe; color: #1d4ed8; }
+        .cc-cd-section-pill--project { background: #fce7f3; color: #9d174d; }
+        .cc-cd-sub-title { display: block; font-weight: 700; color: #0f172a; }
         .cc-cd-res-list, .cc-cd-out-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
         .cc-cd-out-list { list-style: disc; padding-left: 1.1rem; }
         .cc-cd-res-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }

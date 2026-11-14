@@ -205,7 +205,11 @@ class ProgramClassRepository
     /** The Teacher this notification goes to doesn't have program_update
      *  (Website Setup is admin-only), so the link has to be their
      *  category's own Course Details page, not program.edit. */
-    private function courseDetailsUrl(?\App\Models\WebsiteSetup\Program $program): string
+    /** Public so both ProgramClassController (teacher redirects) and
+     *  ProgramClassCoordinatorController (coordinator redirects) can reuse
+     *  this same Program -> category -> route mapping, instead of each
+     *  duplicating it. */
+    public function courseDetailsUrl(?\App\Models\WebsiteSetup\Program $program): string
     {
         if (!$program) {
             return route('dashboard');

@@ -65,15 +65,7 @@ class ProgramClassController extends Controller
      *  - Admin included, since it's just as valid a landing spot. */
     private function redirectToCourseDetails(Program $program)
     {
-        $routeName = match ($program->category?->name) {
-            'Homeschooling'    => 'homeschooling.overview',
-            'Academics Boost'  => 'core-academics.overview',
-            'Beyond Acedamics' => 'beyond-academics.overview',
-            'Beyond Screens'   => 'beyond-screens.overview',
-            default            => 'dashboard',
-        };
-
-        return redirect(route($routeName) . '?program=' . $program->id . '#course-details');
+        return redirect($this->repo->courseDetailsUrl($program));
     }
 
     public function create($programId)

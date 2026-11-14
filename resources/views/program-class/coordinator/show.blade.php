@@ -12,7 +12,7 @@
                     <h4 class="bradecrumb-title mb-1">{{ $data['title'] }}</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
-                        <li class="breadcrumb-item"><a href="{{ route('program-class-coordinator.index') }}">Coordinator Review</a></li>
+                        <li class="breadcrumb-item"><a href="{{ route('program-class-coordinator.index') }}">Course Lessons Review</a></li>
                         <li class="breadcrumb-item active">{{ $item->title }}</li>
                     </ol>
                 </div>

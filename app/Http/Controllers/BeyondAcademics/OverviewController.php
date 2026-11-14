@@ -22,16 +22,25 @@ class OverviewController extends Controller
         $user = Auth::user();
         $isAdmin = $user && (int) $user->role_id === 1;
         $isTeacher = $user && !$isAdmin && isTeachingStaff();
+        $isCoordinator = $user && !$isAdmin && !$isTeacher && hasPermission('class_content_coordinator_review');
 
-        if (!$isAdmin && !$isTeacher) {
+        if (!$isAdmin && !$isTeacher && !$isCoordinator) {
             abort(403, ___('alert.You are not authorized to access this page'));
         }
 
         // null = no restriction (admin sees every active program). A
         // teacher only sees the programs they're actually assigned to
-        // teach, set from the Program edit form's "Teachers" field -
-        // students aren't on this page yet, that's a separate follow-up.
-        $programIds = $isAdmin ? null : $user->staff->programs()->pluck('programs.id')->all();
+        // teach, set from the Program edit form's "Teachers" field. A
+        // coordinator sees the programs taught by whichever teachers they
+        // oversee (Staff::coordinatees()) - students aren't on this page
+        // yet, that's a separate follow-up.
+        $programIds = null;
+        if ($isTeacher) {
+            $programIds = $user->staff->programs()->pluck('programs.id')->all();
+        } elseif ($isCoordinator) {
+            $coordinateeIds = $user->staff->coordinatees->pluck('id');
+            $programIds = Program::whereHas('teachers', fn ($q) => $q->whereIn('staff.id', $coordinateeIds))->pluck('id')->all();
+        }
 
         /** Same category record the public Our Programs page reads for
          *  its own banner - one place (Website Setup > Course Catalogue >
@@ -66,7 +75,7 @@ class OverviewController extends Controller
         $selectedOption = $data['courseOptions']->firstWhere('id', $selectedId) ?? $data['courseOptions']->first();
 
         $data['selectedProgram'] = $selectedOption
-            ? Program::with(['teachers', 'programClasses.materials', 'programClasses.activities', 'programClasses.outcomes'])->find($selectedOption->id)
+            ? Program::with(['teachers', 'programClasses.materials', 'programClasses.activities', 'programClasses.outcomes', 'programClasses.creator'])->find($selectedOption->id)
             : null;
 
         $data['contentModules'] = $data['selectedProgram'] ? $data['selectedProgram']->contentModules() : collect();
