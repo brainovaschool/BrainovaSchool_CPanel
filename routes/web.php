@@ -285,12 +285,20 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('manage-school-features/update', [\App\Http\Controllers\SchoolFeatureManagerController::class, 'update'])->name('school-features.update');
                     Route::post('manage-school-features/reset-password', [\App\Http\Controllers\SchoolFeatureManagerController::class, 'resetPassword'])->name('school-features.reset-password');
 
+                    // Homeschooling (Super Admin only for now - guarded inside the
+                    // controller, not by a role middleware).
+                    Route::get('homeschooling/overview', [\App\Http\Controllers\Homeschooling\OverviewController::class, 'index'])->name('homeschooling.overview');
+
+                    // Core Academics / "Academic Boost" category (Super Admin only for now
+                    // - same reasoning). Route/controller keep the old internal name.
+                    Route::get('core-academics/overview', [\App\Http\Controllers\CoreAcademics\OverviewController::class, 'index'])->name('core-academics.overview');
+
                     // Beyond Academics (Super Admin only for now, same as its sidebar entry -
                     // guarded inside the controller, not by a role middleware).
                     Route::get('beyond-academics/overview', [\App\Http\Controllers\BeyondAcademics\OverviewController::class, 'index'])->name('beyond-academics.overview');
 
-                    // Core Academics (Super Admin only for now - same reasoning).
-                    Route::get('core-academics/overview', [\App\Http\Controllers\CoreAcademics\OverviewController::class, 'index'])->name('core-academics.overview');
+                    // Beyond Screens (Super Admin only for now - same reasoning).
+                    Route::get('beyond-screens/overview', [\App\Http\Controllers\BeyondScreens\OverviewController::class, 'index'])->name('beyond-screens.overview');
                     Route::get('fees-collection-monthly',      [DashboardController::class, 'feesCollectionMonthly']);
                     Route::get('revenue',                      [DashboardController::class, 'revenueYearly']);
                     Route::get('fees-collection-current-month', [DashboardController::class, 'feesCollectionCurrentMonth']);

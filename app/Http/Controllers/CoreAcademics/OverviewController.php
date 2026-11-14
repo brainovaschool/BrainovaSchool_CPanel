@@ -18,11 +18,13 @@ class OverviewController extends Controller
         /** Same category record the public Our Programs page reads for
          *  its own banner - one place (Website Setup > Course Catalogue >
          *  Program Category > Edit) to set tagline/title/subtitle/image
-         *  for this category everywhere it's shown. */
-        $category = ProgramCategory::where('name', 'Core Academics')->with('upload')->first();
+         *  for this category everywhere it's shown. Renamed from "Core
+         *  Academics" to "Academic Boost" - the route/controller/view
+         *  keep the old internal name, only the category name changed. */
+        $category = ProgramCategory::where('name', 'Academic Boost')->with('upload')->first();
         $data['category'] = $category;
 
-        /** Scoped to the "Core Academics" category - the academic subjects
+        /** Scoped to the "Academic Boost" category - the academic subjects
          *  themselves, not the Beyond Academics skills catalogue. */
         $data['featured'] = Program::active()
             ->when($category, fn ($q) => $q->where('program_category_id', $category->id))
@@ -31,7 +33,7 @@ class OverviewController extends Controller
             ->take(8)
             ->get();
 
-        $data['title'] = 'Core Academics — Overview';
+        $data['title'] = 'Academic Boost — Overview';
 
         return view('core-academics.overview', compact('data'));
     }

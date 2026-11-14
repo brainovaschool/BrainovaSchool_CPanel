@@ -11,7 +11,7 @@
                     <h4 class="bradecrumb-title mb-1">Overview</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
-                        <li class="breadcrumb-item">Core Academics</li>
+                        <li class="breadcrumb-item">Academic Boost</li>
                         <li class="breadcrumb-item">Overview</li>
                     </ol>
                 </div>
@@ -46,7 +46,7 @@
                     @endif
                 </div>
                 @if (!$cat)
-                    <p class="ca-hero-missing">No "Core Academics" category found in Website Setup &rarr; Course Catalogue &rarr; Program Category.</p>
+                    <p class="ca-hero-missing">No "Academic Boost" category found in Website Setup &rarr; Course Catalogue &rarr; Program Category.</p>
                 @endif
             </div>
 
@@ -59,7 +59,7 @@
                     <a href="{{ route('program.index') }}">Manage in Website Setup <i class="fa-solid fa-arrow-right"></i></a>
                 </div>
                 @if ($data['featured']->isEmpty())
-                    <p class="text-secondary mb-0" style="font-size: 13px;">No courses added yet — add one under Website Setup &rarr; Course Catalogue &rarr; Program, in the Core Academics category.</p>
+                    <p class="text-secondary mb-0" style="font-size: 13px;">No courses added yet — add one under Website Setup &rarr; Course Catalogue &rarr; Program, in the Academic Boost category.</p>
                 @else
                     <div class="ca-course-grid">
                         @foreach ($data['featured'] as $program)

@@ -14,12 +14,31 @@
                     </a>
                 </li>
 
-                {{-- Core Academics: still admin-only for now. --}}
+                {{-- The five Course Catalogue categories, each its own
+                     top-level section - same order as Our Programs:
+                     Homeschooling, Academic Boost (was "Core Academics" -
+                     route/controller keep the old internal name, only the
+                     category name changed), Beyond Academics, Beyond
+                     Screens. Social Clubs doesn't have one yet. All
+                     admin-only for now except Beyond Academics, which also
+                     opens for a teacher assigned to teach in it. --}}
                 @if (auth()->user()?->role_id == 1)
+                    <li class="sidebar-menu-item {{ set_menu(['homeschooling*']) }}">
+                        <a class="parent-item-content has-arrow">
+                            <i class="las la-home"></i>
+                            <span class="on-half-expanded">Homeschooling</span>
+                        </a>
+                        <ul class="child-menu-list">
+                            <li class="sidebar-menu-item {{ set_menu(['homeschooling/overview']) }}">
+                                <a href="{{ route('homeschooling.overview') }}">Overview</a>
+                            </li>
+                        </ul>
+                    </li>
+
                     <li class="sidebar-menu-item {{ set_menu(['core-academics*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-school"></i>
-                            <span class="on-half-expanded">Core Academics</span>
+                            <span class="on-half-expanded">Academic Boost</span>
                         </a>
                         <ul class="child-menu-list">
                             <li class="sidebar-menu-item {{ set_menu(['core-academics/overview']) }}">
@@ -29,9 +48,6 @@
                     </li>
                 @endif
 
-                {{-- Beyond Academics: admin sees every course, a teacher
-                     only the ones they're assigned to teach - Course
-                     Details is next, student access is a later step. --}}
                 @if (auth()->user()?->role_id == 1 || isTeachingStaff())
                     <li class="sidebar-menu-item {{ set_menu(['beyond-academics*']) }}">
                         <a class="parent-item-content has-arrow">
@@ -41,6 +57,20 @@
                         <ul class="child-menu-list">
                             <li class="sidebar-menu-item {{ set_menu(['beyond-academics/overview']) }}">
                                 <a href="{{ route('beyond-academics.overview') }}">Overview</a>
+                            </li>
+                        </ul>
+                    </li>
+                @endif
+
+                @if (auth()->user()?->role_id == 1)
+                    <li class="sidebar-menu-item {{ set_menu(['beyond-screens*']) }}">
+                        <a class="parent-item-content has-arrow">
+                            <i class="las la-paint-brush"></i>
+                            <span class="on-half-expanded">Beyond Screens</span>
+                        </a>
+                        <ul class="child-menu-list">
+                            <li class="sidebar-menu-item {{ set_menu(['beyond-screens/overview']) }}">
+                                <a href="{{ route('beyond-screens.overview') }}">Overview</a>
                             </li>
                         </ul>
                     </li>
