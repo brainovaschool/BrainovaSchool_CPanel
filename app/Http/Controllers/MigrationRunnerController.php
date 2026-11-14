@@ -4151,6 +4151,58 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . implode("\n", $lines) . '</pre>');
     }
 
+    /** Read-only: every student_program_enrollments row (who's actually
+     *  enrolled in which Program) plus each Program's real status, so
+     *  "the student doesn't see the course" can be told apart from
+     *  "nothing was actually saved" vs. "the Program itself isn't Active"
+     *  - the two things Student::programs()->active() silently filters on. */
+    public function inspectStudentPrograms(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $lines = [];
+
+        $lines[] = '=== Programs and their status ===';
+        foreach (Program::orderBy('id')->get() as $program) {
+            $lines[] = "#{$program->id} \"{$program->title}\"  status=" . ($program->status ? 'Active' : 'INACTIVE (hidden from every student, even if enrolled)');
+        }
+
+        $lines[] = '';
+        $lines[] = '=== student_program_enrollments (who is enrolled in which Program) ===';
+        $rows = DB::table('student_program_enrollments')->get();
+        if ($rows->isEmpty()) {
+            $lines[] = 'No rows at all — nobody has been checked/saved as enrolled in any Program yet.';
+        }
+        foreach ($rows as $row) {
+            $student = Student::find($row->student_id);
+            $program = Program::find($row->program_id);
+            $studentName = $student ? trim($student->first_name . ' ' . $student->last_name) . " (id {$student->id}, user_id {$student->user_id})" : "missing student id {$row->student_id}";
+            $programTitle = $program ? $program->title . " (id {$program->id}, status=" . ($program->status ? 'Active' : 'INACTIVE') . ')' : "missing program id {$row->program_id}";
+            $lines[] = "{$studentName}  is enrolled in  {$programTitle}";
+        }
+
+        $lines[] = '';
+        $lines[] = '=== Students named "Ali" and their login User ===';
+        $alis = Student::where('first_name', 'like', '%ali%')->get();
+        if ($alis->isEmpty()) {
+            $lines[] = 'No Student row matches "Ali".';
+        }
+        foreach ($alis as $ali) {
+            $user = $ali->user_id ? User::find($ali->user_id) : null;
+            $lines[] = "Student #{$ali->id} \"{$ali->first_name} {$ali->last_name}\" — user_id={$ali->user_id}" . ($user ? " -> User #{$user->id} <{$user->email}> role_id={$user->role_id}" : ' -> NO MATCHING USER ROW (this student has no login, or the login points elsewhere)');
+            $enrolledIds = DB::table('student_program_enrollments')->where('student_id', $ali->id)->pluck('program_id');
+            $lines[] = '  Enrolled program ids: ' . ($enrolledIds->isEmpty() ? '(none)' : $enrolledIds->implode(', '));
+        }
+
+        return response('<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
+    }
+
     public function inspectCoordinatorPermissions(string $key)
     {
         if (!hash_equals(self::KEY, $key)) {
