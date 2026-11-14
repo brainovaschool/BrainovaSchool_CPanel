@@ -494,3 +494,20 @@ input.form-check-input:checked {
   white-space: nowrap;
   min-width: 0;
 }
+
+/* Dashboard-wide: same system-font stack as the public website, in place
+   of the theme's own "Lexend" everywhere - not just the Overview pages.
+   Only "Lexend" rules need beating; everywhere but a few (headings,
+   strong, and two ApexCharts labels) it's set without !important, so a
+   plain tag list with !important here outranks it regardless of the
+   original selector's own specificity. <i> (every icon in this theme -
+   Font Awesome, Line Awesome) is deliberately left out: icons set their
+   own font-family to their icon font the same way, and this would break
+   every icon glyph in the dashboard if it applied there too. */
+body,
+h1, h2, h3, h4, h5, h6,
+p, span, div, a, button,
+input, textarea, select, label,
+td, th, li, strong, em, small, blockquote, caption {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+}
