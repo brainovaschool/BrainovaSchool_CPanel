@@ -19,6 +19,52 @@
     @endpush
 @endonce
 
+{{-- Clicking a lesson's icon chip (📎 ❓ 🏆 ✏️ 🎯) opens that lesson and
+     shows ONLY the matching section, instead of the chip being purely
+     decorative. Opening the row any other way (title, chevron) resets it
+     back to showing everything. Event-delegated once for the whole page,
+     since lessons from both sources (Program Classes and Class Content)
+     share the same .cc-cd-lesson/.cc-cd-sub markup. --}}
+@once
+    @push('script')
+    <script>
+    (function () {
+        document.addEventListener('click', function (e) {
+            var chip = e.target.closest('.cc-cd-chip[data-target]');
+            if (chip) {
+                e.preventDefault();
+                e.stopPropagation();
+                var details = chip.closest('details.cc-cd-lesson');
+                if (!details) { return; }
+                details.open = true;
+                var target = chip.getAttribute('data-target');
+                var matched = null;
+                details.querySelectorAll('.cc-cd-sub[data-section]').forEach(function (sec) {
+                    var isMatch = sec.getAttribute('data-section') === target;
+                    sec.style.display = isMatch ? '' : 'none';
+                    if (isMatch) { matched = sec; }
+                });
+                if (matched) {
+                    matched.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+                return;
+            }
+
+            var summary = e.target.closest('.cc-cd-lesson-summary');
+            if (summary) {
+                var row = summary.closest('details.cc-cd-lesson');
+                if (row && !row.open) {
+                    row.querySelectorAll('.cc-cd-sub[data-section]').forEach(function (sec) {
+                        sec.style.display = '';
+                    });
+                }
+            }
+        });
+    })();
+    </script>
+    @endpush
+@endonce
+
 @php
     // The 4 parent Overview controllers put everything into $data (e.g.
     // $data['courseOptions']) rather than passing bare variables, and
@@ -106,11 +152,11 @@
                 @php
                     $cd_num++;
                     $cd_chips = [];
-                    if ($pc->materials->isNotEmpty()) { $cd_chips[] = ['📎', $pc->materials->count()]; }
-                    if ($pc->hasQuiz()) { $cd_chips[] = ['❓', 1]; }
-                    if ($pc->hasProject()) { $cd_chips[] = ['🏆', 1]; }
-                    if ($pc->activities->isNotEmpty()) { $cd_chips[] = ['✏️', $pc->activities->count()]; }
-                    if ($pc->outcomes->isNotEmpty()) { $cd_chips[] = ['🎯', $pc->outcomes->count()]; }
+                    if ($pc->materials->isNotEmpty()) { $cd_chips[] = ['📎', $pc->materials->count(), 'materials']; }
+                    if ($pc->hasQuiz()) { $cd_chips[] = ['❓', 1, 'quiz']; }
+                    if ($pc->hasProject()) { $cd_chips[] = ['🏆', 1, 'project']; }
+                    if ($pc->activities->isNotEmpty()) { $cd_chips[] = ['✏️', $pc->activities->count(), 'activities']; }
+                    if ($pc->outcomes->isNotEmpty()) { $cd_chips[] = ['🎯', $pc->outcomes->count(), 'outcomes']; }
                 @endphp
                 <details class="cc-cd-lesson cc-cd-lesson--{{ $pc->review_status }}" {{ $cd_num === 1 ? 'open' : '' }}>
                     <summary class="cc-cd-lesson-summary">
@@ -119,8 +165,8 @@
                             {{ $pc->title }}
                             @if ($cd_chips)
                                 <span class="cc-cd-chip-row">
-                                    @foreach ($cd_chips as [$icon, $count])
-                                        <span class="cc-cd-chip">{{ $icon }}@if($count > 1) {{ $count }}@endif</span>
+                                    @foreach ($cd_chips as [$icon, $count, $target])
+                                        <span class="cc-cd-chip" data-target="{{ $target }}" title="Show just this">{{ $icon }}@if($count > 1) {{ $count }}@endif</span>
                                     @endforeach
                                 </span>
                             @endif
@@ -155,7 +201,7 @@
                         @endif
 
                         @if ($pc->materials->isNotEmpty())
-                            <div class="cc-cd-sub">
+                            <div class="cc-cd-sub" data-section="materials">
                                 <h5>📎 Resources</h5>
                                 <ul class="cc-cd-res-list">
                                     @foreach ($pc->materials as $m)
@@ -169,38 +215,52 @@
                         @endif
 
                         @if ($pc->hasQuiz())
-                            <div class="cc-cd-sub">
+                            <div class="cc-cd-sub" data-section="quiz">
                                 <h5>❓ Quiz (self check)</h5>
                                 <div class="cc-cd-pill-row"><span class="hw-type-pill hw-type-pill--quiz">Quiz</span><span class="cc-cd-hwtitle">{{ $pc->quiz_title }}</span></div>
                                 @if ($pc->quiz_description)
                                     <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->quiz_description }}</p>
                                 @endif
+                                @if ($pc->quiz_link_url)
+                                    <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->quiz_link_url }}" target="_blank" rel="noopener">Open quiz &rarr;</a></p>
+                                @endif
                             </div>
                         @endif
 
                         @if ($pc->hasProject())
-                            <div class="cc-cd-sub">
+                            <div class="cc-cd-sub" data-section="project">
                                 <h5>🏆 Project</h5>
                                 <div class="cc-cd-pill-row"><span class="hw-type-pill hw-type-pill--project">Project</span><span class="cc-cd-hwtitle">{{ $pc->project_title }}</span></div>
                                 @if ($pc->project_description)
                                     <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->project_description }}</p>
                                 @endif
+                                @if ($pc->project_link_url)
+                                    <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->project_link_url }}" target="_blank" rel="noopener">Open project &rarr;</a></p>
+                                @endif
                             </div>
                         @endif
 
                         @if ($pc->activities->isNotEmpty())
-                            <div class="cc-cd-sub">
+                            <div class="cc-cd-sub" data-section="activities">
                                 <h5>✏️ Activities</h5>
                                 <ul class="cc-cd-out-list">
                                     @foreach ($pc->activities as $a)
-                                        <li><strong>{{ $a->title }}.</strong> {{ $a->description }}</li>
+                                        <li>
+                                            <strong>{{ $a->title }}.</strong> {{ $a->description }}
+                                            @if ($a->link_url)
+                                                <a href="{{ $a->link_url }}" target="_blank" rel="noopener">Open &rarr;</a>
+                                            @endif
+                                            @if ($a->video_url)
+                                                <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
+                                            @endif
+                                        </li>
                                     @endforeach
                                 </ul>
                             </div>
                         @endif
 
                         @if ($pc->outcomes->isNotEmpty())
-                            <div class="cc-cd-sub">
+                            <div class="cc-cd-sub" data-section="outcomes">
                                 <h5>🎯 Learning outcomes</h5>
                                 <ul class="cc-cd-out-list">
                                     @foreach ($pc->outcomes as $o)
@@ -268,6 +328,9 @@
                                         @if ($lesson->quiz_description)
                                             <p class="cc-cd-desc cc-cd-desc--sm">{{ $lesson->quiz_description }}</p>
                                         @endif
+                                        @if ($lesson->quiz_link_url)
+                                            <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $lesson->quiz_link_url }}" target="_blank" rel="noopener">Open quiz &rarr;</a></p>
+                                        @endif
                                     </div>
                                 @endif
 
@@ -278,6 +341,9 @@
                                         @if ($lesson->project_description)
                                             <p class="cc-cd-desc cc-cd-desc--sm">{{ $lesson->project_description }}</p>
                                         @endif
+                                        @if ($lesson->project_link_url)
+                                            <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $lesson->project_link_url }}" target="_blank" rel="noopener">Open project &rarr;</a></p>
+                                        @endif
                                     </div>
                                 @endif
 
@@ -286,7 +352,15 @@
                                         <h5>✏️ Activities</h5>
                                         <ul class="cc-cd-out-list">
                                             @foreach ($lesson->activities as $a)
-                                                <li><strong>{{ $a->title }}.</strong> {{ $a->description }}</li>
+                                                <li>
+                                                    <strong>{{ $a->title }}.</strong> {{ $a->description }}
+                                                    @if ($a->link_url)
+                                                        <a href="{{ $a->link_url }}" target="_blank" rel="noopener">Open &rarr;</a>
+                                                    @endif
+                                                    @if ($a->video_url)
+                                                        <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
+                                                    @endif
+                                                </li>
                                             @endforeach
                                         </ul>
                                     </div>
