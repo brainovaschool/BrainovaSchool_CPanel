@@ -88,6 +88,7 @@ class ProgramClassMarkRepository
         $totalGraded = 0;
         $totalSlots  = 0;
         $pendingSubmissions = [];
+        $recentActivity     = [];
 
         foreach ($classes as $class) {
             $items = $class->gradableItems();
@@ -98,6 +99,7 @@ class ProgramClassMarkRepository
             $lessonObtained = 0.0;
             $lessonPossible = 0.0;
             $lessonGraded   = 0;
+            $lessonPending  = 0;
             $lessonSlots    = count($items) * $students->count();
 
             foreach ($items as $type => $item) {
@@ -105,7 +107,16 @@ class ProgramClassMarkRepository
                     $mark = $class->marks->first(fn ($m) => (int) $m->student_id === $student->id && $m->assessment_type === $type);
                     if (!$mark || $mark->marks === null) {
                         if ($mark && $mark->isSubmitted()) {
+                            $lessonPending++;
                             $pendingSubmissions[] = [
+                                'student'   => $student,
+                                'class'     => $class,
+                                'itemTitle' => $item['title'],
+                                'mark'      => $mark,
+                            ];
+                            $recentActivity[] = [
+                                'type'      => 'submitted',
+                                'at'        => $mark->submitted_at,
                                 'student'   => $student,
                                 'class'     => $class,
                                 'itemTitle' => $item['title'],
@@ -119,6 +130,18 @@ class ProgramClassMarkRepository
                     $totalGraded++;
                     $studentTotals[$student->id]['graded']++;
 
+                    if ($mark->graded_at) {
+                        $recentActivity[] = [
+                            'type'      => 'graded',
+                            'at'        => $mark->graded_at,
+                            'student'   => $student,
+                            'class'     => $class,
+                            'itemTitle' => $item['title'],
+                            'marks'     => $mark->marks,
+                            'maxMarks'  => $item['max_marks'],
+                        ];
+                    }
+
                     if ($item['max_marks']) {
                         $lessonObtained += $mark->marks;
                         $lessonPossible += $item['max_marks'];
@@ -129,12 +152,23 @@ class ProgramClassMarkRepository
             }
 
             $totalSlots += $lessonSlots;
+
+            $lessonStatus = 'not_started';
+            if ($lessonSlots > 0) {
+                if ($lessonGraded === $lessonSlots) {
+                    $lessonStatus = 'completed';
+                } elseif ($lessonGraded > 0 || $lessonPending > 0) {
+                    $lessonStatus = 'in_progress';
+                }
+            }
+
             $lessonRows[] = [
                 'class'   => $class,
                 'items'   => $items,
                 'graded'  => $lessonGraded,
                 'total'   => $lessonSlots,
                 'avgPct'  => $lessonPossible > 0 ? round($lessonObtained / $lessonPossible * 100, 1) : null,
+                'status'  => $lessonStatus,
             ];
         }
 
@@ -145,10 +179,15 @@ class ProgramClassMarkRepository
                 'graded'  => $t['graded'],
                 'pct'     => $t['possible'] > 0 ? round($t['obtained'] / $t['possible'] * 100, 1) : null,
             ];
-        });
+        })->sortByDesc(fn ($row) => $row['pct'] ?? -1)->values();
 
         $lessonPcts  = collect($lessonRows)->pluck('avgPct')->filter(fn ($v) => $v !== null);
         $classAvgPct = $lessonPcts->isNotEmpty() ? round($lessonPcts->avg(), 1) : null;
+
+        $statusCounts = collect($lessonRows)->countBy('status');
+
+        usort($recentActivity, fn ($a, $b) => $b['at'] <=> $a['at']);
+        $recentActivity = array_slice($recentActivity, 0, 8);
 
         return [
             'students'           => $students,
@@ -161,6 +200,12 @@ class ProgramClassMarkRepository
             'approvedLessons'    => $classes->where('review_status', ProgramClass::APPROVED)->count(),
             'totalLessons'       => $classes->count(),
             'pendingSubmissions' => $pendingSubmissions,
+            'recentActivity'     => $recentActivity,
+            'statusCounts'       => [
+                'completed'   => (int) ($statusCounts['completed'] ?? 0),
+                'in_progress' => (int) ($statusCounts['in_progress'] ?? 0),
+                'not_started' => (int) ($statusCounts['not_started'] ?? 0),
+            ],
         ];
     }
 
