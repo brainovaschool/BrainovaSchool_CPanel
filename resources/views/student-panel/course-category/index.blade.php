@@ -27,6 +27,9 @@
                         </div>
                     @endif
                 </div>
+                @if (!$cat)
+                    <p class="sp-cat-hero-missing">No "{{ $data['categoryTitle'] }}" category found.</p>
+                @endif
             </div>
 
             <div class="sp-cat-featured">
@@ -68,25 +71,41 @@
 @endsection
 
 @push('css')
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap">
 <style>
     #overview, #course-details, #progress-report { scroll-margin-top: 100px; display: block; }
     #course-details, #progress-report { margin-top: 1.25rem; }
     #progress-report h4 { margin: 0 0 0.75rem; font-size: 1.15rem; font-weight: 700; color: #0f172a; }
 
+    {{-- Same hero look as the admin/teacher category pages (resources/
+         views/beyond-academics/overview.blade.php etc.), and the same
+         real public-site heading font (Libre Baskerville, loaded above)
+         rather than an invented color scheme. --}}
     .sp-cat-hero {
-        background: linear-gradient(135deg, #5e17eb 0%, #7c3aed 100%);
+        background: #ffffff;
+        border: 1px solid var(--ot-border-basic-table, #e4e7ec);
         border-radius: 20px;
         padding: 2rem 2.25rem;
-        color: #ffffff;
-        margin-bottom: 1rem;
+        margin-bottom: 1.25rem;
     }
-    .sp-cat-hero-badge { display: inline-block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; background: rgba(255,255,255,.18); padding: 0.25rem 0.7rem; border-radius: 999px; margin-bottom: 0.75rem; }
-    .sp-cat-hero-grid { display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap; }
-    .sp-cat-hero-copy { flex: 1; min-width: 220px; }
-    .sp-cat-hero-eyebrow { font-size: 0.85rem; font-weight: 600; opacity: .85; margin: 0 0 0.3rem; }
-    .sp-cat-hero-copy h2 { font-size: 1.6rem; font-weight: 800; margin: 0 0 0.4rem; }
-    .sp-cat-hero-copy p { font-size: 0.92rem; opacity: .9; margin: 0; }
-    .sp-cat-hero-art img { max-width: 160px; border-radius: 14px; }
+    .sp-cat-hero-badge {
+        display: inline-block;
+        background: #5e17eb;
+        color: #fff;
+        font-size: 0.75rem;
+        font-weight: 700;
+        padding: 0.35rem 1rem;
+        border-radius: 999px;
+        margin-bottom: 1.25rem;
+    }
+    .sp-cat-hero-grid { display: flex; align-items: stretch; gap: 2.5rem; flex-wrap: wrap; flex: 1 1 auto; }
+    .sp-cat-hero-eyebrow { font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; color: #007585; margin: 0 0 0.6rem; }
+    .sp-cat-hero-copy { flex: 1 1 auto; min-width: 0; }
+    .sp-cat-hero-copy h2 { font-family: "Libre Baskerville", serif; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 700; color: #0f2937; margin: 0 0 0.75rem; line-height: 1.25; }
+    .sp-cat-hero-copy p { font-size: 1rem; color: #475569; margin: 0; max-width: 48rem; line-height: 1.6; }
+    .sp-cat-hero-missing { font-size: 0.85rem; color: #8b93a3; margin: 0.75rem 0 0; }
+    .sp-cat-hero-art { flex: 0 0 42%; max-width: 460px; width: 100%; min-height: 140px; }
+    .sp-cat-hero-art img { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 14px; }
     .sp-cat-featured {
         background: #ffffff;
         border: 1px solid var(--ot-border-basic-table, #e4e7ec);

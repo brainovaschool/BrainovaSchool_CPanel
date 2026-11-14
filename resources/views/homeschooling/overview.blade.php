@@ -108,10 +108,13 @@
 @endsection
 
 @push('css')
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap">
 <style>
-    /* Same clean system-font stack the public site's own CSS falls back
-       to - scoped to this page only via .hs-overview-page, so nothing
-       else in the dashboard changes font. */
+    /* System-font stack for body copy, same as the public site's own
+       fallback - scoped to this page only via .hs-overview-page.
+       Headings use the public site's real heading font (Libre
+       Baskerville, loaded above) instead of that fallback, so this
+       actually matches rather than approximating it. */
     .hs-overview-page {
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
@@ -145,7 +148,7 @@
         letter-spacing: 0.1em;
         text-transform: uppercase;
         font-weight: 700;
-        color: #6366f1;
+        color: #007585;
         margin: 0 0 0.6rem;
     }
     .hs-hero-copy {
@@ -153,9 +156,10 @@
         min-width: 0;
     }
     .hs-hero-copy h2 {
+        font-family: "Libre Baskerville", serif;
         font-size: clamp(1.5rem, 3vw, 2rem);
-        font-weight: 800;
-        color: #0f172a;
+        font-weight: 700;
+        color: #0f2937;
         margin: 0 0 0.75rem;
         line-height: 1.25;
     }
@@ -181,7 +185,7 @@
         display: block;
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
         border-radius: 14px;
     }
 
