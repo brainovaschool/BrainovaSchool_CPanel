@@ -15,8 +15,9 @@
                 </li>
 
                 {{-- Core Academics / Beyond Academics: new top-level
-                     categories, admin-only for now - no sub-items yet,
-                     those are coming next. --}}
+                     categories, admin-only for now. Beyond Academics has
+                     its first sub-item (Overview) - Course Details is
+                     next, Core Academics still has no sub-items yet. --}}
                 @if (auth()->user()?->role_id == 1)
                     <li class="sidebar-menu-item {{ set_menu(['core-academics*']) }}">
                         <a class="parent-item-content has-arrow">
@@ -33,6 +34,9 @@
                             <span class="on-half-expanded">Beyond Academics</span>
                         </a>
                         <ul class="child-menu-list">
+                            <li class="sidebar-menu-item {{ set_menu(['beyond-academics/overview']) }}">
+                                <a href="{{ route('beyond-academics.overview') }}">Overview</a>
+                            </li>
                         </ul>
                     </li>
                 @endif
