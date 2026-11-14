@@ -190,13 +190,16 @@ a.fe-filter-pill:hover {
   background: var(--accent, var(--fe-c-indigo));
 }
 
+/* These are transparent mascot cutouts, not full-bleed photos - "contain"
+   with some breathing room lets the gradient show through as a backdrop
+   instead of stretching the character to fill the frame. */
 .fe-category-card-media img {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
+  inset: 8%;
+  width: 84%;
+  height: 84%;
+  object-fit: contain;
+  object-position: center bottom;
   display: block;
 }
 
