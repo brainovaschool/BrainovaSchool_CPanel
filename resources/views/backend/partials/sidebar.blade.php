@@ -30,7 +30,13 @@
                         </a>
                         <ul class="child-menu-list">
                             <li class="sidebar-menu-item {{ set_menu(['homeschooling/overview']) }}">
-                                <a href="{{ route('homeschooling.overview') }}">Overview</a>
+                                <a href="{{ route('homeschooling.overview') }}#overview">Overview</a>
+                            </li>
+                            <li class="sidebar-menu-item {{ set_menu(['homeschooling/overview']) }}">
+                                <a href="{{ route('homeschooling.overview') }}#course-details">Course Details</a>
+                            </li>
+                            <li class="sidebar-menu-item {{ set_menu(['homeschooling/overview']) }}">
+                                <a href="{{ route('homeschooling.overview') }}#progress-report">Progress &amp; Report</a>
                             </li>
                         </ul>
                     </li>
@@ -42,7 +48,13 @@
                         </a>
                         <ul class="child-menu-list">
                             <li class="sidebar-menu-item {{ set_menu(['core-academics/overview']) }}">
-                                <a href="{{ route('core-academics.overview') }}">Overview</a>
+                                <a href="{{ route('core-academics.overview') }}#overview">Overview</a>
+                            </li>
+                            <li class="sidebar-menu-item {{ set_menu(['core-academics/overview']) }}">
+                                <a href="{{ route('core-academics.overview') }}#course-details">Course Details</a>
+                            </li>
+                            <li class="sidebar-menu-item {{ set_menu(['core-academics/overview']) }}">
+                                <a href="{{ route('core-academics.overview') }}#progress-report">Progress &amp; Report</a>
                             </li>
                         </ul>
                     </li>
@@ -56,7 +68,13 @@
                         </a>
                         <ul class="child-menu-list">
                             <li class="sidebar-menu-item {{ set_menu(['beyond-academics/overview']) }}">
-                                <a href="{{ route('beyond-academics.overview') }}">Overview</a>
+                                <a href="{{ route('beyond-academics.overview') }}#overview">Overview</a>
+                            </li>
+                            <li class="sidebar-menu-item {{ set_menu(['beyond-academics/overview']) }}">
+                                <a href="{{ route('beyond-academics.overview') }}#course-details">Course Details</a>
+                            </li>
+                            <li class="sidebar-menu-item {{ set_menu(['beyond-academics/overview']) }}">
+                                <a href="{{ route('beyond-academics.overview') }}#progress-report">Progress &amp; Report</a>
                             </li>
                         </ul>
                     </li>
@@ -70,7 +88,13 @@
                         </a>
                         <ul class="child-menu-list">
                             <li class="sidebar-menu-item {{ set_menu(['beyond-screens/overview']) }}">
-                                <a href="{{ route('beyond-screens.overview') }}">Overview</a>
+                                <a href="{{ route('beyond-screens.overview') }}#overview">Overview</a>
+                            </li>
+                            <li class="sidebar-menu-item {{ set_menu(['beyond-screens/overview']) }}">
+                                <a href="{{ route('beyond-screens.overview') }}#course-details">Course Details</a>
+                            </li>
+                            <li class="sidebar-menu-item {{ set_menu(['beyond-screens/overview']) }}">
+                                <a href="{{ route('beyond-screens.overview') }}#progress-report">Progress &amp; Report</a>
                             </li>
                         </ul>
                     </li>

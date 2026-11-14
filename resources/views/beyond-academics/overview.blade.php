@@ -8,11 +8,10 @@
         <div class="page-header">
             <div class="row">
                 <div class="col-sm-6">
-                    <h4 class="bradecrumb-title mb-1">Overview</h4>
+                    <h4 class="bradecrumb-title mb-1">Beyond Academics</h4>
                     <ol class="breadcrumb">
                         <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">{{ ___('common.home') }}</a></li>
                         <li class="breadcrumb-item">Beyond Academics</li>
-                        <li class="breadcrumb-item">Overview</li>
                     </ol>
                 </div>
                 <div class="col-sm-6 text-sm-end">
@@ -27,6 +26,7 @@
 
         @php($cat = $data['category'] ?? null)
         <div class="ba-overview-page">
+        <section id="overview">
             <div class="ba-hero">
                 <span class="ba-hero-badge">Overview</span>
                 <div class="ba-hero-grid">
@@ -90,6 +90,17 @@
                     </div>
                 @endif
             </div>
+        </section>
+
+        <section id="course-details" class="ba-placeholder-section">
+            <h4>Course Details</h4>
+            <p class="text-secondary mb-0" style="font-size: 13px;">Content coming soon — lesson plans, materials, recordings, assignments and the end-of-course project for each class.</p>
+        </section>
+
+        <section id="progress-report" class="ba-placeholder-section">
+            <h4>Progress &amp; Report</h4>
+            <p class="text-secondary mb-0" style="font-size: 13px;">Content coming soon.</p>
+        </section>
         </div>
 
     </div>
@@ -267,6 +278,30 @@
     .ba-status-pill--upcoming { background: #dbeafe; color: #1d4ed8; }
     .ba-status-pill--coming_soon { background: #f1f5f9; color: #64748b; }
     .ba-status-pill--enrolling { background: #ece4fd; color: #5e17eb; }
+
+    /* Overview, Course Details and Progress & Report are one page - the
+       sidebar's sub-items are just anchor links into it, not separate
+       pages. scroll-margin-top keeps the fixed header from covering the
+       section heading when a link jumps here. */
+    #overview, #course-details, #progress-report {
+        scroll-margin-top: 100px;
+        display: block;
+    }
+    #course-details, #progress-report {
+        margin-top: 1.25rem;
+    }
+    .ba-placeholder-section {
+        background: #ffffff;
+        border: 1px solid var(--ot-border-basic-table, #e4e7ec);
+        border-radius: 20px;
+        padding: 1.5rem 1.75rem;
+    }
+    .ba-placeholder-section h4 {
+        margin: 0 0 0.5rem;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: #0f172a;
+    }
 
     @media (max-width: 767px) {
         .ba-hero {
