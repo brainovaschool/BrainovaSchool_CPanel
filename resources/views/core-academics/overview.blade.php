@@ -26,63 +26,65 @@
         </div>
 
         @php($cat = $data['category'] ?? null)
-        <div class="ca-hero">
-            <span class="ca-hero-badge">Overview</span>
-            <div class="ca-hero-grid">
-                <div class="ca-hero-copy">
-                    @if ($cat?->tagline)
-                        <p class="ca-hero-eyebrow">{{ $cat->tagline }}</p>
-                    @endif
-                    <h2>{{ $cat?->hero_title ?: ($cat?->name ?: 'Strong Foundations, Real Results') }}</h2>
-                    @if ($cat?->hero_subtitle)
-                        <p>{{ $cat->hero_subtitle }}</p>
+        <div class="ca-overview-page">
+            <div class="ca-hero">
+                <span class="ca-hero-badge">Overview</span>
+                <div class="ca-hero-grid">
+                    <div class="ca-hero-copy">
+                        @if ($cat?->tagline)
+                            <p class="ca-hero-eyebrow">{{ $cat->tagline }}</p>
+                        @endif
+                        <h2>{{ $cat?->hero_title ?: ($cat?->name ?: 'Strong Foundations, Real Results') }}</h2>
+                        @if ($cat?->hero_subtitle)
+                            <p>{{ $cat->hero_subtitle }}</p>
+                        @endif
+                    </div>
+                    @if ($cat?->image)
+                        <div class="ca-hero-art">
+                            <img src="{{ $cat->image }}" alt="">
+                        </div>
                     @endif
                 </div>
-                @if ($cat?->image)
-                    <div class="ca-hero-art">
-                        <img src="{{ $cat->image }}" alt="">
+                @if (!$cat)
+                    <p class="ca-hero-missing">No "Core Academics" category found in Website Setup &rarr; Course Catalogue &rarr; Program Category.</p>
+                @endif
+            </div>
+
+            {{-- Featured Courses: a live reflection of Website Setup > Course
+                 Catalogue > Program - nothing to manage here, add/edit a
+                 Program there and it shows up here automatically. --}}
+            <div class="ca-featured">
+                <div class="ca-featured-head">
+                    <h4>Featured Courses</h4>
+                    <a href="{{ route('program.index') }}">Manage in Website Setup <i class="fa-solid fa-arrow-right"></i></a>
+                </div>
+                @if ($data['featured']->isEmpty())
+                    <p class="text-secondary mb-0" style="font-size: 13px;">No courses added yet — add one under Website Setup &rarr; Course Catalogue &rarr; Program, in the Core Academics category.</p>
+                @else
+                    <div class="ca-course-grid">
+                        @foreach ($data['featured'] as $program)
+                            <a href="{{ route('frontend.course-detail', $program->slug) }}" target="_blank" rel="noopener" class="ca-course-card">
+                                <div class="ca-course-card-media">
+                                    @if ($program->image)
+                                        <img src="{{ $program->image }}" alt="{{ $program->title }}">
+                                    @endif
+                                </div>
+                                <div class="ca-course-card-body">
+                                    <h5>{{ $program->title }}</h5>
+                                    <p class="ca-course-meta">
+                                        @if ($program->age_range)<span>{{ $program->age_range }}</span>@endif
+                                        @if ($program->age_range && $program->lessons) <span>&bull;</span> @endif
+                                        @if ($program->lessons)<span>{{ $program->lessons }}</span>@endif
+                                    </p>
+                                    @if ($program->badge)
+                                        <span class="ca-course-badge">{{ $program->badge }}</span>
+                                    @endif
+                                </div>
+                            </a>
+                        @endforeach
                     </div>
                 @endif
             </div>
-            @if (!$cat)
-                <p class="ca-hero-missing">No "Core Academics" category found in Website Setup &rarr; Course Catalogue &rarr; Program Category.</p>
-            @endif
-        </div>
-
-        {{-- Featured Courses: a live reflection of Website Setup > Course
-             Catalogue > Program - nothing to manage here, add/edit a
-             Program there and it shows up here automatically. --}}
-        <div class="ca-featured">
-            <div class="ca-featured-head">
-                <h4>Featured Courses</h4>
-                <a href="{{ route('program.index') }}">Manage in Website Setup <i class="fa-solid fa-arrow-right"></i></a>
-            </div>
-            @if ($data['featured']->isEmpty())
-                <p class="text-secondary mb-0" style="font-size: 13px;">No courses added yet — add one under Website Setup &rarr; Course Catalogue &rarr; Program, in the Core Academics category.</p>
-            @else
-                <div class="ca-course-grid">
-                    @foreach ($data['featured'] as $program)
-                        <a href="{{ route('frontend.course-detail', $program->slug) }}" target="_blank" rel="noopener" class="ca-course-card">
-                            <div class="ca-course-card-media">
-                                @if ($program->image)
-                                    <img src="{{ $program->image }}" alt="{{ $program->title }}">
-                                @endif
-                            </div>
-                            <div class="ca-course-card-body">
-                                <h5>{{ $program->title }}</h5>
-                                <p class="ca-course-meta">
-                                    @if ($program->age_range)<span>{{ $program->age_range }}</span>@endif
-                                    @if ($program->age_range && $program->lessons) <span>&bull;</span> @endif
-                                    @if ($program->lessons)<span>{{ $program->lessons }}</span>@endif
-                                </p>
-                                @if ($program->badge)
-                                    <span class="ca-course-badge">{{ $program->badge }}</span>
-                                @endif
-                            </div>
-                        </a>
-                    @endforeach
-                </div>
-            @endif
         </div>
 
     </div>
@@ -90,67 +92,74 @@
 
 @push('css')
 <style>
+    /* Same clean system-font stack the public site's own CSS falls back
+       to - scoped to this page only via .ca-overview-page, so nothing
+       else in the dashboard changes font. */
+    .ca-overview-page {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
     .ca-hero {
-        position: relative;
-        background: linear-gradient(120deg, #efe7ff 0%, #e4ecff 60%, #eef2ff 100%);
+        background: #ffffff;
+        border: 1px solid var(--ot-border-basic-table, #e4e7ec);
         border-radius: 20px;
-        padding: 28px 32px 32px;
-        margin-bottom: 20px;
-        overflow: hidden;
+        padding: 2rem 2.25rem;
+        margin-bottom: 1.25rem;
     }
     .ca-hero-badge {
         display: inline-block;
         background: #5e17eb;
         color: #fff;
-        font-size: 12px;
+        font-size: 0.75rem;
         font-weight: 700;
-        padding: 6px 16px;
+        padding: 0.35rem 1rem;
         border-radius: 999px;
-        margin-bottom: 16px;
+        margin-bottom: 1.25rem;
     }
     .ca-hero-grid {
         display: flex;
         align-items: center;
-        justify-content: space-between;
-        gap: 24px;
+        gap: 2.5rem;
         flex-wrap: wrap;
+        flex: 1 1 auto;
     }
     .ca-hero-eyebrow {
-        font-size: 12px;
-        letter-spacing: .08em;
+        font-size: 0.8rem;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
         font-weight: 700;
-        color: #5e17eb;
-        margin: 0 0 8px;
+        color: #6366f1;
+        margin: 0 0 0.6rem;
     }
     .ca-hero-copy {
         flex: 1 1 auto;
         min-width: 0;
     }
     .ca-hero-copy h2 {
-        font-size: 28px;
+        font-size: clamp(1.5rem, 3vw, 2rem);
         font-weight: 800;
-        color: #1f2430;
-        margin: 0 0 10px;
+        color: #0f172a;
+        margin: 0 0 0.75rem;
         line-height: 1.25;
     }
     .ca-hero-copy p {
-        font-size: 15px;
-        color: #475065;
+        font-size: 1rem;
+        color: #475569;
         margin: 0;
-        max-width: 48ch;
+        max-width: 48rem;
+        line-height: 1.6;
     }
     .ca-hero-missing {
-        font-size: 13px;
+        font-size: 0.85rem;
         color: #8b5a00;
         background: #fff7e6;
         border-radius: 8px;
-        padding: 8px 12px;
-        margin: 12px 0 0;
+        padding: 0.5rem 0.75rem;
+        margin: 0.75rem 0 0;
     }
     .ca-hero-art {
-        flex: 0 0 38%;
-        max-width: 380px;
+        flex: 0 0 42%;
+        max-width: 460px;
         width: 100%;
     }
     .ca-hero-art img {
@@ -162,34 +171,33 @@
     }
 
     .ca-featured {
-        background: var(--ot-bg-table-card, #fff);
+        background: #ffffff;
         border: 1px solid var(--ot-border-basic-table, #e4e7ec);
-        border-radius: 16px;
-        padding: 20px 22px;
-        margin-bottom: 20px;
+        border-radius: 20px;
+        padding: 1.5rem 1.75rem;
     }
     .ca-featured-head {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 14px;
+        margin-bottom: 1.1rem;
     }
     .ca-featured-head h4 {
         margin: 0;
-        font-size: 17px;
+        font-size: 1.15rem;
         font-weight: 700;
-        color: #1f2430;
+        color: #0f172a;
     }
     .ca-featured-head a {
-        font-size: 13px;
+        font-size: 0.85rem;
         font-weight: 600;
-        color: #5e17eb;
+        color: #6366f1;
         text-decoration: none;
     }
     .ca-course-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 16px;
+        gap: 1rem;
     }
     .ca-course-card {
         display: block;
@@ -198,10 +206,10 @@
         overflow: hidden;
         text-decoration: none;
         color: inherit;
-        transition: box-shadow .12s ease, transform .12s ease;
+        transition: box-shadow .15s ease, transform .15s ease;
     }
     .ca-course-card:hover {
-        box-shadow: 0 6px 18px rgba(30, 30, 60, .08);
+        box-shadow: 0 10px 26px rgba(15, 23, 42, .08);
         transform: translateY(-2px);
         color: inherit;
     }
@@ -218,31 +226,42 @@
         object-fit: cover;
     }
     .ca-course-card-body {
-        padding: 12px 14px 14px;
+        padding: 0.85rem 1rem 1rem;
     }
     .ca-course-card-body h5 {
-        font-size: 14px;
+        font-size: 0.95rem;
         font-weight: 700;
-        margin: 0 0 6px;
-        color: #1f2430;
+        margin: 0 0 0.4rem;
+        color: #0f172a;
     }
     .ca-course-meta {
-        font-size: 12px;
+        font-size: 0.82rem;
         color: #8b93a3;
-        margin: 0 0 8px;
+        margin: 0 0 0.5rem;
     }
     .ca-course-badge {
         display: inline-block;
-        font-size: 11px;
+        font-size: 0.72rem;
         font-weight: 700;
         background: #e1f6fa;
         color: #007585;
-        padding: 3px 10px;
+        padding: 0.2rem 0.65rem;
         border-radius: 999px;
     }
 
-    @media (max-width: 575px) {
-        .ca-hero-art { display: none; }
+    @media (max-width: 767px) {
+        .ca-hero {
+            padding: 1.5rem;
+        }
+        .ca-hero-grid {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1.25rem;
+        }
+        .ca-hero-art {
+            flex: none;
+            max-width: none;
+        }
     }
 </style>
 @endpush
