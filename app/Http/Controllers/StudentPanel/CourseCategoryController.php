@@ -32,11 +32,12 @@ class CourseCategoryController extends Controller
 
         $dashboard = $student
             ? $this->repo->dashboardForStudent($student, $category, $programId)
-            : ['category' => null, 'programs' => collect(), 'selectedProgram' => null, 'progress' => null];
+            : ['category' => null, 'featured' => collect(), 'programs' => collect(), 'selectedProgram' => null, 'progress' => null];
 
         $data['categorySlug']    = $category;
         $data['categoryTitle']   = CourseCategoryRepository::CATEGORIES[$category];
         $data['category']        = $dashboard['category'];
+        $data['featured']        = $dashboard['featured'];
         $data['courseOptions']   = $dashboard['programs'];
         $data['selectedProgram'] = $dashboard['selectedProgram'];
         $data['progress']        = $dashboard['progress'];

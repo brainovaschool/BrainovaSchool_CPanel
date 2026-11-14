@@ -42,6 +42,18 @@ class CourseCategoryRepository
         $categoryName = self::CATEGORIES[$slug] ?? null;
         $category = $categoryName ? ProgramCategory::where('name', $categoryName)->with('upload')->first() : null;
 
+        // Featured Courses: every active program in this category, same as
+        // the admin/teacher page's own Featured Courses - a catalog to
+        // browse, not scoped to what this student happens to be enrolled
+        // in (that scoping only applies to Course Details/Progress &
+        // Report below, where real lesson content and grades live).
+        $featured = Program::active()
+            ->when($category, fn ($q) => $q->where('program_category_id', $category->id))
+            ->orderBy('sort_order')
+            ->with('upload')
+            ->take(8)
+            ->get();
+
         $programs = $student->programs()->active()
             ->when($category, fn ($q) => $q->where('program_category_id', $category->id))
             ->orderBy('sort_order')
@@ -58,6 +70,7 @@ class CourseCategoryRepository
 
         return [
             'category'        => $category,
+            'featured'        => $featured,
             'programs'        => $programs,
             'selectedProgram' => $selectedProgram,
             'progress'        => $progress,
