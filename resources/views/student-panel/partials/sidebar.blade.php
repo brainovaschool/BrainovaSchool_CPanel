@@ -23,11 +23,13 @@
                      only shown for a category this student is actually
                      enrolled in a Program for. --}}
                 @php($spEnrolledCategories = auth()->user()->student ? auth()->user()->student->programs()->active()->with('category')->get()->pluck('category.name')->filter()->unique() : collect())
+                {{-- Same icon per category as the admin/teacher sidebar. --}}
+                @php($spCategoryIcons = ['homeschooling' => 'la-home', 'academics-boost' => 'la-school', 'beyond-academics' => 'la-rocket', 'beyond-screens' => 'la-paint-brush'])
                 @foreach (\App\Repositories\StudentPanel\CourseCategoryRepository::CATEGORIES as $spSlug => $spCategoryName)
                     @if ($spEnrolledCategories->contains($spCategoryName))
                         <li class="sidebar-menu-item {{ set_menu(["student-panel-course/{$spSlug}*"]) }}">
                             <a class="parent-item-content has-arrow">
-                                <i class="las la-book-open"></i>
+                                <i class="las {{ $spCategoryIcons[$spSlug] ?? 'la-book-open' }}"></i>
                                 <span class="on-half-expanded">{{ $spCategoryName === 'Beyond Acedamics' ? 'Beyond Academics' : $spCategoryName }}</span>
                             </a>
                             <ul class="child-menu-list">
