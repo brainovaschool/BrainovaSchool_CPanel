@@ -497,6 +497,11 @@
                                     </ul>
                                 </li>
                             @endif
+                            @if (auth()->user()?->role_id == 1 || isTeachingStaff())
+                                <li class="sidebar-menu-item {{ set_menu(['program-class-grading*']) }}">
+                                    <a href="{{ route('program-class-grading.index') }}">Grading</a>
+                                </li>
+                            @endif
                             @if (hasPermission('homework_read') && hasFeature('homework'))
                                 <li class="sidebar-menu-item {{ set_menu(['homework*']) }}">
                                     <a class="has-arrow">{{ ___('common.homeworks') }}</a>

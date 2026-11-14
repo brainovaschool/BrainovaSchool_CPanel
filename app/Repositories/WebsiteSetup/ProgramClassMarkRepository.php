@@ -261,4 +261,71 @@ class ProgramClassMarkRepository
 
         return $this->responseWithSuccess('Submitted.', []);
     }
+
+    /** The "Grading" page's data: every lesson with at least one gradable
+     *  item, across whichever programs the viewer can see (already
+     *  filtered to just one program if they picked one), each with its
+     *  own graded/awaiting-marks/no-hand-ins-yet breakdown - plus the
+     *  same three numbers totalled, for the stat cards at the top. Mirrors
+     *  the Homework "quest log" page's shape (same idea: filter, stat
+     *  cards, a table of gradable work with a Grade action), but reusing
+     *  our own simpler per-lesson grading screen rather than Homework's
+     *  AJAX/modal machinery - there's no separate submission workflow to
+     *  replicate here. */
+    public function gradingOverview(array $programIds, ?int $selectedProgramId): array
+    {
+        $classes = ProgramClass::with(['program.students', 'marks'])
+            ->whereIn('program_id', $programIds)
+            ->when($selectedProgramId, fn ($q) => $q->where('program_id', $selectedProgramId))
+            ->orderByDesc('id')
+            ->get()
+            ->filter(fn ($c) => !empty($c->gradableItems()))
+            ->values();
+
+        $graded    = 0;
+        $needMarks = 0;
+        $noHandIns = 0;
+        $rows      = [];
+
+        foreach ($classes as $class) {
+            $items    = $class->gradableItems();
+            $students = $class->program->students;
+
+            $lessonGraded    = 0;
+            $lessonNeedMarks = 0;
+            $lessonNoHandIns = 0;
+
+            foreach ($items as $type => $item) {
+                foreach ($students as $student) {
+                    $mark = $class->marks->first(fn ($m) => (int) $m->student_id === $student->id && $m->assessment_type === $type);
+
+                    if ($mark && $mark->marks !== null) {
+                        $lessonGraded++;
+                    } elseif ($mark && $mark->isSubmitted()) {
+                        $lessonNeedMarks++;
+                    } else {
+                        $lessonNoHandIns++;
+                    }
+                }
+            }
+
+            $graded    += $lessonGraded;
+            $needMarks += $lessonNeedMarks;
+            $noHandIns += $lessonNoHandIns;
+
+            $rows[] = [
+                'class'     => $class,
+                'items'     => $items,
+                'graded'    => $lessonGraded,
+                'needMarks' => $lessonNeedMarks,
+                'noHandIns' => $lessonNoHandIns,
+                'total'     => count($items) * $students->count(),
+            ];
+        }
+
+        return [
+            'rows'  => $rows,
+            'stats' => ['graded' => $graded, 'needMarks' => $needMarks, 'noHandIns' => $noHandIns],
+        ];
+    }
 }

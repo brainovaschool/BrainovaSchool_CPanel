@@ -5,6 +5,7 @@ use App\Http\Controllers\WebsiteSetup\ProgramClassAdminController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassCoordinatorController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassGradeController;
+use App\Http\Controllers\WebsiteSetup\ProgramClassGradingController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMarkSubmissionController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMaterialController;
 
@@ -48,6 +49,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/{id}/grade',  'edit')->name('grade.edit');
                     Route::post('/{id}/grade', 'update')->name('grade.update')->middleware('DemoCheck');
                 });
+
+                Route::get('/program-class-grading', [ProgramClassGradingController::class, 'index'])->name('program-class-grading.index');
 
                 Route::controller(ProgramClassCoordinatorController::class)->prefix('program-class-coordinator')->name('program-class-coordinator.')->group(function () {
                     Route::get('/',             'index')->name('index')->middleware('PermissionCheck:class_content_coordinator_review');
