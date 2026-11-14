@@ -53,6 +53,14 @@
                                                     $mark = $data['grid']['marks'][$student->id][$type] ?? null;
                                                 @endphp
                                                 <td>
+                                                    @if ($mark && $mark->isSubmitted())
+                                                        <a href="{{ $mark->downloadUrl() }}" target="_blank" rel="noopener" class="d-block mb-1" style="font-size:12px;">
+                                                            <i class="fa-solid fa-paperclip"></i> {{ $mark->submission_original_filename ?: 'View submission' }}
+                                                        </a>
+                                                        <span class="text-secondary d-block mb-1" style="font-size:11px;">{{ $mark->submitted_at->diffForHumans() }}</span>
+                                                    @else
+                                                        <span class="text-secondary d-block mb-1" style="font-size:11px;">Not submitted</span>
+                                                    @endif
                                                     <input type="number" step="0.01" min="0" @if ($item['max_marks']) max="{{ $item['max_marks'] }}" @endif
                                                         class="form-control ot-input" style="width:110px;"
                                                         name="marks[{{ $student->id }}][{{ $type }}]"

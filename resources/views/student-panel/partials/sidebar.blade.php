@@ -15,6 +15,36 @@
                         <span class="on-half-expanded">{{ ___('common.dashboard') }}</span>
                     </a>
                 </li>
+
+                {{-- The same 4 Course Catalogue categories the admin/teacher
+                     sidebar shows (Homeschooling, Academics Boost, Beyond
+                     Academics, Beyond Screens), each its own expandable
+                     Overview/Course Details/Progress & Report section -
+                     only shown for a category this student is actually
+                     enrolled in a Program for. --}}
+                @php($spEnrolledCategories = auth()->user()->student ? auth()->user()->student->programs()->active()->with('category')->get()->pluck('category.name')->filter()->unique() : collect())
+                @foreach (\App\Repositories\StudentPanel\CourseCategoryRepository::CATEGORIES as $spSlug => $spCategoryName)
+                    @if ($spEnrolledCategories->contains($spCategoryName))
+                        <li class="sidebar-menu-item {{ set_menu(["student-panel-course/{$spSlug}*"]) }}">
+                            <a class="parent-item-content has-arrow">
+                                <i class="las la-book-open"></i>
+                                <span class="on-half-expanded">{{ $spCategoryName === 'Beyond Acedamics' ? 'Beyond Academics' : $spCategoryName }}</span>
+                            </a>
+                            <ul class="child-menu-list">
+                                <li class="sidebar-menu-item {{ set_menu(["student-panel-course/{$spSlug}"]) }}">
+                                    <a href="{{ route('student-panel-course.index', $spSlug) }}#overview">Overview</a>
+                                </li>
+                                <li class="sidebar-menu-item {{ set_menu(["student-panel-course/{$spSlug}"]) }}">
+                                    <a href="{{ route('student-panel-course.index', $spSlug) }}#course-details">Course Details</a>
+                                </li>
+                                <li class="sidebar-menu-item {{ set_menu(["student-panel-course/{$spSlug}"]) }}">
+                                    <a href="{{ route('student-panel-course.index', $spSlug) }}#progress-report">Progress &amp; Report</a>
+                                </li>
+                            </ul>
+                        </li>
+                    @endif
+                @endforeach
+
                 <li class="sidebar-menu-item {{ set_menu(['student-panel-ai-help*']) }}">
                     <a href="{{ route('student-panel-ai-help.index') }}" class="parent-item-content">
                         <i class="las la-robot"></i>
@@ -149,15 +179,6 @@
                         <a href="{{ route('student-panel-class-content.index') }}" class="parent-item-content">
                             <i class="las la-book-reader"></i>
                             <span class="on-half-expanded">Class Content</span>
-                        </a>
-                    </li>
-                @endif
-
-                @if (auth()->user()->student && auth()->user()->student->programs()->active()->exists())
-                    <li class="sidebar-menu-item {{ set_menu(['student-panel-my-courses*']) }}">
-                        <a href="{{ route('student-panel-my-courses.index') }}" class="parent-item-content">
-                            <i class="las la-book-open"></i>
-                            <span class="on-half-expanded">My Courses</span>
                         </a>
                     </li>
                 @endif

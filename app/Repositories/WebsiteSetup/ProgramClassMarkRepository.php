@@ -6,15 +6,24 @@ use App\Models\StudentInfo\Student;
 use App\Models\WebsiteSetup\Program;
 use App\Models\WebsiteSetup\ProgramClass;
 use App\Models\WebsiteSetup\ProgramClassMark;
+use App\Services\B2Storage;
 use App\Traits\ReturnFormatTrait;
 
 /** Marks for a single lesson's gradable items (Quiz/Project/Worksheet/
  *  Assignment), one row per student per item - what the teacher-facing
  *  grading screen reads and writes, and what Progress & Report reads
- *  back out per program. */
+ *  back out per program. Also where a student's own submission (a link
+ *  or an uploaded file) for that same item lives - see submitForStudent(). */
 class ProgramClassMarkRepository
 {
     use ReturnFormatTrait;
+
+    private B2Storage $storage;
+
+    public function __construct(B2Storage $storage)
+    {
+        $this->storage = $storage;
+    }
 
     /** Every enrolled student x every gradable item on this lesson, with
      *  whatever mark already exists slotted in - exactly what the
@@ -191,7 +200,7 @@ class ProgramClassMarkRepository
                     }
                 }
 
-                $itemRows[$type] = ['title' => $item['title'], 'max_marks' => $item['max_marks'], 'marks' => $value];
+                $itemRows[$type] = ['title' => $item['title'], 'max_marks' => $item['max_marks'], 'marks' => $value, 'mark' => $mark];
             }
 
             $totalSlots += count($items);
@@ -204,5 +213,52 @@ class ProgramClassMarkRepository
             'totalSlots' => $totalSlots,
             'pct'        => $possible > 0 ? round($obtained / $possible * 100, 1) : null,
         ];
+    }
+
+    /** A student submitting their own work for one gradable item on a
+     *  lesson - a link or an uploaded file, same file-or-link convention
+     *  as teacher materials. Only ever touches submission_* columns;
+     *  marks/graded_by/graded_at are left exactly as they were; grading
+     *  is the teacher's separate action via save() above. */
+    public function submitForStudent(ProgramClass $class, Student $student, string $type, $request): array
+    {
+        if (!array_key_exists($type, $class->gradableItems())) {
+            return $this->responseWithError(___('alert.not_found'), []);
+        }
+
+        $linkUrl = trim((string) $request->input('link_url'));
+        $file    = $request->file('file');
+
+        $mark = ProgramClassMark::firstOrNew([
+            'program_class_id' => $class->id,
+            'assessment_type'  => $type,
+            'student_id'       => $student->id,
+        ]);
+
+        if ($file) {
+            if (!$file->isValid()) {
+                return $this->responseWithError("The file didn't upload properly (code {$file->getError()}) - try again.", []);
+            }
+
+            $uploaded = $this->storage->upload($file, 'program-class-submissions');
+            if (!$uploaded['ok']) {
+                return $this->responseWithError($uploaded['message'], []);
+            }
+
+            $mark->submission_storage_key       = $uploaded['storage_key'];
+            $mark->submission_original_filename = $uploaded['original_filename'];
+            $mark->submission_link_url          = null;
+        } elseif ($linkUrl !== '') {
+            $mark->submission_link_url          = $linkUrl;
+            $mark->submission_storage_key       = null;
+            $mark->submission_original_filename = null;
+        } else {
+            return $this->responseWithError('Add a link or choose a file before submitting.', []);
+        }
+
+        $mark->submitted_at = now();
+        $mark->save();
+
+        return $this->responseWithSuccess('Submitted.', []);
     }
 }

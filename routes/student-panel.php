@@ -10,8 +10,8 @@ use App\Http\Controllers\StudentPanel\ProfileController;
 use App\Http\Controllers\StudentPanel\AiHelpController;
 use App\Http\Controllers\StudentPanel\AvatarController;
 use App\Http\Controllers\StudentPanel\ClassContentController;
+use App\Http\Controllers\StudentPanel\CourseCategoryController;
 use App\Http\Controllers\StudentPanel\IslandController;
-use App\Http\Controllers\StudentPanel\MyCoursesController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use App\Http\Controllers\StudentPanel\HomeworkController;
 use App\Http\Controllers\StudentPanel\DashboardController;
@@ -72,8 +72,9 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::get('/{id}', 'show')->name('show');
                     });
 
-                    Route::controller(MyCoursesController::class)->prefix('student-panel-my-courses')->name('student-panel-my-courses.')->group(function () {
-                        Route::get('/', 'index')->name('index');
+                    Route::controller(CourseCategoryController::class)->prefix('student-panel-course')->name('student-panel-course.')->group(function () {
+                        Route::get('/{category}', 'index')->name('index')->where('category', 'homeschooling|academics-boost|beyond-academics|beyond-screens');
+                        Route::post('/submit', 'submit')->name('submit')->middleware('DemoCheck');
                     });
 
                     Route::controller(ProfileController::class)->prefix('student-panel')->group(function () {

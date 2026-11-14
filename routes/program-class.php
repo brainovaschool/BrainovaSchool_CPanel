@@ -5,6 +5,7 @@ use App\Http\Controllers\WebsiteSetup\ProgramClassAdminController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassCoordinatorController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassGradeController;
+use App\Http\Controllers\WebsiteSetup\ProgramClassMarkSubmissionController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMaterialController;
 
 /** The newer, simpler alternative to routes/class-content.php for
@@ -23,6 +24,13 @@ Route::middleware(saasMiddleware())->group(function () {
             // access control.
             Route::get('/program-class/materials/{material}/download', [ProgramClassMaterialController::class, 'download'])
                 ->name('program-class-material.download')
+                ->middleware('signed');
+
+            // A student needs this too (to open what they submitted), so
+            // it sits outside AdminPanel the same way - the signed URL
+            // itself is the access control.
+            Route::get('/program-class/mark-submissions/{mark}/download', [ProgramClassMarkSubmissionController::class, 'download'])
+                ->name('program-class-mark-submission.download')
                 ->middleware('signed');
 
             Route::group(['middleware' => ['auth.routes', 'AdminPanel']], function () {
