@@ -140,6 +140,8 @@ class ProgramRepository
         $row->class_days          = $request->class_days ? implode(', ', (array) $request->class_days) : null;
         $row->class_time          = $this->formatTimeRange($request->class_time_start, $request->class_time_end);
         $row->duration            = $request->duration;
+        $row->start_date          = $request->start_date ?: null;
+        $row->end_date            = $request->end_date ?: null;
         $row->enrolled            = $request->enrolled;
         $row->price               = $request->price;
         $row->accent              = $request->accent ?: 'teal';

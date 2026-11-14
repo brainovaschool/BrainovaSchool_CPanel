@@ -20,6 +20,8 @@ class Program extends Model
     protected $casts = [
         'overview'   => 'array',
         'highlights' => 'array',
+        'start_date' => 'date',
+        'end_date'   => 'date',
     ];
 
     /** The fixed set of lifecycle stages a program can show as its status

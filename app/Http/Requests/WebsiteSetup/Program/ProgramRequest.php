@@ -32,6 +32,8 @@ class ProgramRequest extends FormRequest
             'class_time_start'    => 'nullable|date_format:H:i',
             'class_time_end'      => 'nullable|date_format:H:i',
             'duration'            => 'nullable|string|max:60',
+            'start_date'          => 'nullable|date',
+            'end_date'            => 'nullable|date|after_or_equal:start_date',
             'enrolled'            => 'nullable|string|max:120',
             'price'               => 'nullable|string|max:60',
             'accent'              => 'nullable|string|max:30',

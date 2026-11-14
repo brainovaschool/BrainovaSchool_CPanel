@@ -131,6 +131,18 @@
         <label class="form-label">{{ ___('settings.duration') }}</label>
         <input class="form-control ot-input" name="duration" value="{{ old('duration', $p->duration ?? '') }}" placeholder="6 weeks">
     </div>
+    <div class="col-md-3 mb-3">
+        <label class="form-label">Start date</label>
+        <input type="date" class="form-control ot-input @error('start_date') is-invalid @enderror" name="start_date"
+            value="{{ old('start_date', $p && $p->start_date ? $p->start_date->format('Y-m-d') : '') }}">
+        @error('start_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    </div>
+    <div class="col-md-3 mb-3">
+        <label class="form-label">End date</label>
+        <input type="date" class="form-control ot-input @error('end_date') is-invalid @enderror" name="end_date"
+            value="{{ old('end_date', $p && $p->end_date ? $p->end_date->format('Y-m-d') : '') }}">
+        @error('end_date')<div class="invalid-feedback">{{ $message }}</div>@enderror
+    </div>
 
     <div class="col-md-3 mb-3">
         <label class="form-label">Classes per week</label>
