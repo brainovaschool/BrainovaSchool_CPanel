@@ -88,7 +88,9 @@ class B2Storage
         }
 
         try {
-            $getUploadUrl = Http::withToken($session['authorizationToken'])
+            // withHeaders(), not withToken() - B2 wants the raw token as-is,
+            // not Laravel's default "Bearer <token>" formatting.
+            $getUploadUrl = Http::withHeaders(['Authorization' => $session['authorizationToken']])
                 ->post($session['apiUrl'] . '/b2api/v3/b2_get_upload_url', [
                     'bucketId' => $this->credential('B2_BUCKET_ID'),
                 ]);
@@ -129,7 +131,7 @@ class B2Storage
         }
 
         try {
-            $auth = Http::withToken($session['authorizationToken'])
+            $auth = Http::withHeaders(['Authorization' => $session['authorizationToken']])
                 ->post($session['apiUrl'] . '/b2api/v3/b2_get_download_authorization', [
                     'bucketId' => $this->credential('B2_BUCKET_ID'),
                     'fileNamePrefix' => $storageKey,
