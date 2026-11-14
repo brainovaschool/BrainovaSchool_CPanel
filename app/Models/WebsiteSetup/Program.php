@@ -2,6 +2,7 @@
 
 namespace App\Models\WebsiteSetup;
 
+use App\Models\Staff\Staff;
 use App\Models\Upload;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,6 +31,12 @@ class Program extends Model
     public function upload()
     {
         return $this->belongsTo(Upload::class, 'upload_id', 'id');
+    }
+
+    /** Which staff teach this program - set from the Program edit form. */
+    public function teachers()
+    {
+        return $this->belongsToMany(Staff::class, 'staff_program_enrollments', 'program_id', 'staff_id');
     }
 
     public function scopeActive($query)

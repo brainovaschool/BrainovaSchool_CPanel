@@ -97,4 +97,11 @@ class Staff extends BaseModel
     {
         return $this->belongsToMany(Staff::class, 'staff_coordinators', 'coordinator_staff_id', 'staff_id');
     }
+
+    /** Which Programs (Website Setup > Course Catalogue) this staff member
+     *  teaches - set from the Program edit form's "Teachers" field. */
+    public function programs()
+    {
+        return $this->belongsToMany(\App\Models\WebsiteSetup\Program::class, 'staff_program_enrollments', 'staff_id', 'program_id');
+    }
 }

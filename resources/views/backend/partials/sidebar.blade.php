@@ -14,10 +14,7 @@
                     </a>
                 </li>
 
-                {{-- Core Academics / Beyond Academics: new top-level
-                     categories, admin-only for now. Beyond Academics has
-                     its first sub-item (Overview) - Course Details is
-                     next, Core Academics still has no sub-items yet. --}}
+                {{-- Core Academics: still admin-only, no sub-items yet. --}}
                 @if (auth()->user()?->role_id == 1)
                     <li class="sidebar-menu-item {{ set_menu(['core-academics*']) }}">
                         <a class="parent-item-content has-arrow">
@@ -27,7 +24,12 @@
                         <ul class="child-menu-list">
                         </ul>
                     </li>
+                @endif
 
+                {{-- Beyond Academics: admin sees every course, a teacher
+                     only the ones they're assigned to teach - Course
+                     Details is next, student access is a later step. --}}
+                @if (auth()->user()?->role_id == 1 || isTeachingStaff())
                     <li class="sidebar-menu-item {{ set_menu(['beyond-academics*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-rocket"></i>

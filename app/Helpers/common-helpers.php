@@ -334,6 +334,21 @@ if (!function_exists('hasPermission')) {
     }
 }
 
+if (!function_exists('isTeachingStaff')) {
+    /** The logged-in user has a Staff record whose role carries
+     *  class_content_create - the same "is a teacher" signal used
+     *  wherever the app needs it, instead of a hardcoded role_id. */
+    function isTeachingStaff(): bool
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        if (!$user || !$user->staff) {
+            return false;
+        }
+        $roleIds = \App\Models\Role::whereJsonContains('permissions', 'class_content_create')->pluck('id');
+        return $roleIds->contains($user->staff->role_id);
+    }
+}
+
 if (!function_exists('schoolSettingsBlockedRoleSlugs')) {
     /**
      * Role slugs that must not access school CMS / system settings (routes + sidebar).

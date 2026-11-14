@@ -30,7 +30,7 @@ class ProgramRepository
 
     public function show($id)
     {
-        return $this->program->find($id);
+        return $this->program->with('teachers')->find($id);
     }
 
     public function store($request)
@@ -46,6 +46,7 @@ class ProgramRepository
 
             $row->slug = $this->uniqueSlug($request->title);
             $row->save();
+            $row->teachers()->sync((array) $request->input('teacher_ids', []));
 
             DB::commit();
             return $this->responseWithSuccess(___('alert.created_successfully'), []);
@@ -68,6 +69,7 @@ class ProgramRepository
 
             $row->slug = $this->uniqueSlug($request->title, $row->id);
             $row->save();
+            $row->teachers()->sync((array) $request->input('teacher_ids', []));
 
             DB::commit();
             return $this->responseWithSuccess(___('alert.updated_successfully'), []);

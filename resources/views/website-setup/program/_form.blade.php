@@ -28,6 +28,23 @@
         @error('program_focus_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
 
+    <div class="col-md-12 mb-3">
+        <label class="form-label">Teachers</label>
+        <div class="border rounded p-2" style="max-height: 160px; overflow-y: auto;">
+            @php $selectedTeacherIds = old('teacher_ids', $p?->teachers->pluck('id')->all() ?? []); @endphp
+            @forelse ($data['teachers'] as $teacher)
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="teacher_ids[]" value="{{ $teacher->id }}"
+                        id="teacher{{ $teacher->id }}" {{ in_array($teacher->id, $selectedTeacherIds) ? 'checked' : '' }}>
+                    <label class="form-check-label" for="teacher{{ $teacher->id }}">{{ trim($teacher->first_name . ' ' . $teacher->last_name) }}</label>
+                </div>
+            @empty
+                <p class="text-secondary mb-0" style="font-size: 13px;">No teaching staff found.</p>
+            @endforelse
+        </div>
+        <small class="text-secondary">Who teaches this program — controls which teacher sees it under Beyond Academics.</small>
+    </div>
+
     <div class="col-md-8 mb-3">
         <label class="form-label">{{ ___('common.title') }} <span class="fillable">*</span></label>
         <input class="form-control ot-input @error('title') is-invalid @enderror" name="title"

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\WebsiteSetup;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WebsiteSetup\Program\ProgramRequest;
+use App\Models\Role;
+use App\Models\Staff\Staff;
 use App\Models\WebsiteSetup\ProgramFocus;
 use App\Repositories\WebsiteSetup\ProgramCategoryRepository;
 use App\Repositories\WebsiteSetup\ProgramRepository;
@@ -35,6 +37,7 @@ class ProgramController extends Controller
     {
         $data['categories'] = $this->categoryRepo->all();
         $data['focuses']    = $this->focusOptions();
+        $data['teachers']   = $this->teacherOptions();
         $data['title']      = ___('settings.add_program');
         return view('website-setup.program.create', compact('data'));
     }
@@ -56,6 +59,7 @@ class ProgramController extends Controller
         }
         $data['categories'] = $this->categoryRepo->all();
         $data['focuses']    = $this->focusOptions();
+        $data['teachers']   = $this->teacherOptions();
         $data['title']      = ___('settings.edit_program');
         return view('website-setup.program.edit', compact('data'));
     }
@@ -110,5 +114,13 @@ class ProgramController extends Controller
         return ProgramFocus::with('category')
             ->orderBy('program_category_id')->orderBy('sort_order')->orderBy('name')
             ->get();
+    }
+
+    /** Same "is a teaching staff member" signal used everywhere else in
+     *  the app (class_content_create permission), not a hardcoded role_id. */
+    private function teacherOptions()
+    {
+        $roleIds = Role::whereJsonContains('permissions', 'class_content_create')->pluck('id');
+        return Staff::active()->whereIn('role_id', $roleIds)->orderBy('first_name')->get();
     }
 }
