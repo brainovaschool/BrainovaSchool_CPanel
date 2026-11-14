@@ -17,6 +17,10 @@
     @push('css')
     <link rel="stylesheet" href="{{ global_asset('backend/assets/css/homework-teacher-gamified.css') }}">
     @endpush
+    {{-- Provides the delete_row() JS the delete button below calls - the
+         same confirm-then-ajax-delete helper used everywhere else in the
+         admin dashboard. --}}
+    @include('backend.partials.delete-ajax')
 @endonce
 
 {{-- Clicking a lesson's icon chip (📎 ❓ 🏆 ✏️ 🎯) opens that lesson and
@@ -165,7 +169,7 @@
                     if ($pc->activities->isNotEmpty()) { $cd_chips[] = ['✏️', $pc->activities->count(), 'activities']; }
                     if ($pc->outcomes->isNotEmpty()) { $cd_chips[] = ['🎯', $pc->outcomes->count(), 'outcomes']; }
                 @endphp
-                <details class="cc-cd-lesson cc-cd-lesson--{{ $pc->review_status }}" {{ $cd_num === 1 ? 'open' : '' }}>
+                <details id="row_{{ $pc->id }}" class="cc-cd-lesson cc-cd-lesson--{{ $pc->review_status }}" {{ $cd_num === 1 ? 'open' : '' }}>
                     <summary class="cc-cd-lesson-summary">
                         <span class="cc-cd-lesson-num cc-cd-lesson-num--{{ $pc->review_status }}">{{ $cd_num }}</span>
                         <span class="cc-cd-lesson-title">
@@ -182,9 +186,20 @@
                             $cd_coord_can_decide = $cd_is_coordinator
                                 && in_array((int) $pc->created_by, $cd_coordinatee_ids, true)
                                 && in_array($pc->review_status, [\App\Models\WebsiteSetup\ProgramClass::SUBMITTED, \App\Models\WebsiteSetup\ProgramClass::CHANGES_REQUESTED], true);
+                            // Admin can delete any lesson, any status (same
+                            // bypass used everywhere else); the owning
+                            // teacher only while it's still theirs to edit.
+                            $cd_can_delete = $cd_is_admin
+                                || ((int) $pc->created_by === (int) $cd_viewer_staff_id && $pc->isEditableByTeacher());
                         @endphp
                         @if ($cd_can_manage || $cd_is_coordinator)
                             <span class="cc-cd-status-tag cc-cd-status-tag--{{ $pc->review_status }}"><i></i>{{ \App\Models\WebsiteSetup\ProgramClass::REVIEW_STATUSES[$pc->review_status] ?? $pc->review_status }}</span>
+                        @endif
+                        @if ($cd_can_delete)
+                            <button type="button" class="cc-cd-delete-btn" title="Delete this lesson"
+                                onclick="event.stopPropagation(); delete_row('program-class/delete', {{ $pc->id }});">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
                         @endif
                         <span class="cc-cd-lesson-chev">&#9662;</span>
                     </summary>
@@ -576,6 +591,12 @@
         .cc-cd-lesson-title small { display: block; width: 100%; font-weight: 500; color: #8b93a3; font-size: 0.74rem; }
         .cc-cd-chip-row { display: inline-flex; gap: 0.3rem; }
         .cc-cd-chip { font-size: 0.72rem; background: #f1f5f9; color: #475569; border-radius: 999px; padding: 0.08rem 0.4rem; font-weight: 600; }
+        .cc-cd-delete-btn {
+            background: transparent; border: 1px solid var(--ot-border-basic-table, #e4e7ec); border-radius: 8px;
+            color: #94a3b8; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0; cursor: pointer; transition: color .15s ease, border-color .15s ease, background .15s ease;
+        }
+        .cc-cd-delete-btn:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
         .cc-cd-lesson-chev { color: #8b93a3; transition: transform .15s ease; flex-shrink: 0; }
         details[open] .cc-cd-lesson-chev { transform: rotate(180deg); }
         .cc-cd-lesson-body { padding: 0 1rem 1rem 3.25rem; border-top: 1px solid var(--ot-border-basic-table, #e4e7ec); }
