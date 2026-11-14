@@ -38,15 +38,73 @@
             </div>
         </div>
 
+        {{-- Featured Courses: a live reflection of Website Setup > Course
+             Catalogue > Program - nothing to manage here, add/edit a
+             Program there and it shows up here automatically. --}}
+        <div class="ba-featured">
+            <div class="ba-featured-head">
+                <h4>Featured Courses</h4>
+                <a href="{{ route('program.index') }}">Manage in Website Setup <i class="fa-solid fa-arrow-right"></i></a>
+            </div>
+            @if ($data['featured']->isEmpty())
+                <p class="text-secondary mb-0" style="font-size: 13px;">No courses added yet — add one under Website Setup &rarr; Course Catalogue &rarr; Program.</p>
+            @else
+                <div class="ba-course-grid">
+                    @foreach ($data['featured'] as $program)
+                        <a href="{{ route('frontend.course-detail', $program->slug) }}" target="_blank" rel="noopener" class="ba-course-card">
+                            <div class="ba-course-card-media">
+                                @if ($program->image)
+                                    <img src="{{ $program->image }}" alt="{{ $program->title }}">
+                                @endif
+                            </div>
+                            <div class="ba-course-card-body">
+                                <h5>{{ $program->title }}</h5>
+                                <p class="ba-course-meta">
+                                    @if ($program->age_range)<span>{{ $program->age_range }}</span>@endif
+                                    @if ($program->age_range && $program->lessons) <span>&bull;</span> @endif
+                                    @if ($program->lessons)<span>{{ $program->lessons }}</span>@endif
+                                </p>
+                                @if ($program->badge)
+                                    <span class="ba-course-badge">{{ $program->badge }}</span>
+                                @endif
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
         <div class="ba-category-grid">
             @foreach ($data['categories'] as $i => $cat)
                 <div class="ba-category">
-                    <button type="button" class="ba-category-btn" style="background: {{ $cat['color'] }};" data-ba-toggle="ba-panel-{{ $i }}">
-                        <i class="las {{ $cat['icon'] }}"></i>
-                        <span>{{ $cat['label'] }}</span>
+                    <button type="button" class="ba-category-btn" data-ba-toggle="ba-panel-{{ $i }}">
+                        @if ($cat->image)
+                            <span class="ba-category-thumb" style="background-image: url('{{ $cat->image }}');"></span>
+                        @else
+                            <span class="ba-category-thumb ba-category-thumb--empty"><i class="las la-graduation-cap"></i></span>
+                        @endif
+                        <span class="ba-category-label">{{ $cat->name }}</span>
                     </button>
                     <div class="ba-category-panel" id="ba-panel-{{ $i }}" hidden>
-                        <p class="text-secondary mb-0" style="font-size: 13px;">Course content for "{{ $cat['label'] }}" is coming soon.</p>
+                        @if ($cat->activePrograms->isEmpty())
+                            <p class="text-secondary mb-0" style="font-size: 13px;">No courses in this category yet.</p>
+                        @else
+                            <ul class="ba-category-course-list">
+                                @foreach ($cat->activePrograms as $program)
+                                    <li>
+                                        <a href="{{ route('frontend.course-detail', $program->slug) }}" target="_blank" rel="noopener">
+                                            @if ($program->image)
+                                                <img src="{{ $program->image }}" alt="">
+                                            @endif
+                                            <span>{{ $program->title }}</span>
+                                            @if ($program->badge)
+                                                <em>{{ $program->badge }}</em>
+                                            @endif
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        @endif
                     </div>
                 </div>
             @endforeach
@@ -103,6 +161,86 @@
         display: block;
     }
 
+    .ba-featured {
+        background: var(--ot-bg-table-card, #fff);
+        border: 1px solid var(--ot-border-basic-table, #e4e7ec);
+        border-radius: 16px;
+        padding: 20px 22px;
+        margin-bottom: 20px;
+    }
+    .ba-featured-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 14px;
+    }
+    .ba-featured-head h4 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        color: #1f2430;
+    }
+    .ba-featured-head a {
+        font-size: 13px;
+        font-weight: 600;
+        color: #5e17eb;
+        text-decoration: none;
+    }
+    .ba-course-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+    }
+    .ba-course-card {
+        display: block;
+        border: 1px solid var(--ot-border-basic-table, #edeef1);
+        border-radius: 14px;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        transition: box-shadow .12s ease, transform .12s ease;
+    }
+    .ba-course-card:hover {
+        box-shadow: 0 6px 18px rgba(30, 30, 60, .08);
+        transform: translateY(-2px);
+        color: inherit;
+    }
+    .ba-course-card-media {
+        height: 110px;
+        background: #eef1f6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .ba-course-card-media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .ba-course-card-body {
+        padding: 12px 14px 14px;
+    }
+    .ba-course-card-body h5 {
+        font-size: 14px;
+        font-weight: 700;
+        margin: 0 0 6px;
+        color: #1f2430;
+    }
+    .ba-course-meta {
+        font-size: 12px;
+        color: #8b93a3;
+        margin: 0 0 8px;
+    }
+    .ba-course-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        background: #e1f6fa;
+        color: #007585;
+        padding: 3px 10px;
+        border-radius: 999px;
+    }
+
     .ba-category-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
@@ -110,9 +248,10 @@
     }
     .ba-category-btn {
         width: 100%;
-        border: none;
+        border: 1px solid var(--ot-border-basic-table, #e4e7ec);
+        background: var(--ot-bg-table-card, #fff);
         border-radius: 16px;
-        padding: 20px 16px;
+        padding: 14px;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
@@ -123,11 +262,22 @@
     .ba-category-btn:hover {
         transform: translateY(-2px);
     }
-    .ba-category-btn i {
-        font-size: 24px;
-        color: #334058;
+    .ba-category-thumb {
+        width: 100%;
+        height: 80px;
+        border-radius: 10px;
+        background-size: cover;
+        background-position: center;
+        background-color: #eef1f6;
     }
-    .ba-category-btn span {
+    .ba-category-thumb--empty {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        color: #8b93a3;
+    }
+    .ba-category-label {
         font-size: 14px;
         font-weight: 700;
         color: #1f2430;
@@ -139,7 +289,40 @@
         border-top: none;
         border-radius: 0 0 12px 12px;
         margin-top: -6px;
-        padding: 14px 16px 16px;
+        padding: 10px 14px 14px;
+    }
+    .ba-category-course-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .ba-category-course-list li + li {
+        border-top: 1px dashed var(--ot-border-basic-table, #edeef1);
+    }
+    .ba-category-course-list a {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 0;
+        text-decoration: none;
+        color: #334058;
+        font-size: 13px;
+    }
+    .ba-category-course-list img {
+        width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex: 0 0 auto;
+    }
+    .ba-category-course-list span {
+        flex: 1;
+        font-weight: 600;
+    }
+    .ba-category-course-list em {
+        font-style: normal;
+        font-size: 11px;
+        color: #8b93a3;
     }
 
     @media (max-width: 575px) {
