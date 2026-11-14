@@ -169,8 +169,24 @@ class ProgramClassMarkRepository
      *  the same program->programClasses() list Course Details shows. */
     public function progressForStudent(Program $program, Student $student): array
     {
+        return $this->studentBreakdown($program, $student, true);
+    }
+
+    /** What clicking a student's name on the teacher-facing Progress &
+     *  Report's "Student scores" table opens - the same per-student
+     *  breakdown as progressForStudent(), but across every lesson with
+     *  gradable items regardless of review status, not just Approved
+     *  ones, since a teacher can grade a lesson before it's approved and
+     *  should still see that mark here. */
+    public function studentBreakdownForTeacher(Program $program, Student $student): array
+    {
+        return $this->studentBreakdown($program, $student, false);
+    }
+
+    private function studentBreakdown(Program $program, Student $student, bool $approvedOnly): array
+    {
         $classes = $program->programClasses()
-            ->approved()
+            ->when($approvedOnly, fn ($q) => $q->approved())
             ->with(['marks' => fn ($q) => $q->where('student_id', $student->id)])
             ->orderBy('sort_order')
             ->get();
@@ -204,7 +220,7 @@ class ProgramClassMarkRepository
             }
 
             $totalSlots += count($items);
-            $lessonRows[$class->id] = ['items' => $itemRows];
+            $lessonRows[$class->id] = ['class' => $class, 'items' => $itemRows];
         }
 
         return [

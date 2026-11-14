@@ -64,7 +64,7 @@
                             <tbody>
                                 @foreach ($pr_progress['lessonRows'] as $row)
                                     <tr>
-                                        <td>{{ $row['class']->title }}</td>
+                                        <td><a href="{{ route('program-class.grade.edit', $row['class']->id) }}">{{ $row['class']->title }}</a></td>
                                         <td>{{ implode(', ', array_map(fn ($i) => $i['title'], $row['items'])) }}</td>
                                         <td>{{ $row['graded'] }}/{{ $row['total'] }}</td>
                                         <td>{{ $row['avgPct'] !== null ? $row['avgPct'] . '%' : '—' }}</td>
@@ -90,7 +90,7 @@
                         <tbody>
                             @foreach ($pr_progress['studentRows'] as $row)
                                 <tr>
-                                    <td>{{ $row['student']->full_name }}</td>
+                                    <td><a href="{{ route('program-student-progress.show', [$pr_selected->id, $row['student']->id]) }}">{{ $row['student']->full_name }}</a></td>
                                     <td>{{ $row['graded'] }}</td>
                                     <td>{{ $row['pct'] !== null ? $row['pct'] . '%' : '—' }}</td>
                                 </tr>

@@ -8,6 +8,7 @@ use App\Http\Controllers\WebsiteSetup\ProgramClassGradeController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassGradingController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMarkSubmissionController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMaterialController;
+use App\Http\Controllers\WebsiteSetup\ProgramStudentProgressController;
 
 /** The newer, simpler alternative to routes/class-content.php for
  *  program-based courses - a teacher adds/edits their own Program's
@@ -51,6 +52,9 @@ Route::middleware(saasMiddleware())->group(function () {
                 });
 
                 Route::get('/program-class-grading', [ProgramClassGradingController::class, 'index'])->name('program-class-grading.index');
+
+                Route::get('/program-class-progress/{program}/{student}', [ProgramStudentProgressController::class, 'show'])
+                    ->name('program-student-progress.show');
 
                 Route::controller(ProgramClassCoordinatorController::class)->prefix('program-class-coordinator')->name('program-class-coordinator.')->group(function () {
                     Route::get('/',             'index')->name('index')->middleware('PermissionCheck:class_content_coordinator_review');
