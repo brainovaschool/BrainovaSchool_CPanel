@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\WebsiteSetup\ProgramClassAdminController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassCoordinatorController;
+use App\Http\Controllers\WebsiteSetup\ProgramClassGradeController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMaterialController;
 
 /** The newer, simpler alternative to routes/class-content.php for
@@ -33,6 +34,11 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::put('/update/{id}',              'update')->name('update')->middleware('DemoCheck');
                     Route::delete('/delete/{id}',           'delete')->name('delete')->middleware('DemoCheck');
                     Route::post('/submit/{id}',             'submit')->name('submit')->middleware('DemoCheck');
+                });
+
+                Route::controller(ProgramClassGradeController::class)->prefix('program-class')->name('program-class.')->group(function () {
+                    Route::get('/{id}/grade',  'edit')->name('grade.edit');
+                    Route::post('/{id}/grade', 'update')->name('grade.update')->middleware('DemoCheck');
                 });
 
                 Route::controller(ProgramClassCoordinatorController::class)->prefix('program-class-coordinator')->name('program-class-coordinator.')->group(function () {

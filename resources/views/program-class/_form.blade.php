@@ -211,11 +211,14 @@
         <h5 class="mb-1"><i class="fa-solid fa-trophy me-1"></i> Project (optional)</h5>
         <p class="text-secondary mb-2" style="font-size:.85rem;">One deliverable the student submits for this lesson — leave the title blank for no project.</p>
         <div class="row">
-            <div class="col-md-6 mb-2">
+            <div class="col-md-5 mb-2">
                 <input class="form-control ot-input" name="project_title" maxlength="150" value="{{ old('project_title', $l->project_title ?? '') }}" placeholder="Project title">
             </div>
-            <div class="col-md-6 mb-2">
+            <div class="col-md-5 mb-2">
                 <input class="form-control ot-input" name="project_link_url" maxlength="500" value="{{ old('project_link_url', $l->project_link_url ?? '') }}" placeholder="Link (optional)">
+            </div>
+            <div class="col-md-2 mb-2">
+                <input type="number" min="0" class="form-control ot-input" name="project_max_marks" value="{{ old('project_max_marks', $l->project_max_marks ?? '') }}" placeholder="Max marks">
             </div>
             <div class="col-md-12 mb-2">
                 <textarea class="form-control ot-textarea" name="project_description" rows="2" placeholder="What the student should build">{{ old('project_description', $l->project_description ?? '') }}</textarea>
@@ -229,14 +232,59 @@
         <h5 class="mb-1"><i class="fa-solid fa-circle-question me-1"></i> Quiz (optional)</h5>
         <p class="text-secondary mb-2" style="font-size:.85rem;">One quiz the student completes for this lesson — leave the title blank for no quiz.</p>
         <div class="row">
-            <div class="col-md-6 mb-2">
+            <div class="col-md-5 mb-2">
                 <input class="form-control ot-input" name="quiz_title" maxlength="150" value="{{ old('quiz_title', $l->quiz_title ?? '') }}" placeholder="Quiz title">
             </div>
-            <div class="col-md-6 mb-2">
+            <div class="col-md-5 mb-2">
                 <input class="form-control ot-input" name="quiz_link_url" maxlength="500" value="{{ old('quiz_link_url', $l->quiz_link_url ?? '') }}" placeholder="Link (optional)">
+            </div>
+            <div class="col-md-2 mb-2">
+                <input type="number" min="0" class="form-control ot-input" name="quiz_max_marks" value="{{ old('quiz_max_marks', $l->quiz_max_marks ?? '') }}" placeholder="Max marks">
             </div>
             <div class="col-md-12 mb-2">
                 <textarea class="form-control ot-textarea" name="quiz_description" rows="2" placeholder="What the quiz covers">{{ old('quiz_description', $l->quiz_description ?? '') }}</textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-2 mb-3 cc-form-section cc-form-section--worksheet">
+    <div class="card-body">
+        <h5 class="mb-1"><i class="fa-solid fa-file-pen me-1"></i> Worksheet (optional)</h5>
+        <p class="text-secondary mb-2" style="font-size:.85rem;">One worksheet the student completes for this lesson — leave the title blank for no worksheet.</p>
+        <div class="row">
+            <div class="col-md-5 mb-2">
+                <input class="form-control ot-input" name="worksheet_title" maxlength="150" value="{{ old('worksheet_title', $l->worksheet_title ?? '') }}" placeholder="Worksheet title">
+            </div>
+            <div class="col-md-5 mb-2">
+                <input class="form-control ot-input" name="worksheet_link_url" maxlength="500" value="{{ old('worksheet_link_url', $l->worksheet_link_url ?? '') }}" placeholder="Link (optional)">
+            </div>
+            <div class="col-md-2 mb-2">
+                <input type="number" min="0" class="form-control ot-input" name="worksheet_max_marks" value="{{ old('worksheet_max_marks', $l->worksheet_max_marks ?? '') }}" placeholder="Max marks">
+            </div>
+            <div class="col-md-12 mb-2">
+                <textarea class="form-control ot-textarea" name="worksheet_description" rows="2" placeholder="What the worksheet covers">{{ old('worksheet_description', $l->worksheet_description ?? '') }}</textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-2 mb-3 cc-form-section cc-form-section--assignment">
+    <div class="card-body">
+        <h5 class="mb-1"><i class="fa-solid fa-file-circle-check me-1"></i> Assignment (optional)</h5>
+        <p class="text-secondary mb-2" style="font-size:.85rem;">One assignment the student submits for this lesson — leave the title blank for no assignment.</p>
+        <div class="row">
+            <div class="col-md-5 mb-2">
+                <input class="form-control ot-input" name="assignment_title" maxlength="150" value="{{ old('assignment_title', $l->assignment_title ?? '') }}" placeholder="Assignment title">
+            </div>
+            <div class="col-md-5 mb-2">
+                <input class="form-control ot-input" name="assignment_link_url" maxlength="500" value="{{ old('assignment_link_url', $l->assignment_link_url ?? '') }}" placeholder="Link (optional)">
+            </div>
+            <div class="col-md-2 mb-2">
+                <input type="number" min="0" class="form-control ot-input" name="assignment_max_marks" value="{{ old('assignment_max_marks', $l->assignment_max_marks ?? '') }}" placeholder="Max marks">
+            </div>
+            <div class="col-md-12 mb-2">
+                <textarea class="form-control ot-textarea" name="assignment_description" rows="2" placeholder="What the student should submit">{{ old('assignment_description', $l->assignment_description ?? '') }}</textarea>
             </div>
         </div>
     </div>
@@ -289,5 +337,7 @@
     .cc-form-section--outcomes { border-left-color: #10b98133; }
     .cc-form-section--project { border-left-color: #b4530933; }
     .cc-form-section--quiz { border-left-color: #c026d333; }
+    .cc-form-section--worksheet { border-left-color: #0d948833; }
+    .cc-form-section--assignment { border-left-color: #2563eb33; }
 </style>
 @endpush

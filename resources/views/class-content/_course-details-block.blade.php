@@ -178,6 +178,8 @@
                     if ($pc->materials->isNotEmpty()) { $cd_chips[] = ['📎', $pc->materials->count(), 'materials']; }
                     if ($pc->hasQuiz()) { $cd_chips[] = ['❓', 1, 'quiz']; }
                     if ($pc->hasProject()) { $cd_chips[] = ['🏆', 1, 'project']; }
+                    if ($pc->hasWorksheet()) { $cd_chips[] = ['📝', 1, 'worksheet']; }
+                    if ($pc->hasAssignment()) { $cd_chips[] = ['📋', 1, 'assignment']; }
                     if ($pc->activities->isNotEmpty()) { $cd_chips[] = ['✏️', $pc->activities->count(), 'activities']; }
                     if ($pc->outcomes->isNotEmpty()) { $cd_chips[] = ['🎯', $pc->outcomes->count(), 'outcomes']; }
                 @endphp
@@ -206,6 +208,11 @@
                         @endphp
                         @if ($cd_can_manage || $cd_is_coordinator)
                             <span class="cc-cd-status-tag cc-cd-status-tag--{{ $pc->review_status }}"><i></i>{{ \App\Models\WebsiteSetup\ProgramClass::REVIEW_STATUSES[$pc->review_status] ?? $pc->review_status }}</span>
+                        @endif
+                        @if ($cd_can_manage && !empty($pc->gradableItems()))
+                            <a href="{{ route('program-class.grade.edit', $pc->id) }}" class="cc-cd-grade-btn" title="Grade marks" onclick="event.stopPropagation();">
+                                <i class="fa-solid fa-marker"></i>
+                            </a>
                         @endif
                         @if ($cd_can_delete)
                             <button type="button" class="cc-cd-delete-btn" title="Delete this lesson"
@@ -329,6 +336,32 @@
                                 @endif
                                 @if ($pc->project_link_url)
                                     <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->project_link_url }}" target="_blank" rel="noopener">Open project &rarr;</a></p>
+                                @endif
+                            </div>
+                        @endif
+
+                        @if ($pc->hasWorksheet())
+                            <div class="cc-cd-sub" data-section="worksheet">
+                                <span class="cc-cd-section-pill cc-cd-section-pill--worksheet">Worksheet</span>
+                                <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->worksheet_title }}</p>
+                                @if ($pc->worksheet_description)
+                                    <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->worksheet_description }}</p>
+                                @endif
+                                @if ($pc->worksheet_link_url)
+                                    <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->worksheet_link_url }}" target="_blank" rel="noopener">Open worksheet &rarr;</a></p>
+                                @endif
+                            </div>
+                        @endif
+
+                        @if ($pc->hasAssignment())
+                            <div class="cc-cd-sub" data-section="assignment">
+                                <span class="cc-cd-section-pill cc-cd-section-pill--assignment">Assignment</span>
+                                <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->assignment_title }}</p>
+                                @if ($pc->assignment_description)
+                                    <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->assignment_description }}</p>
+                                @endif
+                                @if ($pc->assignment_link_url)
+                                    <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->assignment_link_url }}" target="_blank" rel="noopener">Open assignment &rarr;</a></p>
                                 @endif
                             </div>
                         @endif
@@ -609,6 +642,12 @@
             flex-shrink: 0; cursor: pointer; transition: color .15s ease, border-color .15s ease, background .15s ease;
         }
         .cc-cd-delete-btn:hover { color: #dc2626; border-color: #fecaca; background: #fef2f2; }
+        .cc-cd-grade-btn {
+            background: transparent; border: 1px solid var(--ot-border-basic-table, #e4e7ec); border-radius: 8px;
+            color: #94a3b8; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
+            flex-shrink: 0; cursor: pointer; transition: color .15s ease, border-color .15s ease, background .15s ease;
+        }
+        .cc-cd-grade-btn:hover { color: #5e17eb; border-color: #ddd6fe; background: #f5f3ff; }
         .cc-cd-lesson-chev { color: #8b93a3; transition: transform .15s ease; flex-shrink: 0; }
         details[open] .cc-cd-lesson-chev { transform: rotate(180deg); }
         .cc-cd-lesson-body { padding: 0 1rem 1rem 3.25rem; border-top: 1px solid var(--ot-border-basic-table, #e4e7ec); }
@@ -624,6 +663,8 @@
         .cc-cd-section-pill--outcomes { background: #e0e7ff; color: #4338ca; }
         .cc-cd-section-pill--quiz { background: #dbeafe; color: #1d4ed8; }
         .cc-cd-section-pill--project { background: #fce7f3; color: #9d174d; }
+        .cc-cd-section-pill--worksheet { background: #ccfbf1; color: #0d9488; }
+        .cc-cd-section-pill--assignment { background: #dbeafe; color: #2563eb; }
         .cc-cd-sub-title { display: block; font-weight: 700; color: #0f172a; }
         .cc-cd-res-list, .cc-cd-out-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
         .cc-cd-out-list { list-style: disc; padding-left: 1.1rem; }

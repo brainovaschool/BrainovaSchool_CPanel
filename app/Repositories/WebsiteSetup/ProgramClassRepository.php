@@ -290,11 +290,25 @@ class ProgramClassRepository
         $row->project_title       = $projectTitle ?: null;
         $row->project_description = $projectTitle ? $request->input('project_description') : null;
         $row->project_link_url    = $projectTitle ? (trim((string) $request->input('project_link_url')) ?: null) : null;
+        $row->project_max_marks   = $projectTitle ? ($request->input('project_max_marks') ?: null) : null;
 
         $quizTitle = trim((string) $request->input('quiz_title'));
         $row->quiz_title       = $quizTitle ?: null;
         $row->quiz_description = $quizTitle ? $request->input('quiz_description') : null;
         $row->quiz_link_url    = $quizTitle ? (trim((string) $request->input('quiz_link_url')) ?: null) : null;
+        $row->quiz_max_marks   = $quizTitle ? ($request->input('quiz_max_marks') ?: null) : null;
+
+        $worksheetTitle = trim((string) $request->input('worksheet_title'));
+        $row->worksheet_title       = $worksheetTitle ?: null;
+        $row->worksheet_description = $worksheetTitle ? $request->input('worksheet_description') : null;
+        $row->worksheet_link_url    = $worksheetTitle ? (trim((string) $request->input('worksheet_link_url')) ?: null) : null;
+        $row->worksheet_max_marks   = $worksheetTitle ? ($request->input('worksheet_max_marks') ?: null) : null;
+
+        $assignmentTitle = trim((string) $request->input('assignment_title'));
+        $row->assignment_title       = $assignmentTitle ?: null;
+        $row->assignment_description = $assignmentTitle ? $request->input('assignment_description') : null;
+        $row->assignment_link_url    = $assignmentTitle ? (trim((string) $request->input('assignment_link_url')) ?: null) : null;
+        $row->assignment_max_marks   = $assignmentTitle ? ($request->input('assignment_max_marks') ?: null) : null;
     }
 
     private function syncChildren(ProgramClass $class, $request): array
