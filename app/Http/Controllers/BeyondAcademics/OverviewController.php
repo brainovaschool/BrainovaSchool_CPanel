@@ -38,14 +38,12 @@ class OverviewController extends Controller
             ->take(8)
             ->get();
 
+        // Each category is just a link out to the public Our Programs page,
+        // filtered to it - that page is public, so it isn't scoped to the
+        // viewer's own enrollment/teaching the way Featured Courses above is.
         $data['categories'] = ProgramCategory::where('status', 1)
             ->orderBy('sort_order')
-            ->with(['upload', 'activePrograms' => function ($q) use ($programIds) {
-                $q->with('upload');
-                if ($programIds !== null) {
-                    $q->whereIn('id', $programIds);
-                }
-            }])
+            ->with('upload')
             ->get();
 
         $data['title'] = 'Beyond Academics — Overview';

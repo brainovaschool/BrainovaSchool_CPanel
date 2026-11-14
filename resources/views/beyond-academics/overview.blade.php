@@ -74,39 +74,20 @@
             @endif
         </div>
 
+        {{-- Each category just opens the public Our Programs page already
+             filtered to it - that page already shows every course in the
+             category properly (images, pagination, full cards), so there's
+             no reason to rebuild a smaller version of it here. --}}
         <div class="ba-category-grid">
-            @foreach ($data['categories'] as $i => $cat)
-                <div class="ba-category">
-                    <button type="button" class="ba-category-btn" data-ba-toggle="ba-panel-{{ $i }}">
-                        @if ($cat->image)
-                            <span class="ba-category-thumb" style="background-image: url('{{ $cat->image }}');"></span>
-                        @else
-                            <span class="ba-category-thumb ba-category-thumb--empty"><i class="las la-graduation-cap"></i></span>
-                        @endif
-                        <span class="ba-category-label">{{ $cat->name }}</span>
-                    </button>
-                    <div class="ba-category-panel" id="ba-panel-{{ $i }}" hidden>
-                        @if ($cat->activePrograms->isEmpty())
-                            <p class="text-secondary mb-0" style="font-size: 13px;">No courses in this category yet.</p>
-                        @else
-                            <ul class="ba-category-course-list">
-                                @foreach ($cat->activePrograms as $program)
-                                    <li>
-                                        <a href="{{ route('frontend.course-detail', $program->slug) }}" target="_blank" rel="noopener">
-                                            @if ($program->image)
-                                                <img src="{{ $program->image }}" alt="">
-                                            @endif
-                                            <span>{{ $program->title }}</span>
-                                            @if ($program->badge)
-                                                <em>{{ $program->badge }}</em>
-                                            @endif
-                                        </a>
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @endif
-                    </div>
-                </div>
+            @foreach ($data['categories'] as $cat)
+                <a href="{{ route('frontend.courses', ['category' => $cat->slug]) }}" target="_blank" rel="noopener" class="ba-category-btn">
+                    @if ($cat->image)
+                        <span class="ba-category-thumb" style="background-image: url('{{ $cat->image }}');"></span>
+                    @else
+                        <span class="ba-category-thumb ba-category-thumb--empty"><i class="las la-graduation-cap"></i></span>
+                    @endif
+                    <span class="ba-category-label">{{ $cat->name }}</span>
+                </a>
             @endforeach
         </div>
 
@@ -257,6 +238,8 @@
         align-items: flex-start;
         gap: 10px;
         cursor: pointer;
+        text-decoration: none;
+        color: inherit;
         transition: transform .12s ease;
     }
     .ba-category-btn:hover {
@@ -283,65 +266,9 @@
         color: #1f2430;
         text-align: left;
     }
-    .ba-category-panel {
-        background: var(--ot-bg-table-card, #fff);
-        border: 1px solid var(--ot-border-basic-table, #e4e7ec);
-        border-top: none;
-        border-radius: 0 0 12px 12px;
-        margin-top: -6px;
-        padding: 10px 14px 14px;
-    }
-    .ba-category-course-list {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-    }
-    .ba-category-course-list li + li {
-        border-top: 1px dashed var(--ot-border-basic-table, #edeef1);
-    }
-    .ba-category-course-list a {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 8px 0;
-        text-decoration: none;
-        color: #334058;
-        font-size: 13px;
-    }
-    .ba-category-course-list img {
-        width: 34px;
-        height: 34px;
-        border-radius: 8px;
-        object-fit: cover;
-        flex: 0 0 auto;
-    }
-    .ba-category-course-list span {
-        flex: 1;
-        font-weight: 600;
-    }
-    .ba-category-course-list em {
-        font-style: normal;
-        font-size: 11px;
-        color: #8b93a3;
-    }
 
     @media (max-width: 575px) {
         .ba-hero-art { display: none; }
     }
 </style>
-@endpush
-
-@push('script')
-<script>
-(function () {
-    document.querySelectorAll('[data-ba-toggle]').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var panel = document.getElementById(btn.getAttribute('data-ba-toggle'));
-            if (panel) {
-                panel.hidden = !panel.hidden;
-            }
-        });
-    });
-})();
-</script>
 @endpush
