@@ -57,7 +57,7 @@ class ClassContentLessonRepository
             $message = ___('alert.created_successfully') . ($warnings ? ' — but: ' . implode(' ', $warnings) : '');
             return $this->responseWithSuccess($message, ['id' => $row->id]);
         } catch (\Throwable $th) {
-            return $this->responseWithError(___('alert.something_went_wrong_please_try_again') . ' (' . $th->getMessage() . ')', []);
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
     }
 
@@ -78,7 +78,7 @@ class ClassContentLessonRepository
             $message = ___('alert.updated_successfully') . ($warnings ? ' — but: ' . implode(' ', $warnings) : '');
             return $this->responseWithSuccess($message, []);
         } catch (\Throwable $th) {
-            return $this->responseWithError(___('alert.something_went_wrong_please_try_again') . ' (' . $th->getMessage() . ')', []);
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
     }
 
