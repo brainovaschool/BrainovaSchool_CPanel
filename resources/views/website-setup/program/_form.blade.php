@@ -45,6 +45,32 @@
         <small class="text-secondary">Who teaches this program — controls which teacher sees it under Beyond Academics.</small>
     </div>
 
+    <div class="col-md-12 mb-2">
+        <label class="form-label mb-0">Link to Class Content <small class="text-muted">(optional)</small></label>
+        <small class="text-secondary d-block mb-2">Connects this program to the real Class / Section / Subject where its lessons, materials and homework already live in Class Content — once set, Course Details can show them here. Leave blank if this program isn't being taught in Class Content yet.</small>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Class</label>
+        <select id="programClass" class="nice-select niceSelect bordered_style wide" name="classes_id">
+            <option value="">— None —</option>
+            @foreach ($data['classesList'] as $item)
+                <option value="{{ $item->id }}" {{ old('classes_id', $p->classes_id ?? '') == $item->id ? 'selected' : '' }}>{{ $item->name }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Section</label>
+        <select id="programSection" class="nice-select niceSelect bordered_style wide" name="section_id">
+            <option value="">— None —</option>
+        </select>
+    </div>
+    <div class="col-md-4 mb-3">
+        <label class="form-label">Subject</label>
+        <select id="programSubject" class="nice-select niceSelect bordered_style wide" name="subject_id">
+            <option value="">— None —</option>
+        </select>
+    </div>
+
     <div class="col-md-8 mb-3">
         <label class="form-label">{{ ___('common.title') }} <span class="fillable">*</span></label>
         <input class="form-control ot-input @error('title') is-invalid @enderror" name="title"
@@ -193,6 +219,71 @@
     }
     cat.addEventListener('change', sync);
     sync();
+})();
+</script>
+@endpush
+
+{{-- Link to Class Content: Class -> Section -> Subject chain, reusing the
+     exact same AJAX endpoints the Homework form already uses (these are
+     plain Class/Section/Subject lookups, nothing homework-specific about
+     them) instead of building a parallel set. --}}
+@push('script')
+<script>
+(function () {
+    var SECTION_URL = '{{ route("homework.ajax.sections-by-class") }}';
+    var SUBJECT_URL  = '{{ route("homework.ajax.subjects-by-section") }}';
+    var restoreSection = @json(old('section_id', $p->section_id ?? ''));
+    var restoreSubject  = @json(old('subject_id', $p->subject_id ?? ''));
+
+    function loadSections(classId) {
+        var $sec = $('#programSection').empty().append('<option value="">— None —</option>');
+        $('#programSubject').empty().append('<option value="">— None —</option>');
+        $sec.niceSelect('update');
+        $('#programSubject').niceSelect('update');
+        if (!classId) { return; }
+        $.getJSON(SECTION_URL, { class_id: classId }, function (response) {
+            if (response.success && response.data) {
+                response.data.forEach(function (s) {
+                    $sec.append('<option value="' + s.id + '">' + $('<div/>').text(s.name).html() + '</option>');
+                });
+            }
+            $sec.niceSelect('update');
+            if (restoreSection) {
+                var sv = restoreSection;
+                restoreSection = null;
+                $('#programSection').val(String(sv)).niceSelect('update').trigger('change');
+            }
+        });
+    }
+
+    function loadSubjects(classId, sectionId) {
+        var $sub = $('#programSubject').empty().append('<option value="">— None —</option>');
+        $sub.niceSelect('update');
+        if (!classId || !sectionId) { return; }
+        $.getJSON(SUBJECT_URL, { class_id: classId, section_id: sectionId }, function (response) {
+            if (response.success && response.data) {
+                response.data.forEach(function (s) {
+                    $sub.append('<option value="' + s.id + '">' + $('<div/>').text(s.name).html() + '</option>');
+                });
+            }
+            $sub.niceSelect('update');
+            if (restoreSubject) {
+                var sv = restoreSubject;
+                restoreSubject = null;
+                $('#programSubject').val(String(sv)).niceSelect('update');
+            }
+        });
+    }
+
+    $('#programClass').on('change', function () { loadSections($(this).val()); });
+    $('body').on('change', '#programSection', function () {
+        loadSubjects($('#programClass').val(), $(this).val());
+    });
+
+    var initialClass = $('#programClass').val();
+    if (initialClass) {
+        loadSections(initialClass);
+    }
 })();
 </script>
 @endpush

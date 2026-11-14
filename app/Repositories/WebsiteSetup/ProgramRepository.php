@@ -125,6 +125,9 @@ class ProgramRepository
     {
         $row->program_category_id = $request->program_category_id;
         $row->program_focus_id    = $request->program_focus_id ?: null;
+        $row->classes_id          = $request->classes_id ?: null;
+        $row->section_id          = $request->section_id ?: null;
+        $row->subject_id          = $request->subject_id ?: null;
         $row->title               = $request->title;
         $row->badge               = $request->badge;
         $row->status_label        = $request->status_label ?: null;

@@ -119,6 +119,25 @@
                                     @enderror
                                 </div>
 
+                                {{-- 3b. LINK TO A CLASS (optional) — ties this task to a
+                                     specific Class Content lesson so it shows up on that
+                                     class's Course Details card. Populated by AJAX once
+                                     Class + Section + Subject are all chosen. --}}
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">
+                                        Link to a class <small class="text-muted">(optional)</small>
+                                    </label>
+                                    <select id="hw_lesson"
+                                            class="nice-select niceSelect lessons bordered_style wide @error('class_content_lesson_id') is-invalid @enderror"
+                                            name="class_content_lesson_id">
+                                        <option value="">Not linked to a specific class</option>
+                                    </select>
+                                    <small class="text-muted">Shows this task on that class's Course Details card.</small>
+                                    @error('class_content_lesson_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
                                 {{-- 4. TASK CATEGORY --}}
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">
@@ -340,6 +359,7 @@ $(document).ready(function () {
 
     var hwRestoreSectionOnce = @json(old('section'));
     var hwRestoreSubjectOnce = @json(old('subject'));
+    var hwRestoreLessonOnce  = @json(old('class_content_lesson_id'));
 
     function hwLoadSections(classId) {
         var $sec = $('#hw_section').empty().append('<option value="">' + $('<div/>').text(HW_SECTION_PH).html() + '</option>');
@@ -405,6 +425,39 @@ $(document).ready(function () {
             },
             error: function () {
                 console.error('Homework: failed to load subjects');
+            }
+        });
+    }
+
+    function hwLoadLessons(classId, sectionId, subjectId) {
+        var $lsn = $('#hw_lesson').empty().append('<option value="">Not linked to a specific class</option>');
+        $lsn.niceSelect('update');
+
+        if (!classId || !sectionId || !subjectId) {
+            return;
+        }
+
+        $.ajax({
+            url:      '{{ route("homework.ajax.lessons-by-class-section-subject") }}',
+            method:   'GET',
+            data:     { class_id: classId, section_id: sectionId, subject_id: subjectId },
+            dataType: 'json',
+            success: function (response) {
+                if (response.success && response.data) {
+                    response.data.forEach(function (lesson) {
+                        $lsn.append('<option value="' + lesson.id + '">' + $('<div/>').text(lesson.module_title + ' — ' + lesson.title).html() + '</option>');
+                    });
+                }
+                $lsn.niceSelect('update');
+
+                if (hwRestoreLessonOnce !== null && hwRestoreLessonOnce !== '') {
+                    var rl = hwRestoreLessonOnce;
+                    hwRestoreLessonOnce = null;
+                    $('#hw_lesson').val(String(rl)).niceSelect('update');
+                }
+            },
+            error: function () {
+                console.error('Homework: failed to load Class Content lessons');
             }
         });
     }
@@ -511,13 +564,23 @@ $(document).ready(function () {
     // a native 'change' event on the underlying <select>. Body delegation
     // catches both native and delegated events reliably.
     $('body').on('change', '#hw_class, #hw_section, #subject', generateTitle);
+    $('body').on('change', '#subject', function () {
+        hwLoadLessons($('#hw_class').val(), $('#hw_section').val(), $(this).val());
+    });
 
     // Polling fallback (600 ms) — catches cases where NiceSelect AJAX updates
     // the selected value without firing any change event at all.
     var _lastSnap = '';
+    var _lastLessonSnap = '';
     setInterval(function () {
         var snap = [$('#hw_class').val(), $('#hw_section').val(), $('#subject').val(), $('#task_type').val(), $('#hw_date').val(), $('#hw_topic').val()].join('|');
         if (snap !== _lastSnap) { _lastSnap = snap; generateTitle(); }
+
+        var lessonSnap = [$('#hw_class').val(), $('#hw_section').val(), $('#subject').val()].join('|');
+        if (lessonSnap !== _lastLessonSnap) {
+            _lastLessonSnap = lessonSnap;
+            hwLoadLessons($('#hw_class').val(), $('#hw_section').val(), $('#subject').val());
+        }
     }, 600);
 
     // =========================================================================

@@ -150,6 +150,10 @@ class HomeworkController extends Controller
 
         $data['subjects'] = $this->assignSubjectRepo->getSubjects($request);
 
+        $data['lessons'] = ($classesId && $data['homework']->section_id && $data['homework']->subject_id)
+            ? $this->repo->getLessonsByClassSectionSubject((int) $classesId, (int) $data['homework']->section_id, (int) $data['homework']->subject_id)
+            : [];
+
         return view('backend.homework.edit', compact('data'));
     }
 
@@ -391,6 +395,25 @@ class HomeworkController extends Controller
 
         $subjects = $this->repo->getSubjectsByClassSection((int) $classId, (int) $sectionId);
         return response()->json(['success' => true, 'data' => $subjects]);
+    }
+
+    /**
+     * AJAX endpoint: Returns Class Content lessons for a given class/section/subject.
+     * Used by the optional "Link to a class" dropdown on the Homework form.
+     * Query params: ?class_id=123&section_id=456&subject_id=789
+     */
+    public function getLessonsByClassSectionSubject(Request $request)
+    {
+        $classId = $request->query('class_id');
+        $sectionId = $request->query('section_id');
+        $subjectId = $request->query('subject_id');
+
+        if (!$classId || !$sectionId || !$subjectId) {
+            return response()->json(['error' => 'class_id, section_id and subject_id are required'], 400);
+        }
+
+        $lessons = $this->repo->getLessonsByClassSectionSubject((int) $classId, (int) $sectionId, (int) $subjectId);
+        return response()->json(['success' => true, 'data' => $lessons]);
     }
 
     // =========================================================================

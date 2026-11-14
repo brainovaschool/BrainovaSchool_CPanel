@@ -16,6 +16,9 @@ class ProgramRequest extends FormRequest
         return [
             'program_category_id' => 'required|exists:program_categories,id',
             'program_focus_id'    => 'nullable|exists:program_focuses,id',
+            'classes_id'          => 'nullable|exists:classes,id',
+            'section_id'          => 'nullable|exists:sections,id',
+            'subject_id'          => 'nullable|exists:subjects,id',
             'title'               => 'required|string|max:191|unique:programs,title,' . $this->route('id'),
             'badge'               => 'nullable|string|max:60',
             'description'         => 'nullable|string|max:1000',

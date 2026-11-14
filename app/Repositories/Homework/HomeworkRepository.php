@@ -115,6 +115,7 @@ class HomeworkRepository implements HomeworkInterface
             $homework->classes_id      = $request->class;
             $homework->section_id      = $request->section;
             $homework->subject_id      = $request->subject;
+            $homework->class_content_lesson_id = $request->class_content_lesson_id ?: null;
             $homework->topic           = $request->topic;
             $homework->title           = $request->title;
             $homework->task_type       = $request->task_type;
@@ -172,6 +173,7 @@ class HomeworkRepository implements HomeworkInterface
             $row->classes_id      = $request->class;
             $row->section_id      = $request->section;
             $row->subject_id      = $request->subject;
+            $row->class_content_lesson_id = $request->class_content_lesson_id ?: null;
             $row->topic           = $request->topic;
             $row->title           = $request->title;
             $row->task_type       = $request->task_type;
@@ -1114,6 +1116,24 @@ public function getSubjectsByClassSection(int $classId, int $sectionId): array
     return $query->get(['subjects.id', 'subjects.name'])->toArray();
 }
 
+/**
+ * Returns the Class Content lessons taught under a given class/section/subject
+ * (used by the optional "Link to a class" dropdown on the Homework form).
+ * Only lessons under an approved module are offered - a lesson still in
+ * review isn't something you'd attach a live homework task to yet.
+ */
+public function getLessonsByClassSectionSubject(int $classId, int $sectionId, int $subjectId): array
+{
+    return DB::table('class_content_lessons as l')
+        ->join('class_content_modules as m', 'm.id', '=', 'l.module_id')
+        ->where('m.classes_id', $classId)
+        ->where('m.section_id', $sectionId)
+        ->where('m.subject_id', $subjectId)
+        ->where('m.review_status', \App\Models\ClassContent\ClassContentModule::APPROVED)
+        ->orderBy('m.sort_order')->orderBy('l.sort_order')
+        ->get(['l.id', 'l.title', 'm.title as module_title'])
+        ->toArray();
+}
 
 
 

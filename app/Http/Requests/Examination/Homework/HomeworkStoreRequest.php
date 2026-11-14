@@ -25,6 +25,11 @@ class HomeworkStoreRequest extends FormRequest
             'topic'       => 'required|string|max:255',
             'title'       => 'required|string|max:500',
 
+            // Optional - links this task to a specific Class Content lesson
+            // (the "Link to a class" dropdown), so it shows up on that
+            // lesson's Course Details card.
+            'class_content_lesson_id' => 'nullable|integer|exists:class_content_lessons,id',
+
             // Standard document upload — optional for all non-quiz task types.
             // Accepted: images, PDF, Word documents.
             'document'            => 'nullable|file|mimes:jpeg,jpg,png,gif,pdf,doc,docx|max:10240',

@@ -2,6 +2,10 @@
 
 namespace App\Models\WebsiteSetup;
 
+use App\Models\Academic\Classes;
+use App\Models\Academic\Section;
+use App\Models\Academic\Subject;
+use App\Models\ClassContent\ClassContentModule;
 use App\Models\Staff\Staff;
 use App\Models\Upload;
 use Illuminate\Database\Eloquent\Model;
@@ -53,6 +57,48 @@ class Program extends Model
     public function teachers()
     {
         return $this->belongsToMany(Staff::class, 'staff_program_enrollments', 'program_id', 'staff_id');
+    }
+
+    /** Optional - the real academic Class/Section/Subject this program is
+     *  taught under, set from the Program edit form's "Link to Class
+     *  Content" fields. Null until someone sets it; the Course Details
+     *  block shows a "not linked yet" state for any program without one. */
+    public function classes()
+    {
+        return $this->belongsTo(Classes::class, 'classes_id', 'id');
+    }
+
+    public function section()
+    {
+        return $this->belongsTo(Section::class, 'section_id', 'id');
+    }
+
+    public function subject()
+    {
+        return $this->belongsTo(Subject::class, 'subject_id', 'id');
+    }
+
+    public function isLinkedToClassContent(): bool
+    {
+        return (bool) ($this->classes_id && $this->section_id && $this->subject_id);
+    }
+
+    /** Approved modules (with their lessons) for this program's linked
+     *  Class/Section/Subject - what Course Details actually renders. Empty
+     *  if the program isn't linked yet. */
+    public function contentModules()
+    {
+        if (!$this->isLinkedToClassContent()) {
+            return collect();
+        }
+
+        return ClassContentModule::approved()
+            ->where('classes_id', $this->classes_id)
+            ->where('section_id', $this->section_id)
+            ->where('subject_id', $this->subject_id)
+            ->with(['lessons.materials', 'lessons.activities', 'lessons.outcomes', 'lessons.homeworks'])
+            ->orderBy('sort_order')
+            ->get();
     }
 
     public function scopeActive($query)

@@ -34,7 +34,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('homework/ajax/filtered-report',   'getFilteredReport')->name('homework.ajax.filtered-report');
                     Route::get('homework/ajax/sections-by-class',  'getSectionsByClass')->name('homework.ajax.sections-by-class');
                     Route::get('homework/ajax/subjects-by-section', 'getSubjectsBySection')->name('homework.ajax.subjects-by-section');
-                    
+                    Route::get('homework/ajax/lessons-by-class-section-subject', 'getLessonsByClassSectionSubject')->name('homework.ajax.lessons-by-class-section-subject');
+
                     // Remove the middleware temporarily for a quick test
                     //Route::get('homework/get-all-questions', 'getAllQuestions')->name('homework.get-all-questions');
                     

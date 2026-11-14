@@ -4,6 +4,7 @@ namespace App\Http\Controllers\WebsiteSetup;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\WebsiteSetup\Program\ProgramRequest;
+use App\Models\Academic\Classes;
 use App\Models\Role;
 use App\Models\Staff\Staff;
 use App\Models\WebsiteSetup\ProgramFocus;
@@ -38,6 +39,7 @@ class ProgramController extends Controller
         $data['categories'] = $this->categoryRepo->all();
         $data['focuses']    = $this->focusOptions();
         $data['teachers']   = $this->teacherOptions();
+        $data['classesList'] = $this->classesOptions();
         $data['title']      = ___('settings.add_program');
         return view('website-setup.program.create', compact('data'));
     }
@@ -60,6 +62,7 @@ class ProgramController extends Controller
         $data['categories'] = $this->categoryRepo->all();
         $data['focuses']    = $this->focusOptions();
         $data['teachers']   = $this->teacherOptions();
+        $data['classesList'] = $this->classesOptions();
         $data['title']      = ___('settings.edit_program');
         return view('website-setup.program.edit', compact('data'));
     }
@@ -122,5 +125,15 @@ class ProgramController extends Controller
     {
         $roleIds = Role::whereJsonContains('permissions', 'class_content_create')->pluck('id');
         return Staff::active()->whereIn('role_id', $roleIds)->orderBy('first_name')->get();
+    }
+
+    /** For the optional "Link to Class Content" fields - Section and
+     *  Subject are loaded client-side via the same AJAX endpoints the
+     *  Homework form already uses (homework.ajax.sections-by-class /
+     *  subjects-by-section), so only the Class list needs to come from
+     *  here. */
+    private function classesOptions()
+    {
+        return Classes::active()->orderBy('name')->get();
     }
 }

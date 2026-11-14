@@ -3,6 +3,7 @@
 namespace App\Models\ClassContent;
 
 use App\Models\BaseModel;
+use App\Models\Homework;
 use App\Traits\ResolvesVideoEmbed;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -16,6 +17,14 @@ class ClassContentLesson extends BaseModel
     public function module(): BelongsTo
     {
         return $this->belongsTo(ClassContentModule::class, 'module_id');
+    }
+
+    /** Homework tasks (quiz/assignment/project/etc.) linked to this lesson
+     *  via the Create/Edit Homework form's optional "Link to a class"
+     *  dropdown - see Homework::lesson(). */
+    public function homeworks(): HasMany
+    {
+        return $this->hasMany(Homework::class, 'class_content_lesson_id')->orderBy('date');
     }
 
     public function materials(): HasMany

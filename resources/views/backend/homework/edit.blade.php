@@ -102,6 +102,28 @@
                                     @enderror
                                 </div>
 
+                                {{-- 3b. LINK TO A CLASS (optional) --}}
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">
+                                        Link to a class <small class="text-muted">(optional)</small>
+                                    </label>
+                                    <select id="hw_lesson"
+                                            class="nice-select niceSelect lessons bordered_style wide @error('class_content_lesson_id') is-invalid @enderror"
+                                            name="class_content_lesson_id">
+                                        <option value="">Not linked to a specific class</option>
+                                        @foreach ($data['lessons'] as $item)
+                                            <option value="{{ $item->id }}"
+                                                {{ old('class_content_lesson_id', $data['homework']->class_content_lesson_id) == $item->id ? 'selected' : '' }}>
+                                                {{ $item->module_title }} — {{ $item->title }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <small class="text-muted">Shows this task on that class's Course Details card.</small>
+                                    @error('class_content_lesson_id')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
                                 {{-- 4. TASK CATEGORY --}}
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label">
@@ -325,8 +347,10 @@ $(document).ready(function () {
     function hwLoadSections(classId) {
         var $sec = $('#hw_section').empty().append('<option value="">' + $('<div/>').text(HW_SECTION_PH).html() + '</option>');
         $('#subject').empty().append('<option value="">' + $('<div/>').text(HW_SUBJECT_PH).html() + '</option>');
+        $('#hw_lesson').empty().append('<option value="">Not linked to a specific class</option>');
         $sec.niceSelect('update');
         $('#subject').niceSelect('update');
+        $('#hw_lesson').niceSelect('update');
 
         if (!classId) {
             return;
@@ -353,7 +377,9 @@ $(document).ready(function () {
 
     function hwLoadSubjects(classId, sectionId) {
         var $sub = $('#subject').empty().append('<option value="">' + $('<div/>').text(HW_SUBJECT_PH).html() + '</option>');
+        $('#hw_lesson').empty().append('<option value="">Not linked to a specific class</option>');
         $sub.niceSelect('update');
+        $('#hw_lesson').niceSelect('update');
 
         if (!classId || !sectionId) {
             return;
@@ -374,6 +400,33 @@ $(document).ready(function () {
             },
             error: function () {
                 console.error('Homework: failed to load subjects');
+            }
+        });
+    }
+
+    function hwLoadLessons(classId, sectionId, subjectId) {
+        var $lsn = $('#hw_lesson').empty().append('<option value="">Not linked to a specific class</option>');
+        $lsn.niceSelect('update');
+
+        if (!classId || !sectionId || !subjectId) {
+            return;
+        }
+
+        $.ajax({
+            url:      '{{ route("homework.ajax.lessons-by-class-section-subject") }}',
+            method:   'GET',
+            data:     { class_id: classId, section_id: sectionId, subject_id: subjectId },
+            dataType: 'json',
+            success: function (response) {
+                if (response.success && response.data) {
+                    response.data.forEach(function (lesson) {
+                        $lsn.append('<option value="' + lesson.id + '">' + $('<div/>').text(lesson.module_title + ' — ' + lesson.title).html() + '</option>');
+                    });
+                }
+                $lsn.niceSelect('update');
+            },
+            error: function () {
+                console.error('Homework: failed to load Class Content lessons');
             }
         });
     }
@@ -462,12 +515,25 @@ $(document).ready(function () {
 
     // Body-level delegation for NiceSelect AJAX dropdowns
     $('body').on('change', '#hw_class, #hw_section, #subject', generateTitle);
+    $('body').on('change', '#subject', function () {
+        hwLoadLessons($('#hw_class').val(), $('#hw_section').val(), $(this).val());
+    });
 
-    // Polling fallback (600 ms) for when NiceSelect AJAX updates value silently
+    // Polling fallback (600 ms) for when NiceSelect AJAX updates value silently.
+    // _lastLessonSnap starts at the page's already-rendered Class/Section/Subject
+    // (not ''), so the pre-selected lesson from the database isn't wiped out by
+    // an unwanted reload on the very first tick.
     var _lastSnap = '';
+    var _lastLessonSnap = [$('#hw_class').val(), $('#hw_section').val(), $('#subject').val()].join('|');
     setInterval(function () {
         var snap = [$('#hw_class').val(), $('#hw_section').val(), $('#subject').val(), $('#task_type').val(), $('#hw_date').val(), $('#hw_topic').val()].join('|');
         if (snap !== _lastSnap) { _lastSnap = snap; generateTitle(); }
+
+        var lessonSnap = [$('#hw_class').val(), $('#hw_section').val(), $('#subject').val()].join('|');
+        if (lessonSnap !== _lastLessonSnap) {
+            _lastLessonSnap = lessonSnap;
+            hwLoadLessons($('#hw_class').val(), $('#hw_section').val(), $('#subject').val());
+        }
     }, 600);
 
 });

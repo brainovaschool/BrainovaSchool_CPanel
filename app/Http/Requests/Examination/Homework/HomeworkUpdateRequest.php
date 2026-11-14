@@ -25,6 +25,9 @@ class HomeworkUpdateRequest extends FormRequest
             'topic'     => 'required|string|max:255',
             'title'     => 'required|string|max:500',
 
+            // Optional - links this task to a specific Class Content lesson.
+            'class_content_lesson_id' => 'nullable|integer|exists:class_content_lessons,id',
+
             // On update, re-uploading a document or CSV is optional.
             // If a new file is provided it replaces the old one; if omitted the existing file is kept.
             'document'            => 'nullable|file|mimes:jpeg,jpg,png,gif,pdf,doc,docx|max:10240',

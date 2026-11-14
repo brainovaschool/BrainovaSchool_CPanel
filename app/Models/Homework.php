@@ -8,6 +8,7 @@ use App\Models\HomeworkStudent;
 use App\Models\Academic\Classes;
 use App\Models\Academic\Section;
 use App\Models\Academic\Subject;
+use App\Models\ClassContent\ClassContentLesson;
 use App\Models\HomeworkQuestion;
 use App\Models\Examination\ExamType;
 use Illuminate\Support\Facades\Auth;
@@ -39,6 +40,15 @@ class Homework extends BaseModel
     public function upload()
     {
         return $this->belongsTo(Upload::class, 'document_id', 'id');
+    }
+
+    /** Optional - set from the Create/Edit Homework form's "Link to a class"
+     *  dropdown, so the Course Details page can show this task under the
+     *  right Class Content lesson. Null for every homework row created
+     *  before this link existed, and for anyone who still leaves it blank. */
+    public function lesson()
+    {
+        return $this->belongsTo(ClassContentLesson::class, 'class_content_lesson_id', 'id');
     }
 
 
