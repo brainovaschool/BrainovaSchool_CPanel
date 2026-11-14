@@ -271,6 +271,9 @@ class ProgramClassMarkRepository
 
         if ($file) {
             if (!$file->isValid()) {
+                if (in_array($file->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)) {
+                    return $this->responseWithError('That file is too large for this server to accept right now - try a smaller photo, or paste a link instead.', []);
+                }
                 return $this->responseWithError("The file didn't upload properly (code {$file->getError()}) - try again.", []);
             }
 

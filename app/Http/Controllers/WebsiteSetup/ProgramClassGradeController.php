@@ -30,7 +30,7 @@ class ProgramClassGradeController extends Controller
         return null;
     }
 
-    private function authorize(ProgramClass $class): void
+    private function guardAccess(ProgramClass $class): void
     {
         $staffId = $this->staffId();
         if ($staffId === null) {
@@ -47,7 +47,7 @@ class ProgramClassGradeController extends Controller
         if (!$class) {
             return redirect()->route('dashboard')->with('danger', ___('alert.not_found'));
         }
-        $this->authorize($class);
+        $this->guardAccess($class);
 
         if (empty($class->gradableItems())) {
             return redirect($this->courseDetailsUrl($class))->with('danger', 'This lesson has no quiz, project, worksheet, or assignment to grade.');
@@ -66,7 +66,7 @@ class ProgramClassGradeController extends Controller
         if (!$class) {
             return redirect()->route('dashboard')->with('danger', ___('alert.not_found'));
         }
-        $this->authorize($class);
+        $this->guardAccess($class);
 
         $request->validate([
             'marks.*.*' => 'nullable|numeric|min:0',

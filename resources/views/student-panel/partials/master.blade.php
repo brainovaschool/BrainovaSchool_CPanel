@@ -59,6 +59,22 @@
         <!-- end sidebar -->
 
         <main class="main-content ph-24 ph-lg-32 pt-100 mt-4">
+            {{-- A persistent banner, not just the easy-to-miss toast
+                 (alert-message.blade.php below) - so a failed submission
+                 (wrong file type, too large, etc.) is unmistakable rather
+                 than looking like the button silently did nothing. --}}
+            @if (session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    {{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
+            @if (session('danger'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    {{ session('danger') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            @endif
             <!-- start main content -->
             @yield('content')
             <!-- end main content -->
