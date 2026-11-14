@@ -38,16 +38,13 @@
     <!-- Custom CSS  start -->
     <link rel="stylesheet" href="{{ global_asset('backend') }}/assets/css/style.css">
     <link rel="stylesheet" href="{{ global_asset('backend') }}/assets/css/style2.css">
-    <link rel="stylesheet" href="{{ global_asset('backend') }}/assets/css/custom.css">
+    <link rel="stylesheet" href="{{ global_asset('backend') }}/assets/css/custom.css?v={{ @filemtime(public_path('backend/assets/css/custom.css')) }}">
+    {{-- Same "Aurora Glass" skin the teacher/admin dashboard uses
+         (resources/views/backend/master.blade.php) - this layout never
+         loaded it, which is why the student panel looked like a plain,
+         unthemed version of the same pages. --}}
+    <link rel="stylesheet" href="{{ global_asset('backend') }}/assets/css/aurora-glass.css?v={{ @filemtime(public_path('backend/assets/css/aurora-glass.css')) }}">
     @stack('css')
-    
-    
-    
-    <link rel="stylesheet" href="{{ asset('css/brainova-modern.css') }}">
-    
-    
-    
-    
 </head>
 
 <body class="{{ @findDirectionOfLang() }} default-theme" dir="{{ @findDirectionOfLang() }}">
