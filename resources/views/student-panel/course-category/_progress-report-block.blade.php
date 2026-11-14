@@ -81,19 +81,34 @@
 @once
     @push('css')
     <style>
+        {{-- Progress & Report is its own page now (the 3-page split), but
+             still reuses Course Details' .cc-cd-card/.cc-cd-label class
+             names - needs its own copy rather than relying on Course
+             Details happening to be on the same page to supply them. --}}
+        .cc-cd-card {
+            background: #ffffff;
+            border: 1px solid var(--ot-border-basic-table, #e4e7ec);
+            border-radius: 20px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, .05);
+        }
+        .cc-cd-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #8b93a3; margin: 0 0 0.6rem; }
         .cc-pr-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
         .cc-pr-stat {
             background: #ffffff;
             border: 1px solid var(--ot-border-basic-table, #e4e7ec);
             border-radius: 16px;
             padding: 1rem 1.1rem;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, .05);
         }
         .cc-pr-stat-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #8b93a3; margin: 0 0 0.35rem; }
         .cc-pr-stat-value { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0; }
         .cc-pr-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .cc-pr-table th { text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #8b93a3; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--ot-border-basic-table, #e4e7ec); }
-        .cc-pr-table td { padding: 0.55rem 0.6rem; border-bottom: 1px solid #f1f3f6; color: #334155; }
+        .cc-pr-table th { text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #8b93a3; padding: 0.6rem; border-bottom: 2px solid var(--ot-border-basic-table, #e4e7ec); }
+        .cc-pr-table td { padding: 0.65rem 0.6rem; border-bottom: 1px solid #e4e7ec; color: #334155; }
         .cc-pr-table tbody tr:last-child td { border-bottom: none; }
+        .cc-pr-table tbody tr:nth-child(even) { background: #f8f9fb; }
     </style>
     @endpush
 @endonce
