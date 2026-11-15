@@ -54,10 +54,16 @@
     </div>
 
     @if ($isManager)
-        <div class="col-md-4">
-            <label class="form-label">Note</label>
-            <textarea name="note" class="form-control ot-input" rows="2">{{ old('note', $reel->note ?? '') }}</textarea>
-        </div>
+        @php($customFields = $customFields ?? collect())
+        @php($endHookField = $customFields->first(fn ($f) => strtolower(trim($f->label)) === 'end hook'))
+        @if ($endHookField)
+            {{-- End Hook pairs with Hook (opening/closing line for the
+                 same script), filling the width Hook itself leaves spare. --}}
+            <div class="col-md-4">
+                @php($current = old('custom_fields.' . $endHookField->key, ($reel->custom_fields ?? [])[$endHookField->key] ?? null))
+                @include('portal.social.reels._custom-field-input', ['field' => $endHookField, 'current' => $current])
+            </div>
+        @endif
 
         {{-- On the single-reel edit panel this card is pulled out and shown
              next to Approve instead (see _edit-panel.blade.php) - same
@@ -95,58 +101,37 @@
             </div>
         @endunless
 
-        @php($customFields = $customFields ?? [])
+        {{-- Time (sec)/Theme/Cover are all short fields - one row together
+             instead of each taking a half-width row of its own. --}}
+        @foreach (['time (sec)', 'theme', 'cover'] as $shortLabel)
+            @php($field = $customFields->first(fn ($f) => strtolower(trim($f->label)) === $shortLabel))
+            @continue(!$field)
+            <div class="col-md-4">
+                @php($current = old('custom_fields.' . $field->key, ($reel->custom_fields ?? [])[$field->key] ?? null))
+                @include('portal.social.reels._custom-field-input', ['field' => $field, 'current' => $current])
+            </div>
+        @endforeach
+
         @foreach ($customFields as $field)
             {{-- Pillar/Series above are this reel's own category/series_name columns -
                  a custom field with either label exists only for standalone Reel Studio
                  projects (which have no reel of their own to pull those from), so it'd
-                 just be a second, always-blank copy here. --}}
-            @continue(in_array(strtolower(trim($field->label)), ['pillar', 'series'], true))
-            @php($current = old('custom_fields.' . $field->key, ($reel->custom_fields ?? [])[$field->key] ?? null))
-            @php($isCharacterField = $field->list_key === \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS)
+                 just be a second, always-blank copy here. End Hook/Time (sec)/Theme/
+                 Cover already rendered above, in their own specific spots. --}}
+            @continue(in_array(strtolower(trim($field->label)), ['pillar', 'series', 'end hook', 'time (sec)', 'theme', 'cover'], true))
             <div class="col-md-6">
-                @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_CHECKBOX)
-                    <div class="form-check mt-4">
-                        <input type="checkbox" class="form-check-input" id="cf_{{ $field->key }}"
-                               name="custom_fields[{{ $field->key }}]" value="1" {{ $current ? 'checked' : '' }}>
-                        <label class="form-check-label" for="cf_{{ $field->key }}">{{ $field->label }}</label>
-                    </div>
-                @else
-                    <label class="form-label">{{ $field->label }}</label>
-                    @if ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT && $isCharacterField)
-                        @php($currentArr = (array) ($current ?? []))
-                        <select name="custom_fields[{{ $field->key }}][]" class="form-control select2_multy wide" multiple data-source="reel_characters">
-                            @foreach ($field->options() as $opt)
-                                <option value="{{ $opt }}" {{ in_array((string) $opt, array_map('strval', $currentArr), true) ? 'selected' : '' }}>{{ $opt }}</option>
-                            @endforeach
-                        </select>
-                    @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_SELECT)
-                        <select name="custom_fields[{{ $field->key }}]" class="nice-select niceSelect bordered_style wide">
-                            <option value="">—</option>
-                            @foreach ($field->options() as $opt)
-                                <option value="{{ $opt }}" {{ (string) $current === (string) $opt ? 'selected' : '' }}>{{ $opt }}</option>
-                            @endforeach
-                        </select>
-                    @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_TEXTAREA)
-                        <textarea name="custom_fields[{{ $field->key }}]" class="form-control ot-input" rows="2">{{ $current }}</textarea>
-                    @elseif ($field->type === \App\Models\Portal\PortalReelCustomField::TYPE_FILE)
-                        <div class="ot_fileUploader left-side mb-1">
-                            <input class="form-control ot-input bn-file-placeholder" type="text" placeholder="No file chosen" readonly>
-                            <button class="primary-btn-small-input" type="button">
-                                <label class="btn btn-lg ot-btn-primary" for="cf_{{ $field->key }}_file">Browse</label>
-                                <input type="file" class="d-none bn-file-input" id="cf_{{ $field->key }}_file" name="custom_fields[{{ $field->key }}]">
-                            </button>
-                        </div>
-                        @php($currentUpload = $current ? \App\Models\Upload::find($current) : null)
-                        @if ($currentUpload)
-                            <p class="text-secondary mt-1 mb-0"><a href="{{ globalAsset($currentUpload->path) }}" target="_blank">Current file</a></p>
-                        @endif
-                    @else
-                        <input type="{{ $field->type }}" name="custom_fields[{{ $field->key }}]" class="form-control ot-input" value="{{ $current }}">
-                    @endif
-                @endif
+                @php($current = old('custom_fields.' . $field->key, ($reel->custom_fields ?? [])[$field->key] ?? null))
+                @include('portal.social.reels._custom-field-input', ['field' => $field, 'current' => $current])
             </div>
         @endforeach
+
+        {{-- Note pairs with whatever's left (normally Character) rather
+             than sitting next to Hook, where it left Hook's own row half
+             empty. --}}
+        <div class="col-md-6">
+            <label class="form-label">Note</label>
+            <textarea name="note" class="form-control ot-input" rows="2">{{ old('note', $reel->note ?? '') }}</textarea>
+        </div>
     @endif
 </div>
 
