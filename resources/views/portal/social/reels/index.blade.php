@@ -59,11 +59,11 @@
 
         @if ($showBulk)
             <div class="col-12 p-0">
-                <div class="card ot-card bn-reels-filters mb-24 d-flex flex-row flex-wrap align-items-center gap-2" style="padding:1rem 1.25rem" id="bulkActionsBar" hidden>
+                <div class="card ot-card bn-reels-filters mb-24 d-flex flex-row flex-wrap align-items-center gap-3" style="padding:1rem 1.25rem" id="bulkActionsBar" hidden>
                     <strong><span id="bulkSelectedCount">0</span> selected</strong>
                     <div id="bnCharactersDisplay" class="text-secondary" style="font-size:.85rem" hidden></div>
                     @if ($data['canApprove'])
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="d-flex align-items-center gap-2 flex-wrap bn-bar-group">
                             <form id="bulkApproveForm" action="{{ route('portal-social-reels.bulk-review') }}" method="post" class="d-inline">
                                 @csrf
                                 <input type="hidden" name="status" value="accepted">
@@ -77,7 +77,7 @@
                         </div>
                     @endif
                     @if ($data['canAssign'])
-                        <form id="bulkAssignForm" action="{{ route('portal-social-reels.bulk-assign') }}" method="post" class="d-flex align-items-center gap-2 flex-wrap">
+                        <form id="bulkAssignForm" action="{{ route('portal-social-reels.bulk-assign') }}" method="post" class="d-flex align-items-center gap-2 flex-wrap bn-bar-group">
                             @csrf
                             <select name="assigned_to" class="form-control ot-input" required style="width:220px">
                                 <option value="">Assign to…</option>
@@ -88,7 +88,7 @@
                             <input type="date" name="deadline" class="form-control ot-input" style="width:150px">
                             <button type="submit" class="btn btn-sm ot-btn-primary">Assign selected</button>
                         </form>
-                        <form id="bulkMarkPaidForm" action="{{ route('portal-social-reels.bulk-mark-paid') }}" method="post" class="d-flex align-items-center gap-2 flex-wrap">
+                        <form id="bulkMarkPaidForm" action="{{ route('portal-social-reels.bulk-mark-paid') }}" method="post" class="d-flex align-items-center gap-2 flex-wrap bn-bar-group">
                             @csrf
                             <span class="text-secondary" style="font-size:.85rem">Mark as paid task —</span>
                             <input type="number" step="0.01" min="0" name="amount" class="form-control ot-input" placeholder="Amount" required style="width:110px">
@@ -108,7 +108,7 @@
                             </span>
                             <button type="submit" class="btn btn-sm ot-btn-primary">Mark as paid</button>
                         </form>
-                        <form id="bnPromptStatusForm" method="post" class="d-flex align-items-center gap-2 flex-wrap" hidden>
+                        <form id="bnPromptStatusForm" method="post" class="d-flex align-items-center gap-2 flex-wrap bn-bar-group" hidden>
                             @csrf
                             <span class="text-secondary" style="font-size:.85rem">Prompt status for the selected reel —</span>
                             <label class="d-flex align-items-center gap-1 mb-0" style="font-size:.85rem">
@@ -123,7 +123,7 @@
                         </form>
                     @endif
                     @if ($data['canManage'])
-                        <form id="bulkUpdateFieldsForm" action="{{ route('portal-social-reels.bulk-update-fields') }}" method="post" class="d-flex align-items-center gap-2 flex-wrap">
+                        <form id="bulkUpdateFieldsForm" action="{{ route('portal-social-reels.bulk-update-fields') }}" method="post" class="d-flex align-items-center gap-2 flex-wrap bn-bar-group">
                             @csrf
                             <span class="text-secondary" style="font-size:.85rem">Set for selected —</span>
                             {{-- Plain selects, not nice-select - nice-select's init silently
@@ -347,6 +347,12 @@
         #bulkActionsBar[hidden],
         #bnPromptStatusForm[hidden],
         #bulkMarkPaidForm[hidden] { display: none !important; }
+        /* Each action in the top bar is its own small "chip" - without
+           this, every button/select/checkbox just runs together into
+           one undifferentiated row once they're compact enough to share
+           lines, which reads as cluttered rather than organised. */
+        .bn-bar-group { background: rgba(0, 0, 0, .035); border-radius: 10px; padding: 6px 12px; }
+        .dark-theme .bn-bar-group { background: rgba(255, 255, 255, .06); }
     </style>
     @endpush
 
