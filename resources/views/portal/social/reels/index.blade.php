@@ -61,6 +61,7 @@
             <div class="col-12 p-0">
                 <div class="card ot-card bn-reels-filters mb-24 d-flex flex-column gap-2" style="padding:1rem 1.25rem" id="bulkActionsBar" hidden>
                     <strong><span id="bulkSelectedCount">0</span> selected</strong>
+                    <div id="bnCharactersDisplay" class="text-secondary" style="font-size:.85rem" hidden></div>
                     @if ($data['canApprove'])
                         <div class="d-flex align-items-center gap-2 flex-wrap">
                             <form id="bulkApproveForm" action="{{ route('portal-social-reels.bulk-review') }}" method="post" class="d-inline">
@@ -134,21 +135,20 @@
                     <div class="table-responsive">
                     <table class="ot-basic-table ot-table-bg bn-reels-table">
                         <colgroup>
-                            @if ($showBulk)<col style="width:4%">@endif
-                            <col style="width:6%">
+                            @if ($showBulk)<col style="width:3%">@endif
+                            <col style="width:7%">
                             <col style="width:5%">
+                            <col style="width:18%">
+                            <col style="width:8%">
                             <col style="width:10%">
                             <col style="width:6%">
-                            <col style="width:7%">
-                            <col style="width:7%">
-                            <col style="width:11%">
-                            <col style="width:7%">
-                            <col style="width:7%">
+                            <col style="width:9%">
+                            <col style="width:6%">
                             <col style="width:7%">
                             <col style="width:7%">
                             <col style="width:7%">
-                            <col style="width:7%">
-                            <col style="width:7%">
+                            <col style="width:5%">
+                            <col style="width:5%">
                         </colgroup>
                         <thead class="thead">
                             <tr>
@@ -158,11 +158,10 @@
                                 <th>Series</th>
                                 <th>Code</th>
                                 <th>Topic</th>
-                                <th>Characters</th>
                                 <th>Suggested by</th>
                                 <th>Approve</th>
-                                <th>Assign</th>
                                 <th>Deadline</th>
+                                <th>Status</th>
                                 <th>Reel Setup</th>
                                 <th>Prompt</th>
                                 <th>Canva link</th>
@@ -175,12 +174,14 @@
                             @forelse ($data['reels'] as $reel)
                                 @php($staff = optional($reel->suggestedBy)->staff)
                                 @php($isSuggested = $reel->status === \App\Models\Portal\PortalReel::SUGGESTED)
+                                @php($charNames = $data['charactersFieldKey'] ? array_values(array_filter((array) ($reel->custom_fields[$data['charactersFieldKey']] ?? []))) : [])
                                 <tr class="{{ $reel->rowStateClass() }}">
                                     @if ($showBulk)
                                         <td><input type="checkbox" class="bn-reel-check" value="{{ $reel->id }}"
                                             data-edit-url="{{ route('portal-social-reels.edit', $reel->id) }}"
                                             data-prompt-url="{{ route('portal-social-reels.prompt-ready', $reel->id) }}"
-                                            data-open-paid="{{ $reel->is_open_paid ? '1' : '0' }}"></td>
+                                            data-open-paid="{{ $reel->is_open_paid ? '1' : '0' }}"
+                                            data-characters="{{ implode(', ', $charNames) }}"></td>
                                     @endif
                                     <td>
                                         @if ($reel->series_name)
@@ -198,35 +199,6 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @php($charNames = $data['charactersFieldKey'] ? array_values(array_filter((array) ($reel->custom_fields[$data['charactersFieldKey']] ?? []))) : [])
-                                        @if ($charNames)
-                                            <details class="bn-approve-details">
-                                                <summary><span class="text-secondary" title="{{ implode(', ', $charNames) }}">{{ count($charNames) }} 👤</span></summary>
-                                                <div class="bn-approve-panel" style="min-width:170px">
-                                                    @foreach ($charNames as $name)
-                                                        @php($char = $data['charactersByName']->get($name))
-                                                        <div class="mb-1 pb-1" style="border-bottom:1px solid rgba(0,0,0,.08)">
-                                                            <strong style="font-size:12px">{{ $name }}</strong><br>
-                                                            @if ($char)
-                                                                <span style="font-size:11px">
-                                                                    @if ($char->portrait)<a href="{{ globalAsset($char->portrait->path) }}" target="_blank">Portrait</a>@endif
-                                                                    @if ($char->descriptionUpload)@if($char->portrait) · @endif<a href="{{ globalAsset($char->descriptionUpload->path) }}" target="_blank">Notes</a>@endif
-                                                                    @foreach ($char->costumes as $i => $costume)
-                                                                        @if ($costume->upload)@if($char->portrait || $char->descriptionUpload || $i > 0) · @endif<a href="{{ globalAsset($costume->upload->path) }}" target="_blank">Costume {{ $i + 1 }}</a>@endif
-                                                                    @endforeach
-                                                                </span>
-                                                            @else
-                                                                <span class="text-secondary" style="font-size:11px">not found</span>
-                                                            @endif
-                                                        </div>
-                                                    @endforeach
-                                                </div>
-                                            </details>
-                                        @else
-                                            —
-                                        @endif
-                                    </td>
-                                    <td>
                                         {{ optional($reel->suggestedBy)->name ?: '—' }}
                                         @if (optional($staff?->designation)->name)
                                             <div class="bn-reel-sub">{{ $staff->designation->name }}</div>
@@ -236,10 +208,21 @@
                                         <span class="{{ $isSuggested ? 'badge-basic-secondary-text' : $reel->statusBadgeClass() }}">{{ $isSuggested ? 'Suggested' : $reel->statusLabel() }}</span>
                                     </td>
                                     <td>
-                                        {{ $reel->is_open_paid ? 'Open — Paid Task' : (optional($reel->assignee)->first_name ? trim($reel->assignee->first_name . ' ' . $reel->assignee->last_name) : '—') }}
+                                        {{ $reel->deadline?->format('d M Y') ?: '—' }}
                                     </td>
                                     <td>
-                                        {{ $reel->deadline?->format('d M Y') ?: '—' }}
+                                        @php($reelTask = $reel->task)
+                                        @if ($reelTask)
+                                            <details class="bn-approve-details">
+                                                <summary><span class="badge-basic-info-text">{{ str_replace('_', ' ', ucfirst($reelTask->status)) }}</span></summary>
+                                                <div class="bn-approve-panel" style="min-width:150px">
+                                                    <div style="font-size:12px" class="mb-1"><strong>Claimed by:</strong> {{ optional($reelTask->assignee)->first_name ? trim($reelTask->assignee->first_name . ' ' . $reelTask->assignee->last_name) : '—' }}</div>
+                                                    <div style="font-size:12px"><strong>Status:</strong> {{ str_replace('_', ' ', ucfirst($reelTask->status)) }}</div>
+                                                </div>
+                                            </details>
+                                        @else
+                                            —
+                                        @endif
                                     </td>
                                     <td>
                                         @if ($reel->is_document_track)
@@ -259,7 +242,7 @@
                                                 <span class="text-secondary" style="font-size:.85rem">Document track</span>
                                             @endif
                                         @else
-                                            <a href="{{ route('portal-social-reels.setup', $reel->id) }}" class="btn btn-sm ot-btn-primary">Reel Setup</a>
+                                            —
                                         @endif
                                     </td>
                                     <td>
@@ -369,6 +352,7 @@
                 var editLink = document.getElementById('bnEditSingleLink');
                 var promptForm = document.getElementById('bnPromptStatusForm');
                 var markPaidForm = document.getElementById('bulkMarkPaidForm');
+                var charactersDisplay = document.getElementById('bnCharactersDisplay');
 
                 function checks() {
                     return document.querySelectorAll('.bn-reel-check');
@@ -397,6 +381,12 @@
                     // for the prompt-status one instead while it'd apply to
                     // just that one already-paid reel.
                     if (markPaidForm) { markPaidForm.hidden = !!isOpenPaid; }
+
+                    if (charactersDisplay) {
+                        var names = single ? single.dataset.characters : '';
+                        charactersDisplay.hidden = !names;
+                        if (names) { charactersDisplay.textContent = 'Characters: ' + names; }
+                    }
                 }
 
                 function updateBar() {

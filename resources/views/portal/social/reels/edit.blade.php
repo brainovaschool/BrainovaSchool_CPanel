@@ -19,6 +19,11 @@
                         <li class="breadcrumb-item">{{ $data['title'] }}</li>
                     </ol>
                 </div>
+                @unless ($data['reel']->is_document_track)
+                    <div class="col-sm-4 text-sm-end">
+                        <a href="{{ route('portal-social-reels.setup', $data['reel']->id) }}" class="btn ot-btn-primary">Reel Setup</a>
+                    </div>
+                @endunless
             </div>
         </div>
 
