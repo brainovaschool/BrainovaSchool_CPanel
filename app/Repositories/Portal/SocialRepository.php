@@ -48,6 +48,11 @@ class SocialRepository
             ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
             ->when($filters['format'] ?? null, fn ($q, $v) => $q->where('format', $v))
             ->when($filters['series_name'] ?? null, fn ($q, $v) => $q->where('series_name', $v))
+            ->when($filters['assigned_to'] ?? null, fn ($q, $v) => $q->where('assigned_to', $v))
+            // The task workflow status (open/assigned/in progress/...)
+            // lives on the linked PortalTask, not the reel itself - only
+            // reels that were ever assigned or marked paid have one at all.
+            ->when($filters['task_status'] ?? null, fn ($q, $v) => $q->whereHas('task', fn ($tq) => $tq->where('status', $v)))
             ->get()
             ->sortByDesc(fn (PortalReel $reel) => (int) preg_replace('/\D/', '', (string) $reel->code))
             ->values();

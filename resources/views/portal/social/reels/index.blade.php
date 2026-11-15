@@ -52,6 +52,33 @@
                             @endforeach
                         </select>
                     @endif
+                    {{-- Plain selects, not nice-select - a past batch of new
+                         nice-select elements on this same page (the "Set
+                         for selected" bar) silently failed to render a
+                         replacement for most of them, verified live. Not
+                         worth risking the same thing here. --}}
+                    <select name="task_status" class="form-control ot-input" style="width:150px">
+                        <option value="">Any task status</option>
+                        @foreach ([
+                            \App\Models\Portal\PortalTask::OPEN         => 'Open',
+                            \App\Models\Portal\PortalTask::ASSIGNED     => 'Assigned',
+                            \App\Models\Portal\PortalTask::IN_PROGRESS  => 'In progress',
+                            \App\Models\Portal\PortalTask::SUBMITTED    => 'Submitted',
+                            \App\Models\Portal\PortalTask::UNDER_REVIEW => 'Under review',
+                            \App\Models\Portal\PortalTask::REVISION     => 'Revision',
+                            \App\Models\Portal\PortalTask::COMPLETED    => 'Completed',
+                        ] as $value => $label)
+                            <option value="{{ $value }}" {{ ($data['filters']['task_status'] ?? '') === $value ? 'selected' : '' }}>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                    @if ($data['contentTeam']->count())
+                        <select name="assigned_to" class="form-control ot-input" style="width:160px">
+                            <option value="">Anyone assigned</option>
+                            @foreach ($data['contentTeam'] as $staff)
+                                <option value="{{ $staff->id }}" {{ (string) ($data['filters']['assigned_to'] ?? '') === (string) $staff->id ? 'selected' : '' }}>{{ $staff->first_name }} {{ $staff->last_name }}</option>
+                            @endforeach
+                        </select>
+                    @endif
                     <button class="btn ot-btn-primary" type="submit">{{ ___('common.Search') }}</button>
                 </div>
             </form>

@@ -74,11 +74,11 @@ class SocialController extends Controller
         $data['canManage']   = $this->canManageContent();
         $data['canApprove']  = $this->canApproveReels();
         $data['canAssign']   = $this->canAssignReels();
-        $data['reels']       = $this->repo->reels($request->only(['status', 'category', 'format', 'series_name']));
+        $data['reels']       = $this->repo->reels($request->only(['status', 'category', 'format', 'series_name', 'assigned_to', 'task_status']));
         $data['settings']    = PortalSetting::current();
         $data['series']      = $this->repo->reelSeries();
         $data['contentTeam'] = $this->repo->assignableStaff();
-        $data['filters']     = $request->only(['status', 'category', 'format', 'series_name']);
+        $data['filters']     = $request->only(['status', 'category', 'format', 'series_name', 'assigned_to', 'task_status']);
         $data['staffId']     = $this->actingStaffId();
         // Characters now only shows (as plain names) for whichever one
         // reel is selected, in the top bar - this just resolves which
