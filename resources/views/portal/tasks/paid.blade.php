@@ -53,7 +53,9 @@
                                     <td>{{ $t->due_date?->format('d M Y') }}</td>
                                     <td>{{ Setting('currency_symbol') }} {{ number_format($t->amount, 2) }}</td>
                                     <td>
-                                        @if ($t->prompt_ready)
+                                        @if ($t->no_prompt)
+                                            <span class="badge-basic-secondary-text">No prompt</span>
+                                        @elseif ($t->prompt_ready)
                                             <span class="badge-basic-success-text">Ready</span>
                                         @else
                                             <span class="badge-basic-warning-text">In process</span>

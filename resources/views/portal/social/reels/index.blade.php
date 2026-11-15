@@ -98,8 +98,12 @@
                                 @endforeach
                             </select>
                             <span class="form-check d-flex align-items-center gap-1" style="font-size:.85rem" title="Leave unticked if the prompt/shot list isn't written yet - the task stays visible but can't be claimed until you come back and tick this.">
-                                <input type="checkbox" class="form-check-input" id="bulkPromptReady" name="prompt_ready" value="1">
+                                <input type="checkbox" class="form-check-input bn-prompt-ready" id="bulkPromptReady" name="prompt_ready" value="1">
                                 <label class="form-check-label mb-0" for="bulkPromptReady">Prompt ready</label>
+                            </span>
+                            <span class="form-check d-flex align-items-center gap-1" style="font-size:.85rem" title="Tick this instead if this one was never going to have a written prompt at all - it'll still be claimable, just labelled 'No prompt' instead of 'Ready'.">
+                                <input type="checkbox" class="form-check-input bn-no-prompt" id="bulkNoPrompt" name="no_prompt" value="1">
+                                <label class="form-check-label mb-0" for="bulkNoPrompt">No prompt</label>
                             </span>
                             <button type="submit" class="btn btn-sm ot-btn-primary">Mark as paid</button>
                         </form>
@@ -285,8 +289,12 @@
                                                             <input type="number" step="0.01" min="0" name="amount" class="form-control ot-input form-control-sm" placeholder="Amount" required style="width:110px">
                                                             <input type="date" name="deadline" class="form-control ot-input form-control-sm" value="{{ $reel->deadline?->format('Y-m-d') }}" style="width:130px">
                                                             <label class="d-flex align-items-center gap-1 mb-0" style="font-size:12px">
-                                                                <input type="checkbox" class="form-check-input" name="prompt_ready" value="1">
+                                                                <input type="checkbox" class="form-check-input bn-prompt-ready" name="prompt_ready" value="1">
                                                                 Prompt ready
+                                                            </label>
+                                                            <label class="d-flex align-items-center gap-1 mb-0" style="font-size:12px">
+                                                                <input type="checkbox" class="form-check-input bn-no-prompt" name="no_prompt" value="1">
+                                                                No prompt
                                                             </label>
                                                             <button type="submit" class="btn btn-sm ot-btn-primary">Mark as paid</button>
                                                         </form>
@@ -294,15 +302,22 @@
                                                 </details>
                                             @else
                                                 @php($reelTask = $reel->task)
+                                                @php($isNoPrompt = $reelTask && $reelTask->no_prompt)
+                                                @php($isReady = $reelTask && $reelTask->prompt_ready && !$isNoPrompt)
                                                 <details class="bn-approve-details mt-1">
-                                                    <summary><span class="{{ $reelTask && $reelTask->prompt_ready ? 'text-success' : 'text-secondary' }}" title="Tick once the prompt/shot list is ready - staff can't claim this until then">{{ $reelTask && $reelTask->prompt_ready ? '✅ Prompt ready' : '⏳ Prompt in process' }}</span></summary>
+                                                    <summary><span class="{{ $isReady ? 'text-success' : 'text-secondary' }}" title="Tick Prompt ready once the prompt/shot list is written, or No prompt if this one was never going to have one - either way staff can then claim it">{{ $isNoPrompt ? '🚫 No prompt' : ($isReady ? '✅ Prompt ready' : '⏳ Prompt in process') }}</span></summary>
                                                     <div class="bn-approve-panel">
-                                                        <form action="{{ route('portal-social-reels.prompt-ready', $reel->id) }}" method="post">
+                                                        <form action="{{ route('portal-social-reels.prompt-ready', $reel->id) }}" method="post" class="d-flex flex-column gap-1">
                                                             @csrf
                                                             <label class="d-flex align-items-center gap-1 mb-0" style="font-size:13px">
-                                                                <input type="checkbox" class="form-check-input" name="prompt_ready" value="1" {{ $reelTask && $reelTask->prompt_ready ? 'checked' : '' }} onchange="this.form.submit()">
-                                                                Prompt ready — staff can claim
+                                                                <input type="checkbox" class="form-check-input bn-prompt-ready" name="prompt_ready" value="1" {{ $isReady ? 'checked' : '' }}>
+                                                                Prompt ready
                                                             </label>
+                                                            <label class="d-flex align-items-center gap-1 mb-0" style="font-size:13px">
+                                                                <input type="checkbox" class="form-check-input bn-no-prompt" name="no_prompt" value="1" {{ $isNoPrompt ? 'checked' : '' }}>
+                                                                No prompt
+                                                            </label>
+                                                            <button type="submit" class="btn btn-sm ot-btn-primary">Update</button>
                                                         </form>
                                                     </div>
                                                 </details>
@@ -466,6 +481,23 @@
                     if (e.target.classList.contains('bn-reel-check')) {
                         updateBar();
                     }
+                });
+
+                // "Prompt ready" and "No prompt" mean two different things
+                // but both unblock claiming - ticking one in a given form
+                // never leaves the other also ticked, so they read as the
+                // single choice they actually are.
+                document.addEventListener('change', function (e) {
+                    if (!e.target.classList.contains('bn-prompt-ready') && !e.target.classList.contains('bn-no-prompt')) {
+                        return;
+                    }
+                    if (!e.target.checked) {
+                        return;
+                    }
+                    var form = e.target.closest('form');
+                    if (!form) return;
+                    var other = form.querySelector(e.target.classList.contains('bn-prompt-ready') ? '.bn-no-prompt' : '.bn-prompt-ready');
+                    if (other) { other.checked = false; }
                 });
 
                 // Each bulk form starts with no ids[] of its own - the

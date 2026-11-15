@@ -552,8 +552,14 @@ class SocialRepository
      *  "Open — Paid Task" on a reel's own Assign card, just over several
      *  at once, with an amount and (optionally) a specific list of staff
      *  it's restricted to instead of open to everyone. */
-    public function bulkMarkReelsPaid(array $ids, float $amount, ?string $deadline, array $visibleToStaffIds, int $assignedByUserId, bool $promptReady = true): array
+    public function bulkMarkReelsPaid(array $ids, float $amount, ?string $deadline, array $visibleToStaffIds, int $assignedByUserId, bool $promptReady = true, bool $noPrompt = false): array
     {
+        // "No prompt" (this reel was never going to have a written one)
+        // unblocks claiming exactly like prompt_ready does - it's stored
+        // separately only so the Prompt column can say "No prompt"
+        // instead of "Ready".
+        $promptReady = $promptReady || $noPrompt;
+
         foreach ($ids as $id) {
             $reel = PortalReel::find((int) $id);
             if (!$reel) {
@@ -567,27 +573,29 @@ class SocialRepository
             }
             $reel->save();
 
-            $this->syncReelTask($reel, null, true, $deadline ?: $reel->deadline?->format('Y-m-d'), $assignedByUserId, $amount, $visibleToStaffIds, $promptReady);
+            $this->syncReelTask($reel, null, true, $deadline ?: $reel->deadline?->format('Y-m-d'), $assignedByUserId, $amount, $visibleToStaffIds, $promptReady, $noPrompt);
         }
 
         return $this->responseWithSuccess(count($ids) . ' reel(s) marked as paid tasks.', []);
     }
 
-    /** Flips just prompt_ready on an already-open paid task, leaving its
-     *  amount/visibility/deadline untouched - the one-click "it's ready
-     *  now" action once the prompt/shot list has actually been written,
+    /** Flips just prompt_ready/no_prompt on an already-open paid task,
+     *  leaving its amount/visibility/deadline untouched - the one-click
+     *  "it's ready now" (or "it was never going to have one") action,
      *  separate from the full Mark As Paid form so re-checking it can
      *  never accidentally wipe the amount already set. */
-    public function setReelPromptReady(int $reelId, bool $promptReady): array
+    public function setReelPromptReady(int $reelId, bool $promptReady, bool $noPrompt = false): array
     {
         $task = PortalTask::where('reel_id', $reelId)->first();
         if (!$task || !$task->paid) {
             return $this->responseWithError('This reel isn\'t a paid task yet.', []);
         }
-        $task->prompt_ready = $promptReady;
+        $task->prompt_ready = $promptReady || $noPrompt;
+        $task->no_prompt     = $noPrompt;
         $task->save();
 
-        return $this->responseWithSuccess($promptReady ? 'Prompt marked ready - staff can now claim it.' : 'Marked as still in process.', []);
+        $message = $noPrompt ? 'Marked as no prompt - staff can claim it.' : ($task->prompt_ready ? 'Prompt marked ready - staff can now claim it.' : 'Marked as still in process.');
+        return $this->responseWithSuccess($message, []);
     }
 
     /** Keeps one Team Portal task in step with a reel's assignment -
@@ -595,7 +603,7 @@ class SocialRepository
      *  on every re-assign - so "as soon as the task is assigned the
      *  content creator will see the task in her task list" holds true
      *  the same way it would for any other task. */
-    private function syncReelTask(PortalReel $reel, ?int $staffId, bool $openPaid, ?string $deadline, int $assignedByUserId, ?float $amount = null, array $visibleToStaffIds = [], ?bool $promptReady = null): void
+    private function syncReelTask(PortalReel $reel, ?int $staffId, bool $openPaid, ?string $deadline, int $assignedByUserId, ?float $amount = null, array $visibleToStaffIds = [], ?bool $promptReady = null, ?bool $noPrompt = null): void
     {
         $task = PortalTask::where('reel_id', $reel->id)->first();
 
@@ -624,6 +632,9 @@ class SocialRepository
         }
         if ($openPaid && $promptReady !== null) {
             $attributes['prompt_ready'] = $promptReady;
+        }
+        if ($openPaid && $noPrompt !== null) {
+            $attributes['no_prompt'] = $noPrompt;
         }
 
         if ($task) {

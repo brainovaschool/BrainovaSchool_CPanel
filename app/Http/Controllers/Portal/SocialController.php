@@ -352,7 +352,8 @@ class SocialController extends Controller
             $request->deadline,
             (array) $request->input('visible_to_staff_ids', []),
             Auth::id(),
-            $request->boolean('prompt_ready')
+            $request->boolean('prompt_ready'),
+            $request->boolean('no_prompt')
         );
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
@@ -365,7 +366,7 @@ class SocialController extends Controller
         if (!$this->canAssignReels()) {
             abort(403, 'Only admin/coordinator can do this.');
         }
-        $result = $this->repo->setReelPromptReady((int) $id, $request->boolean('prompt_ready'));
+        $result = $this->repo->setReelPromptReady((int) $id, $request->boolean('prompt_ready'), $request->boolean('no_prompt'));
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

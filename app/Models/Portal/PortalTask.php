@@ -31,6 +31,7 @@ class PortalTask extends Model
         'urgent'                => 'boolean',
         'paid'                  => 'boolean',
         'prompt_ready'          => 'boolean',
+        'no_prompt'             => 'boolean',
         'active_status'         => 'boolean',
         'assigned_date'         => 'date',
         'due_date'              => 'date',
