@@ -43,12 +43,13 @@
                 <div class="card-body">
                     <div class="table-responsive">
                     <table class="ot-basic-table ot-table-bg">
-                        <thead class="thead"><tr><th>Title</th><th>Category</th><th>Due</th><th>Amount</th><th>Prompt</th>@if ($data['isManager'])<th>Visible to</th>@endif<th class="action">{{ ___('common.action') }}</th></tr></thead>
+                        <thead class="thead"><tr><th>Title</th><th>Code</th><th>Series</th><th>Due</th><th>Amount</th><th>Prompt</th><th>Status</th>@if ($data['isManager'])<th>Visible to</th>@endif<th>Claimed by</th><th class="action">{{ ___('common.action') }}</th></tr></thead>
                         <tbody class="tbody">
                             @forelse ($data['openTasks'] as $t)
                                 <tr>
                                     <td>{{ $t->title }}</td>
-                                    <td>{{ $t->category ?: '—' }}</td>
+                                    <td>{{ $t->reel?->code ?: '—' }}</td>
+                                    <td>{{ $t->reel?->series_name ?: '—' }}</td>
                                     <td>{{ $t->due_date?->format('d M Y') }}</td>
                                     <td>{{ Setting('currency_symbol') }} {{ number_format($t->amount, 2) }}</td>
                                     <td>
@@ -58,6 +59,7 @@
                                             <span class="badge-basic-warning-text">In process</span>
                                         @endif
                                     </td>
+                                    <td><span class="badge-basic-info-text">{{ str_replace('_', ' ', ucfirst($t->status)) }}</span></td>
                                     @if ($data['isManager'])
                                         <td style="font-size:.85rem">
                                             @if (empty($t->visible_to_role_ids) && empty($t->visible_to_staff_ids))
@@ -76,6 +78,7 @@
                                             @endif
                                         </td>
                                     @endif
+                                    <td>{{ optional($t->assignee)->first_name ? trim($t->assignee->first_name . ' ' . $t->assignee->last_name) : '—' }}</td>
                                     <td class="action"><a href="{{ route('portal-tasks.show', $t->id) }}" class="btn btn-sm ot-btn-primary">{{ $data['isManager'] ? 'Open' : ($t->prompt_ready ? 'View & Claim' : 'View') }}</a></td>
                                 </tr>
                             @empty

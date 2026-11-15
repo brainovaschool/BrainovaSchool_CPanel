@@ -308,7 +308,7 @@ class TaskController extends Controller
         $staffId   = $this->actingStaffId();
 
         $data['isManager'] = $isManager;
-        $openTasks = \App\Models\Portal\PortalTask::where('paid', true)->where('status', \App\Models\Portal\PortalTask::OPEN)->get();
+        $openTasks = \App\Models\Portal\PortalTask::where('paid', true)->where('status', \App\Models\Portal\PortalTask::OPEN)->with('reel')->get();
         // Managers see every open paid task regardless of who it's
         // restricted to, for oversight - an employee only sees the ones
         // actually open to them.
