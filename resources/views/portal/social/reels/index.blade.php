@@ -107,6 +107,22 @@
                             </span>
                             <button type="submit" class="btn btn-sm ot-btn-primary">Mark as paid</button>
                         </form>
+                        <form id="bnPromptStatusForm" method="post" class="d-flex align-items-center gap-2 flex-wrap" hidden>
+                            @csrf
+                            <span class="text-secondary" style="font-size:.85rem">Prompt status for the selected reel —</span>
+                            <label class="d-flex align-items-center gap-1 mb-0" style="font-size:.85rem">
+                                <input type="checkbox" class="form-check-input bn-prompt-ready" name="prompt_ready" value="1">
+                                Prompt ready
+                            </label>
+                            <label class="d-flex align-items-center gap-1 mb-0" style="font-size:.85rem">
+                                <input type="checkbox" class="form-check-input bn-no-prompt" name="no_prompt" value="1">
+                                No prompt
+                            </label>
+                            <button type="submit" class="btn btn-sm ot-btn-primary">Update</button>
+                        </form>
+                    @endif
+                    @if ($data['canManage'])
+                        <a id="bnEditSingleLink" href="#" class="btn btn-sm btn-outline-secondary" hidden>{{ ___('common.edit') }} selected reel</a>
                     @endif
                 </div>
             </div>
@@ -161,7 +177,10 @@
                                 @php($isSuggested = $reel->status === \App\Models\Portal\PortalReel::SUGGESTED)
                                 <tr class="{{ $reel->rowStateClass() }}">
                                     @if ($showBulk)
-                                        <td><input type="checkbox" class="bn-reel-check" value="{{ $reel->id }}"></td>
+                                        <td><input type="checkbox" class="bn-reel-check" value="{{ $reel->id }}"
+                                            data-edit-url="{{ route('portal-social-reels.edit', $reel->id) }}"
+                                            data-prompt-url="{{ route('portal-social-reels.prompt-ready', $reel->id) }}"
+                                            data-open-paid="{{ $reel->is_open_paid ? '1' : '0' }}"></td>
                                     @endif
                                     <td>
                                         @if ($reel->series_name)
@@ -214,129 +233,13 @@
                                         @endif
                                     </td>
                                     <td>
-                                        @if ($data['canApprove'])
-                                            @php($promptCheckable = $reel->prompt_link && !$reel->prompt_approved_at)
-                                            @php($canvaCheckable = $reel->canva_link && !$reel->canva_approved_at)
-                                            @php($videoCheckable = $reel->drive_link && !$reel->video_approved_at)
-                                            <details class="bn-approve-details">
-                                                <summary>
-                                                    <span class="{{ $isSuggested ? 'text-secondary' : 'text-success' }}" title="Topic">T</span>
-                                                    @unless ($reel->is_document_track)
-                                                        <span class="{{ $reel->prompt_approved_at ? 'text-success' : 'text-secondary' }}" title="Prompt">P</span>
-                                                        <span class="{{ $reel->canva_approved_at ? 'text-success' : 'text-secondary' }}" title="Canva">C</span>
-                                                    @endunless
-                                                    <span class="{{ $reel->video_approved_at ? 'text-success' : 'text-secondary' }}" title="Video">V</span>
-                                                </summary>
-                                                <div class="bn-approve-panel">
-                                                    <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-1">
-                                                        @csrf
-                                                        <input type="hidden" name="status" value="accepted">
-                                                        <input type="checkbox" class="form-check-input" {{ $isSuggested ? '' : 'checked disabled' }} onchange="this.form.submit()">
-                                                        <label class="mb-0">Topic</label>
-                                                    </form>
-                                                    @unless ($reel->is_document_track)
-                                                        <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-1">
-                                                            @csrf
-                                                            <input type="hidden" name="stage" value="prompt">
-                                                            <input type="checkbox" class="form-check-input" {{ $reel->prompt_approved_at ? 'checked' : '' }} {{ $promptCheckable ? '' : 'disabled' }} onchange="this.form.submit()">
-                                                            <label class="mb-0">Prompt</label>
-                                                        </form>
-                                                        <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-1">
-                                                            @csrf
-                                                            <input type="hidden" name="stage" value="canva">
-                                                            <input type="checkbox" class="form-check-input" {{ $reel->canva_approved_at ? 'checked' : '' }} {{ $canvaCheckable ? '' : 'disabled' }} onchange="this.form.submit()">
-                                                            <label class="mb-0">Canva</label>
-                                                        </form>
-                                                    @endunless
-                                                    <form action="{{ route('portal-social-reels.approve-stage', $reel->id) }}" method="post" class="d-flex align-items-center gap-1 mb-2">
-                                                        @csrf
-                                                        <input type="hidden" name="stage" value="video">
-                                                        <input type="checkbox" class="form-check-input" {{ $reel->video_approved_at ? 'checked' : '' }} {{ $videoCheckable ? '' : 'disabled' }} onchange="this.form.submit()">
-                                                        <label class="mb-0">Video</label>
-                                                    </form>
-                                                    @if ($isSuggested)
-                                                        <form action="{{ route('portal-social-reels.review', $reel->id) }}" method="post" onsubmit="return confirm('Discard this suggestion?');">
-                                                            @csrf
-                                                            <input type="hidden" name="status" value="rejected">
-                                                            <button type="submit" class="btn btn-sm btn-outline-danger w-100">Discard</button>
-                                                        </form>
-                                                    @endif
-                                                </div>
-                                            </details>
-                                        @else
-                                            <span class="{{ $isSuggested ? 'badge-basic-secondary-text' : $reel->statusBadgeClass() }}">{{ $isSuggested ? 'Suggested' : $reel->statusLabel() }}</span>
-                                        @endif
+                                        <span class="{{ $isSuggested ? 'badge-basic-secondary-text' : $reel->statusBadgeClass() }}">{{ $isSuggested ? 'Suggested' : $reel->statusLabel() }}</span>
                                     </td>
                                     <td>
-                                        @if ($data['canAssign'] && !$isSuggested)
-                                            <form action="{{ route('portal-social-reels.assign', $reel->id) }}" method="post" class="bn-inline-assign-form">
-                                                @csrf
-                                                <select name="assigned_to" class="form-control ot-input form-control-sm" {{ $reel->is_open_paid ? 'disabled' : '' }} onchange="this.form.submit()">
-                                                    <option value="">— Select —</option>
-                                                    @foreach ($data['contentTeam'] as $s)
-                                                        <option value="{{ $s->id }}" {{ (int) $reel->assigned_to === $s->id ? 'selected' : '' }}>{{ $s->first_name }} {{ $s->last_name }}</option>
-                                                    @endforeach
-                                                </select>
-                                                <input type="hidden" name="deadline" value="{{ $reel->deadline?->format('Y-m-d') }}">
-                                            </form>
-                                            @unless ($reel->is_open_paid)
-                                                <details class="bn-approve-details mt-1">
-                                                    <summary><span class="text-secondary" title="Mark as a paid, open-to-claim task">💰 Paid</span></summary>
-                                                    <div class="bn-approve-panel">
-                                                        <form action="{{ route('portal-social-reels.bulk-mark-paid') }}" method="post" class="d-flex flex-column gap-1">
-                                                            @csrf
-                                                            <input type="hidden" name="ids[]" value="{{ $reel->id }}">
-                                                            <input type="number" step="0.01" min="0" name="amount" class="form-control ot-input form-control-sm" placeholder="Amount" required style="width:110px">
-                                                            <input type="date" name="deadline" class="form-control ot-input form-control-sm" value="{{ $reel->deadline?->format('Y-m-d') }}" style="width:130px">
-                                                            <label class="d-flex align-items-center gap-1 mb-0" style="font-size:12px">
-                                                                <input type="checkbox" class="form-check-input bn-prompt-ready" name="prompt_ready" value="1">
-                                                                Prompt ready
-                                                            </label>
-                                                            <label class="d-flex align-items-center gap-1 mb-0" style="font-size:12px">
-                                                                <input type="checkbox" class="form-check-input bn-no-prompt" name="no_prompt" value="1">
-                                                                No prompt
-                                                            </label>
-                                                            <button type="submit" class="btn btn-sm ot-btn-primary">Mark as paid</button>
-                                                        </form>
-                                                    </div>
-                                                </details>
-                                            @else
-                                                @php($reelTask = $reel->task)
-                                                @php($isNoPrompt = $reelTask && $reelTask->no_prompt)
-                                                @php($isReady = $reelTask && $reelTask->prompt_ready && !$isNoPrompt)
-                                                <details class="bn-approve-details mt-1">
-                                                    <summary><span class="{{ $isReady ? 'text-success' : 'text-secondary' }}" title="Tick Prompt ready once the prompt/shot list is written, or No prompt if this one was never going to have one - either way staff can then claim it">{{ $isNoPrompt ? '🚫 No prompt' : ($isReady ? '✅ Prompt ready' : '⏳ Prompt in process') }}</span></summary>
-                                                    <div class="bn-approve-panel">
-                                                        <form action="{{ route('portal-social-reels.prompt-ready', $reel->id) }}" method="post" class="d-flex flex-column gap-1">
-                                                            @csrf
-                                                            <label class="d-flex align-items-center gap-1 mb-0" style="font-size:13px">
-                                                                <input type="checkbox" class="form-check-input bn-prompt-ready" name="prompt_ready" value="1" {{ $isReady ? 'checked' : '' }}>
-                                                                Prompt ready
-                                                            </label>
-                                                            <label class="d-flex align-items-center gap-1 mb-0" style="font-size:13px">
-                                                                <input type="checkbox" class="form-check-input bn-no-prompt" name="no_prompt" value="1" {{ $isNoPrompt ? 'checked' : '' }}>
-                                                                No prompt
-                                                            </label>
-                                                            <button type="submit" class="btn btn-sm ot-btn-primary">Update</button>
-                                                        </form>
-                                                    </div>
-                                                </details>
-                                            @endunless
-                                        @else
-                                            {{ $reel->is_open_paid ? 'Open — Paid Task' : (optional($reel->assignee)->first_name ? trim($reel->assignee->first_name . ' ' . $reel->assignee->last_name) : '—') }}
-                                        @endif
+                                        {{ $reel->is_open_paid ? 'Open — Paid Task' : (optional($reel->assignee)->first_name ? trim($reel->assignee->first_name . ' ' . $reel->assignee->last_name) : '—') }}
                                     </td>
                                     <td>
-                                        @if ($data['canAssign'] && !$isSuggested)
-                                            <form action="{{ route('portal-social-reels.assign', $reel->id) }}" method="post" class="bn-inline-deadline-form">
-                                                @csrf
-                                                <input type="hidden" name="assigned_to" value="{{ $reel->assigned_to }}">
-                                                @if ($reel->is_open_paid)<input type="hidden" name="open_paid" value="1">@endif
-                                                <input type="date" name="deadline" class="form-control ot-input form-control-sm" value="{{ $reel->deadline?->format('Y-m-d') }}" onchange="this.form.submit()">
-                                            </form>
-                                        @else
-                                            {{ $reel->deadline?->format('d M Y') ?: '—' }}
-                                        @endif
+                                        {{ $reel->deadline?->format('d M Y') ?: '—' }}
                                     </td>
                                     <td>
                                         @if ($reel->is_document_track)
@@ -394,7 +297,6 @@
                                     </td>
                                     <td class="action bn-reel-actions">
                                         @if ($data['canManage'])
-                                            <a href="{{ route('portal-social-reels.edit', $reel->id) }}" class="btn btn-sm btn-outline-secondary">{{ ___('common.edit') }}</a>
                                             <form action="{{ route('portal-social-reels.destroy', $reel->id) }}" method="post" class="d-inline" onsubmit="return confirm('Remove this reel/topic?');">
                                                 @csrf
                                                 @method('DELETE')
@@ -420,7 +322,7 @@
         .bn-series-tag { font-family: "Lexend", sans-serif; font-weight: 600; font-size: 11px; border-radius: 14px; padding: 3px 10px; background: rgba(var(--bn-turquoise-rgb), .14); color: var(--bn-turquoise-text, #007585); white-space: normal; display: inline-block; line-height: 1.3; }
         .dark-theme .bn-series-tag { background: rgba(0, 151, 178, .22); color: var(--bn-turquoise-light); }
         .bn-reel-sub { color: var(--bn-muted, #8a8fa3); font-size: .78rem; margin-top: .15rem; }
-        .bn-inline-assign-form select, .bn-inline-deadline-form input { min-width: 120px; }
+        .bn-inline-deadline-form input { min-width: 120px; }
         .bn-link-cell { display: block; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .bn-approve-details summary { cursor: pointer; list-style: none; font-weight: 700; font-size: 13px; letter-spacing: .1em; }
         .bn-approve-details summary::-webkit-details-marker { display: none; }
@@ -446,8 +348,14 @@
         .dark-theme .bn-row-approved     { background: rgba(0, 151, 178, .20); }
         /* Bootstrap's d-flex utility sets display:flex with !important,
            which would otherwise beat the plain [hidden] rule and leave
-           this bar visible even while "hidden" is set. */
-        #bulkActionsBar[hidden] { display: none !important; }
+           this bar visible even while "hidden" is set. Same reasoning
+           covers the single-selection-only pieces below (.btn sets its
+           own display, non-important but still author-level, which an
+           unstyled [hidden] still loses to). */
+        #bulkActionsBar[hidden],
+        #bnPromptStatusForm[hidden],
+        #bulkMarkPaidForm[hidden],
+        #bnEditSingleLink[hidden] { display: none !important; }
     </style>
     @endpush
 
@@ -458,9 +366,37 @@
                 var selectAll = document.getElementById('bnSelectAll');
                 var bar = document.getElementById('bulkActionsBar');
                 var countEl = document.getElementById('bulkSelectedCount');
+                var editLink = document.getElementById('bnEditSingleLink');
+                var promptForm = document.getElementById('bnPromptStatusForm');
+                var markPaidForm = document.getElementById('bulkMarkPaidForm');
 
                 function checks() {
                     return document.querySelectorAll('.bn-reel-check');
+                }
+
+                // Editing a reel's own fields, and toggling the prompt
+                // status of one that's already paid, are inherently
+                // single-reel actions - they only ever show up once
+                // exactly one row is checked, using that row's own
+                // data-edit-url/data-prompt-url/data-open-paid.
+                function updateSingleSelection(checked) {
+                    var single = checked.length === 1 ? checked[0] : null;
+
+                    if (editLink) {
+                        editLink.hidden = !single;
+                        if (single) { editLink.href = single.dataset.editUrl; }
+                    }
+
+                    var isOpenPaid = single && single.dataset.openPaid === '1';
+                    if (promptForm) {
+                        promptForm.hidden = !isOpenPaid;
+                        if (isOpenPaid) { promptForm.action = single.dataset.promptUrl; }
+                    }
+                    // Re-marking an already-paid reel as paid would silently
+                    // overwrite its committed amount - swap that form out
+                    // for the prompt-status one instead while it'd apply to
+                    // just that one already-paid reel.
+                    if (markPaidForm) { markPaidForm.hidden = !!isOpenPaid; }
                 }
 
                 function updateBar() {
@@ -470,6 +406,7 @@
                     if (selectAll) {
                         selectAll.checked = checked.length > 0 && checked.length === checks().length;
                     }
+                    updateSingleSelection(checked);
                 }
 
                 document.addEventListener('change', function (e) {

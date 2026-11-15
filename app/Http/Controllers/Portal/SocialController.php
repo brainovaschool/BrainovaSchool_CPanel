@@ -195,6 +195,7 @@ class SocialController extends Controller
 
         $data['reel']         = $reel;
         $data['isManager']    = hasPermission('social_board_manage');
+        $data['canApprove']   = $this->canApproveReels();
         $data['settings']     = PortalSetting::current();
         $data['customFields'] = $this->repo->reelCustomFields();
         $data['series']       = $this->repo->reelSeries();
