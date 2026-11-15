@@ -138,12 +138,11 @@
                             @if ($showBulk)<col style="width:3%">@endif
                             <col style="width:7%">
                             <col style="width:5%">
-                            <col style="width:18%">
+                            <col style="width:20%">
                             <col style="width:8%">
                             <col style="width:10%">
                             <col style="width:6%">
                             <col style="width:9%">
-                            <col style="width:6%">
                             <col style="width:7%">
                             <col style="width:7%">
                             <col style="width:7%">
@@ -162,7 +161,6 @@
                                 <th>Approve</th>
                                 <th>Deadline</th>
                                 <th>Status</th>
-                                <th>Reel Setup</th>
                                 <th>Prompt</th>
                                 <th>Canva link</th>
                                 <th>Drive link</th>
@@ -220,27 +218,6 @@
                                                     <div style="font-size:12px"><strong>Status:</strong> {{ str_replace('_', ' ', ucfirst($reelTask->status)) }}</div>
                                                 </div>
                                             </details>
-                                        @else
-                                            —
-                                        @endif
-                                    </td>
-                                    <td>
-                                        @if ($reel->is_document_track)
-                                            @if ($data['staffId'] !== null && (int) $reel->assigned_to === (int) $data['staffId'])
-                                                <details class="bn-approve-details">
-                                                    <summary><span class="{{ $reel->drive_link ? 'text-success' : 'text-secondary' }}">{{ $reel->drive_link ? 'Video submitted' : 'Submit video link' }}</span></summary>
-                                                    <div class="bn-approve-panel" style="min-width:200px">
-                                                        <form action="{{ route('portal-social-reels.submit-link', $reel->id) }}" method="post" class="d-flex flex-column gap-1">
-                                                            @csrf
-                                                            <input type="hidden" name="stage" value="video">
-                                                            <input type="text" name="link" class="form-control ot-input form-control-sm" value="{{ $reel->drive_link }}" placeholder="Drive link to your clip" required>
-                                                            <button type="submit" class="btn btn-sm ot-btn-primary">Submit</button>
-                                                        </form>
-                                                    </div>
-                                                </details>
-                                            @else
-                                                <span class="text-secondary" style="font-size:.85rem">Document track</span>
-                                            @endif
                                         @else
                                             —
                                         @endif

@@ -91,6 +91,11 @@
 
         @php($customFields = $customFields ?? [])
         @foreach ($customFields as $field)
+            {{-- Pillar/Series above are this reel's own category/series_name columns -
+                 a custom field with either label exists only for standalone Reel Studio
+                 projects (which have no reel of their own to pull those from), so it'd
+                 just be a second, always-blank copy here. --}}
+            @continue(in_array(strtolower(trim($field->label)), ['pillar', 'series'], true))
             @php($current = old('custom_fields.' . $field->key, ($reel->custom_fields ?? [])[$field->key] ?? null))
             @php($isCharacterField = $field->list_key === \App\Models\Portal\PortalReelCustomField::SOURCE_REEL_CHARACTERS)
             <div class="col-md-6">

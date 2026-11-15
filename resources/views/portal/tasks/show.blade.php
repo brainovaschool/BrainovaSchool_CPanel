@@ -226,6 +226,24 @@
                     </div>
                 @endif
 
+                @if ($data['isAssignee'] && $data['isDocumentTrackReel'])
+                    <div class="card ot-card">
+                        <div class="card-header"><h4 class="mb-0">Submit your video</h4></div>
+                        <div class="card-body">
+                            <p class="text-secondary" style="font-size:.9rem">No Reel Studio for this one — once your clip is compiled in Canva, share the finished video's link here for approval.</p>
+                            <form action="{{ route('portal-social-reels.submit-link', $task->reel_id) }}" method="post" class="d-flex flex-column gap-2">
+                                @csrf
+                                <input type="hidden" name="stage" value="video">
+                                <input type="text" name="link" class="form-control ot-input" value="{{ $task->reel->drive_link }}" placeholder="Drive link to your clip" required>
+                                <button type="submit" class="btn ot-btn-primary">{{ $task->reel->drive_link ? 'Update link' : 'Submit' }}</button>
+                            </form>
+                            @if ($task->reel->drive_link)
+                                <p class="mt-2 mb-0 {{ $task->reel->video_approved_at ? 'text-success' : 'text-secondary' }}" style="font-size:.85rem">{{ $task->reel->video_approved_at ? 'Approved.' : 'Submitted — pending approval.' }}</p>
+                            @endif
+                        </div>
+                    </div>
+                @endif
+
                 @if ($data['isAssignee'])
                     <div class="card ot-card">
                         <div class="card-header"><h4 class="mb-0">Your actions</h4></div>
