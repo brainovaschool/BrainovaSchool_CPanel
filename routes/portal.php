@@ -88,6 +88,9 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::get('/',              'reels')->name('index')->middleware(['PermissionCheck:portal_access', 'PermissionCheck:portal_social_reels_read']);
                     Route::get('/create',        'createReel')->name('create')->middleware('PermissionCheck:portal_access');
                     Route::post('/store',        'storeReel')->name('store')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                    Route::get('/import',        'importReelsPage')->name('import')->middleware('PermissionCheck:portal_access');
+                    Route::post('/import',       'importReelsSubmit')->name('import.submit')->middleware('PermissionCheck:portal_access', 'DemoCheck');
+                    Route::get('/import/sample', 'downloadReelSample')->name('import.sample')->middleware('PermissionCheck:portal_access');
                     Route::get('/{id}/setup',    'openReelSetup')->name('setup')->middleware('PermissionCheck:portal_access');
                     Route::get('/edit/{id}',     'editReel')->name('edit')->middleware('PermissionCheck:portal_access');
                     Route::put('/update/{id}',   'updateReel')->name('update')->middleware('PermissionCheck:portal_access', 'DemoCheck');

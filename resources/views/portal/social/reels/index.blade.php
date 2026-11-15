@@ -21,6 +21,11 @@
         <div class="col-12 p-0">
             <form action="{{ route('portal-social-reels.index') }}" method="get">
                 <div class="card ot-card bn-reels-filters mb-24 d-flex flex-row align-items-center gap-3 flex-wrap" style="padding:1rem 1.25rem">
+                    @if ($data['canManage'])
+                        <a href="{{ route('portal-social-reels.import') }}" class="btn btn-sm ot-btn-primary ms-auto order-last">
+                            <i class="fa-solid fa-file-arrow-up"></i> Bulk Import
+                        </a>
+                    @endif
                     <select name="status" class="nice-select niceSelect bordered_style">
                         <option value="">All statuses</option>
                         @foreach (['suggested', 'accepted', 'production', 'ready', 'published', 'rejected'] as $s)

@@ -85,6 +85,132 @@ class SocialRepository
         }
     }
 
+    /** One row from the bulk-import sheet -> one suggested reel, same as
+     *  typing it into the Add Reel form - then, if the row says Paid or
+     *  Assign To, straight through assignReel()/bulkMarkReelsPaid() so it
+     *  ends up exactly where doing that by hand on the Reels page would
+     *  have (status, Task Board sync, and staff notification included).
+     *  Never throws - an unmatched Series/staff name just gets noted as a
+     *  warning instead of failing the whole row, since a non-technical
+     *  user retyping a name slightly differently shouldn't lose a row. */
+    public function importReel(array $row, int $userId, bool $canAssign): array
+    {
+        $title = trim((string) ($row['topic'] ?? ''));
+        if ($title === '') {
+            return $this->responseWithError('no Topic given - row skipped', []);
+        }
+
+        $warnings = [];
+
+        $seriesName = trim((string) ($row['series'] ?? ''));
+        $series = null;
+        if ($seriesName !== '') {
+            $series = PortalReelSeries::whereRaw('LOWER(name) = ?', [mb_strtolower($seriesName)])->first();
+            if (!$series) {
+                $warnings[] = "Series \"{$seriesName}\" not found - left blank";
+            }
+        }
+
+        $reel = PortalReel::create([
+            'title'        => $title,
+            'format'       => trim((string) ($row['format'] ?? '')) ?: 'Reel',
+            'category'     => trim((string) ($row['pillar'] ?? '')) ?: null,
+            'series_name'  => $series?->name,
+            'hook'         => trim((string) ($row['hook'] ?? '')) ?: null,
+            'note'         => trim((string) ($row['note'] ?? '')) ?: null,
+            'status'       => PortalReel::SUGGESTED,
+            'suggested_by' => $userId,
+            'created_by'   => $userId,
+        ]);
+
+        $deadline = $this->parseImportDate($row['deadline'] ?? null);
+        $isPaid   = $this->parseImportBool($row['paid'] ?? null);
+
+        if ($isPaid && !$canAssign) {
+            $warnings[] = 'marked Paid, but you don\'t have permission to assign/mark paid tasks here - left as a plain suggestion';
+        } elseif ($isPaid) {
+            $amountRaw = $row['amount'] ?? null;
+            if (!is_numeric($amountRaw)) {
+                $warnings[] = 'marked Paid but Amount was missing/not a number - left as a plain suggestion instead';
+            } else {
+                $visibleNames = array_values(array_filter(array_map('trim', explode(',', (string) ($row['visible_to'] ?? '')))));
+                [$visibleIds, $notFound] = $this->matchStaffNames($visibleNames);
+                foreach ($notFound as $n) {
+                    $warnings[] = "Staff \"{$n}\" (Visible To) not found - ignored";
+                }
+                $this->bulkMarkReelsPaid([$reel->id], (float) $amountRaw, $deadline, $visibleIds, $userId);
+            }
+        } elseif ($canAssign && trim((string) ($row['assign_to'] ?? '')) !== '') {
+            [$ids, $notFound] = $this->matchStaffNames([trim((string) $row['assign_to'])]);
+            foreach ($notFound as $n) {
+                $warnings[] = "Staff \"{$n}\" (Assign To) not found - left unassigned";
+            }
+            if ($ids) {
+                $this->assignReel($reel->id, $ids[0], false, $deadline, $userId);
+            } elseif ($deadline) {
+                $reel->deadline = $deadline;
+                $reel->save();
+            }
+        } elseif ($deadline) {
+            $reel->deadline = $deadline;
+            $reel->save();
+        }
+
+        return $this->responseWithSuccess('Added.', ['id' => $reel->id, 'warnings' => $warnings]);
+    }
+
+    /** Matches each given full name (case-insensitive) against the same
+     *  assignableStaff() list the Reels page's own Assign/Visible-to
+     *  dropdowns use - so a bulk-import row can only land on someone who
+     *  could already be picked by hand. Returns [matchedIds, namesNotFound]. */
+    private function matchStaffNames(array $names): array
+    {
+        $pool     = $this->assignableStaff();
+        $ids      = [];
+        $notFound = [];
+        foreach ($names as $name) {
+            if ($name === '') {
+                continue;
+            }
+            $match = $pool->first(fn ($s) => mb_strtolower(trim($s->first_name . ' ' . $s->last_name)) === mb_strtolower($name));
+            if ($match) {
+                $ids[] = $match->id;
+            } else {
+                $notFound[] = $name;
+            }
+        }
+        return [$ids, $notFound];
+    }
+
+    /** Accepts a real Excel date cell (serial number), a typed date
+     *  string (e.g. "2026-12-01"), or blank - whatever a non-technical
+     *  user's spreadsheet happens to hand back for a "Deadline" cell. */
+    private function parseImportDate($value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+        if (is_numeric($value)) {
+            try {
+                return \PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject((float) $value)->format('Y-m-d');
+            } catch (\Throwable $e) {
+                return null;
+            }
+        }
+        try {
+            return Carbon::parse((string) $value)->format('Y-m-d');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /** "Yes"/"Y"/"True"/"1" (any case) count as yes - anything else,
+     *  including blank, is no. */
+    private function parseImportBool($value): bool
+    {
+        return in_array(mb_strtolower(trim((string) $value)), ['yes', 'y', 'true', '1'], true);
+    }
+
     public function updateReel($request, int $id): array
     {
         $reel = PortalReel::find($id);

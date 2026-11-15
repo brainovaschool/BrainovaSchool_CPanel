@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Portal;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Imports\ReelsImport;
 use App\Models\Portal\PortalReel;
 use App\Models\Portal\PortalResponsibility;
 use App\Models\Portal\PortalSetting;
 use App\Models\Staff\Staff;
 use App\Repositories\Portal\SocialRepository;
+use Maatwebsite\Excel\Facades\Excel;
 
 /** Social board — handoff spec phase 8. "Content" rights (reels, month
  *  plan) and "Audience" rights (metrics) follow whoever currently holds
@@ -229,6 +231,51 @@ class SocialController extends Controller
         $this->requireContentAccess();
         $result = $this->repo->destroyReel((int) $id);
         return redirect()->route('portal-social-reels.index')->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    // ---- Bulk import (Excel) -----------------------------------------
+
+    public function importReelsPage()
+    {
+        $this->requireContentAccess();
+        $data['canAssign'] = $this->canAssignReels();
+        $data['title']     = 'Bulk Import Reels';
+        return view('portal.social.reels.import', compact('data'));
+    }
+
+    public function importReelsSubmit(Request $request)
+    {
+        $this->requireContentAccess();
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls,csv',
+        ]);
+
+        $import = new ReelsImport(Auth::id(), $this->canAssignReels());
+        Excel::import($import, $request->file('file'));
+
+        if (!$import->added) {
+            return back()->with('danger', 'Nothing was added. ' . ($import->skipped[0] ?? 'Check that the Topic column is filled in.'));
+        }
+
+        $notes = array_merge($import->skipped, $import->warnings);
+        $message = count($import->added) . ' reel(s) added.';
+        if ($notes) {
+            $shown = array_slice($notes, 0, 5);
+            $message .= ' Notes: ' . implode('. ', $shown) . (count($notes) > 5 ? ', and ' . (count($notes) - 5) . ' more.' : '.');
+        }
+        // alert-message.blade.php only renders the 'success'/'danger'
+        // flash keys (as a toast) - a partial import with notes still
+        // counts as a success, it just comes with extra detail attached.
+        return redirect()->route('portal-social-reels.index')->with('success', $message);
+    }
+
+    public function downloadReelSample()
+    {
+        $filePath = public_path('reel_bulk_import_sample.csv');
+        if (!file_exists($filePath)) {
+            return back()->with('danger', 'Sample file not found.');
+        }
+        return response()->download($filePath, 'reel_bulk_import_sample.csv');
     }
 
     /** Same gate as the single-reel review() - approve or discard a
