@@ -43,7 +43,7 @@
                 <div class="card-body">
                     <div class="table-responsive">
                     <table class="ot-basic-table ot-table-bg">
-                        <thead class="thead"><tr><th>Title</th><th>Category</th><th>Due</th><th>Amount</th>@if ($data['isManager'])<th>Visible to</th>@endif<th class="action">{{ ___('common.action') }}</th></tr></thead>
+                        <thead class="thead"><tr><th>Title</th><th>Category</th><th>Due</th><th>Amount</th><th>Prompt</th>@if ($data['isManager'])<th>Visible to</th>@endif<th class="action">{{ ___('common.action') }}</th></tr></thead>
                         <tbody class="tbody">
                             @forelse ($data['openTasks'] as $t)
                                 <tr>
@@ -51,6 +51,13 @@
                                     <td>{{ $t->category ?: '—' }}</td>
                                     <td>{{ $t->due_date?->format('d M Y') }}</td>
                                     <td>{{ Setting('currency_symbol') }} {{ number_format($t->amount, 2) }}</td>
+                                    <td>
+                                        @if ($t->prompt_ready)
+                                            <span class="badge-basic-success-text">Ready</span>
+                                        @else
+                                            <span class="badge-basic-warning-text">In process</span>
+                                        @endif
+                                    </td>
                                     @if ($data['isManager'])
                                         <td style="font-size:.85rem">
                                             @if (empty($t->visible_to_role_ids) && empty($t->visible_to_staff_ids))
@@ -69,7 +76,7 @@
                                             @endif
                                         </td>
                                     @endif
-                                    <td class="action"><a href="{{ route('portal-tasks.show', $t->id) }}" class="btn btn-sm ot-btn-primary">{{ $data['isManager'] ? 'Open' : 'View & Claim' }}</a></td>
+                                    <td class="action"><a href="{{ route('portal-tasks.show', $t->id) }}" class="btn btn-sm ot-btn-primary">{{ $data['isManager'] ? 'Open' : ($t->prompt_ready ? 'View & Claim' : 'View') }}</a></td>
                                 </tr>
                             @empty
                                 <tr><td colspan="100%" class="text-center gray-color">{{ ___('common.no_data_available') }}</td></tr>

@@ -30,6 +30,7 @@ class PortalTask extends Model
     protected $casts = [
         'urgent'                => 'boolean',
         'paid'                  => 'boolean',
+        'prompt_ready'          => 'boolean',
         'active_status'         => 'boolean',
         'assigned_date'         => 'date',
         'due_date'              => 'date',

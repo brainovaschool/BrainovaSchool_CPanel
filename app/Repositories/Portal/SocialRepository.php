@@ -35,7 +35,7 @@ class SocialRepository
 
     public function reels(array $filters)
     {
-        return PortalReel::with(['suggestedBy.staff.designation', 'creator', 'assignee', 'seriesModel', 'promptUpload'])
+        return PortalReel::with(['suggestedBy.staff.designation', 'creator', 'assignee', 'seriesModel', 'promptUpload', 'task'])
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
             ->when($filters['format'] ?? null, fn ($q, $v) => $q->where('format', $v))
@@ -138,7 +138,8 @@ class SocialRepository
                 foreach ($notFound as $n) {
                     $warnings[] = "Staff \"{$n}\" (Visible To) not found - ignored";
                 }
-                $this->bulkMarkReelsPaid([$reel->id], (float) $amountRaw, $deadline, $visibleIds, $userId);
+                $promptReady = $this->parseImportBool($row['prompt_ready'] ?? null);
+                $this->bulkMarkReelsPaid([$reel->id], (float) $amountRaw, $deadline, $visibleIds, $userId, $promptReady);
             }
         } elseif ($canAssign && trim((string) ($row['assign_to'] ?? '')) !== '') {
             [$ids, $notFound] = $this->matchStaffNames([trim((string) $row['assign_to'])]);
@@ -551,7 +552,7 @@ class SocialRepository
      *  "Open — Paid Task" on a reel's own Assign card, just over several
      *  at once, with an amount and (optionally) a specific list of staff
      *  it's restricted to instead of open to everyone. */
-    public function bulkMarkReelsPaid(array $ids, float $amount, ?string $deadline, array $visibleToStaffIds, int $assignedByUserId): array
+    public function bulkMarkReelsPaid(array $ids, float $amount, ?string $deadline, array $visibleToStaffIds, int $assignedByUserId, bool $promptReady = true): array
     {
         foreach ($ids as $id) {
             $reel = PortalReel::find((int) $id);
@@ -566,10 +567,27 @@ class SocialRepository
             }
             $reel->save();
 
-            $this->syncReelTask($reel, null, true, $deadline ?: $reel->deadline?->format('Y-m-d'), $assignedByUserId, $amount, $visibleToStaffIds);
+            $this->syncReelTask($reel, null, true, $deadline ?: $reel->deadline?->format('Y-m-d'), $assignedByUserId, $amount, $visibleToStaffIds, $promptReady);
         }
 
         return $this->responseWithSuccess(count($ids) . ' reel(s) marked as paid tasks.', []);
+    }
+
+    /** Flips just prompt_ready on an already-open paid task, leaving its
+     *  amount/visibility/deadline untouched - the one-click "it's ready
+     *  now" action once the prompt/shot list has actually been written,
+     *  separate from the full Mark As Paid form so re-checking it can
+     *  never accidentally wipe the amount already set. */
+    public function setReelPromptReady(int $reelId, bool $promptReady): array
+    {
+        $task = PortalTask::where('reel_id', $reelId)->first();
+        if (!$task || !$task->paid) {
+            return $this->responseWithError('This reel isn\'t a paid task yet.', []);
+        }
+        $task->prompt_ready = $promptReady;
+        $task->save();
+
+        return $this->responseWithSuccess($promptReady ? 'Prompt marked ready - staff can now claim it.' : 'Marked as still in process.', []);
     }
 
     /** Keeps one Team Portal task in step with a reel's assignment -
@@ -577,7 +595,7 @@ class SocialRepository
      *  on every re-assign - so "as soon as the task is assigned the
      *  content creator will see the task in her task list" holds true
      *  the same way it would for any other task. */
-    private function syncReelTask(PortalReel $reel, ?int $staffId, bool $openPaid, ?string $deadline, int $assignedByUserId, ?float $amount = null, array $visibleToStaffIds = []): void
+    private function syncReelTask(PortalReel $reel, ?int $staffId, bool $openPaid, ?string $deadline, int $assignedByUserId, ?float $amount = null, array $visibleToStaffIds = [], ?bool $promptReady = null): void
     {
         $task = PortalTask::where('reel_id', $reel->id)->first();
 
@@ -603,6 +621,9 @@ class SocialRepository
         }
         if ($openPaid && $visibleToStaffIds) {
             $attributes['visible_to_staff_ids'] = $visibleToStaffIds;
+        }
+        if ($openPaid && $promptReady !== null) {
+            $attributes['prompt_ready'] = $promptReady;
         }
 
         if ($task) {

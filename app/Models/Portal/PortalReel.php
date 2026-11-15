@@ -119,6 +119,15 @@ class PortalReel extends Model
         return $this->belongsTo(ReelProject::class, 'reel_project_id');
     }
 
+    /** The Team Portal task kept in sync with this reel's assignment -
+     *  null until it's first assigned or marked paid (see
+     *  SocialRepository::syncReelTask()). Used on the Reels table to show/
+     *  toggle whether an open paid task's prompt is ready to claim. */
+    public function task()
+    {
+        return $this->hasOne(PortalTask::class, 'reel_id');
+    }
+
     /** One human-readable label summarising where this reel actually
      *  stands right now - the table shows this instead of the raw status
      *  enum, since "assigned to X" / "prompt pending approval" etc. carry

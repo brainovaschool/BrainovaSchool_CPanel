@@ -99,6 +99,7 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/{id}/assign',  'assignReel')->name('assign')->middleware('PermissionCheck:social_board_manage,portal_reel_assign', 'DemoCheck');
                     Route::post('/bulk-assign',  'bulkAssignReels')->name('bulk-assign')->middleware('PermissionCheck:social_board_manage,portal_reel_assign', 'DemoCheck');
                     Route::post('/bulk-mark-paid', 'bulkMarkReelsPaid')->name('bulk-mark-paid')->middleware('PermissionCheck:social_board_manage,portal_reel_assign', 'DemoCheck');
+                    Route::post('/{id}/prompt-ready', 'setReelPromptReady')->name('prompt-ready')->middleware('PermissionCheck:social_board_manage,portal_reel_assign', 'DemoCheck');
                     Route::post('/{id}/submit-link', 'submitReelLink')->name('submit-link')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/{id}/approve-stage', 'approveReelStage')->name('approve-stage')->middleware('PermissionCheck:social_board_manage,portal_reel_approve', 'DemoCheck');
                     Route::post('/{id}/schedule', 'scheduleReel')->name('schedule')->middleware('PermissionCheck:social_board_manage,portal_reel_approve', 'DemoCheck');

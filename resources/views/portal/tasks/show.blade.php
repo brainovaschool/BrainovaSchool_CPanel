@@ -217,6 +217,13 @@
                             @endif
                         </div>
                     </div>
+                @elseif ($data['promptNotReady'])
+                    <div class="card ot-card">
+                        <div class="card-header"><h4 class="mb-0">Claim this paid task</h4></div>
+                        <div class="card-body">
+                            <p class="text-secondary mb-0">⏳ The prompt for this one is still being prepared — it'll open up to claim as soon as it's ready.</p>
+                        </div>
+                    </div>
                 @endif
 
                 @if ($data['isAssignee'])

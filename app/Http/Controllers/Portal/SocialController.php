@@ -351,8 +351,21 @@ class SocialController extends Controller
             (float) $request->amount,
             $request->deadline,
             (array) $request->input('visible_to_staff_ids', []),
-            Auth::id()
+            Auth::id(),
+            $request->boolean('prompt_ready')
         );
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
+    }
+
+    /** Same gate as assign()/bulkMarkReelsPaid() - toggling whether an
+     *  already-open paid task can be claimed is still an assignment
+     *  decision. */
+    public function setReelPromptReady(Request $request, $id)
+    {
+        if (!$this->canAssignReels()) {
+            abort(403, 'Only admin/coordinator can do this.');
+        }
+        $result = $this->repo->setReelPromptReady((int) $id, $request->boolean('prompt_ready'));
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 

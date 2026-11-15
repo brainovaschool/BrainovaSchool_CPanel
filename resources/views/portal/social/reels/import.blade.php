@@ -37,6 +37,7 @@
                             <li><strong>Paid</strong> — write <code>Yes</code> to make it a paid, open-to-claim task. Leave blank (or write <code>No</code>) for a plain idea.</li>
                             <li><strong>Amount</strong> — required if Paid is Yes. The payment for that task.</li>
                             <li><strong>Deadline</strong> — optional date, used either way. Type it as <code>2026-12-05</code> (year-month-day) so it can't be misread.</li>
+                            <li><strong>Prompt Ready</strong> — only used when Paid is Yes. Write <code>Yes</code> if the prompt/shot list is already written, so staff can claim it right away. Leave blank (or write <code>No</code>) if it's still being prepared — the task still shows up for staff so they know it's coming, but they can't claim it until you tick "Prompt ready" for it on the Reels page later.</li>
                             <li><strong>Assign To</strong> — optional. A staff name (first + last name, exactly as it appears on the Reels page) to assign it to directly instead of marking it Paid.</li>
                             <li><strong>Visible To</strong> — optional, only used when Paid is Yes. One or more staff names separated by commas, if the paid task should only be open to specific people instead of everyone.</li>
                         </ul>

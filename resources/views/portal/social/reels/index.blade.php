@@ -97,6 +97,10 @@
                                     <option value="{{ $staff->id }}">{{ $staff->first_name }} {{ $staff->last_name }}</option>
                                 @endforeach
                             </select>
+                            <span class="form-check d-flex align-items-center gap-1" style="font-size:.85rem" title="Leave unticked if the prompt/shot list isn't written yet - the task stays visible but can't be claimed until you come back and tick this.">
+                                <input type="checkbox" class="form-check-input" id="bulkPromptReady" name="prompt_ready" value="1">
+                                <label class="form-check-label mb-0" for="bulkPromptReady">Prompt ready</label>
+                            </span>
                             <button type="submit" class="btn btn-sm ot-btn-primary">Mark as paid</button>
                         </form>
                     @endif
@@ -280,7 +284,25 @@
                                                             <input type="hidden" name="ids[]" value="{{ $reel->id }}">
                                                             <input type="number" step="0.01" min="0" name="amount" class="form-control ot-input form-control-sm" placeholder="Amount" required style="width:110px">
                                                             <input type="date" name="deadline" class="form-control ot-input form-control-sm" value="{{ $reel->deadline?->format('Y-m-d') }}" style="width:130px">
+                                                            <label class="d-flex align-items-center gap-1 mb-0" style="font-size:12px">
+                                                                <input type="checkbox" class="form-check-input" name="prompt_ready" value="1">
+                                                                Prompt ready
+                                                            </label>
                                                             <button type="submit" class="btn btn-sm ot-btn-primary">Mark as paid</button>
+                                                        </form>
+                                                    </div>
+                                                </details>
+                                            @else
+                                                @php($reelTask = $reel->task)
+                                                <details class="bn-approve-details mt-1">
+                                                    <summary><span class="{{ $reelTask && $reelTask->prompt_ready ? 'text-success' : 'text-secondary' }}" title="Tick once the prompt/shot list is ready - staff can't claim this until then">{{ $reelTask && $reelTask->prompt_ready ? '✅ Prompt ready' : '⏳ Prompt in process' }}</span></summary>
+                                                    <div class="bn-approve-panel">
+                                                        <form action="{{ route('portal-social-reels.prompt-ready', $reel->id) }}" method="post">
+                                                            @csrf
+                                                            <label class="d-flex align-items-center gap-1 mb-0" style="font-size:13px">
+                                                                <input type="checkbox" class="form-check-input" name="prompt_ready" value="1" {{ $reelTask && $reelTask->prompt_ready ? 'checked' : '' }} onchange="this.form.submit()">
+                                                                Prompt ready — staff can claim
+                                                            </label>
                                                         </form>
                                                     </div>
                                                 </details>

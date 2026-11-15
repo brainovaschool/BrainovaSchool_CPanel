@@ -201,6 +201,9 @@ class TaskRepository
         if (!$task->isVisibleTo($staffId)) {
             return $this->responseWithError('This task isn\'t open to you.', []);
         }
+        if (!$task->prompt_ready) {
+            return $this->responseWithError('The prompt for this task isn\'t ready yet - check back soon.', []);
+        }
 
         $blockers = $this->claimBlockers($staffId);
         if ($blockers->count() >= PortalTask::MAX_OPEN_TASKS_FOR_CLAIM) {

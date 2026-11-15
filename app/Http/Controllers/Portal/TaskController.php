@@ -219,7 +219,12 @@ class TaskController extends Controller
         // person who actually created/assigned this task (or the main
         // admin) can hand it to someone else, not any manager.
         $data['isCreator']  = $isManager && ((int) $task->assigned_by === (int) Auth::id() || (int) Auth::user()->role_id === 1);
-        $data['canClaim']   = $task->paid && $task->status === \App\Models\Portal\PortalTask::OPEN && $staffId !== null && $task->isVisibleTo($staffId);
+        $data['canClaim']   = $task->paid && $task->status === \App\Models\Portal\PortalTask::OPEN && $staffId !== null && $task->isVisibleTo($staffId) && $task->prompt_ready;
+        // Shown instead of the Claim button for an Open task that's
+        // visible to them but not yet claimable purely because its
+        // prompt isn't ready - everything else about $canClaim already
+        // held, prompt_ready is the one thing holding it back.
+        $data['promptNotReady'] = $isOpenForClaim && !$task->prompt_ready;
         $data['claimBlockers'] = $data['canClaim'] ? $this->repo->claimBlockers($staffId) : collect();
         $data['claimBlocked']  = $data['claimBlockers']->count() >= \App\Models\Portal\PortalTask::MAX_OPEN_TASKS_FOR_CLAIM;
         $data['canMarkPaid'] = $isManager && $task->paid && $task->status === \App\Models\Portal\PortalTask::COMPLETED && $task->pay_status === 'due';
