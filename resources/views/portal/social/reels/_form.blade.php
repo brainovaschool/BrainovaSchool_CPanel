@@ -8,7 +8,7 @@
      this reel about", never "where is it in the pipeline". --}}
 
 <div class="row g-3">
-    <div class="col-md-{{ $isManager ? 4 : 6 }}">
+    <div class="col-md-{{ $isManager ? 2 : 6 }}">
         <label class="form-label">Series</label>
         <select name="series_name" id="reelSeriesSelect" class="nice-select niceSelect bordered_style wide">
             <option value="">—</option>
@@ -23,13 +23,13 @@
             <p class="text-secondary mb-0 mt-1">Picking a series fills in its Pillar/Format/Characters for you.</p>
         @endunless
     </div>
-    <div class="col-md-{{ $isManager ? 4 : 6 }}">
+    <div class="col-md-6">
         <label class="form-label">Topic</label>
         <input type="text" name="title" class="form-control ot-input" value="{{ old('title', $reel->title ?? '') }}" required maxlength="150">
     </div>
 
     @if ($isManager)
-        <div class="col-md-4">
+        <div class="col-md-2">
             <label class="form-label">Format</label>
             <select name="format" id="reelFormatSelect" class="nice-select niceSelect bordered_style wide">
                 @foreach ($settings->reel_formats ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_FORMATS as $f)
@@ -37,7 +37,7 @@
                 @endforeach
             </select>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-2">
             <label class="form-label">Pillar</label>
             <select name="category" id="reelPillarSelect" class="nice-select niceSelect bordered_style wide">
                 <option value="">—</option>
@@ -48,13 +48,13 @@
         </div>
     @endif
 
-    <div class="col-md-{{ $isManager ? 4 : 12 }}">
+    <div class="col-md-{{ $isManager ? 8 : 12 }}">
         <label class="form-label">Hook</label>
         <input type="text" name="hook" class="form-control ot-input" value="{{ old('hook', $reel->hook ?? '') }}">
     </div>
 
     @if ($isManager)
-        <div class="col-md-6">
+        <div class="col-md-4">
             <label class="form-label">Note</label>
             <textarea name="note" class="form-control ot-input" rows="2">{{ old('note', $reel->note ?? '') }}</textarea>
         </div>
