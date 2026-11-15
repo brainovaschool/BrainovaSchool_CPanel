@@ -467,6 +467,24 @@
                     if (other) { other.checked = false; }
                 });
 
+                // _form.blade.php has this exact same listener for its own
+                // page (create/the old standalone edit page) - it never
+                // runs here, because the single-reel panel is injected via
+                // innerHTML, and browsers never execute scripts added that
+                // way. Without this, choosing a Prompt file/Cover/etc. in
+                // that panel still attaches the file correctly (the <input>
+                // itself needs no JS), but the "No file chosen" box next to
+                // Browse never updates to say otherwise - easy to mistake
+                // for the upload not having worked at all.
+                document.addEventListener('change', function (e) {
+                    if (!e.target.classList.contains('bn-file-input')) return;
+                    var wrapper = e.target.closest('.ot_fileUploader');
+                    var placeholder = wrapper ? wrapper.querySelector('.bn-file-placeholder') : null;
+                    if (placeholder) {
+                        placeholder.value = e.target.files.length ? e.target.files[0].name : '';
+                    }
+                });
+
                 // Each bulk form starts with no ids[] of its own - the
                 // checked rows are only known at submit time, so they're
                 // added as hidden inputs right before the form actually posts.

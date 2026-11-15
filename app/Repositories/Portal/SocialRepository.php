@@ -35,13 +35,22 @@ class SocialRepository
 
     public function reels(array $filters)
     {
+        // Ordered by the number in each reel's own code (highest at the
+        // top, 1 at the bottom) rather than id - a code is only assigned
+        // when a reel leaves "suggested" (see PortalReel::booted()), not
+        // when it's created, so id order and code-number order drift
+        // apart as reels get approved out of sequence. Digits are pulled
+        // out of the code itself (not a dedicated column) so it works
+        // the same regardless of each series' own prefix letters, and a
+        // reel with no code yet just sorts to the very bottom.
         return PortalReel::with(['suggestedBy.staff.designation', 'creator', 'assignee', 'seriesModel', 'promptUpload', 'task'])
             ->when($filters['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($filters['category'] ?? null, fn ($q, $v) => $q->where('category', $v))
             ->when($filters['format'] ?? null, fn ($q, $v) => $q->where('format', $v))
             ->when($filters['series_name'] ?? null, fn ($q, $v) => $q->where('series_name', $v))
-            ->orderByDesc('id')
-            ->get();
+            ->get()
+            ->sortByDesc(fn (PortalReel $reel) => (int) preg_replace('/\D/', '', (string) $reel->code))
+            ->values();
     }
 
     public function showReel(int $id): ?PortalReel
