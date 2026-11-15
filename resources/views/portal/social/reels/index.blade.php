@@ -123,8 +123,36 @@
                         </form>
                     @endif
                     @if ($data['canManage'])
-                        <a id="bnEditSingleLink" href="#" class="btn btn-sm btn-outline-secondary" hidden>{{ ___('common.edit') }} selected reel</a>
+                        <form id="bulkUpdateFieldsForm" action="{{ route('portal-social-reels.bulk-update-fields') }}" method="post" class="d-flex align-items-center gap-2 flex-wrap">
+                            @csrf
+                            <span class="text-secondary" style="font-size:.85rem">Set for selected —</span>
+                            <select name="series_name" id="bulkFieldsSeries" class="nice-select niceSelect bordered_style" style="min-width:140px">
+                                <option value="">Series: don't change</option>
+                                @foreach ($data['series'] as $s)
+                                    <option value="{{ $s->name }}" data-defaults="{{ json_encode($s->defaults ?: []) }}">{{ $s->name }}</option>
+                                @endforeach
+                            </select>
+                            <select name="format" id="bulkFieldsFormat" class="nice-select niceSelect bordered_style" style="min-width:120px">
+                                <option value="">Format: don't change</option>
+                                @foreach ($data['settings']->reel_formats ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_FORMATS as $f)
+                                    <option value="{{ $f }}">{{ $f }}</option>
+                                @endforeach
+                            </select>
+                            <select name="category" id="bulkFieldsCategory" class="nice-select niceSelect bordered_style" style="min-width:140px">
+                                <option value="">Pillar: don't change</option>
+                                @foreach ($data['settings']->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES as $cat)
+                                    <option value="{{ $cat }}">{{ $cat }}</option>
+                                @endforeach
+                            </select>
+                            <select name="is_document_track" class="nice-select niceSelect bordered_style" style="min-width:170px">
+                                <option value="">Document track: don't change</option>
+                                <option value="1">Mark as document track</option>
+                                <option value="0">Unmark document track</option>
+                            </select>
+                            <button type="submit" class="btn btn-sm ot-btn-primary">Apply</button>
+                        </form>
                     @endif
+                    <div id="bnSingleReelPanel" class="mt-2" hidden></div>
                 </div>
             </div>
         @endif
@@ -176,7 +204,7 @@
                                 <tr class="{{ $reel->rowStateClass() }}">
                                     @if ($showBulk)
                                         <td><input type="checkbox" class="bn-reel-check" value="{{ $reel->id }}"
-                                            data-edit-url="{{ route('portal-social-reels.edit', $reel->id) }}"
+                                            data-edit-url="{{ route('portal-social-reels.edit-panel', $reel->id) }}"
                                             data-prompt-url="{{ route('portal-social-reels.prompt-ready', $reel->id) }}"
                                             data-open-paid="{{ $reel->is_open_paid ? '1' : '0' }}"
                                             data-characters="{{ implode(', ', $charNames) }}"></td>
@@ -314,8 +342,7 @@
            unstyled [hidden] still loses to). */
         #bulkActionsBar[hidden],
         #bnPromptStatusForm[hidden],
-        #bulkMarkPaidForm[hidden],
-        #bnEditSingleLink[hidden] { display: none !important; }
+        #bulkMarkPaidForm[hidden] { display: none !important; }
     </style>
     @endpush
 
@@ -326,27 +353,53 @@
                 var selectAll = document.getElementById('bnSelectAll');
                 var bar = document.getElementById('bulkActionsBar');
                 var countEl = document.getElementById('bulkSelectedCount');
-                var editLink = document.getElementById('bnEditSingleLink');
+                var singleReelPanel = document.getElementById('bnSingleReelPanel');
                 var promptForm = document.getElementById('bnPromptStatusForm');
                 var markPaidForm = document.getElementById('bulkMarkPaidForm');
                 var charactersDisplay = document.getElementById('bnCharactersDisplay');
+                var panelLoadedForId = null;
 
                 function checks() {
                     return document.querySelectorAll('.bn-reel-check');
                 }
 
-                // Editing a reel's own fields, and toggling the prompt
-                // status of one that's already paid, are inherently
-                // single-reel actions - they only ever show up once
-                // exactly one row is checked, using that row's own
-                // data-edit-url/data-prompt-url/data-open-paid.
+                // The full single-reel editor (Topic/Hook/Format/Pillar/
+                // Note/Document track/Prompt file, Approve checkboxes,
+                // Reel Setup) - fetched fresh and injected in place of
+                // the old standalone Edit page, only while exactly one
+                // row is checked. Its own forms post to the same routes
+                // the old Edit page used and land back on this same
+                // index page, so no further JS wiring is needed once
+                // it's in the DOM.
+                function updateEditPanel(single) {
+                    if (!singleReelPanel) return;
+                    if (!single) {
+                        panelLoadedForId = null;
+                        singleReelPanel.hidden = true;
+                        singleReelPanel.innerHTML = '';
+                        return;
+                    }
+                    if (panelLoadedForId === single.value) {
+                        singleReelPanel.hidden = false;
+                        return;
+                    }
+                    fetch(single.dataset.editUrl)
+                        .then(function (r) { return r.text(); })
+                        .then(function (html) {
+                            singleReelPanel.innerHTML = html;
+                            singleReelPanel.hidden = false;
+                            panelLoadedForId = single.value;
+                        });
+                }
+
+                // Toggling the prompt status of a reel that's already
+                // paid is also an inherently single-reel action - it
+                // only ever shows up once exactly one row is checked,
+                // using that row's own data-prompt-url/data-open-paid.
                 function updateSingleSelection(checked) {
                     var single = checked.length === 1 ? checked[0] : null;
 
-                    if (editLink) {
-                        editLink.hidden = !single;
-                        if (single) { editLink.href = single.dataset.editUrl; }
-                    }
+                    updateEditPanel(single);
 
                     var isOpenPaid = single && single.dataset.openPaid === '1';
                     if (promptForm) {
@@ -407,7 +460,7 @@
                 // Each bulk form starts with no ids[] of its own - the
                 // checked rows are only known at submit time, so they're
                 // added as hidden inputs right before the form actually posts.
-                ['bulkApproveForm', 'bulkDiscardForm', 'bulkAssignForm', 'bulkMarkPaidForm'].forEach(function (formId) {
+                ['bulkApproveForm', 'bulkDiscardForm', 'bulkAssignForm', 'bulkMarkPaidForm', 'bulkUpdateFieldsForm'].forEach(function (formId) {
                     var form = document.getElementById(formId);
                     if (!form) return;
                     form.addEventListener('submit', function (e) {
@@ -427,6 +480,31 @@
                         });
                     });
                 });
+
+                // Picking a Series in "Set for selected" previews that
+                // series' own Format/Pillar defaults into the two selects
+                // next to it, purely as a convenience - the backend
+                // applies the same defaults itself (and only to whichever
+                // selected reels are actually blank on that field), so
+                // leaving these two as "don't change" still works.
+                var bulkFieldsSeries = document.getElementById('bulkFieldsSeries');
+                if (bulkFieldsSeries && window.jQuery) {
+                    jQuery(bulkFieldsSeries).on('change', function () {
+                        var opt = bulkFieldsSeries.options[bulkFieldsSeries.selectedIndex];
+                        var defaults = {};
+                        try { defaults = JSON.parse(opt.getAttribute('data-defaults') || '{}'); } catch (e) { /* ignore */ }
+                        var formatSelect = document.getElementById('bulkFieldsFormat');
+                        var categorySelect = document.getElementById('bulkFieldsCategory');
+                        if (formatSelect && !formatSelect.value && defaults.format) {
+                            formatSelect.value = defaults.format;
+                            jQuery(formatSelect).niceSelect('update');
+                        }
+                        if (categorySelect && !categorySelect.value && defaults.category) {
+                            categorySelect.value = defaults.category;
+                            jQuery(categorySelect).niceSelect('update');
+                        }
+                    });
+                }
             })();
         </script>
         @endpush

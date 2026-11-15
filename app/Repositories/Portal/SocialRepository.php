@@ -536,6 +536,51 @@ class SocialRepository
         return $this->responseWithSuccess('Assigned.', []);
     }
 
+    /** Applies Series/Format/Pillar/Document-track to a whole batch of
+     *  reels at once - the "Set for selected" bar on the Reels table.
+     *  An explicitly-chosen Format/Pillar always overwrites; a chosen
+     *  Series' own defaults only fill in a field a given reel currently
+     *  has blank, same non-destructive rule fillBlankFieldsFromSeries()
+     *  already applies on a single save - so setting Series across a
+     *  batch where some reels already have their own Format never stomps
+     *  on it. $fields: ['series_name' => ?string, 'format' => ?string,
+     *  'category' => ?string, 'is_document_track' => ?string ('', '0', '1')]
+     *  - an empty string/missing key means "don't change" throughout. */
+    public function bulkUpdateReelFields(array $ids, array $fields): array
+    {
+        $seriesName     = trim((string) ($fields['series_name'] ?? ''));
+        $format         = trim((string) ($fields['format'] ?? ''));
+        $category       = trim((string) ($fields['category'] ?? ''));
+        $documentTrack  = $fields['is_document_track'] ?? '';
+        $seriesDefaults = $seriesName !== '' ? $this->resolveSeriesDefaults($seriesName) : [];
+
+        foreach ($ids as $id) {
+            $reel = PortalReel::find((int) $id);
+            if (!$reel) {
+                continue;
+            }
+            if ($seriesName !== '') {
+                $reel->series_name = $seriesName;
+            }
+            if ($format !== '') {
+                $reel->format = $format;
+            } elseif (empty($reel->format) && !empty($seriesDefaults['format'])) {
+                $reel->format = $seriesDefaults['format'];
+            }
+            if ($category !== '') {
+                $reel->category = $category;
+            } elseif (empty($reel->category) && !empty($seriesDefaults['category'])) {
+                $reel->category = $seriesDefaults['category'];
+            }
+            if ($documentTrack !== '') {
+                $reel->is_document_track = (bool) $documentTrack;
+            }
+            $reel->save();
+        }
+
+        return $this->responseWithSuccess(count($ids) . ' reel(s) updated.', []);
+    }
+
     /** Bulk version of assignReel() - one staff member (never open-paid)
      *  and one deadline applied to a whole batch of ticked ids, each
      *  still going through the same task-sync/notification as normal. */

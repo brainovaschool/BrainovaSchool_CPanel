@@ -92,7 +92,8 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::post('/import',       'importReelsSubmit')->name('import.submit')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::get('/import/sample', 'downloadReelSample')->name('import.sample')->middleware('PermissionCheck:portal_access');
                     Route::get('/{id}/setup',    'openReelSetup')->name('setup')->middleware('PermissionCheck:portal_access');
-                    Route::get('/edit/{id}',     'editReel')->name('edit')->middleware('PermissionCheck:portal_access');
+                    Route::get('/{id}/edit-panel', 'editReelPanel')->name('edit-panel')->middleware('PermissionCheck:portal_access');
+                    Route::post('/bulk-update-fields', 'bulkUpdateReelFields')->name('bulk-update-fields')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::put('/update/{id}',   'updateReel')->name('update')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/{id}/review',  'reviewReel')->name('review')->middleware('PermissionCheck:portal_access', 'DemoCheck');
                     Route::post('/bulk-review',  'bulkReviewReels')->name('bulk-review')->middleware('PermissionCheck:portal_access', 'DemoCheck');

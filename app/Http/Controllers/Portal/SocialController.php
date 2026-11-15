@@ -184,12 +184,16 @@ class SocialController extends Controller
         return redirect()->route('portal-social-reel-studio.show', $project->id);
     }
 
-    public function editReel($id)
+    /** The single-reel panel that expands in the Reels table's top bar
+     *  when exactly one row is checked - a bare fragment (no master
+     *  layout) fetched and injected client-side, replacing what used to
+     *  be its own Edit Reel/Topic page. */
+    public function editReelPanel($id)
     {
         $this->requireContentAccess();
         $reel = $this->repo->showReel((int) $id);
         if (!$reel) {
-            return redirect()->route('portal-social-reels.index')->with('danger', ___('alert.not_found'));
+            abort(404);
         }
 
         $data['reel']         = $reel;
@@ -198,8 +202,25 @@ class SocialController extends Controller
         $data['settings']     = PortalSetting::current();
         $data['customFields'] = $this->repo->reelCustomFields();
         $data['series']       = $this->repo->reelSeries();
-        $data['title']        = 'Edit Reel/Topic';
-        return view('portal.social.reels.edit', compact('data'));
+        return view('portal.social.reels._edit-panel', compact('data'));
+    }
+
+    /** Same gate the Edit page used to have - Series/Format/Pillar/
+     *  Document-track across a whole batch of ticked reels at once. */
+    public function bulkUpdateReelFields(Request $request)
+    {
+        $this->requireContentAccess();
+        $request->validate([
+            'ids'                => 'required|array|min:1',
+            'ids.*'              => 'integer|exists:portal_reels,id',
+            'series_name'        => 'nullable|string|max:150',
+            'format'             => 'nullable|string|max:20',
+            'category'           => 'nullable|string|max:100',
+            'is_document_track'  => 'nullable|in:0,1',
+        ]);
+
+        $result = $this->repo->bulkUpdateReelFields($request->ids, $request->only(['series_name', 'format', 'category', 'is_document_track']));
+        return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
     public function updateReel(Request $request, $id)
