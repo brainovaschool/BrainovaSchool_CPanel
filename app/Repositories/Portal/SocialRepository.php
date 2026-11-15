@@ -965,12 +965,23 @@ class SocialRepository
         return $this->responseWithSuccess(count($ids) . ' reel(s) ' . ($status === PortalReel::REJECTED ? 'discarded.' : 'approved.'), []);
     }
 
+    /** Deleting a reel used to leave its own synced PortalTask behind -
+     *  still Open, still showing up for staff to claim, with no reel left
+     *  to actually do. Same payout-protects-the-record guard
+     *  TaskRepository::bulkDelete() already applies when a task is
+     *  deleted directly: a task that's already been paid is never
+     *  deleted along with its reel (that audit trail stays), so the
+     *  whole reel delete is refused instead of silently orphaning it. */
     public function destroyReel(int $id): array
     {
-        $reel = PortalReel::find($id);
+        $reel = PortalReel::with('task.payout')->find($id);
         if (!$reel) {
             return $this->responseWithError(___('alert.not_found'), []);
         }
+        if ($reel->task && $reel->task->payout) {
+            return $this->responseWithError('That reel\'s task has already been paid - its payment record would be orphaned, so it can\'t be deleted this way.', []);
+        }
+        $reel->task?->delete();
         $reel->delete();
         return $this->responseWithSuccess('Removed.', []);
     }
