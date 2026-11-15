@@ -59,7 +59,7 @@
 
         @if ($showBulk)
             <div class="col-12 p-0">
-                <div class="card ot-card bn-reels-filters mb-24 d-flex flex-column gap-2" style="padding:1rem 1.25rem" id="bulkActionsBar" hidden>
+                <div class="card ot-card bn-reels-filters mb-24 d-flex flex-row flex-wrap align-items-center gap-2" style="padding:1rem 1.25rem" id="bulkActionsBar" hidden>
                     <strong><span id="bulkSelectedCount">0</span> selected</strong>
                     <div id="bnCharactersDisplay" class="text-secondary" style="font-size:.85rem" hidden></div>
                     @if ($data['canApprove'])
@@ -79,7 +79,7 @@
                     @if ($data['canAssign'])
                         <form id="bulkAssignForm" action="{{ route('portal-social-reels.bulk-assign') }}" method="post" class="d-flex align-items-center gap-2 flex-wrap">
                             @csrf
-                            <select name="assigned_to" class="form-control ot-input" required style="min-width:160px">
+                            <select name="assigned_to" class="form-control ot-input" required style="width:220px">
                                 <option value="">Assign to…</option>
                                 @foreach ($data['contentTeam'] as $staff)
                                     <option value="{{ $staff->id }}">{{ $staff->first_name }} {{ $staff->last_name }}</option>
@@ -126,28 +126,32 @@
                         <form id="bulkUpdateFieldsForm" action="{{ route('portal-social-reels.bulk-update-fields') }}" method="post" class="d-flex align-items-center gap-2 flex-wrap">
                             @csrf
                             <span class="text-secondary" style="font-size:.85rem">Set for selected —</span>
-                            <select name="series_name" id="bulkFieldsSeries" class="nice-select niceSelect bordered_style" style="min-width:140px">
-                                <option value="">Series: don't change</option>
+                            {{-- Plain selects, not nice-select - nice-select's init silently
+                                 fails to render a replacement for some of these (verified live;
+                                 it leaves the original <select> as display:none with nothing in
+                                 its place), so a native select is what's actually reliable here. --}}
+                            <select name="series_name" id="bulkFieldsSeries" class="form-control ot-input" title="Series" style="width:120px">
+                                <option value="">Series…</option>
                                 @foreach ($data['series'] as $s)
                                     <option value="{{ $s->name }}" data-defaults="{{ json_encode($s->defaults ?: []) }}">{{ $s->name }}</option>
                                 @endforeach
                             </select>
-                            <select name="format" id="bulkFieldsFormat" class="nice-select niceSelect bordered_style" style="min-width:120px">
-                                <option value="">Format: don't change</option>
+                            <select name="format" id="bulkFieldsFormat" class="form-control ot-input" title="Format" style="width:120px">
+                                <option value="">Format…</option>
                                 @foreach ($data['settings']->reel_formats ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_FORMATS as $f)
                                     <option value="{{ $f }}">{{ $f }}</option>
                                 @endforeach
                             </select>
-                            <select name="category" id="bulkFieldsCategory" class="nice-select niceSelect bordered_style" style="min-width:140px">
-                                <option value="">Pillar: don't change</option>
+                            <select name="category" id="bulkFieldsCategory" class="form-control ot-input" title="Pillar" style="width:125px">
+                                <option value="">Pillar…</option>
                                 @foreach ($data['settings']->reel_categories ?: \App\Models\Portal\PortalSetting::DEFAULT_REEL_CATEGORIES as $cat)
                                     <option value="{{ $cat }}">{{ $cat }}</option>
                                 @endforeach
                             </select>
-                            <select name="is_document_track" class="nice-select niceSelect bordered_style" style="min-width:170px">
-                                <option value="">Document track: don't change</option>
-                                <option value="1">Mark as document track</option>
-                                <option value="0">Unmark document track</option>
+                            <select name="is_document_track" class="form-control ot-input" title="Document track" style="width:160px">
+                                <option value="">Doc. track…</option>
+                                <option value="1">Mark as doc. track</option>
+                                <option value="0">Unmark doc. track</option>
                             </select>
                             <button type="submit" class="btn btn-sm ot-btn-primary">Apply</button>
                         </form>
@@ -488,8 +492,8 @@
                 // selected reels are actually blank on that field), so
                 // leaving these two as "don't change" still works.
                 var bulkFieldsSeries = document.getElementById('bulkFieldsSeries');
-                if (bulkFieldsSeries && window.jQuery) {
-                    jQuery(bulkFieldsSeries).on('change', function () {
+                if (bulkFieldsSeries) {
+                    bulkFieldsSeries.addEventListener('change', function () {
                         var opt = bulkFieldsSeries.options[bulkFieldsSeries.selectedIndex];
                         var defaults = {};
                         try { defaults = JSON.parse(opt.getAttribute('data-defaults') || '{}'); } catch (e) { /* ignore */ }
@@ -497,11 +501,9 @@
                         var categorySelect = document.getElementById('bulkFieldsCategory');
                         if (formatSelect && !formatSelect.value && defaults.format) {
                             formatSelect.value = defaults.format;
-                            jQuery(formatSelect).niceSelect('update');
                         }
                         if (categorySelect && !categorySelect.value && defaults.category) {
                             categorySelect.value = defaults.category;
-                            jQuery(categorySelect).niceSelect('update');
                         }
                     });
                 }
