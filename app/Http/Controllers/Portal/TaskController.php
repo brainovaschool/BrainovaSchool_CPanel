@@ -302,7 +302,7 @@ class TaskController extends Controller
         return back()->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
-    public function paidTasks()
+    public function paidTasks(Request $request)
     {
         $isManager = hasPermission('portal_manage');
         $staffId   = $this->actingStaffId();
@@ -312,7 +312,24 @@ class TaskController extends Controller
         // Managers see every open paid task regardless of who it's
         // restricted to, for oversight - an employee only sees the ones
         // actually open to them.
-        $data['openTasks'] = $isManager ? $openTasks : $openTasks->filter(fn ($t) => $t->isVisibleTo($staffId))->values();
+        $openTasks = $isManager ? $openTasks : $openTasks->filter(fn ($t) => $t->isVisibleTo($staffId))->values();
+
+        // Series/Prompt-status filters for this Open table only - the
+        // Series options are whichever series actually have an open task
+        // right now, not every series that's ever existed, so the
+        // dropdown never offers a choice that comes back empty.
+        $data['openSeriesOptions'] = $openTasks->map(fn ($t) => optional($t->reel)->series_name)->filter()->unique()->sort()->values();
+        $data['filters'] = $request->only(['series_name', 'prompt_status']);
+        if ($request->filled('series_name')) {
+            $openTasks = $openTasks->filter(fn ($t) => optional($t->reel)->series_name === $request->series_name)->values();
+        }
+        if ($request->filled('prompt_status')) {
+            $openTasks = $openTasks->filter(function ($t) use ($request) {
+                $status = $t->no_prompt ? 'no_prompt' : ($t->prompt_ready ? 'ready' : 'in_process');
+                return $status === $request->prompt_status;
+            })->values();
+        }
+        $data['openTasks'] = $openTasks;
 
         if ($isManager) {
             $data['claimedTasks']   = \App\Models\Portal\PortalTask::where('paid', true)

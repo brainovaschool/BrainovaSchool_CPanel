@@ -37,6 +37,27 @@
             @endif
         @endunless
 
+        <form action="{{ route('portal-paid-tasks.index') }}" method="get">
+            <div class="card ot-card bn-reels-filters mb-24 d-flex flex-row align-items-center gap-3 flex-wrap" style="padding:1rem 1.25rem">
+                <select name="series_name" class="nice-select niceSelect bordered_style">
+                    <option value="">All series</option>
+                    @foreach ($data['openSeriesOptions'] as $s)
+                        <option value="{{ $s }}" {{ ($data['filters']['series_name'] ?? '') === $s ? 'selected' : '' }}>{{ $s }}</option>
+                    @endforeach
+                </select>
+                <select name="prompt_status" class="nice-select niceSelect bordered_style">
+                    <option value="">Prompt — any status</option>
+                    <option value="ready" {{ ($data['filters']['prompt_status'] ?? '') === 'ready' ? 'selected' : '' }}>Ready</option>
+                    <option value="no_prompt" {{ ($data['filters']['prompt_status'] ?? '') === 'no_prompt' ? 'selected' : '' }}>No prompt</option>
+                    <option value="in_process" {{ ($data['filters']['prompt_status'] ?? '') === 'in_process' ? 'selected' : '' }}>In process</option>
+                </select>
+                <button class="btn ot-btn-primary" type="submit">{{ ___('common.Search') }}</button>
+                @if (($data['filters']['series_name'] ?? '') !== '' || ($data['filters']['prompt_status'] ?? '') !== '')
+                    <a href="{{ route('portal-paid-tasks.index') }}" class="btn btn-outline-secondary">Clear</a>
+                @endif
+            </div>
+        </form>
+
         <div class="table-content table-basic mb-24">
             <div class="card">
                 <div class="card-header"><h4 class="mb-0">Open — available to claim</h4></div>
