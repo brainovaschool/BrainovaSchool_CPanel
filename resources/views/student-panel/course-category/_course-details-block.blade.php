@@ -245,12 +245,14 @@
                                         @foreach ($pc->activities as $a)
                                             <li>
                                                 <strong>{{ $a->title }}.</strong> {{ $a->description }}
-                                                @if ($a->storage_key || $a->link_url)
-                                                    <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
-                                                @endif
-                                                @if ($a->video_url)
-                                                    <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
-                                                @endif
+                                                <div class="cc-cd-activity-links">
+                                                    @if ($a->storage_key || $a->link_url)
+                                                        <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
+                                                    @endif
+                                                    @if ($a->video_url)
+                                                        <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
+                                                    @endif
+                                                </div>
                                             </li>
                                         @endforeach
                                     </ul>
@@ -385,6 +387,13 @@
         .cc-cd-res-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; }
         .cc-cd-out-list li { font-size: 1rem; color: #475569; line-height: 1.5; }
         .cc-cd-ico { flex-shrink: 0; }
+        .cc-cd-desc a, .cc-cd-res-list a, .cc-cd-out-list a, .cc-cd-activity-links a {
+            color: #0097b2; font-weight: 700; text-decoration: none;
+        }
+        .cc-cd-desc a:hover, .cc-cd-res-list a:hover, .cc-cd-out-list a:hover, .cc-cd-activity-links a:hover {
+            text-decoration: underline;
+        }
+        .cc-cd-activity-links { display: flex; gap: 1rem; margin-top: 0.25rem; }
         .cc-cd-score { font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0.5rem 0 0; }
         .cc-cd-submit-form { margin-top: 0.5rem; background: #f8f9fb; border: 1px dashed var(--ot-border-basic-table, #e4e7ec); border-radius: 10px; padding: 0.75rem; }
         .cc-cd-submit-label { font-size: 0.92rem; font-weight: 600; color: #475569; margin: 0 0 0.5rem; }

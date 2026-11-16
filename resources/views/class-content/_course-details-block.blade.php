@@ -433,12 +433,14 @@
                                         @foreach ($pc->activities as $a)
                                             <li>
                                                 <strong>{{ $a->title }}.</strong> {{ $a->description }}
-                                                @if ($a->storage_key || $a->link_url)
-                                                    <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
-                                                @endif
-                                                @if ($a->video_url)
-                                                    <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
-                                                @endif
+                                                <div class="cc-cd-activity-links">
+                                                    @if ($a->storage_key || $a->link_url)
+                                                        <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
+                                                    @endif
+                                                    @if ($a->video_url)
+                                                        <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
+                                                    @endif
+                                                </div>
                                             </li>
                                         @endforeach
                                     </ul>
@@ -570,12 +572,14 @@
                                                 @foreach ($lesson->activities as $a)
                                                     <li>
                                                         <strong>{{ $a->title }}.</strong> {{ $a->description }}
-                                                        @if ($a->storage_key || $a->link_url)
-                                                            <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
-                                                        @endif
-                                                        @if ($a->video_url)
-                                                            <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
-                                                        @endif
+                                                        <div class="cc-cd-activity-links">
+                                                            @if ($a->storage_key || $a->link_url)
+                                                                <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
+                                                            @endif
+                                                            @if ($a->video_url)
+                                                                <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
+                                                            @endif
+                                                        </div>
                                                     </li>
                                                 @endforeach
                                             </ul>
@@ -797,6 +801,17 @@
         .cc-cd-res-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; }
         .cc-cd-out-list li { font-size: 1rem; color: #475569; line-height: 1.5; }
         .cc-cd-ico { flex-shrink: 0; }
+        {{-- "Open quiz/project/.../activity →" etc. look like plain text
+             by default (an <a> inside a colored-text parent doesn't
+             automatically read as a link) - make them unmistakably
+             clickable everywhere they appear. --}}
+        .cc-cd-desc a, .cc-cd-res-list a, .cc-cd-out-list a, .cc-cd-activity-links a {
+            color: #0097b2; font-weight: 700; text-decoration: none;
+        }
+        .cc-cd-desc a:hover, .cc-cd-res-list a:hover, .cc-cd-out-list a:hover, .cc-cd-activity-links a:hover {
+            text-decoration: underline;
+        }
+        .cc-cd-activity-links { display: flex; gap: 1rem; margin-top: 0.25rem; }
         .cc-cd-pill-row { display: flex; align-items: center; gap: 0.5rem; }
         .cc-cd-hwtitle { font-size: 1rem; font-weight: 600; color: #0f172a; }
         .cc-cd-hw-wrap { display: flex; flex-direction: column; gap: 0.5rem; background: #f8f9fb; border: 1px solid var(--ot-border-basic-table, #e4e7ec); border-radius: 12px; padding: 0.55rem; }

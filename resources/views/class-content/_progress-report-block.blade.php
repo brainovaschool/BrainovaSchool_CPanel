@@ -146,8 +146,7 @@
                                     <tr>
                                         <td>
                                             <a href="{{ route('program-class.grade.edit', $row['class']->program_id) }}" class="cc-pr-lesson-link" title="{{ $row['class']->title }}">
-                                                <strong>{{ $row['label'] }}</strong>
-                                                <span>{{ \Illuminate\Support\Str::limit($row['class']->title, 32) }}</span>
+                                                {{ $row['label'] }}
                                             </a>
                                         </td>
                                         <td>{{ implode(', ', array_map(fn ($i) => $i['title'], $row['items'])) }}</td>
@@ -346,10 +345,12 @@
         .cc-pr-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .cc-pr-table th { text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #8b93a3; padding: 0.6rem; border-bottom: 2px solid var(--ot-border-basic-table, #e4e7ec); }
         .cc-pr-table td { padding: 0.65rem 0.6rem; border-bottom: 1px solid #e4e7ec; color: #334155; }
-        .cc-pr-lesson-link { display: flex; align-items: baseline; gap: 0.45rem; text-decoration: none; }
-        .cc-pr-lesson-link strong { font-size: 0.78rem; font-weight: 800; color: #0097b2; background: #e1f6fa; border-radius: 999px; padding: 0.05rem 0.5rem; flex-shrink: 0; }
-        .cc-pr-lesson-link span { color: #334155; }
-        .cc-pr-lesson-link:hover span { text-decoration: underline; }
+        .cc-pr-lesson-link {
+            display: inline-block; font-size: 0.78rem; font-weight: 800;
+            color: #0097b2; background: #e1f6fa; border-radius: 999px;
+            padding: 0.15rem 0.65rem; text-decoration: none;
+        }
+        .cc-pr-lesson-link:hover { background: #cdeef5; text-decoration: none; }
         .cc-pr-table tbody tr:last-child td { border-bottom: none; }
         .cc-pr-table tbody tr:nth-child(even) { background: #f8f9fb; }
         .cc-pr-pill { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px; }
