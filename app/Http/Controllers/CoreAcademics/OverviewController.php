@@ -23,11 +23,37 @@ class OverviewController extends Controller
         $this->markRepo     = $markRepo;
     }
 
+    private function isAdmin(): bool
+    {
+        $user = Auth::user();
+        return $user && (int) $user->role_id === 1;
+    }
+
+    /** Was Super Admin only - the sidebar now also opens this section for
+     *  a teacher actually assigned (Program::teachers()) to a program
+     *  under Academics Boost (see teachesInCategory()), so this gate has
+     *  to allow the same thing, or that teacher hits the tab and then a
+     *  403 the moment they click into it. */
     private function guard(): void
     {
-        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+        if (!Auth::check() || (!$this->isAdmin() && !teachesInCategory('Academics Boost'))) {
             abort(403, ___('alert.You are not authorized to access this page'));
         }
+    }
+
+    /** null = no restriction (admin sees every active program in the
+     *  category). Otherwise just the ids of programs this teacher
+     *  personally teaches (Program edit form's "Teachers" field) - same
+     *  scoping Beyond Academics already applies for its own teachers, so
+     *  an assigned teacher here only ever sees their own program(s), not
+     *  every other teacher's students/progress too. */
+    private function scopedProgramIds(): ?array
+    {
+        if ($this->isAdmin()) {
+            return null;
+        }
+        $staff = Auth::user()->staff;
+        return $staff ? $staff->programs()->pluck('programs.id')->all() : [];
     }
 
     /** Same category record the public Our Programs page reads for its
@@ -41,8 +67,10 @@ class OverviewController extends Controller
 
     private function courseOptions(?ProgramCategory $category)
     {
+        $scopedIds = $this->scopedProgramIds();
         return Program::active()
             ->when($category, fn ($q) => $q->where('program_category_id', $category->id))
+            ->when($scopedIds !== null, fn ($q) => $q->whereIn('id', $scopedIds))
             ->orderBy('sort_order')
             ->get(['id', 'title']);
     }
@@ -54,9 +82,12 @@ class OverviewController extends Controller
         $data['category'] = $category;
 
         /** Scoped to the "Academics Boost" category - the academic subjects
-         *  themselves, not the Beyond Academics skills catalogue. */
+         *  themselves, not the Beyond Academics skills catalogue - and, for
+         *  a teacher, to just their own program(s) within it. */
+        $scopedIds = $this->scopedProgramIds();
         $data['featured'] = Program::active()
             ->when($category, fn ($q) => $q->where('program_category_id', $category->id))
+            ->when($scopedIds !== null, fn ($q) => $q->whereIn('id', $scopedIds))
             ->orderBy('sort_order')
             ->with('upload')
             ->take(8)
