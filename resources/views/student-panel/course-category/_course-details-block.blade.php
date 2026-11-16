@@ -153,7 +153,14 @@
                                     @if ($pc->{$sp_type . '_description'})
                                         <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->{$sp_type . '_description'} }}</p>
                                     @endif
-                                    @if ($pc->{$sp_type . '_link_url'})
+                                    @if ($sp_isCsvQuiz)
+                                        {{-- quiz_link_url already points at the real take-quiz page here -
+                                             a generic uploaded file never takes over this specific link. --}}
+                                        <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->quiz_link_url }}" target="_blank" rel="noopener">{{ $sp_meta['open_label'] }} &rarr;</a></p>
+                                    @elseif ($pc->hasFile($sp_type))
+                                        {{-- Same "file wins over a plain link" rule Materials already uses. --}}
+                                        <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->fileDownloadUrl($sp_type) }}" target="_blank" rel="noopener">{{ $sp_meta['open_label'] }} &rarr;</a></p>
+                                    @elseif ($pc->{$sp_type . '_link_url'})
                                         <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->{$sp_type . '_link_url'} }}" target="_blank" rel="noopener">{{ $sp_meta['open_label'] }} &rarr;</a></p>
                                     @endif
 
@@ -211,8 +218,8 @@
                                     @foreach ($pc->activities as $a)
                                         <li>
                                             <strong>{{ $a->title }}.</strong> {{ $a->description }}
-                                            @if ($a->link_url)
-                                                <a href="{{ $a->link_url }}" target="_blank" rel="noopener">Open &rarr;</a>
+                                            @if ($a->storage_key || $a->link_url)
+                                                <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
                                             @endif
                                             @if ($a->video_url)
                                                 <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>

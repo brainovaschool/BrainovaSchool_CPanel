@@ -16,8 +16,10 @@
             'description' => old("activities.description.$i"),
             'video_url' => old("activities.video_url.$i"),
             'link_url' => old("activities.link_url.$i"),
+            'storage_key' => old("activities.existing_storage_key.$i"),
+            'original_filename' => old("activities.existing_original_filename.$i"),
         ])
-        : ($l ? $l->activities->map(fn ($a) => ['title' => $a->title, 'description' => $a->description, 'video_url' => $a->video_url, 'link_url' => $a->link_url]) : collect());
+        : ($l ? $l->activities->map(fn ($a) => ['title' => $a->title, 'description' => $a->description, 'video_url' => $a->video_url, 'link_url' => $a->link_url, 'storage_key' => $a->storage_key, 'original_filename' => $a->original_filename]) : collect());
 
     $outcomeRows = old('outcomes') !== null
         ? collect(old('outcomes'))
@@ -90,9 +92,13 @@
                         <input class="form-control ot-input" name="materials[url][]" value="{{ $mat['url'] }}" placeholder="Link (optional)">
                     </div>
                     <div class="col-md-5 mb-2">
-                        <input type="file" class="form-control ot-input" name="materials[file][]">
+                        <div class="ot_fileUploader left-side mb-1">
+                            <input class="form-control ot-input" type="text" value="{{ $mat['original_filename'] ?? '' }}" placeholder="No file chosen" readonly>
+                            <button class="primary-btn-small-input ot-browse-btn" type="button"><span class="btn btn-lg ot-btn-primary">Browse</span></button>
+                            <input type="file" class="d-none" name="materials[file][]">
+                        </div>
                         @if (!empty($mat['original_filename']))
-                            <small class="text-secondary d-block">Current file: {{ $mat['original_filename'] }} — choose a new one to replace it.</small>
+                            <small class="text-secondary d-block">Choosing a new file replaces this one.</small>
                         @endif
                         <input type="hidden" name="materials[existing_storage_key][]" value="{{ $mat['storage_key'] }}">
                         <input type="hidden" name="materials[existing_original_filename][]" value="{{ $mat['original_filename'] }}">
@@ -112,7 +118,11 @@
                     <input class="form-control ot-input" name="materials[url][]" value="" placeholder="Link (optional)">
                 </div>
                 <div class="col-md-5 mb-2">
-                    <input type="file" class="form-control ot-input" name="materials[file][]">
+                    <div class="ot_fileUploader left-side mb-1">
+                        <input class="form-control ot-input" type="text" value="" placeholder="No file chosen" readonly>
+                        <button class="primary-btn-small-input ot-browse-btn" type="button"><span class="btn btn-lg ot-btn-primary">Browse</span></button>
+                        <input type="file" class="d-none" name="materials[file][]">
+                    </div>
                     <input type="hidden" name="materials[existing_storage_key][]" value="">
                     <input type="hidden" name="materials[existing_original_filename][]" value="">
                 </div>
@@ -147,6 +157,18 @@
                         <input class="form-control ot-input" name="activities[video_url][]" value="{{ $act['video_url'] }}" placeholder="Video link (optional)">
                     </div>
                     <div class="col-md-6 mb-2">
+                        <div class="ot_fileUploader left-side mb-1">
+                            <input class="form-control ot-input" type="text" value="{{ $act['original_filename'] ?? '' }}" placeholder="No file chosen" readonly>
+                            <button class="primary-btn-small-input ot-browse-btn" type="button"><span class="btn btn-lg ot-btn-primary">Browse</span></button>
+                            <input type="file" class="d-none" name="activities[file][]">
+                        </div>
+                        @if (!empty($act['original_filename']))
+                            <small class="text-secondary d-block">Choosing a new file replaces this one.</small>
+                        @endif
+                        <input type="hidden" name="activities[existing_storage_key][]" value="{{ $act['storage_key'] ?? '' }}">
+                        <input type="hidden" name="activities[existing_original_filename][]" value="{{ $act['original_filename'] ?? '' }}">
+                    </div>
+                    <div class="col-md-12 mb-2">
                         <textarea class="form-control ot-textarea" name="activities[description][]" rows="2" placeholder="What the student should do">{{ $act['description'] }}</textarea>
                     </div>
                 </div>
@@ -167,6 +189,15 @@
                     <input class="form-control ot-input" name="activities[video_url][]" value="" placeholder="Video link (optional)">
                 </div>
                 <div class="col-md-6 mb-2">
+                    <div class="ot_fileUploader left-side mb-1">
+                        <input class="form-control ot-input" type="text" value="" placeholder="No file chosen" readonly>
+                        <button class="primary-btn-small-input ot-browse-btn" type="button"><span class="btn btn-lg ot-btn-primary">Browse</span></button>
+                        <input type="file" class="d-none" name="activities[file][]">
+                    </div>
+                    <input type="hidden" name="activities[existing_storage_key][]" value="">
+                    <input type="hidden" name="activities[existing_original_filename][]" value="">
+                </div>
+                <div class="col-md-12 mb-2">
                     <textarea class="form-control ot-textarea" name="activities[description][]" rows="2" placeholder="What the student should do"></textarea>
                 </div>
             </div>
@@ -221,6 +252,17 @@
                 <input type="number" min="0" class="form-control ot-input" name="project_max_marks" value="{{ old('project_max_marks', $l->project_max_marks ?? '') }}" placeholder="Max marks">
             </div>
             <div class="col-md-12 mb-2">
+                <label class="form-label mb-1" style="font-size:.85rem;">Attach a file (optional)</label>
+                <div class="ot_fileUploader left-side mb-1">
+                    <input class="form-control ot-input" type="text" value="{{ $l->project_original_filename ?? '' }}" placeholder="No file chosen" readonly>
+                    <button class="primary-btn-small-input ot-browse-btn" type="button"><span class="btn btn-lg ot-btn-primary">Browse</span></button>
+                    <input type="file" class="d-none" name="project_file">
+                </div>
+                @if ($l && $l->project_original_filename)
+                    <small class="text-secondary d-block">Choosing a new file replaces this one.</small>
+                @endif
+            </div>
+            <div class="col-md-12 mb-2">
                 <textarea class="form-control ot-textarea" name="project_description" rows="2" placeholder="What the student should build">{{ old('project_description', $l->project_description ?? '') }}</textarea>
             </div>
         </div>
@@ -245,13 +287,22 @@
                 <textarea class="form-control ot-textarea" name="quiz_description" rows="2" placeholder="What the quiz covers">{{ old('quiz_description', $l->quiz_description ?? '') }}</textarea>
             </div>
             <div class="col-md-12 mb-2">
+                <label class="form-label mb-1" style="font-size:.85rem;">Attach a file (optional)</label>
+                <div class="ot_fileUploader left-side mb-1">
+                    <input class="form-control ot-input" type="text" value="{{ $l->quiz_original_filename ?? '' }}" placeholder="No file chosen" readonly>
+                    <button class="primary-btn-small-input ot-browse-btn" type="button"><span class="btn btn-lg ot-btn-primary">Browse</span></button>
+                    <input type="file" class="d-none" name="quiz_file">
+                </div>
+                @if ($l && $l->quiz_original_filename)
+                    <small class="text-secondary d-block">Choosing a new file replaces this one.</small>
+                @endif
+            </div>
+            <div class="col-md-12 mb-2">
                 <label class="form-label mb-1" style="font-size:.85rem;">Attach quiz questions (optional)</label>
                 <div class="ot_fileUploader left-side mb-1">
-                    <input class="form-control ot-input" type="text" id="quizCsvPlaceholder" placeholder="No file chosen" readonly>
-                    <button class="primary-btn-small-input" type="button">
-                        <label class="btn btn-lg ot-btn-primary" for="quizCsvBrowse">Browse</label>
-                        <input type="file" class="d-none" name="bulk_questions_file" id="quizCsvBrowse" accept=".csv,.txt">
-                    </button>
+                    <input class="form-control ot-input" type="text" value="" placeholder="No file chosen" readonly>
+                    <button class="primary-btn-small-input ot-browse-btn" type="button"><span class="btn btn-lg ot-btn-primary">Browse</span></button>
+                    <input type="file" class="d-none" name="bulk_questions_file" accept=".csv,.txt">
                 </div>
                 <small class="text-secondary d-block mt-1">
                     Upload a CSV of multiple-choice questions to turn this into an auto-graded quiz students take right here, instead of a plain link — the Link field above will be filled in for you.
@@ -281,6 +332,17 @@
                 <input type="number" min="0" class="form-control ot-input" name="worksheet_max_marks" value="{{ old('worksheet_max_marks', $l->worksheet_max_marks ?? '') }}" placeholder="Max marks">
             </div>
             <div class="col-md-12 mb-2">
+                <label class="form-label mb-1" style="font-size:.85rem;">Attach a file (optional)</label>
+                <div class="ot_fileUploader left-side mb-1">
+                    <input class="form-control ot-input" type="text" value="{{ $l->worksheet_original_filename ?? '' }}" placeholder="No file chosen" readonly>
+                    <button class="primary-btn-small-input ot-browse-btn" type="button"><span class="btn btn-lg ot-btn-primary">Browse</span></button>
+                    <input type="file" class="d-none" name="worksheet_file">
+                </div>
+                @if ($l && $l->worksheet_original_filename)
+                    <small class="text-secondary d-block">Choosing a new file replaces this one.</small>
+                @endif
+            </div>
+            <div class="col-md-12 mb-2">
                 <textarea class="form-control ot-textarea" name="worksheet_description" rows="2" placeholder="What the worksheet covers">{{ old('worksheet_description', $l->worksheet_description ?? '') }}</textarea>
             </div>
         </div>
@@ -300,6 +362,17 @@
             </div>
             <div class="col-md-2 mb-2">
                 <input type="number" min="0" class="form-control ot-input" name="assignment_max_marks" value="{{ old('assignment_max_marks', $l->assignment_max_marks ?? '') }}" placeholder="Max marks">
+            </div>
+            <div class="col-md-12 mb-2">
+                <label class="form-label mb-1" style="font-size:.85rem;">Attach a file (optional)</label>
+                <div class="ot_fileUploader left-side mb-1">
+                    <input class="form-control ot-input" type="text" value="{{ $l->assignment_original_filename ?? '' }}" placeholder="No file chosen" readonly>
+                    <button class="primary-btn-small-input ot-browse-btn" type="button"><span class="btn btn-lg ot-btn-primary">Browse</span></button>
+                    <input type="file" class="d-none" name="assignment_file">
+                </div>
+                @if ($l && $l->assignment_original_filename)
+                    <small class="text-secondary d-block">Choosing a new file replaces this one.</small>
+                @endif
             </div>
             <div class="col-md-12 mb-2">
                 <textarea class="form-control ot-textarea" name="assignment_description" rows="2" placeholder="What the student should submit">{{ old('assignment_description', $l->assignment_description ?? '') }}</textarea>
@@ -345,21 +418,27 @@
     wireRepeater('addOutcomeRow', 'outcomesWrap', 'outcomeRowTemplate');
 
     // Same "Browse" file-picker look used throughout the admin theme
-    // (.ot_fileUploader) - the real <input type="file"> stays hidden
-    // (every input[type=file] on the page gets .hide()'d by main.js) and
-    // this just mirrors the chosen filename onto the visible placeholder
-    // text, scoped to this one field by id rather than relying on the
-    // theme's own fragile hardcoded fileBrouse/fileBrouse2/.../placeholder
-    // id pairs (only 4 slots, easily clashing with other fields on a page).
-    var quizCsvInput = document.getElementById('quizCsvBrowse');
-    var quizCsvPlaceholder = document.getElementById('quizCsvPlaceholder');
-    if (quizCsvInput && quizCsvPlaceholder) {
-        quizCsvInput.addEventListener('change', function () {
-            if (this.files && this.files[0]) {
-                quizCsvPlaceholder.value = this.files[0].name;
-            }
-        });
-    }
+    // (.ot_fileUploader): a visible placeholder + Browse button sitting
+    // next to the real <input type="file">, which stays hidden (every
+    // input[type=file] on the page gets .hide()'d by the theme's own
+    // main.js). Delegated on the page itself rather than bound per
+    // field/id, so this works for every uploader already on the page AND
+    // for new Material/Activity rows the repeater clones in later -
+    // the theme's own convention only ever wires a handful of hardcoded
+    // ids (fileBrouse, fileBrouse2...), which can't cover a repeating row.
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.ot-browse-btn');
+        if (!btn) return;
+        var input = btn.closest('.ot_fileUploader')?.querySelector('input[type="file"]');
+        if (input) input.click();
+    });
+    document.addEventListener('change', function (e) {
+        if (!e.target.matches('.ot_fileUploader input[type="file"]')) return;
+        var placeholder = e.target.closest('.ot_fileUploader')?.querySelector('input[type="text"]');
+        if (placeholder && e.target.files && e.target.files[0]) {
+            placeholder.value = e.target.files[0].name;
+        }
+    });
 })();
 </script>
 @endpush

@@ -188,10 +188,12 @@ class ProgramClassController extends Controller
             'project_description' => 'nullable|string|max:3000',
             'project_link_url'    => 'nullable|string|max:500',
             'project_max_marks'   => 'nullable|integer|min:0',
+            'project_file'        => 'nullable|file|max:51200',
             'quiz_title'          => 'nullable|string|max:150',
             'quiz_description'    => 'nullable|string|max:3000',
             'quiz_link_url'       => 'nullable|string|max:500',
             'quiz_max_marks'      => 'nullable|integer|min:0',
+            'quiz_file'           => 'nullable|file|max:51200',
             // Optional - a quiz can still just be a plain link, exactly as
             // today. Same mimes/size limit as Homework's own quiz upload.
             'bulk_questions_file' => 'nullable|file|mimes:csv,txt|max:5120',
@@ -199,11 +201,14 @@ class ProgramClassController extends Controller
             'worksheet_description' => 'nullable|string|max:3000',
             'worksheet_link_url'    => 'nullable|string|max:500',
             'worksheet_max_marks'   => 'nullable|integer|min:0',
+            'worksheet_file'        => 'nullable|file|max:51200',
             'assignment_title'       => 'nullable|string|max:150',
             'assignment_description' => 'nullable|string|max:3000',
             'assignment_link_url'    => 'nullable|string|max:500',
             'assignment_max_marks'   => 'nullable|integer|min:0',
+            'assignment_file'        => 'nullable|file|max:51200',
             'materials.file.*'    => 'nullable|file|max:51200',
+            'activities.file.*'   => 'nullable|file|max:51200',
         ]);
     }
 }

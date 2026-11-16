@@ -6,6 +6,7 @@ use App\Models\BaseModel;
 use App\Models\Staff\Staff;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\URL;
 
 class ProgramClass extends BaseModel
 {
@@ -100,6 +101,22 @@ class ProgramClass extends BaseModel
         return isset($this->quiz_questions_count)
             ? (int) $this->quiz_questions_count > 0
             : $this->quizQuestions()->exists();
+    }
+
+    /** Whether Project/Quiz/Worksheet/Assignment has an uploaded file
+     *  (vs. just a typed-in link_url, or neither) - $type is one of
+     *  ProgramClassMark::TYPES. */
+    public function hasFile(string $type): bool
+    {
+        return (bool) $this->{"{$type}_storage_key"};
+    }
+
+    /** Short-lived link that resolves to the uploaded file - only call
+     *  when hasFile() is true. Same shape as
+     *  ProgramClassMaterial::downloadUrl(). */
+    public function fileDownloadUrl(string $type): string
+    {
+        return URL::temporarySignedRoute('program-class-file.download', now()->addMinutes(15), ['id' => $this->id, 'type' => $type]);
     }
 
     public function hasProject(): bool

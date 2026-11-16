@@ -8,6 +8,8 @@ use App\Http\Controllers\WebsiteSetup\ProgramClassGradeController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassGradingController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMarkSubmissionController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMaterialController;
+use App\Http\Controllers\WebsiteSetup\ProgramClassActivityController;
+use App\Http\Controllers\WebsiteSetup\ProgramClassFileController;
 use App\Http\Controllers\Admin\HomeworkController;
 
 /** The newer, simpler alternative to routes/class-content.php for
@@ -33,6 +35,18 @@ Route::middleware(saasMiddleware())->group(function () {
             // itself is the access control.
             Route::get('/program-class/mark-submissions/{mark}/download', [ProgramClassMarkSubmissionController::class, 'download'])
                 ->name('program-class-mark-submission.download')
+                ->middleware('signed');
+
+            // Same pattern as program-class-material.download above.
+            Route::get('/program-class/activities/{activity}/download', [ProgramClassActivityController::class, 'download'])
+                ->name('program-class-activity.download')
+                ->middleware('signed');
+
+            // Project/Quiz/Worksheet/Assignment's own uploaded file - keyed
+            // by {id, type} rather than a child row id, since these four are
+            // single fields directly on the ProgramClass itself.
+            Route::get('/program-class/{id}/file/{type}/download', [ProgramClassFileController::class, 'download'])
+                ->name('program-class-file.download')
                 ->middleware('signed');
 
             Route::group(['middleware' => ['auth.routes', 'AdminPanel']], function () {

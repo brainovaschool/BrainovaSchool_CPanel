@@ -54,10 +54,10 @@ class ProgramClassRepository
             $row->class_date  = $request->class_date ?: null;
             $row->sort_order  = (int) $request->sort_order;
             $row->created_by  = $staffId;
-            $this->fillProjectAndQuiz($row, $request);
+            $warnings = $this->fillProjectAndQuiz($row, $request);
             $row->save();
 
-            $warnings = $this->syncChildren($row, $request);
+            $warnings = array_merge($warnings, $this->syncChildren($row, $request));
             if ($quizCsvWarning = $this->applyQuizCsv($row, $request)) {
                 $warnings[] = $quizCsvWarning;
             }
@@ -79,10 +79,10 @@ class ProgramClassRepository
             $row->video_url   = trim((string) $request->video_url) ?: null;
             $row->class_date  = $request->class_date ?: null;
             $row->sort_order  = (int) $request->sort_order;
-            $this->fillProjectAndQuiz($row, $request);
+            $warnings = $this->fillProjectAndQuiz($row, $request);
             $row->save();
 
-            $warnings = $this->syncChildren($row, $request);
+            $warnings = array_merge($warnings, $this->syncChildren($row, $request));
             if ($quizCsvWarning = $this->applyQuizCsv($row, $request)) {
                 $warnings[] = $quizCsvWarning;
             }
@@ -294,31 +294,50 @@ class ProgramClassRepository
         return route($routeName) . '?program=' . $program->id;
     }
 
-    private function fillProjectAndQuiz(ProgramClass $row, $request): void
+    /** Project/Quiz/Worksheet/Assignment all have the exact same shape
+     *  (title/description/link/max_marks, "all or nothing" keyed off
+     *  title presence), now plus an optional uploaded file - same
+     *  B2Storage convention Materials already uses. A file already on
+     *  the row (from an earlier save) is left untouched unless a new one
+     *  is submitted this time; the Link field stays independently
+     *  editable either way. Returns any upload-failure warnings, same
+     *  shape syncChildren()'s own warnings array uses. */
+    private function fillProjectAndQuiz(ProgramClass $row, $request): array
     {
-        $projectTitle = trim((string) $request->input('project_title'));
-        $row->project_title       = $projectTitle ?: null;
-        $row->project_description = $projectTitle ? $request->input('project_description') : null;
-        $row->project_link_url    = $projectTitle ? (trim((string) $request->input('project_link_url')) ?: null) : null;
-        $row->project_max_marks   = $projectTitle ? ($request->input('project_max_marks') ?: null) : null;
+        $warnings = [];
 
-        $quizTitle = trim((string) $request->input('quiz_title'));
-        $row->quiz_title       = $quizTitle ?: null;
-        $row->quiz_description = $quizTitle ? $request->input('quiz_description') : null;
-        $row->quiz_link_url    = $quizTitle ? (trim((string) $request->input('quiz_link_url')) ?: null) : null;
-        $row->quiz_max_marks   = $quizTitle ? ($request->input('quiz_max_marks') ?: null) : null;
+        foreach (['project', 'quiz', 'worksheet', 'assignment'] as $type) {
+            $title = trim((string) $request->input("{$type}_title"));
+            $row->{"{$type}_title"} = $title ?: null;
 
-        $worksheetTitle = trim((string) $request->input('worksheet_title'));
-        $row->worksheet_title       = $worksheetTitle ?: null;
-        $row->worksheet_description = $worksheetTitle ? $request->input('worksheet_description') : null;
-        $row->worksheet_link_url    = $worksheetTitle ? (trim((string) $request->input('worksheet_link_url')) ?: null) : null;
-        $row->worksheet_max_marks   = $worksheetTitle ? ($request->input('worksheet_max_marks') ?: null) : null;
+            if ($title === '') {
+                $row->{"{$type}_description"}       = null;
+                $row->{"{$type}_link_url"}           = null;
+                $row->{"{$type}_max_marks"}          = null;
+                $row->{"{$type}_storage_key"}        = null;
+                $row->{"{$type}_original_filename"}  = null;
+                continue;
+            }
 
-        $assignmentTitle = trim((string) $request->input('assignment_title'));
-        $row->assignment_title       = $assignmentTitle ?: null;
-        $row->assignment_description = $assignmentTitle ? $request->input('assignment_description') : null;
-        $row->assignment_link_url    = $assignmentTitle ? (trim((string) $request->input('assignment_link_url')) ?: null) : null;
-        $row->assignment_max_marks   = $assignmentTitle ? ($request->input('assignment_max_marks') ?: null) : null;
+            $row->{"{$type}_description"} = $request->input("{$type}_description");
+            $row->{"{$type}_max_marks"}   = $request->input("{$type}_max_marks") ?: null;
+            $row->{"{$type}_link_url"}    = trim((string) $request->input("{$type}_link_url")) ?: null;
+
+            $file = $request->file("{$type}_file");
+            if ($file && !$file->isValid()) {
+                $warnings[] = ucfirst($type) . ": the file didn't upload properly (code {$file->getError()}) - try again.";
+            } elseif ($file && $file->isValid()) {
+                $uploaded = $this->storage->upload($file, "program-class-{$type}");
+                if ($uploaded['ok']) {
+                    $row->{"{$type}_storage_key"}       = $uploaded['storage_key'];
+                    $row->{"{$type}_original_filename"} = $uploaded['original_filename'];
+                } else {
+                    $warnings[] = ucfirst($type) . ': ' . $uploaded['message'];
+                }
+            }
+        }
+
+        return $warnings;
     }
 
     /** If a CSV of quiz questions was uploaded, imports it against this
@@ -427,12 +446,31 @@ class ProgramClassRepository
             if (trim((string) $title) === '') {
                 continue;
             }
+
+            $storageKey = $request->input("activities.existing_storage_key.{$i}") ?: null;
+            $originalFilename = $request->input("activities.existing_original_filename.{$i}") ?: null;
+
+            $file = $request->file("activities.file.{$i}");
+            if ($file && !$file->isValid()) {
+                $warnings[] = "\"{$title}\": the file didn't upload properly (code {$file->getError()}) - try again.";
+            } elseif ($file && $file->isValid()) {
+                $uploaded = $this->storage->upload($file, 'program-class-activities');
+                if ($uploaded['ok']) {
+                    $storageKey = $uploaded['storage_key'];
+                    $originalFilename = $uploaded['original_filename'];
+                } else {
+                    $warnings[] = "\"{$title}\": " . $uploaded['message'];
+                }
+            }
+
             ProgramClassActivity::create([
-                'program_class_id' => $class->id,
+                'program_class_id'  => $class->id,
                 'title'             => $title,
                 'description'       => $request->input("activities.description.{$i}"),
                 'video_url'         => trim((string) $request->input("activities.video_url.{$i}")) ?: null,
                 'link_url'          => trim((string) $request->input("activities.link_url.{$i}")) ?: null,
+                'storage_key'       => $storageKey,
+                'original_filename' => $originalFilename,
                 'sort_order'        => $i,
             ]);
         }

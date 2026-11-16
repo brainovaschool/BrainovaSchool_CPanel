@@ -379,8 +379,8 @@
                                     @foreach ($pc->activities as $a)
                                         <li>
                                             <strong>{{ $a->title }}.</strong> {{ $a->description }}
-                                            @if ($a->link_url)
-                                                <a href="{{ $a->link_url }}" target="_blank" rel="noopener">Open &rarr;</a>
+                                            @if ($a->storage_key || $a->link_url)
+                                                <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
                                             @endif
                                             @if ($a->video_url)
                                                 <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
@@ -486,8 +486,8 @@
                                             @foreach ($lesson->activities as $a)
                                                 <li>
                                                     <strong>{{ $a->title }}.</strong> {{ $a->description }}
-                                                    @if ($a->link_url)
-                                                        <a href="{{ $a->link_url }}" target="_blank" rel="noopener">Open &rarr;</a>
+                                                    @if ($a->storage_key || $a->link_url)
+                                                        <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
                                                     @endif
                                                     @if ($a->video_url)
                                                         <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
