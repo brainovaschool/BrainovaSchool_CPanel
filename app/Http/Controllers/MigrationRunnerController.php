@@ -4518,8 +4518,7 @@ class MigrationRunnerController extends Controller
                 $lines[] = '  No teachers attached via Program::teachers() (the Teachers checkboxes on this Program\'s edit form).';
             }
             foreach ($program->teachers as $teacher) {
-                $teacherUser = \App\Models\User::where('staff_id', $teacher->id)->first()
-                    ?? \App\Models\User::whereHas('staff', fn ($q) => $q->where('staffs.id', $teacher->id))->first();
+                $teacherUser = $teacher->user_id ? \App\Models\User::find($teacher->user_id) : null;
                 $academicsBoost   = $categoryName === 'Academics Boost'   ? 'YES (this program IS Academics Boost)'   : 'no (this program is not Academics Boost)';
                 // The category row is actually named "Beyond Acedamics"
                 // (typo, matches every other lookup of it in this app) -
