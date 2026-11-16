@@ -67,7 +67,15 @@
                     </li>
                 @endif
 
-                @if (auth()->user()?->role_id == 1 || teachesInCategory('Beyond Academics') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve'))
+                {{-- The Program Category row itself is actually named
+                     "Beyond Acedamics" (typo, kept as-is everywhere else in
+                     the app - see BeyondAcademics\OverviewController::category(),
+                     MigrationRunnerController::linkRoboticsProgramDemo()) -
+                     teachesInCategory() has to be given that exact stored
+                     name or it never matches any Program, no matter how
+                     correctly a teacher is assigned to one. This is why an
+                     assigned teacher's tab never showed up. --}}
+                @if (auth()->user()?->role_id == 1 || teachesInCategory('Beyond Acedamics') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve'))
                     <li class="sidebar-menu-item {{ set_menu(['beyond-academics*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-rocket"></i>

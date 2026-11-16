@@ -4480,6 +4480,68 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
     }
 
+    /** Diagnoses "I marked them as a Teacher on the Program but their
+     *  sidebar still doesn't show it" for every Program at once, instead
+     *  of guessing one case at a time - every Program with its category
+     *  and its teachers() pivot, PLUS whether teachesInCategory() would
+     *  actually return true for each of those teachers against both
+     *  category-gated sections (Academics Boost / Beyond Academics).
+     *  Pass ?program=name to filter to just one (partial, case-
+     *  insensitive match). */
+    public function inspectProgramTeacherLinks(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $filter = trim((string) request()->query('program', ''));
+
+        $programs = \App\Models\WebsiteSetup\Program::with(['category', 'teachers'])
+            ->when($filter !== '', fn ($q) => $q->where('title', 'like', '%' . $filter . '%'))
+            ->orderBy('title')
+            ->get();
+
+        if ($programs->isEmpty()) {
+            return response('No Program matched' . ($filter !== '' ? " \"{$filter}\"" : '') . '.');
+        }
+
+        $lines = [];
+        foreach ($programs as $program) {
+            $categoryName = $program->category?->name;
+            $lines[] = "Program #{$program->id} \"{$program->title}\" — category: " . ($categoryName ?: '(none set)') . ($program->active ? '' : ' — NOT active');
+
+            if ($program->teachers->isEmpty()) {
+                $lines[] = '  No teachers attached via Program::teachers() (the Teachers checkboxes on this Program\'s edit form).';
+            }
+            foreach ($program->teachers as $teacher) {
+                $teacherUser = \App\Models\User::where('staff_id', $teacher->id)->first()
+                    ?? \App\Models\User::whereHas('staff', fn ($q) => $q->where('staffs.id', $teacher->id))->first();
+                $academicsBoost   = $categoryName === 'Academics Boost'   ? 'YES (this program IS Academics Boost)'   : 'no (this program is not Academics Boost)';
+                // The category row is actually named "Beyond Acedamics"
+                // (typo, matches every other lookup of it in this app) -
+                // teachesInCategory('Beyond Academics') would never match
+                // anything, which was the actual bug.
+                $beyondAcademics  = $categoryName === 'Beyond Acedamics'  ? 'YES (this program IS Beyond Academics)'  : 'no (this program is not Beyond Academics)';
+                $lines[] = sprintf(
+                    "  Teacher: %s %s (staff #%d)%s\n    Academics Boost sidebar would show: %s\n    Beyond Academics sidebar would show: %s",
+                    $teacher->first_name,
+                    $teacher->last_name,
+                    $teacher->id,
+                    $teacherUser ? " <{$teacherUser->email}>" : ' — NO linked User row, this person cannot log in at all',
+                    $academicsBoost,
+                    $beyondAcademics
+                );
+            }
+            $lines[] = '';
+        }
+
+        return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
+    }
+
     /** Diagnoses why a staff member's mobile "Team" login fails. Shows,
      *  per Staff row: the linked User's email/role_id/status and whether
      *  the row even has a usable password hash -- without ever printing
