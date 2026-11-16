@@ -71,7 +71,7 @@
 
     .bn-theme-picker { display: inline-flex; align-items: center; gap: 7px; }
     .bn-theme-picker__label {
-        font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+        font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
         color: rgba(255, 255, 255, 0.75); margin-right: 2px;
     }
     .bn-theme-swatch {
@@ -105,16 +105,16 @@
     .bn-gauge__ring-wrap { position: relative; width: 104px; height: 104px; }
     .bn-gauge__num {
         position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-        font-size: 1.3rem; font-weight: 800; color: var(--bn-ink);
+        font-size: 1.53rem; font-weight: 800; color: var(--bn-ink);
     }
-    .bn-gauge__cap { font-size: 0.78rem; color: #7a8790; margin-top: 8px; max-width: 200px; }
+    .bn-gauge__cap { font-size: 0.92rem; color: #7a8790; margin-top: 8px; max-width: 200px; }
     .bn-gauge__cap b { color: var(--bn-ink); }
 
     .bn-level-badge__ring-row { display: flex; align-items: center; gap: 12px; }
     .bn-level-badge__ring-wrap { position: relative; flex-shrink: 0; width: 62px; height: 62px; }
     .bn-level-badge__ring-num {
         position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-        font-size: 1.25rem; font-weight: 800; color: #fff;
+        font-size: 1.48rem; font-weight: 800; color: #fff;
     }
 
     /* The level badge was designed for the colored gradient hero (translucent
@@ -132,7 +132,7 @@
     .bn-mastery-donut-row { display: flex; align-items: center; gap: 18px; }
     .bn-mastery-donut-row .bn-donut { flex-shrink: 0; }
     .bn-mastery-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; flex: 1; min-width: 0; }
-    .bn-mastery-legend li { display: flex; align-items: center; gap: 8px; font-size: 0.84rem; color: var(--bn-ink); }
+    .bn-mastery-legend li { display: flex; align-items: center; gap: 8px; font-size: 0.99rem; color: var(--bn-ink); }
     .bn-mastery-legend li b { margin-left: auto; }
 
     .bn-panel {
@@ -175,7 +175,7 @@
     }
 
     .bn-panel__eyebrow {
-        font-size: 0.72rem;
+        font-size: 0.85rem;
         font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -184,7 +184,7 @@
     }
 
     .bn-panel__title {
-        font-size: 1.05rem;
+        font-size: 1.24rem;
         font-weight: 700;
         color: var(--bn-ink);
         margin: 0;
@@ -193,7 +193,7 @@
     .bn-panel__line {
         margin: 4px 0 0;
         color: #56616a;
-        font-size: 0.94rem;
+        font-size: 1.11rem;
         line-height: 1.5;
     }
 
@@ -207,7 +207,7 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 0.78rem;
+        font-size: 0.92rem;
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -240,12 +240,12 @@
     .bn-skill-tile__title {
         font-weight: 700;
         color: var(--bn-ink);
-        font-size: 0.95rem;
+        font-size: 1.12rem;
     }
 
     .bn-skill-tile__meta {
         color: #7a8790;
-        font-size: 0.78rem;
+        font-size: 0.92rem;
         text-transform: uppercase;
         letter-spacing: 0.03em;
     }
@@ -270,7 +270,7 @@
 
     .bn-empty-note {
         color: #7a8790;
-        font-size: 0.9rem;
+        font-size: 1.06rem;
         margin: 0;
     }
 
@@ -280,7 +280,7 @@
         gap: 6px;
         padding: 6px 12px;
         border-radius: 20px;
-        font-size: 0.82rem;
+        font-size: 0.97rem;
         font-weight: 700;
     }
 
@@ -345,7 +345,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.3rem;
+        font-size: 1.53rem;
         box-shadow: 0 0 0 6px rgba(22, 163, 74, 0.12);
     }
 
@@ -358,7 +358,7 @@
     .bn-milestone__line {
         margin: 0;
         color: #56616a;
-        font-size: 0.92rem;
+        font-size: 1.09rem;
     }
 
     /* Next Best Action — Phase 2, one clear action instead of a menu */
@@ -401,7 +401,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.15rem;
+        font-size: 1.36rem;
         box-shadow: 0 4px 12px color-mix(in srgb, var(--bn-primary) 30%, transparent);
     }
 
@@ -410,7 +410,7 @@
     }
 
     .bn-next-action__eyebrow {
-        font-size: 0.68rem;
+        font-size: 0.8rem;
         font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -419,7 +419,7 @@
     }
 
     .bn-next-action__title {
-        font-size: 1.05rem;
+        font-size: 1.24rem;
         font-weight: 700;
         color: var(--bn-ink);
         margin: 0;
@@ -428,7 +428,7 @@
     .bn-next-action__reason {
         margin: 4px 0 0;
         color: #56616a;
-        font-size: 0.86rem;
+        font-size: 1.01rem;
         line-height: 1.5;
     }
 
@@ -467,7 +467,7 @@
     }
 
     .bn-hero__eyebrow {
-        font-size: 0.72rem;
+        font-size: 0.85rem;
         font-weight: 700;
         letter-spacing: 0.06em;
         text-transform: uppercase;
@@ -476,7 +476,7 @@
     }
 
     .bn-hero__name {
-        font-size: 1.35rem;
+        font-size: 1.59rem;
         font-weight: 700;
         color: #fff;
         margin: 2px 0 8px;
@@ -495,7 +495,7 @@
         display: flex;
         align-items: center;
         gap: 6px;
-        font-size: 0.82rem;
+        font-size: 0.97rem;
         color: rgba(255, 255, 255, 0.92);
     }
 
@@ -520,13 +520,13 @@
     }
 
     .bn-level-badge__num {
-        font-size: 1.4rem;
+        font-size: 1.65rem;
         font-weight: 800;
         line-height: 1;
     }
 
     .bn-level-badge__label {
-        font-size: 0.72rem;
+        font-size: 0.85rem;
         text-transform: uppercase;
         letter-spacing: 0.04em;
         opacity: 0.85;
@@ -547,7 +547,7 @@
     }
 
     .bn-level-badge__xp {
-        font-size: 0.68rem;
+        font-size: 0.8rem;
         color: rgba(255, 255, 255, 0.8);
         margin-top: 4px;
     }
@@ -579,20 +579,20 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.95rem;
+        font-size: 1.12rem;
         color: #fff;
         background: var(--bn-primary);
     }
 
     .bn-stat-tile__value {
-        font-size: 1.3rem;
+        font-size: 1.53rem;
         font-weight: 700;
         color: var(--bn-ink);
         line-height: 1.1;
     }
 
     .bn-stat-tile__label {
-        font-size: 0.72rem;
+        font-size: 0.85rem;
         color: #7a8790;
         text-transform: uppercase;
         letter-spacing: 0.03em;
@@ -610,7 +610,7 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.9rem;
+        font-size: 2.24rem;
     }
 
     /* Badges — tiered, tied to real evidence, never arbitrary */
@@ -620,7 +620,7 @@
         gap: 8px;
         border-radius: 12px;
         padding: 8px 14px;
-        font-size: 0.86rem;
+        font-size: 1.01rem;
         font-weight: 700;
         border: 1px solid;
     }
@@ -630,7 +630,7 @@
     .bn-badge--gold    { background: #fef8e3; color: #a1750a; border-color: rgba(161, 117, 10, 0.3); }
 
     .bn-badge__count {
-        font-size: 0.72rem;
+        font-size: 0.85rem;
         font-weight: 600;
         opacity: 0.75;
     }
@@ -641,18 +641,18 @@
     .bn-badge-chip { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 76px; text-align: center; }
     .bn-badge-chip__icon {
         width: 52px; height: 52px; border-radius: 14px; display: flex; align-items: center; justify-content: center;
-        font-size: 1.5rem; border: 1px solid;
+        font-size: 1.77rem; border: 1px solid;
     }
     .bn-badge-chip--bronze .bn-badge-chip__icon { background: #fdf1e7; border-color: rgba(161, 92, 46, 0.25); }
     .bn-badge-chip--silver .bn-badge-chip__icon { background: #f1f4f7; border-color: rgba(91, 107, 122, 0.25); }
     .bn-badge-chip--gold .bn-badge-chip__icon    { background: #fef8e3; border-color: rgba(161, 117, 10, 0.3); }
-    .bn-badge-chip__label { font-size: 0.74rem; font-weight: 700; color: var(--bn-ink); line-height: 1.25; }
-    .bn-badge-chip__count { font-size: 0.68rem; color: #7a8790; }
+    .bn-badge-chip__label { font-size: 0.87rem; font-weight: 700; color: var(--bn-ink); line-height: 1.25; }
+    .bn-badge-chip__count { font-size: 0.8rem; color: #7a8790; }
 
     /* Numbered list — "What's Next", read as a real order (1, 2, 3...). */
     .bn-skill-tile__num {
         flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%; background: var(--bn-primary-soft);
-        color: var(--bn-primary-strong); font-size: 0.76rem; font-weight: 800;
+        color: var(--bn-primary-strong); font-size: 0.9rem; font-weight: 800;
         display: flex; align-items: center; justify-content: center; margin-right: 4px;
     }
 
@@ -672,14 +672,14 @@
     }
 
     .bn-personal-best__num {
-        font-size: 1.3rem;
+        font-size: 1.53rem;
         font-weight: 700;
         color: var(--bn-ink);
         line-height: 1.1;
     }
 
     .bn-personal-best__label {
-        font-size: 0.68rem;
+        font-size: 0.8rem;
         color: #7a8790;
         text-transform: uppercase;
         letter-spacing: 0.03em;
@@ -687,12 +687,12 @@
 
     .bn-personal-best__arrow {
         color: #c3cbd1;
-        font-size: 1.1rem;
+        font-size: 1.3rem;
     }
 
     .bn-personal-best__delta {
         margin-left: auto;
-        font-size: 0.9rem;
+        font-size: 1.06rem;
         font-weight: 700;
     }
 
@@ -717,7 +717,7 @@
 
     .bn-verified-card__badge {
         color: var(--bn-advanced);
-        font-size: 0.68rem;
+        font-size: 0.8rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -730,12 +730,12 @@
     .bn-verified-card__title {
         font-weight: 700;
         color: var(--bn-ink);
-        font-size: 0.92rem;
+        font-size: 1.09rem;
         margin-bottom: 2px;
     }
 
     .bn-verified-card__meta {
-        font-size: 0.72rem;
+        font-size: 0.85rem;
         color: #7a8790;
     }
 
@@ -762,7 +762,7 @@
 
     .bn-goal-option i { color: var(--bn-primary); width: 16px; text-align: center; flex-shrink: 0; }
 
-    .bn-goal-option span { font-size: 0.88rem; color: var(--bn-ink); }
+    .bn-goal-option span { font-size: 1.04rem; color: var(--bn-ink); }
 
     .bn-goal-option--done {
         border-color: rgba(22, 163, 74, 0.3);
@@ -817,7 +817,7 @@
         border-radius: 50%;
     }
 
-    .bn-voice-widget__btn i { color: #fff; font-size: 1.4rem; }
+    .bn-voice-widget__btn i { color: #fff; font-size: 1.65rem; }
 
     .bn-voice-widget__pulse {
         position: absolute;
@@ -845,7 +845,7 @@
     .bn-voice-widget__bubble {
         background: #fff;
         color: var(--bn-ink);
-        font-size: 0.8rem;
+        font-size: 0.94rem;
         font-weight: 600;
         padding: 8px 14px;
         border-radius: 20px;
@@ -883,7 +883,7 @@
         border-radius: 50%;
     }
 
-    .bn-voice-avatar i { color: #fff; font-size: 1.6rem; }
+    .bn-voice-avatar i { color: #fff; font-size: 1.89rem; }
 
     .bn-voice-avatar__icon {
         position: absolute;
@@ -899,7 +899,7 @@
         justify-content: center;
     }
 
-    .bn-voice-avatar__icon i { color: #fff; font-size: 0.62rem; }
+    .bn-voice-avatar__icon i { color: #fff; font-size: 0.73rem; }
 
     .bn-voice-avatar--speaking {
         animation: bnVoiceAvatarSpeaking 0.7s ease-in-out infinite;

@@ -52,13 +52,13 @@
         color: var(--dv2-ink);
     }
 
-    .bn-dv2-greet { font-size: 1.35rem; font-weight: 560; }
-    .bn-dv2-sub { color: var(--dv2-ink-soft); font-size: .88rem; margin-top: 3px; }
+    .bn-dv2-greet { font-size: 1.59rem; font-weight: 560; }
+    .bn-dv2-sub { color: var(--dv2-ink-soft); font-size: 1.04rem; margin-top: 3px; }
 
     .bn-dv2-help {
         display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
         background: var(--dv2-surface); border: 1px solid var(--dv2-line); border-radius: 20px;
-        padding: 7px 14px; font-size: .8rem; font-weight: 700;
+        padding: 7px 14px; font-size: 0.94rem; font-weight: 700;
         color: var(--bn-primary-strong); text-decoration: none;
     }
     .bn-dv2-help:hover { background: var(--bn-primary-soft); color: var(--bn-primary-strong); }
@@ -96,22 +96,22 @@
         flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
         text-align: center; gap: 8px; padding: 12px 0; color: var(--dv2-ink-mute);
     }
-    .bn-dv2-empty i { font-size: 1.5rem; opacity: .45; }
-    .bn-dv2-empty p { margin: 0; font-size: .8rem; max-width: 24ch; line-height: 1.5; }
+    .bn-dv2-empty i { font-size: 1.77rem; opacity: .45; }
+    .bn-dv2-empty p { margin: 0; font-size: 0.94rem; max-width: 24ch; line-height: 1.5; }
 
     /* Three plain figures — the replacement for the old class/subject/teacher
        counters, which were inventory rather than information. */
     .bn-dv2-figure-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .bn-dv2-figure { text-align: center; }
-    .bn-dv2-figure .v { font-size: 1.45rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
-    .bn-dv2-figure .v .of { font-size: .85rem; font-weight: 700; color: var(--dv2-ink-mute); }
-    .bn-dv2-figure .k { font-size: .68rem; color: var(--dv2-ink-mute); text-transform: uppercase; letter-spacing: .04em; margin-top: 3px; line-height: 1.3; }
+    .bn-dv2-figure .v { font-size: 1.71rem; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+    .bn-dv2-figure .v .of { font-size: 1rem; font-weight: 700; color: var(--dv2-ink-mute); }
+    .bn-dv2-figure .k { font-size: 0.8rem; color: var(--dv2-ink-mute); text-transform: uppercase; letter-spacing: .04em; margin-top: 3px; line-height: 1.3; }
 
     /* Profile card */
     .bn-dv2-profile { display: flex; gap: 12px; align-items: flex-start; }
     .bn-dv2-profile img { width: 64px; height: 64px; border-radius: 14px; object-fit: cover; flex-shrink: 0; }
-    .bn-dv2-profile .name { font-weight: 800; font-size: 1.02rem; }
-    .bn-dv2-profile .meta { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 3px; font-size: .78rem; color: var(--dv2-ink-soft); }
+    .bn-dv2-profile .name { font-weight: 800; font-size: 1.2rem; }
+    .bn-dv2-profile .meta { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 3px; font-size: 0.92rem; color: var(--dv2-ink-soft); }
     .bn-dv2-profile .meta li i { width: 14px; color: var(--dv2-ink-mute); margin-right: 5px; }
 
     /* Kea card — replaces the old floating/inline voice avatar on the
@@ -122,10 +122,10 @@
     .bn-dv2-kea__stack img { position: absolute; height: auto; }
     .bn-dv2-kea .fallback {
         width: 64px; height: 64px; object-fit: contain; flex-shrink: 0;
-        display: flex; align-items: center; justify-content: center; font-size: 1.8rem; color: var(--bn-primary);
+        display: flex; align-items: center; justify-content: center; font-size: 2.12rem; color: var(--bn-primary);
     }
-    .bn-dv2-kea .t { font-weight: 700; font-size: .9rem; }
-    .bn-dv2-kea .m { font-size: .76rem; color: var(--dv2-ink-mute); }
+    .bn-dv2-kea .t { font-weight: 700; font-size: 1.06rem; }
+    .bn-dv2-kea .m { font-size: 0.9rem; color: var(--dv2-ink-mute); }
     .bn-dv2-kea .mic {
         margin-left: auto; width: 32px; height: 32px; border-radius: 50%; background: var(--bn-primary);
         color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
@@ -139,30 +139,30 @@
         width: 34px; height: 34px; border-radius: 10px; background: var(--bn-primary-soft); color: var(--bn-primary-strong);
         display: flex; align-items: center; justify-content: center; margin: 0 auto 6px;
     }
-    .bn-dv2-mini-stat .v { font-weight: 800; font-size: 1.1rem; }
-    .bn-dv2-mini-stat .k { font-size: .7rem; color: var(--dv2-ink-mute); text-transform: uppercase; letter-spacing: .04em; }
+    .bn-dv2-mini-stat .v { font-weight: 800; font-size: 1.3rem; }
+    .bn-dv2-mini-stat .k { font-size: 0.83rem; color: var(--dv2-ink-mute); text-transform: uppercase; letter-spacing: .04em; }
     .bn-dv2-pill-row { display: flex; gap: 8px; margin-top: 12px; }
     .bn-dv2-pill { flex: 1; background: var(--dv2-surface-2); border-radius: 10px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; }
     .bn-dv2-pill i { color: var(--dv2-good); }
-    .bn-dv2-pill .v { font-weight: 800; font-size: .92rem; }
-    .bn-dv2-pill .k { font-size: .68rem; color: var(--dv2-ink-mute); }
+    .bn-dv2-pill .v { font-weight: 800; font-size: 1.09rem; }
+    .bn-dv2-pill .k { font-size: 0.8rem; color: var(--dv2-ink-mute); }
 
     .bn-dv2-card-label {
-        font-size: .78rem; font-weight: 800; color: var(--dv2-ink-soft); display: flex; align-items: center; gap: 6px;
+        font-size: 0.92rem; font-weight: 800; color: var(--dv2-ink-soft); display: flex; align-items: center; gap: 6px;
         margin-bottom: 10px;
     }
     .bn-dv2-card-label i { color: var(--bn-primary); }
-    .bn-dv2-card-label .view-all { margin-left: auto; font-size: .74rem; font-weight: 700; color: var(--bn-primary); text-decoration: none; }
+    .bn-dv2-card-label .view-all { margin-left: auto; font-size: 0.87rem; font-weight: 700; color: var(--bn-primary); text-decoration: none; }
 
     /* Ring / gauge presentation (SVG drawn by learning-engine-charts.blade.php) */
     .bn-dv2-ring-wrap { display: flex; flex-direction: column; align-items: center; text-align: center; }
     .bn-dv2-ring-wrap .bn-ring { width: 104px; height: 104px; }
-    .bn-dv2-ring-num { font-size: 1.3rem; font-weight: 800; margin-top: 4px; }
-    .bn-dv2-ring-cap { font-size: .72rem; color: var(--dv2-ink-mute); margin-top: 2px; }
+    .bn-dv2-ring-num { font-size: 1.53rem; font-weight: 800; margin-top: 4px; }
+    .bn-dv2-ring-cap { font-size: 0.85rem; color: var(--dv2-ink-mute); margin-top: 2px; }
 
     /* "Are you improving" trend chip — Brain Level and Personal Best both use it */
     .bn-dv2-trend {
-        display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: .72rem; font-weight: 800;
+        display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; font-size: 0.85rem; font-weight: 800;
         padding: 4px 10px; border-radius: 20px;
     }
     .bn-dv2-trend--up { background: var(--bn-advanced-soft); color: var(--bn-advanced); }
@@ -174,8 +174,8 @@
     .bn-dv2-tree-row { display: flex; align-items: center; gap: 14px; }
     .bn-tree-svg { width: 96px; height: 112px; flex-shrink: 0; display: block; }
     .bn-dv2-tree-info { min-width: 0; flex: 1; }
-    .bn-dv2-tree-name { font-weight: 800; font-size: .98rem; }
-    .bn-dv2-tree-sub { font-size: .76rem; color: var(--dv2-ink-mute); margin-top: 3px; line-height: 1.5; }
+    .bn-dv2-tree-name { font-weight: 800; font-size: 1.16rem; }
+    .bn-dv2-tree-sub { font-size: 0.9rem; color: var(--dv2-ink-mute); margin-top: 3px; line-height: 1.5; }
     .bn-dv2-tree-bar { height: 6px; border-radius: 20px; background: var(--dv2-surface-2); overflow: hidden; margin-top: 8px; }
     .bn-dv2-tree-bar > span { display: block; height: 100%; border-radius: 20px; background: var(--bn-advanced); }
 
@@ -183,57 +183,57 @@
 
     /* Donut legend */
     .bn-dv2-legend { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 5px; }
-    .bn-dv2-legend li { display: flex; align-items: center; gap: 6px; font-size: .76rem; color: var(--dv2-ink-soft); }
+    .bn-dv2-legend li { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--dv2-ink-soft); }
     .bn-dv2-legend .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
     .bn-dv2-legend b { margin-left: auto; color: var(--dv2-ink); }
 
     /* Next Best Action */
-    .bn-dv2-nba-title { font-weight: 800; font-size: .95rem; margin-top: 6px; }
-    .bn-dv2-nba-reason { font-size: .8rem; color: var(--dv2-ink-soft); margin-top: 4px; line-height: 1.45; }
+    .bn-dv2-nba-title { font-weight: 800; font-size: 1.12rem; margin-top: 6px; }
+    .bn-dv2-nba-reason { font-size: 0.94rem; color: var(--dv2-ink-soft); margin-top: 4px; line-height: 1.45; }
 
     /* Numbered / tagged list rows */
-    .bn-dv2-list-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--dv2-line); font-size: .84rem; }
+    .bn-dv2-list-row { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--dv2-line); font-size: 0.99rem; }
     .bn-dv2-list-row:last-child { border-bottom: none; }
     .bn-dv2-list-row .num {
         width: 20px; height: 20px; border-radius: 50%; background: var(--dv2-surface-2); color: var(--dv2-ink-mute);
-        font-size: .68rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        font-size: 0.8rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
     .bn-dv2-list-row .t { flex: 1; }
-    .bn-dv2-tag { font-size: .68rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+    .bn-dv2-tag { font-size: 0.8rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
     .bn-dv2-tag--warn { background: var(--bn-not-started-soft); color: var(--bn-not-started); }
     .bn-dv2-tag--ok { background: var(--bn-advanced-soft); color: var(--bn-advanced); }
     .bn-dv2-tag--review { background: var(--bn-review-soft); color: var(--bn-review); }
 
     /* Badge shelf */
     .bn-dv2-badge-shelf { display: flex; gap: 10px; flex-wrap: wrap; }
-    .bn-dv2-badge-chip { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: .7rem; color: var(--dv2-ink-soft); font-weight: 700; text-align: center; width: 70px; }
+    .bn-dv2-badge-chip { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.83rem; color: var(--dv2-ink-soft); font-weight: 700; text-align: center; width: 70px; }
     .bn-dv2-badge-chip .icn {
         width: 44px; height: 44px; border-radius: 12px; background: var(--dv2-surface-2);
-        display: flex; align-items: center; justify-content: center; font-size: 1.2rem; border: 1px solid;
+        display: flex; align-items: center; justify-content: center; font-size: 1.42rem; border: 1px solid;
     }
     .bn-dv2-badge-chip--bronze .icn { background: #fdf1e7; border-color: rgba(161,92,46,.25); color: #a15c2e; }
     .bn-dv2-badge-chip--silver .icn { background: #f1f4f7; border-color: rgba(91,107,122,.25); color: #5b6b7a; }
     .bn-dv2-badge-chip--gold .icn   { background: #fef8e3; border-color: rgba(161,117,10,.3); color: #a1750a; }
 
     /* Verified skills row */
-    .bn-dv2-vs-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: .82rem; }
+    .bn-dv2-vs-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 0.97rem; }
     .bn-dv2-vs-row i { color: var(--dv2-good); }
     .bn-dv2-vs-row .t { flex: 1; font-weight: 600; }
-    .bn-dv2-vs-row .m { color: var(--dv2-ink-mute); font-size: .72rem; }
+    .bn-dv2-vs-row .m { color: var(--dv2-ink-mute); font-size: 0.85rem; }
 
     /* Marked work — percentage bars, color read off the same mastery-stage
        tokens as everything else, so a glance at the color says how it went. */
     .bn-dv2-mk-row { padding: 8px 0; border-bottom: 1px solid var(--dv2-line); }
     .bn-dv2-mk-row:last-child { border-bottom: none; }
-    .bn-dv2-mk-head { display: flex; align-items: baseline; gap: 8px; font-size: .82rem; margin-bottom: 5px; }
+    .bn-dv2-mk-head { display: flex; align-items: baseline; gap: 8px; font-size: 0.97rem; margin-bottom: 5px; }
     .bn-dv2-mk-head .t { flex: 1; font-weight: 600; color: var(--dv2-ink); }
     .bn-dv2-mk-head .pct { font-weight: 800; font-variant-numeric: tabular-nums; }
     .bn-dv2-mk-bar { height: 7px; border-radius: 20px; background: var(--dv2-surface-2); overflow: hidden; }
     .bn-dv2-mk-bar > span { display: block; height: 100%; border-radius: 20px; }
-    .bn-dv2-mk-points { font-size: .68rem; font-weight: 700; color: var(--bn-advanced); margin-top: 4px; }
+    .bn-dv2-mk-points { font-size: 0.8rem; font-weight: 700; color: var(--bn-advanced); margin-top: 4px; }
     .bn-dv2-mk-rule {
         margin-top: 10px; background: var(--dv2-surface-2); border-radius: 10px; padding: 9px 11px;
-        font-size: .78rem; color: var(--dv2-ink-soft); line-height: 1.5;
+        font-size: 0.92rem; color: var(--dv2-ink-soft); line-height: 1.5;
     }
     .bn-dv2-mk-rule b { color: var(--dv2-ink); }
 
@@ -243,39 +243,39 @@
     .bn-dv2-badge-chip--locked .icn { background: var(--dv2-surface-2); border-color: var(--dv2-line); color: var(--dv2-ink-mute); filter: grayscale(100%); opacity: .55; }
     .bn-dv2-badge-chip--locked { opacity: .65; }
     .bn-dv2-achieve-group + .bn-dv2-achieve-group { margin-top: 14px; }
-    .bn-dv2-achieve-group__label { font-size: .7rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--dv2-ink-mute); margin-bottom: 8px; }
+    .bn-dv2-achieve-group__label { font-size: 0.83rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; color: var(--dv2-ink-mute); margin-bottom: 8px; }
 
     /* Enrolled-program chips — a student can hold several at once, so this
        is a row of tags rather than a single value. */
     .bn-dv2-tracks { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
     .bn-dv2-track-chip {
-        display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 700;
+        display: inline-flex; align-items: center; gap: 6px; font-size: 0.92rem; font-weight: 700;
         padding: 6px 13px; border-radius: 20px; background: var(--dv2-surface); border: 1px solid var(--dv2-line); color: var(--dv2-ink);
     }
     .bn-dv2-track-chip .pip { width: 7px; height: 7px; border-radius: 50%; background: var(--bn-primary); flex-shrink: 0; }
 
     /* Subject filter */
     .bn-dv2-subject-filter { display: flex; align-items: center; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
-    .bn-dv2-subject-filter label { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--dv2-ink-mute); }
+    .bn-dv2-subject-filter label { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; color: var(--dv2-ink-mute); }
     .bn-dv2-subject-filter select {
-        font: inherit; font-size: .84rem; font-weight: 700; color: var(--dv2-ink);
+        font: inherit; font-size: 0.99rem; font-weight: 700; color: var(--dv2-ink);
         background: var(--dv2-surface); border: 1px solid var(--dv2-line); border-radius: 10px; padding: 7px 11px; cursor: pointer;
     }
 
     /* Daily goals */
-    .bn-dv2-goal-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: .84rem; cursor: pointer; }
+    .bn-dv2-goal-row { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 0.99rem; cursor: pointer; }
     .bn-dv2-goal-row input { position: absolute; opacity: 0; width: 16px; height: 16px; }
     .bn-dv2-goal-row .box { width: 16px; height: 16px; border-radius: 5px; border: 2px solid var(--dv2-line); flex-shrink: 0; position: relative; }
     .bn-dv2-goal-row.done .box { background: var(--bn-primary); border-color: var(--bn-primary); }
-    .bn-dv2-goal-row.done .box::after { content: '✓'; color: #fff; font-size: .6rem; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+    .bn-dv2-goal-row.done .box::after { content: '✓'; color: #fff; font-size: 0.71rem; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
     .bn-dv2-goal-row.done .t { color: var(--dv2-ink-mute); text-decoration: line-through; }
 
     /* Reflection journal */
-    .bn-dv2-journal-q { font-size: .72rem; color: var(--dv2-ink-mute); margin-top: 8px; }
-    .bn-dv2-journal-a { font-size: .82rem; margin-top: 2px; }
+    .bn-dv2-journal-q { font-size: 0.85rem; color: var(--dv2-ink-mute); margin-top: 8px; }
+    .bn-dv2-journal-a { font-size: 0.97rem; margin-top: 2px; }
     .bn-dv2-journal textarea, .bn-dv2-journal input[type="text"] {
         width: 100%; border: 1px solid var(--dv2-line); border-radius: 8px; padding: 6px 8px; font-family: inherit;
-        font-size: .82rem; margin-top: 2px; background: var(--dv2-surface-2); color: var(--dv2-ink);
+        font-size: 0.97rem; margin-top: 2px; background: var(--dv2-surface-2); color: var(--dv2-ink);
     }
 
     /* AI tools */
@@ -285,14 +285,14 @@
         width: 36px; height: 36px; border-radius: 10px; background: var(--bn-primary); color: #fff;
         display: flex; align-items: center; justify-content: center; margin: 0 auto 8px;
     }
-    .bn-dv2-ai-tool .t { font-weight: 700; font-size: .82rem; color: var(--dv2-ink); }
-    .bn-dv2-ai-tool .m { font-size: .68rem; color: var(--dv2-ink-mute); }
+    .bn-dv2-ai-tool .t { font-weight: 700; font-size: 0.97rem; color: var(--dv2-ink); }
+    .bn-dv2-ai-tool .m { font-size: 0.8rem; color: var(--dv2-ink-mute); }
 
     /* Homework row */
     .bn-dv2-hw-row { display: flex; align-items: center; gap: 12px; }
     .bn-dv2-hw-row .icn { width: 40px; height: 40px; border-radius: 10px; background: var(--dv2-surface-2); display: flex; align-items: center; justify-content: center; color: var(--bn-primary); flex-shrink: 0; }
-    .bn-dv2-hw-row .t { font-weight: 700; font-size: .86rem; }
-    .bn-dv2-hw-row .m { font-size: .74rem; color: var(--dv2-ink-mute); }
+    .bn-dv2-hw-row .t { font-weight: 700; font-size: 1.01rem; }
+    .bn-dv2-hw-row .m { font-size: 0.87rem; color: var(--dv2-ink-mute); }
     .bn-dv2-hw-row .score { margin-left: auto; font-weight: 800; }
 
     /* Banner (weekly wins / milestone) */
@@ -301,13 +301,13 @@
         border: 1px solid var(--dv2-line); border-radius: 14px; padding: 14px 18px; margin-bottom: 14px;
         display: flex; gap: 12px; align-items: center;
     }
-    .bn-dv2-banner i { font-size: 1.2rem; color: var(--bn-primary); }
-    .bn-dv2-banner .t { font-weight: 800; font-size: .9rem; }
-    .bn-dv2-banner .m { font-size: .8rem; color: var(--dv2-ink-soft); }
+    .bn-dv2-banner i { font-size: 1.42rem; color: var(--bn-primary); }
+    .bn-dv2-banner .t { font-weight: 800; font-size: 1.06rem; }
+    .bn-dv2-banner .m { font-size: 0.94rem; color: var(--dv2-ink-soft); }
 
     /* Mini table (teacher's Skill Mastery Report, parent's student list, etc.) */
-    .bn-dv2-mini-table { width: 100%; border-collapse: collapse; font-size: .82rem; }
-    .bn-dv2-mini-table th { text-align: left; font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--dv2-ink-mute); padding: 6px 8px; border-bottom: 1px solid var(--dv2-line); }
+    .bn-dv2-mini-table { width: 100%; border-collapse: collapse; font-size: 0.97rem; }
+    .bn-dv2-mini-table th { text-align: left; font-size: 0.8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--dv2-ink-mute); padding: 6px 8px; border-bottom: 1px solid var(--dv2-line); }
     .bn-dv2-mini-table td { padding: 8px; border-bottom: 1px solid var(--dv2-line); }
     .bn-dv2-mini-table tr:last-child td { border-bottom: none; }
 </style>

@@ -108,7 +108,7 @@
     <div class="cc-cd-card">
         <p class="cc-cd-label">Course</p>
         @if ($cd_options->isEmpty())
-            <p class="text-secondary mb-0" style="font-size: 13px;">No courses in this category yet.</p>
+            <p class="text-secondary mb-0" style="font-size: 15px;">No courses in this category yet.</p>
         @else
             <form method="GET" class="cc-cd-select-form">
                 <select name="program" class="cc-cd-select" onchange="this.form.submit()">
@@ -410,13 +410,13 @@
                 <div class="cc-cd-empty">
                     <p class="mb-1">No lessons added yet for <strong>{{ $cd_selected->title }}</strong>.</p>
                     @if ($cd_can_manage)
-                        <p class="text-secondary mb-0" style="font-size: 13px;">Use "Add a lesson" above to get started.</p>
+                        <p class="text-secondary mb-0" style="font-size: 15px;">Use "Add a lesson" above to get started.</p>
                     @elseif ($cd_is_admin && !$cd_selected->isLinkedToClassContent())
-                        <p class="text-secondary mb-0" style="font-size: 13px;">
+                        <p class="text-secondary mb-0" style="font-size: 15px;">
                             This program also isn't linked to Class Content - open it in <a href="{{ route('program.edit', $cd_selected->id) }}">Website Setup &rarr; Course Catalogue &rarr; Program</a> if you'd rather use that instead.
                         </p>
                     @else
-                        <p class="text-secondary mb-0" style="font-size: 13px;">Ask the assigned teacher to add lessons here.</p>
+                        <p class="text-secondary mb-0" style="font-size: 15px;">Ask the assigned teacher to add lessons here.</p>
                     @endif
                 </div>
             @endif
@@ -570,14 +570,14 @@
             margin-bottom: 1rem;
         }
         .cc-cd-card:last-child { margin-bottom: 0; }
-        .cc-cd-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #8b93a3; margin: 0 0 0.6rem; }
+        .cc-cd-label { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #8b93a3; margin: 0 0 0.6rem; }
         .cc-cd-select {
             appearance: none;
             -webkit-appearance: none;
             width: 100%;
             max-width: 420px;
             font: inherit;
-            font-size: 0.95rem;
+            font-size: 1.12rem;
             font-weight: 600;
             color: #0f172a;
             background: #f8f9fb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%235e17eb' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 1rem center;
@@ -588,22 +588,22 @@
         }
         .cc-cd-select:focus { outline: none; border-color: #5e17eb; box-shadow: 0 0 0 3px rgba(94, 23, 235, .12); }
         .cc-cd-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem 1.25rem; }
-        .cc-cd-meta-label { font-size: 0.72rem; color: #8b93a3; margin: 0 0 0.15rem; }
-        .cc-cd-meta-value { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; }
-        .cc-cd-status-pill { display: inline-block; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.65rem; border-radius: 999px; }
+        .cc-cd-meta-label { font-size: 0.85rem; color: #8b93a3; margin: 0 0 0.15rem; }
+        .cc-cd-meta-value { font-size: 1.12rem; font-weight: 700; color: #0f172a; margin: 0; }
+        .cc-cd-status-pill { display: inline-block; font-size: 0.85rem; font-weight: 700; padding: 0.2rem 0.65rem; border-radius: 999px; }
         .cc-cd-status-pill--ongoing { background: #dcfce7; color: #15803d; }
         .cc-cd-status-pill--upcoming { background: #dbeafe; color: #1d4ed8; }
         .cc-cd-status-pill--coming_soon { background: #f1f5f9; color: #64748b; }
         .cc-cd-status-pill--enrolling { background: #ece4fd; color: #5e17eb; }
-        .cc-cd-desc { font-size: 0.9rem; color: #475569; line-height: 1.6; margin: 0 0 0.75rem; }
-        .cc-cd-desc--sm { font-size: 0.85rem; margin: 0.6rem 0; }
+        .cc-cd-desc { font-size: 1.06rem; color: #475569; line-height: 1.6; margin: 0 0 0.75rem; }
+        .cc-cd-desc--sm { font-size: 1rem; margin: 0.6rem 0; }
         .cc-cd-desc:last-child { margin-bottom: 0; }
         .cc-cd-highlights { margin: 0; padding-left: 1.1rem; }
-        .cc-cd-highlights li { font-size: 0.88rem; color: #475569; line-height: 1.6; }
+        .cc-cd-highlights li { font-size: 1.04rem; color: #475569; line-height: 1.6; }
         .cc-cd-head-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
         .cc-cd-status-tag {
             display: inline-flex; align-items: center; gap: 0.35rem;
-            font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+            font-size: 0.73rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
             padding: 0.25rem 0.65rem; border-radius: 999px; flex-shrink: 0;
         }
         .cc-cd-status-tag i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
@@ -613,7 +613,7 @@
         .cc-cd-status-tag--coordinator_reviewed { background: #f3e8ff; color: #7e22ce; }
         .cc-cd-status-tag--approved { background: #dcfce7; color: #15803d; }
         .cc-cd-manage-row { background: #f8f9fb; border: 1px dashed var(--ot-border-basic-table, #e4e7ec); border-radius: 10px; padding: 0.65rem 0.75rem; margin-bottom: 0.75rem; }
-        .cc-cd-manage-link { font-size: 0.82rem; font-weight: 600; color: #6366f1; text-decoration: none; white-space: nowrap; }
+        .cc-cd-manage-link { font-size: 0.97rem; font-weight: 600; color: #6366f1; text-decoration: none; white-space: nowrap; }
         .cc-cd-empty { border: 1.5px dashed var(--ot-border-basic-table, #e4e7ec); border-radius: 14px; padding: 1.2rem 1.4rem; }
         .cc-cd-lesson {
             border: 1px solid var(--ot-border-basic-table, #e4e7ec);
@@ -627,21 +627,21 @@
         .cc-cd-lesson--changes_requested { border-left-color: #f59e0b; }
         .cc-cd-lesson--coordinator_reviewed { border-left-color: #a855f7; }
         .cc-cd-lesson--approved { border-left-color: #22c55e; }
-        .cc-cd-lesson-summary { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem; cursor: pointer; list-style: none; font-size: 0.9rem; font-weight: 600; color: #0f172a; }
+        .cc-cd-lesson-summary { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem; cursor: pointer; list-style: none; font-size: 1.06rem; font-weight: 600; color: #0f172a; }
         .cc-cd-lesson-summary::-webkit-details-marker { display: none; }
         .cc-cd-lesson-num {
             width: 26px; height: 26px; border-radius: 50%;
             background: #ece4fd; color: #5e17eb;
-            font-size: 0.76rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            font-size: 0.9rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
         .cc-cd-lesson-num--submitted { background: #dbeafe; color: #1d4ed8; }
         .cc-cd-lesson-num--changes_requested { background: #fef3c7; color: #92400e; }
         .cc-cd-lesson-num--coordinator_reviewed { background: #f3e8ff; color: #7e22ce; }
         .cc-cd-lesson-num--approved { background: #dcfce7; color: #15803d; }
         .cc-cd-lesson-title { flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
-        .cc-cd-lesson-title small { display: block; width: 100%; font-weight: 500; color: #8b93a3; font-size: 0.74rem; }
+        .cc-cd-lesson-title small { display: block; width: 100%; font-weight: 500; color: #8b93a3; font-size: 0.87rem; }
         .cc-cd-chip-row { display: inline-flex; gap: 0.3rem; }
-        .cc-cd-chip { font-size: 0.72rem; background: #f1f5f9; color: #475569; border-radius: 999px; padding: 0.08rem 0.4rem; font-weight: 600; }
+        .cc-cd-chip { font-size: 0.85rem; background: #f1f5f9; color: #475569; border-radius: 999px; padding: 0.08rem 0.4rem; font-weight: 600; }
         .cc-cd-delete-btn {
             background: transparent; border: 1px solid var(--ot-border-basic-table, #e4e7ec); border-radius: 8px;
             color: #94a3b8; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;
@@ -658,10 +658,10 @@
         details[open] .cc-cd-lesson-chev { transform: rotate(180deg); }
         .cc-cd-lesson-body { padding: 0 1rem 1rem 3.25rem; border-top: 1px solid var(--ot-border-basic-table, #e4e7ec); }
         .cc-cd-sub { margin-top: 0.9rem; }
-        .cc-cd-sub h5 { font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #8b93a3; margin: 0 0 0.5rem; }
+        .cc-cd-sub h5 { font-size: 0.83rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #8b93a3; margin: 0 0 0.5rem; }
         .cc-cd-section-pill {
             display: inline-block;
-            font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+            font-size: 0.73rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
             padding: 0.2rem 0.55rem; border-radius: 999px; margin-bottom: 0.55rem;
         }
         .cc-cd-section-pill--resources { background: #ccfbf1; color: #0f766e; }
@@ -674,15 +674,15 @@
         .cc-cd-sub-title { display: block; font-weight: 700; color: #0f172a; }
         .cc-cd-res-list, .cc-cd-out-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
         .cc-cd-out-list { list-style: disc; padding-left: 1.1rem; }
-        .cc-cd-res-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
-        .cc-cd-out-list li { font-size: 0.85rem; color: #475569; line-height: 1.5; }
+        .cc-cd-res-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; }
+        .cc-cd-out-list li { font-size: 1rem; color: #475569; line-height: 1.5; }
         .cc-cd-ico { flex-shrink: 0; }
         .cc-cd-pill-row { display: flex; align-items: center; gap: 0.5rem; }
-        .cc-cd-hwtitle { font-size: 0.85rem; font-weight: 600; color: #0f172a; }
+        .cc-cd-hwtitle { font-size: 1rem; font-weight: 600; color: #0f172a; }
         .cc-cd-hw-wrap { display: flex; flex-direction: column; gap: 0.5rem; background: #f8f9fb; border: 1px solid var(--ot-border-basic-table, #e4e7ec); border-radius: 12px; padding: 0.55rem; }
         .cc-cd-hwrow { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; padding: 0.5rem 0.6rem; background: #fff; border: 1px solid #edeef1; border-radius: 10px; }
-        .cc-cd-hwdue { font-size: 0.74rem; color: #8b93a3; white-space: nowrap; margin-left: auto; }
-        .cc-cd-empty-sub { font-size: 0.82rem; color: #8b93a3; font-style: italic; margin: 0; }
+        .cc-cd-hwdue { font-size: 0.87rem; color: #8b93a3; white-space: nowrap; margin-left: auto; }
+        .cc-cd-empty-sub { font-size: 0.97rem; color: #8b93a3; font-style: italic; margin: 0; }
     </style>
     @endpush
 @endonce

@@ -28,7 +28,7 @@
     <div class="cc-cd-card">
         <p class="cc-cd-label">Course</p>
         @if ($sp_options->isEmpty())
-            <p class="text-secondary mb-0" style="font-size: 13px;">You're not enrolled in any course in this category yet.</p>
+            <p class="text-secondary mb-0" style="font-size: 15px;">You're not enrolled in any course in this category yet.</p>
         @else
             <form method="GET" class="cc-cd-select-form">
                 <select name="program" class="cc-cd-select" onchange="this.form.submit()">
@@ -242,14 +242,14 @@
             margin-bottom: 1rem;
         }
         .cc-cd-card:last-child { margin-bottom: 0; }
-        .cc-cd-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #8b93a3; margin: 0 0 0.6rem; }
+        .cc-cd-label { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #8b93a3; margin: 0 0 0.6rem; }
         .cc-cd-select {
             appearance: none;
             -webkit-appearance: none;
             width: 100%;
             max-width: 420px;
             font: inherit;
-            font-size: 0.95rem;
+            font-size: 1.12rem;
             font-weight: 600;
             color: #0f172a;
             background: #f8f9fb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' stroke='%235e17eb' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 1rem center;
@@ -260,10 +260,10 @@
         }
         .cc-cd-select:focus { outline: none; border-color: #5e17eb; box-shadow: 0 0 0 3px rgba(94, 23, 235, .12); }
         .cc-cd-meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem 1.25rem; }
-        .cc-cd-meta-label { font-size: 0.72rem; color: #8b93a3; margin: 0 0 0.15rem; }
-        .cc-cd-meta-value { font-size: 0.95rem; font-weight: 700; color: #0f172a; margin: 0; }
-        .cc-cd-desc { font-size: 0.9rem; color: #475569; line-height: 1.6; margin: 0 0 0.75rem; }
-        .cc-cd-desc--sm { font-size: 0.85rem; margin: 0.6rem 0; }
+        .cc-cd-meta-label { font-size: 0.85rem; color: #8b93a3; margin: 0 0 0.15rem; }
+        .cc-cd-meta-value { font-size: 1.12rem; font-weight: 700; color: #0f172a; margin: 0; }
+        .cc-cd-desc { font-size: 1.06rem; color: #475569; line-height: 1.6; margin: 0 0 0.75rem; }
+        .cc-cd-desc--sm { font-size: 1rem; margin: 0.6rem 0; }
         .cc-cd-desc:last-child { margin-bottom: 0; }
         .cc-cd-head-row { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.9rem; }
         .cc-cd-empty { border: 1.5px dashed var(--ot-border-basic-table, #e4e7ec); border-radius: 14px; padding: 1.2rem 1.4rem; }
@@ -275,23 +275,23 @@
         }
         .cc-cd-lesson:hover { box-shadow: 0 6px 18px rgba(15, 23, 42, .06); }
         .cc-cd-lesson:last-child { margin-bottom: 0; }
-        .cc-cd-lesson-summary { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem; cursor: pointer; list-style: none; font-size: 0.9rem; font-weight: 600; color: #0f172a; }
+        .cc-cd-lesson-summary { display: flex; align-items: center; gap: 0.75rem; padding: 0.8rem 1rem; cursor: pointer; list-style: none; font-size: 1.06rem; font-weight: 600; color: #0f172a; }
         .cc-cd-lesson-summary::-webkit-details-marker { display: none; }
         .cc-cd-lesson-num {
             width: 26px; height: 26px; border-radius: 50%;
             background: #ece4fd; color: #5e17eb;
-            font-size: 0.76rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            font-size: 0.9rem; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
         }
         .cc-cd-lesson-title { flex: 1; min-width: 0; display: flex; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
         .cc-cd-chip-row { display: inline-flex; gap: 0.3rem; }
-        .cc-cd-chip { font-size: 0.72rem; background: #f1f5f9; color: #475569; border-radius: 999px; padding: 0.08rem 0.4rem; font-weight: 600; }
+        .cc-cd-chip { font-size: 0.85rem; background: #f1f5f9; color: #475569; border-radius: 999px; padding: 0.08rem 0.4rem; font-weight: 600; }
         .cc-cd-lesson-chev { color: #8b93a3; transition: transform .15s ease; flex-shrink: 0; }
         details[open] .cc-cd-lesson-chev { transform: rotate(180deg); }
         .cc-cd-lesson-body { padding: 0 1rem 1rem 3.25rem; border-top: 1px solid var(--ot-border-basic-table, #e4e7ec); }
         .cc-cd-sub { margin-top: 0.9rem; }
         .cc-cd-section-pill {
             display: inline-block;
-            font-size: 0.62rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
+            font-size: 0.73rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
             padding: 0.2rem 0.55rem; border-radius: 999px; margin-bottom: 0.55rem;
         }
         .cc-cd-section-pill--resources { background: #ccfbf1; color: #0f766e; }
@@ -304,16 +304,16 @@
         .cc-cd-sub-title { display: block; font-weight: 700; color: #0f172a; }
         .cc-cd-res-list, .cc-cd-out-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
         .cc-cd-out-list { list-style: disc; padding-left: 1.1rem; }
-        .cc-cd-res-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; }
-        .cc-cd-out-list li { font-size: 0.85rem; color: #475569; line-height: 1.5; }
+        .cc-cd-res-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 1rem; }
+        .cc-cd-out-list li { font-size: 1rem; color: #475569; line-height: 1.5; }
         .cc-cd-ico { flex-shrink: 0; }
-        .cc-cd-score { font-size: 0.85rem; font-weight: 700; color: #0f172a; margin: 0.5rem 0 0; }
+        .cc-cd-score { font-size: 1rem; font-weight: 700; color: #0f172a; margin: 0.5rem 0 0; }
         .cc-cd-submit-form { margin-top: 0.5rem; background: #f8f9fb; border: 1px dashed var(--ot-border-basic-table, #e4e7ec); border-radius: 10px; padding: 0.75rem; }
-        .cc-cd-submit-label { font-size: 0.78rem; font-weight: 600; color: #475569; margin: 0 0 0.5rem; }
+        .cc-cd-submit-label { font-size: 0.92rem; font-weight: 600; color: #475569; margin: 0 0 0.5rem; }
         .cc-cd-submit-row { display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; }
         .cc-cd-submit-row input[type="text"] { flex: 1 1 220px; min-width: 180px; }
         .cc-cd-submit-row input[type="file"] { flex: 1 1 220px; min-width: 180px; }
-        .cc-cd-submit-or { font-size: 0.78rem; color: #94a3b8; font-weight: 600; }
+        .cc-cd-submit-or { font-size: 0.92rem; color: #94a3b8; font-weight: 600; }
     </style>
     @endpush
 @endonce
