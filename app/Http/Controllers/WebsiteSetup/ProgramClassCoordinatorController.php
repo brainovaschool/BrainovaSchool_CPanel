@@ -57,8 +57,14 @@ class ProgramClassCoordinatorController extends Controller
      *  there instead of to program-class-coordinator.index. */
     public function decide(Request $request, $id)
     {
+        // The button actually posts "send_to_admin" (see
+        // class-content/_course-details-block.blade.php) - this used to
+        // say "approve" instead, a value nothing ever sends, so every
+        // "Accept & send to admin" click failed validation silently and
+        // nothing happened. Matches ClassContentCoordinatorController's
+        // decide(), the older equivalent, which already had this right.
         $request->validate([
-            'decision' => 'required|in:approve,request_changes',
+            'decision' => 'required|in:send_to_admin,request_changes',
             'feedback' => 'nullable|string|max:2000',
         ]);
 

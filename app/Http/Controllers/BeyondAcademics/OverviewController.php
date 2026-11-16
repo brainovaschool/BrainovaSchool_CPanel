@@ -41,12 +41,17 @@ class OverviewController extends Controller
         // unrelated reasons), and they still need their full Coordinator
         // scope, not just their own taught programs.
         $isCoordinator = $user && !$isAdmin && hasPermission('class_content_coordinator_review');
+        // A "Head" standing in for Admin on final approval - same
+        // permission that already gates /class-content-admin - should
+        // see every program to approve, same as Admin, not just their
+        // own coordinatees' scope.
+        $isApprover = $user && !$isAdmin && hasPermission('class_content_approve');
 
-        if (!$isAdmin && !$isTeacher && !$isCoordinator) {
+        if (!$isAdmin && !$isTeacher && !$isCoordinator && !$isApprover) {
             abort(403, ___('alert.You are not authorized to access this page'));
         }
 
-        if ($isAdmin) {
+        if ($isAdmin || $isApprover) {
             return null;
         }
 

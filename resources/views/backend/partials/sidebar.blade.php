@@ -47,7 +47,7 @@
                     </li>
                 @endif
 
-                @if (auth()->user()?->role_id == 1 || teachesInCategory('Academics Boost'))
+                @if (auth()->user()?->role_id == 1 || teachesInCategory('Academics Boost') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve'))
                     <li class="sidebar-menu-item {{ set_menu(['core-academics*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-school"></i>
@@ -67,7 +67,7 @@
                     </li>
                 @endif
 
-                @if (auth()->user()?->role_id == 1 || teachesInCategory('Beyond Academics') || hasPermission('class_content_coordinator_review'))
+                @if (auth()->user()?->role_id == 1 || teachesInCategory('Beyond Academics') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve'))
                     <li class="sidebar-menu-item {{ set_menu(['beyond-academics*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-rocket"></i>

@@ -4278,6 +4278,69 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
     }
 
+    /** General version of the "stale snapshot" patch seedCoordinatorRole()
+     *  already does for Coordinator/Teacher by hardcoded role name - this
+     *  does it for EVERY role, so a brand-new custom role (e.g. a "Head"
+     *  role created from the normal Roles screen, standing in for Admin
+     *  on approvals) self-heals the same way instead of needing its own
+     *  one-off method. ADDITIVE ONLY: for any User with a personal
+     *  permissions snapshot (authEffectivePermissions() intersects it
+     *  with their role), merges in whatever their CURRENT role grants
+     *  that the snapshot is missing. Never removes anything, so a
+     *  deliberate per-user restriction an admin set up on purpose is left
+     *  alone - this only fixes the case where the role gained a
+     *  permission (checked on the Roles screen) after that user's
+     *  snapshot was last saved. Safe to re-run any time a role's
+     *  permissions change. */
+    public function syncStalePermissionSnapshots(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $report = [];
+        $roles = Role::all();
+
+        foreach ($roles as $role) {
+            $rolePerms = is_array($role->permissions) ? $role->permissions : [];
+            if (empty($rolePerms)) {
+                continue;
+            }
+
+            $users = \App\Models\User::where('role_id', $role->id)->get();
+            foreach ($users as $u) {
+                $userPerms = is_array($u->permissions) ? $u->permissions : [];
+                if ($userPerms === []) {
+                    continue; // no personal override saved - already inherits the role directly
+                }
+                $merged = array_values(array_unique(array_merge($userPerms, $rolePerms)));
+                sort($merged);
+                $sortedBefore = $userPerms;
+                sort($sortedBefore);
+                if ($merged !== $sortedBefore) {
+                    $added = array_values(array_diff($rolePerms, $userPerms));
+                    $u->permissions = $merged;
+                    $u->save();
+                    $report[] = "User #{$u->id} \"{$u->name}\" <{$u->email}> (role: {$role->name}) — added: " . implode(', ', $added);
+                }
+            }
+        }
+
+        if (!$report) {
+            $report[] = 'Nothing to patch — every user with a personal permission snapshot already matches their role.';
+        }
+
+        return response(
+            '<pre style="font:14px/1.6 monospace;padding:24px;white-space:pre-wrap;">'
+            . implode("\n", $report)
+            . '</pre>'
+        );
+    }
+
     /** Read-only: every ClassContentModule row with its real review_status
      *  (so "nothing in Coordinator's queue" can be told apart from "it's
      *  still sitting in Draft because it was never actually submitted"),

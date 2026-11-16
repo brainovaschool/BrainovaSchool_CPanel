@@ -23,8 +23,15 @@ class ProgramClassAdminController extends Controller
 
     public function decide(Request $request, $id)
     {
-        if ((int) Auth::user()?->role_id !== 1) {
-            abort(403, 'Admin only.');
+        // Was hardcoded to role_id === 1 ("Admin only") - blocked any
+        // staff member granted class_content_approve (e.g. a "Head" role
+        // standing in for Admin) even though that's exactly the
+        // permission this action is meant to be gated by everywhere else
+        // (see class-content-admin's routes/sidebar). hasPermission()
+        // still returns true for the real Admin, so this is a superset,
+        // not a loosening.
+        if (!hasPermission('class_content_approve')) {
+            abort(403, ___('alert.You are not authorized to access this page'));
         }
 
         $request->validate([

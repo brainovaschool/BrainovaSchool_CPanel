@@ -9,6 +9,7 @@ use App\Repositories\Homework\HomeworkRepository;
 use App\Repositories\WebsiteSetup\ProgramClassMarkRepository;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 /** Split into 3 pages (Overview / Course Details / Progress & Report)
  *  rather than one page with 3 anchor sections. */
@@ -31,29 +32,55 @@ class OverviewController extends Controller
 
     /** Was Super Admin only - the sidebar now also opens this section for
      *  a teacher actually assigned (Program::teachers()) to a program
-     *  under Academics Boost (see teachesInCategory()), so this gate has
-     *  to allow the same thing, or that teacher hits the tab and then a
-     *  403 the moment they click into it. */
-    private function guard(): void
-    {
-        if (!Auth::check() || (!$this->isAdmin() && !teachesInCategory('Academics Boost'))) {
-            abort(403, ___('alert.You are not authorized to access this page'));
-        }
-    }
-
-    /** null = no restriction (admin sees every active program in the
-     *  category). Otherwise just the ids of programs this teacher
-     *  personally teaches (Program edit form's "Teachers" field) - same
-     *  scoping Beyond Academics already applies for its own teachers, so
-     *  an assigned teacher here only ever sees their own program(s), not
-     *  every other teacher's students/progress too. */
+     *  under Academics Boost (see teachesInCategory()), or a Coordinator/
+     *  "Head" approver reviewing that teacher's submissions, so this gate
+     *  has to allow all three, or they hit the tab and then a 403 the
+     *  moment they click into it. Folded into scopedProgramIds() itself
+     *  (same shape as BeyondAcademics\OverviewController) rather than a
+     *  separate guard(), so every caller gets the check for free. */
     private function scopedProgramIds(): ?array
     {
-        if ($this->isAdmin()) {
+        $user = Auth::user();
+        $isAdmin       = $this->isAdmin();
+        $isTeacher     = !$isAdmin && teachesInCategory('Academics Boost');
+        $isCoordinator = !$isAdmin && hasPermission('class_content_coordinator_review');
+        // A "Head" standing in for Admin on final approval - same
+        // permission that already gates /class-content-admin - should
+        // see every program to approve, same as Admin, not just their
+        // own coordinatees' scope.
+        $isApprover    = !$isAdmin && hasPermission('class_content_approve');
+
+        if (!$isAdmin && !$isTeacher && !$isCoordinator && !$isApprover) {
+            abort(403, ___('alert.You are not authorized to access this page'));
+        }
+
+        if ($isAdmin || $isApprover) {
             return null;
         }
-        $staff = Auth::user()->staff;
-        return $staff ? $staff->programs()->pluck('programs.id')->all() : [];
+
+        /** Otherwise the union of: programs this teacher personally
+         *  teaches (Program edit form's "Teachers" field), and - if
+         *  they're also a Coordinator - programs taught by whichever
+         *  teachers they oversee (Staff::coordinatees()). Same scoping
+         *  Beyond Academics already applies, so an assigned
+         *  teacher/coordinator here only ever sees their own program(s)
+         *  or their coordinatees', not every other teacher's students. */
+        $idSet = [];
+        if ($isTeacher) {
+            $staff = $user->staff;
+            $idSet = array_merge($idSet, $staff ? $staff->programs()->pluck('programs.id')->all() : []);
+        }
+        if ($isCoordinator) {
+            $coordinateeIds = $user->staff?->coordinatees->pluck('id')->all() ?? [];
+            if ($coordinateeIds) {
+                $idSet = array_merge($idSet, DB::table('staff_program_enrollments')
+                    ->whereIn('staff_id', $coordinateeIds)
+                    ->pluck('program_id')
+                    ->all());
+            }
+        }
+
+        return array_values(array_unique($idSet));
     }
 
     /** Same category record the public Our Programs page reads for its
@@ -77,7 +104,6 @@ class OverviewController extends Controller
 
     public function overview()
     {
-        $this->guard();
         $category = $this->category();
         $data['category'] = $category;
 
@@ -100,7 +126,6 @@ class OverviewController extends Controller
 
     public function courseDetails(Request $request)
     {
-        $this->guard();
         $category = $this->category();
 
         $data['courseOptions'] = $this->courseOptions($category);
@@ -126,7 +151,6 @@ class OverviewController extends Controller
 
     public function progressReport(Request $request)
     {
-        $this->guard();
         $category = $this->category();
 
         $data['courseOptions'] = $this->courseOptions($category);

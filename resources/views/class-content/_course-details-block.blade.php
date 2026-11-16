@@ -96,6 +96,12 @@
     // coordinator actually oversees (Staff::coordinatees()).
     $cd_is_coordinator = !$cd_is_admin && $cd_viewer_staff_id && hasPermission('class_content_coordinator_review');
     $cd_coordinatee_ids = $cd_is_coordinator ? $cd_viewer->staff->coordinatees->pluck('id')->all() : [];
+
+    // A "Head" (or any non-Admin) granted class_content_approve stands
+    // in for Admin on the final decision - same permission that already
+    // gates /class-content-admin's routes and sidebar link, just never
+    // checked here before (this block hardcoded $cd_is_admin instead).
+    $cd_can_approve = $cd_is_admin || hasPermission('class_content_approve');
 @endphp
 
 <div class="cc-cd">
@@ -206,7 +212,7 @@
                             $cd_can_delete = $cd_is_admin
                                 || ((int) $pc->created_by === (int) $cd_viewer_staff_id && $pc->isEditableByTeacher());
                         @endphp
-                        @if ($cd_can_manage || $cd_is_coordinator)
+                        @if ($cd_can_manage || $cd_is_coordinator || $cd_can_approve)
                             <span class="cc-cd-status-tag cc-cd-status-tag--{{ $pc->review_status }}"><i></i>{{ \App\Models\WebsiteSetup\ProgramClass::REVIEW_STATUSES[$pc->review_status] ?? $pc->review_status }}</span>
                         @endif
                         @if ($cd_can_manage && !empty($pc->gradableItems()))
@@ -224,7 +230,7 @@
                     </summary>
                     <div class="cc-cd-lesson-body">
                         @php
-                            $cd_admin_can_decide = $cd_is_admin && in_array($pc->review_status, [\App\Models\WebsiteSetup\ProgramClass::SUBMITTED, \App\Models\WebsiteSetup\ProgramClass::COORDINATOR_REVIEWED], true);
+                            $cd_admin_can_decide = $cd_can_approve && in_array($pc->review_status, [\App\Models\WebsiteSetup\ProgramClass::SUBMITTED, \App\Models\WebsiteSetup\ProgramClass::COORDINATOR_REVIEWED], true);
                             $cd_is_owner_or_admin = $cd_is_admin || (int) $pc->created_by === (int) $cd_viewer_staff_id;
                         @endphp
                         @if ($cd_admin_can_decide)

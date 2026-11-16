@@ -202,6 +202,7 @@ Route::middleware(saasMiddleware())->group(function () {
             Route::get('/db/seed-feature-access/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedFeatureAccess']);
             Route::get('/db/seed-coordinator-role/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'seedCoordinatorRole']);
             Route::get('/db/inspect-coordinator-permissions/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectCoordinatorPermissions']);
+            Route::get('/db/sync-stale-permission-snapshots/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'syncStalePermissionSnapshots']);
             Route::get('/db/inspect-coordinator-links/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectCoordinatorLinks']);
             Route::get('/db/inspect-student-programs/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectStudentPrograms']);
             Route::get('/db/inspect-my-sidebar-check/{key}', [\App\Http\Controllers\MigrationRunnerController::class, 'inspectMySidebarCheck']);
