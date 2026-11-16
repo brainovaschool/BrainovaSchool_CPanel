@@ -338,6 +338,30 @@ class ProgramClassMarkRepository
         return $this->responseWithSuccess('Submitted.', []);
     }
 
+    /** The auto-graded counterpart to submitForStudent() - a CSV-backed
+     *  quiz (see QuizEngineService) grades itself the moment the student
+     *  submits, so taking it IS the submission; this writes the result
+     *  straight into marks/graded_at, bypassing the manual Grade page
+     *  entirely. graded_by stays null ("system-graded", not a staff
+     *  member) - isGraded() only ever checks marks !== null, so nothing
+     *  else has to know the difference. */
+    public function autoGradeQuiz(ProgramClass $class, Student $student, float $earnedMarks): ProgramClassMark
+    {
+        return ProgramClassMark::updateOrCreate(
+            [
+                'program_class_id' => $class->id,
+                'assessment_type'  => ProgramClassMark::QUIZ,
+                'student_id'       => $student->id,
+            ],
+            [
+                'marks'       => $earnedMarks,
+                'graded_by'   => null,
+                'graded_at'   => now(),
+                'submitted_at' => now(),
+            ]
+        );
+    }
+
     /** The "Grading" page's data: every lesson with at least one gradable
      *  item, across whichever programs the viewer can see (already
      *  filtered to just one program if they picked one), each with its

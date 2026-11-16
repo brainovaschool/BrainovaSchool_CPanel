@@ -157,6 +157,25 @@ class ProgramClassController extends Controller
             ->with($result['status'] ? 'success' : 'danger', $result['message']);
     }
 
+    /** Reuses the exact same analytics view the Homework quiz uses
+     *  (backend.homework.quiz_analytics) - see
+     *  ProgramClassRepository::getQuizAnalytics() and QuizEngineService. */
+    public function quizAnalytics($id)
+    {
+        $class = ProgramClass::find($id);
+        if (!$class) {
+            return redirect()->route('dashboard')->with('danger', ___('alert.not_found'));
+        }
+        $this->authorizeClass($class);
+
+        $data['analytics'] = $this->repo->getQuizAnalytics((int) $id);
+        $data['analytics']['owner_type'] = 'program_class';
+        $data['analytics']['back_url']   = route('program-class.edit', $id);
+        $data['title'] = 'Quiz Analytics — ' . ($class->quiz_title ?: 'Quiz');
+
+        return view('backend.homework.quiz_analytics', compact('data'));
+    }
+
     private function validateRequest(Request $request): void
     {
         $request->validate([
@@ -173,6 +192,9 @@ class ProgramClassController extends Controller
             'quiz_description'    => 'nullable|string|max:3000',
             'quiz_link_url'       => 'nullable|string|max:500',
             'quiz_max_marks'      => 'nullable|integer|min:0',
+            // Optional - a quiz can still just be a plain link, exactly as
+            // today. Same mimes/size limit as Homework's own quiz upload.
+            'bulk_questions_file' => 'nullable|file|mimes:csv,txt|max:5120',
             'worksheet_title'       => 'nullable|string|max:150',
             'worksheet_description' => 'nullable|string|max:3000',
             'worksheet_link_url'    => 'nullable|string|max:500',

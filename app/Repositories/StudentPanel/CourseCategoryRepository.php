@@ -83,7 +83,7 @@ class CourseCategoryRepository
         $selectedOption = $selectedOption ?? $programs->first();
 
         $selectedProgram = $selectedOption
-            ? Program::with(['teachers', 'programClasses' => fn ($q) => $q->approved()->with(['materials', 'activities', 'outcomes'])])->find($selectedOption->id)
+            ? Program::with(['teachers', 'programClasses' => fn ($q) => $q->approved()->with(['materials', 'activities', 'outcomes'])->withCount('quizQuestions')])->find($selectedOption->id)
             : null;
 
         // Course Details shows each gradable item's submission/grade status

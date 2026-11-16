@@ -138,6 +138,13 @@
                                 $sp_hasFn = 'has' . ucfirst($sp_type);
                                 $sp_item  = $sp_row[$sp_type] ?? null;
                                 $sp_mark  = $sp_item['mark'] ?? null;
+                                // A CSV-backed quiz (real questions attached - see
+                                // QuizEngineService) grades itself the moment the
+                                // student submits it - nothing to paste a link or
+                                // upload a file for, unlike Project/Worksheet/
+                                // Assignment (and a plain-link quiz with no CSV,
+                                // which keeps behaving exactly as before).
+                                $sp_isCsvQuiz = $sp_type === 'quiz' && $pc->hasQuizQuestions();
                             @endphp
                             @if ($pc->$sp_hasFn())
                                 <div class="cc-cd-sub" data-section="{{ $sp_type }}">
@@ -150,7 +157,13 @@
                                         <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->{$sp_type . '_link_url'} }}" target="_blank" rel="noopener">{{ $sp_meta['open_label'] }} &rarr;</a></p>
                                     @endif
 
-                                    @if ($sp_mark && $sp_mark->isGraded())
+                                    @if ($sp_isCsvQuiz)
+                                        @if ($sp_mark && $sp_mark->isGraded())
+                                            <p class="cc-cd-score">Your score: <strong>{{ $sp_mark->marks }}{{ $pc->quiz_max_marks ? ' / ' . $pc->quiz_max_marks : '' }}</strong></p>
+                                        @else
+                                            <p class="cc-cd-desc cc-cd-desc--sm text-secondary">Click "{{ $sp_meta['open_label'] }}" above to take it — your score appears here once you submit.</p>
+                                        @endif
+                                    @elseif ($sp_mark && $sp_mark->isGraded())
                                         <p class="cc-cd-score">Your score: <strong>{{ $sp_mark->marks }}{{ $pc->{$sp_type . '_max_marks'} ? ' / ' . $pc->{$sp_type . '_max_marks'} : '' }}</strong></p>
                                     @elseif ($sp_mark && $sp_mark->isSubmitted())
                                         <p class="cc-cd-score">

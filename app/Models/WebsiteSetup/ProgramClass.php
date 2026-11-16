@@ -86,6 +86,22 @@ class ProgramClass extends BaseModel
         return $this->hasMany(ProgramClassMark::class, 'program_class_id');
     }
 
+    /** A real CSV-driven, auto-graded question set attached to this
+     *  lesson's quiz (see QuizEngineService) - distinct from hasQuiz(),
+     *  which only means a quiz_title was set (even a plain-link quiz
+     *  with no real questions has that). */
+    public function quizQuestions(): HasMany
+    {
+        return $this->hasMany(\App\Models\QuizQuestion::class, 'program_class_id');
+    }
+
+    public function hasQuizQuestions(): bool
+    {
+        return isset($this->quiz_questions_count)
+            ? (int) $this->quiz_questions_count > 0
+            : $this->quizQuestions()->exists();
+    }
+
     public function hasProject(): bool
     {
         return (bool) $this->project_title;

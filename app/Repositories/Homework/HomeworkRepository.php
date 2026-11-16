@@ -6,6 +6,7 @@ use App\Models\Homework;
 use App\Models\HomeworkStudent;
 use App\Models\OnlineExamination\Answer;
 use App\Models\OnlineExamination\AnswerChildren;
+use App\Services\Quiz\QuizEngineService;
 use App\Traits\CommonHelperTrait;
 use App\Traits\ReturnFormatTrait;
 use Illuminate\Support\Collection;
@@ -17,10 +18,12 @@ class HomeworkRepository implements HomeworkInterface
     use ReturnFormatTrait, CommonHelperTrait;
 
     private $model;
+    private $quizEngine;
 
-    public function __construct(Homework $model)
+    public function __construct(Homework $model, QuizEngineService $quizEngine)
     {
-        $this->model = $model;
+        $this->model      = $model;
+        $this->quizEngine = $quizEngine;
     }
 
     // =========================================================================
@@ -196,23 +199,31 @@ class HomeworkRepository implements HomeworkInterface
                 $row->save();
             }
 
-            // Replace quiz CSV — process CSV BEFORE UploadImageUpdate moves the temp file
+            // Replace quiz CSV — process CSV BEFORE UploadImageUpdate moves the temp file.
+            // Refuses to touch the existing question set if students have
+            // already attempted this quiz (QuizEngineService::hasAnyAttempts()) -
+            // re-uploading used to silently wipe those rows with no warning at all.
+            $quizReplaceWarning = null;
             if ($request->hasFile('bulk_questions_file')) {
-                // Step 1 — delete old questions
-                DB::table('homework_quiz_questions')->where('homework_id', $row->id)->delete();
-                // Step 2 — parse new CSV while temp file still exists
-                $this->processQuizCsv($request->file('bulk_questions_file'), $row->id);
-                // Step 3 — now move/store the file (temp file consumed here)
-                $row->document_id = $this->UploadImageUpdate(
-                    $request->bulk_questions_file,
-                    'backend/uploads/homeworks',
-                    $row->document_id
-                );
-                $row->save();
+                if ($this->quizEngine->hasAnyAttempts(QuizEngineService::OWNER_HOMEWORK, $row->id)) {
+                    $quizReplaceWarning = "This quiz already has student submissions - the new CSV was not applied, so their results stay intact. Remove the existing submissions first if you really need to replace the questions.";
+                } else {
+                    // Step 1 — delete old questions
+                    DB::table('homework_quiz_questions')->where('homework_id', $row->id)->delete();
+                    // Step 2 — parse new CSV while temp file still exists
+                    $this->processQuizCsv($request->file('bulk_questions_file'), $row->id);
+                    // Step 3 — now move/store the file (temp file consumed here)
+                    $row->document_id = $this->UploadImageUpdate(
+                        $request->bulk_questions_file,
+                        'backend/uploads/homeworks',
+                        $row->document_id
+                    );
+                    $row->save();
+                }
             }
 
             DB::commit();
-            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+            return $this->responseWithSuccess($quizReplaceWarning ?? ___('alert.updated_successfully'), []);
 
         } catch (\Throwable $th) {
             DB::rollBack();
@@ -409,111 +420,12 @@ class HomeworkRepository implements HomeworkInterface
                 DB::raw("TRIM(CONCAT(COALESCE(s.first_name,''),' ',COALESCE(s.last_name,''))) as student_name"),
             ]);
 
-        $submittedCount = $submissions->count();
-        $marksValues    = $submissions->pluck('marks')->filter(fn ($m) => $m !== null && $m !== '' && is_numeric($m))->map(fn ($m) => (float) $m);
+        // Per-question/histogram math now lives in the shared QuizEngineService
+        // (also used by Program Class quizzes) - same numbers as before, just
+        // computed in one place instead of inline here.
+        $stats = $this->quizEngine->questionStats(QuizEngineService::OWNER_HOMEWORK, $homeworkId, $submissions, $maxMarks);
 
-        $avgScore = $marksValues->isNotEmpty() ? round($marksValues->avg(), 2) : null;
-        $avgPct   = ($maxMarks > 0 && $marksValues->isNotEmpty())
-            ? round(($marksValues->avg() / $maxMarks) * 100, 1)
-            : null;
-
-        $studentScores = $submissions->map(function ($row) use ($maxMarks) {
-            $m   = isset($row->marks) && is_numeric($row->marks) ? (float) $row->marks : null;
-            $pct = ($maxMarks > 0 && $m !== null) ? round(($m / $maxMarks) * 100, 1) : null;
-
-            return [
-                'student_id'   => (int) $row->student_id,
-                'student_name' => $row->student_name ?: ('#' . $row->student_id),
-                'marks'        => $m,
-                'pct'          => $pct,
-            ];
-        })->values()->all();
-
-        // Histogram buckets (0–10, 11–20, …) for score % — used when enough students
-        $histogramLabels = [];
-        $histogramData   = [];
-        if ($maxMarks > 0 && $marksValues->isNotEmpty()) {
-            $bins = array_fill(0, 10, 0);
-            foreach ($marksValues as $mv) {
-                $p = ($mv / $maxMarks) * 100;
-                $idx = (int) floor($p / 10);
-                if ($idx > 9) {
-                    $idx = 9;
-                }
-                if ($idx < 0) {
-                    $idx = 0;
-                }
-                $bins[$idx]++;
-            }
-            for ($b = 0; $b < 10; $b++) {
-                $histogramLabels[] = ($b * 10) . '–' . (($b + 1) * 10) . '%';
-                $histogramData[]   = $bins[$b];
-            }
-        }
-
-        $questions = DB::table('homework_quiz_questions')
-            ->where('homework_id', $homeworkId)
-            ->orderBy('id')
-            ->get();
-
-        $allAnswers = collect();
-        if (Schema::hasTable('homework_quiz_answers')) {
-            $allAnswers = DB::table('homework_quiz_answers')
-                ->where('homework_id', $homeworkId)
-                ->get()
-                ->groupBy('question_id');
-        }
-
-        $result = [];
-
-        foreach ($questions as $q) {
-            $qAnswers = $allAnswers->get($q->id, collect());
-
-            $attempts     = $qAnswers->count();
-            $correctCount = $qAnswers->where('is_correct', 1)->count();
-            $accuracyPct  = $attempts > 0 ? round(($correctCount / $attempts) * 100) : 0;
-
-            $optionCounts = [
-                'a'       => $qAnswers->where('selected_answer', $q->option_a)->count(),
-                'b'       => $qAnswers->where('selected_answer', $q->option_b)->count(),
-                'c'       => $qAnswers->where('selected_answer', $q->option_c)->count(),
-                'd'       => $qAnswers->where('selected_answer', $q->option_d)->count(),
-                'skipped' => max(0, $submittedCount - $attempts),
-            ];
-
-            $result[] = [
-                'id'             => $q->id,
-                'question'       => $q->question,
-                'option_a'       => $q->option_a,
-                'option_b'       => $q->option_b,
-                'option_c'       => $q->option_c,
-                'option_d'       => $q->option_d,
-                'correct_answer' => $q->correct_answer,
-                'hint'           => $q->hint,
-                'total_attempts' => $attempts,
-                'correct_count'  => $correctCount,
-                'accuracy_pct'   => $accuracyPct,
-                'option_counts'  => $optionCounts,
-            ];
-        }
-
-        $totalQuestions = count($result);
-        $avgAccuracy    = $totalQuestions > 0
-            ? round(array_sum(array_column($result, 'accuracy_pct')) / $totalQuestions)
-            : 0;
-
-        return [
-            'homework'             => $homework,
-            'questions'            => $result,
-            'submitted_students'    => $submittedCount,
-            'max_marks'            => $maxMarks,
-            'avg_score'            => $avgScore,
-            'avg_score_pct'        => $avgPct,
-            'student_scores'       => $studentScores,
-            'histogram_labels'     => $histogramLabels,
-            'histogram_data'       => $histogramData,
-            'avg_question_accuracy' => $avgAccuracy,
-        ];
+        return ['homework' => $homework] + $stats;
     }
 
     // =========================================================================

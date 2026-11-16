@@ -244,6 +244,18 @@
             <div class="col-md-12 mb-2">
                 <textarea class="form-control ot-textarea" name="quiz_description" rows="2" placeholder="What the quiz covers">{{ old('quiz_description', $l->quiz_description ?? '') }}</textarea>
             </div>
+            <div class="col-md-12 mb-2">
+                <label class="form-label mb-1" style="font-size:.85rem;">Attach quiz questions (optional)</label>
+                <input type="file" class="form-control ot-input" name="bulk_questions_file" accept=".csv,.txt">
+                <small class="text-secondary d-block mt-1">
+                    Upload a CSV of multiple-choice questions to turn this into an auto-graded quiz students take right here, instead of a plain link — the Link field above will be filled in for you.
+                    <a href="{{ route('program-class.quiz-sample-csv') }}">Download a sample CSV</a>.
+                    @if ($l && $l->hasQuizQuestions())
+                        <br><span class="text-success"><i class="fa-solid fa-circle-check"></i> {{ $l->quizQuestions()->count() }} question(s) attached — <a href="{{ route('program-class.quiz-analytics', $l->id) }}">View analytics</a>.</span>
+                        Uploading a new file here replaces them (only if no student has taken it yet).
+                    @endif
+                </small>
+            </div>
         </div>
     </div>
 </div>

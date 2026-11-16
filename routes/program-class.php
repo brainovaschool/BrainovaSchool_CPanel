@@ -8,6 +8,7 @@ use App\Http\Controllers\WebsiteSetup\ProgramClassGradeController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassGradingController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMarkSubmissionController;
 use App\Http\Controllers\WebsiteSetup\ProgramClassMaterialController;
+use App\Http\Controllers\Admin\HomeworkController;
 
 /** The newer, simpler alternative to routes/class-content.php for
  *  program-based courses - a teacher adds/edits their own Program's
@@ -43,6 +44,13 @@ Route::middleware(saasMiddleware())->group(function () {
                     Route::put('/update/{id}',              'update')->name('update')->middleware('DemoCheck');
                     Route::delete('/delete/{id}',           'delete')->name('delete')->middleware('DemoCheck');
                     Route::post('/submit/{id}',             'submit')->name('submit')->middleware('DemoCheck');
+                    Route::get('/{id}/quiz-analytics',      'quizAnalytics')->name('quiz-analytics');
+                    // Same static Quiz_Template.csv as Homework's own sample
+                    // download (homework.download-sample) - a separate route
+                    // only because that one sits behind FeatureCheck:homework,
+                    // which has nothing to do with whether this school uses
+                    // Program Class quizzes at all.
+                    Route::get('/quiz-sample-csv', [HomeworkController::class, 'downloadSample'])->name('quiz-sample-csv');
                 });
 
                 // Grade is scoped to a Program (every lesson in it,

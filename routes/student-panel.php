@@ -11,6 +11,7 @@ use App\Http\Controllers\StudentPanel\AiHelpController;
 use App\Http\Controllers\StudentPanel\AvatarController;
 use App\Http\Controllers\StudentPanel\ClassContentController;
 use App\Http\Controllers\StudentPanel\CourseCategoryController;
+use App\Http\Controllers\StudentPanel\ProgramClassQuizController;
 use App\Http\Controllers\StudentPanel\IslandController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use App\Http\Controllers\StudentPanel\HomeworkController;
@@ -77,6 +78,19 @@ Route::middleware(saasMiddleware())->group(function () {
                         Route::get('/{category}/course-details', 'courseDetails')->name('course-details')->where('category', 'homeschooling|academics-boost|beyond-academics|beyond-screens');
                         Route::get('/{category}/progress-report', 'progressReport')->name('progress-report')->where('category', 'homeschooling|academics-boost|beyond-academics|beyond-screens');
                         Route::post('/submit', 'submit')->name('submit')->middleware('DemoCheck');
+                    });
+
+                    /** The Program-Class-lesson counterpart to
+                     *  student-panel-homework.take-quiz / .submit-interactive-quiz
+                     *  (routes/web.php) - same quiz engine, different owner.
+                     *  See ProgramClassQuizController. */
+                    Route::controller(ProgramClassQuizController::class)->prefix('student-panel-program-class-quiz')->name('student-panel-program-class-quiz.')->group(function () {
+                        Route::get('/take/{id}', 'takeQuiz')->name('take-quiz');
+                        // No DemoCheck here, matching the Homework quiz's own
+                        // submit-interactive-quiz route (routes/web.php) -
+                        // taking a quiz isn't the kind of destructive action
+                        // DemoCheck exists to block.
+                        Route::post('/submit', 'submitInteractiveQuiz')->name('submit-interactive-quiz');
                     });
 
                     Route::controller(ProfileController::class)->prefix('student-panel')->group(function () {

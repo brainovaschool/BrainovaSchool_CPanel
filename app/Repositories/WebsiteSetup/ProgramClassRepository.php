@@ -8,7 +8,9 @@ use App\Models\WebsiteSetup\ProgramClassActivity;
 use App\Models\WebsiteSetup\ProgramClassMaterial;
 use App\Models\WebsiteSetup\ProgramClassOutcome;
 use App\Services\B2Storage;
+use App\Services\Quiz\QuizEngineService;
 use App\Traits\ReturnFormatTrait;
+use Illuminate\Support\Facades\DB;
 
 /** Mirrors ClassContentLessonRepository + the review parts of
  *  ClassContentModuleRepository, flattened onto one model and simplified
@@ -20,10 +22,12 @@ class ProgramClassRepository
     use ReturnFormatTrait;
 
     private B2Storage $storage;
+    private QuizEngineService $quizEngine;
 
-    public function __construct(B2Storage $storage)
+    public function __construct(B2Storage $storage, QuizEngineService $quizEngine)
     {
-        $this->storage = $storage;
+        $this->storage    = $storage;
+        $this->quizEngine = $quizEngine;
     }
 
     public function forProgram(int $programId)
@@ -54,6 +58,9 @@ class ProgramClassRepository
             $row->save();
 
             $warnings = $this->syncChildren($row, $request);
+            if ($quizCsvWarning = $this->applyQuizCsv($row, $request)) {
+                $warnings[] = $quizCsvWarning;
+            }
 
             $message = ___('alert.created_successfully') . ($warnings ? ' — but: ' . implode(' ', $warnings) : '');
             return $this->responseWithSuccess($message, ['id' => $row->id]);
@@ -76,6 +83,9 @@ class ProgramClassRepository
             $row->save();
 
             $warnings = $this->syncChildren($row, $request);
+            if ($quizCsvWarning = $this->applyQuizCsv($row, $request)) {
+                $warnings[] = $quizCsvWarning;
+            }
 
             $message = ___('alert.updated_successfully') . ($warnings ? ' — but: ' . implode(' ', $warnings) : '');
             return $this->responseWithSuccess($message, []);
@@ -309,6 +319,63 @@ class ProgramClassRepository
         $row->assignment_description = $assignmentTitle ? $request->input('assignment_description') : null;
         $row->assignment_link_url    = $assignmentTitle ? (trim((string) $request->input('assignment_link_url')) ?: null) : null;
         $row->assignment_max_marks   = $assignmentTitle ? ($request->input('assignment_max_marks') ?: null) : null;
+    }
+
+    /** If a CSV of quiz questions was uploaded, imports it against this
+     *  lesson (QuizEngineService::replaceQuestions() - refuses and returns
+     *  a warning instead if students already attempted the existing set)
+     *  and points quiz_link_url at the real take-quiz page, so the
+     *  existing student-facing "Open quiz →" anchor on Course Details
+     *  needs no changes at all. A quiz with no CSV ever uploaded keeps its
+     *  plain typed-in link exactly as before - this only ever runs when a
+     *  file was actually submitted. Returns a warning string, or null. */
+    private function applyQuizCsv(ProgramClass $row, $request): ?string
+    {
+        if (!$request->hasFile('bulk_questions_file')) {
+            return null;
+        }
+
+        if (!$row->quiz_title) {
+            return 'A quiz title is required to attach quiz questions - the CSV was not processed.';
+        }
+
+        $result = $this->quizEngine->replaceQuestions($request->file('bulk_questions_file'), QuizEngineService::OWNER_PROGRAM_CLASS, $row->id);
+
+        if ($result['status'] === 'blocked') {
+            return $result['message'];
+        }
+
+        $row->quiz_link_url = route('student-panel-program-class-quiz.take-quiz', $row->id);
+        $row->save();
+
+        return null;
+    }
+
+    /** Same shape HomeworkRepository::getQuizAnalytics() returns, built
+     *  from the same shared QuizEngineService - lets this lesson's quiz
+     *  reuse the exact Homework quiz-analytics view. Submissions come from
+     *  program_class_marks (where this quiz auto-grades to), not
+     *  homework_students. */
+    public function getQuizAnalytics(int $programClassId): array
+    {
+        $class    = ProgramClass::findOrFail($programClassId);
+        $maxMarks = (float) ($class->quiz_max_marks ?? 0);
+
+        $submissions = DB::table('program_class_marks as pcm')
+            ->join('students as s', 's.id', '=', 'pcm.student_id')
+            ->where('pcm.program_class_id', $programClassId)
+            ->where('pcm.assessment_type', 'quiz')
+            ->orderByDesc('pcm.marks')
+            ->orderBy('s.first_name')
+            ->get([
+                'pcm.student_id',
+                'pcm.marks',
+                DB::raw("TRIM(CONCAT(COALESCE(s.first_name,''),' ',COALESCE(s.last_name,''))) as student_name"),
+            ]);
+
+        $stats = $this->quizEngine->questionStats(QuizEngineService::OWNER_PROGRAM_CLASS, $programClassId, $submissions, $maxMarks);
+
+        return ['homework' => (object) ['id' => $class->id, 'title' => $class->quiz_title]] + $stats;
     }
 
     private function syncChildren(ProgramClass $class, $request): array

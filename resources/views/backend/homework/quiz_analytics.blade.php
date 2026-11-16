@@ -29,6 +29,11 @@
     $totalQ          = count($questions);
     $hardestQ        = $totalQ ? collect($questions)->sortBy('accuracy_pct')->first() : null;
     $easiestQ        = $totalQ ? collect($questions)->sortByDesc('accuracy_pct')->first() : null;
+    // Reused as-is for a Program Class lesson's quiz (see
+    // ProgramClassRepository::getQuizAnalytics()) - everything above this
+    // is already owner-agnostic (plain arrays), only the breadcrumb/back
+    // links below are Homework-specific by default.
+    $isHomeworkOwner = ($a['owner_type'] ?? 'homework') === 'homework';
 @endphp
 
 <div class="qa-hero">
@@ -37,18 +42,28 @@
             <h4 class="bradecrumb-title mb-1">Quiz analytics</h4>
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">Home</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('homework.index') }}">Homework</a></li>
+                @if ($isHomeworkOwner)
+                    <li class="breadcrumb-item"><a href="{{ route('homework.index') }}">Homework</a></li>
+                @else
+                    <li class="breadcrumb-item"><a href="{{ $a['back_url'] }}">Lesson</a></li>
+                @endif
                 <li class="breadcrumb-item active" aria-current="page">Analytics</li>
             </ol>
         </div>
         <div class="col-lg-4">
             <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
-                <a href="{{ route('homework.export-results', $homework->id) }}" class="btn btn-sm qa-gam-btn-outline">
-                    <i class="fa-solid fa-download me-1"></i>Export CSV
-                </a>
-                <a href="{{ route('homework.index') }}" class="btn btn-sm qa-gam-btn-ice">
-                    <i class="fa-solid fa-arrow-left me-1"></i>Back
-                </a>
+                @if ($isHomeworkOwner)
+                    <a href="{{ route('homework.export-results', $homework->id) }}" class="btn btn-sm qa-gam-btn-outline">
+                        <i class="fa-solid fa-download me-1"></i>Export CSV
+                    </a>
+                    <a href="{{ route('homework.index') }}" class="btn btn-sm qa-gam-btn-ice">
+                        <i class="fa-solid fa-arrow-left me-1"></i>Back
+                    </a>
+                @else
+                    <a href="{{ $a['back_url'] }}" class="btn btn-sm qa-gam-btn-ice">
+                        <i class="fa-solid fa-arrow-left me-1"></i>Back
+                    </a>
+                @endif
             </div>
         </div>
     </div>

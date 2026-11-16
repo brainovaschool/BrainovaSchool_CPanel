@@ -42,9 +42,9 @@
                     <span class="text-success fw-bold">{{ $data['submission']->marks }}</span>
                     / {{ $data['homework']->marks }}
                 </h4>
-                <a href="{{ route('student-panel-homeworks.index') }}"
+                <a href="{{ $data['backUrl'] ?? route('student-panel-homeworks.index') }}"
                    class="btn btn-outline-secondary">
-                    <i class="fa-solid fa-arrow-left"></i> Back to Homework
+                    <i class="fa-solid fa-arrow-left"></i> {{ $data['backLabel'] ?? 'Back to Homework' }}
                 </a>
             </div>
             <hr>
@@ -141,9 +141,9 @@
             <p class="text-muted mb-1">Time taken: <strong id="final-time">—</strong></p>
             <hr>
             <div id="review-section" class="text-start mt-4"></div>
-            <a href="{{ route('student-panel-homeworks.index') }}"
+            <a href="{{ $data['backUrl'] ?? route('student-panel-homeworks.index') }}"
                class="btn btn-primary btn-lg mt-4">
-                Return to Homework
+                {{ $data['backLabel'] ?? 'Return to Homework' }}
             </a>
         </div>
     </div>
@@ -170,6 +170,8 @@
     const questions   = @json($data['questions']);
     const homeworkId  = {{ $data['homework']->id }};
     const totalMarks  = {{ $data['homework']->marks ?? 0 }};
+    const ownerType   = '{{ $data['ownerType'] ?? 'homework' }}';
+    const backUrl     = '{{ $data['backUrl'] ?? route('student-panel-homeworks.index') }}';
 
     // =========================================================================
     // STATE
@@ -346,19 +348,25 @@
                 </div>`;
         });
 
-        // POST to server — server grades against DB answers (source of truth)
+        // POST to server — server grades against DB answers (source of truth).
+        // Submit URL/owner differ for a Program-Class-lesson quiz (see
+        // ProgramClassQuizController) - the extra, unused field on whichever
+        // path doesn't apply is simply ignored server-side.
         $.post(
-            "{{ route('student-panel-homework.submit-interactive-quiz') }}",
+            ownerType === 'program_class'
+                ? "{{ $data['submitUrl'] ?? '' }}"
+                : "{{ route('student-panel-homework.submit-interactive-quiz') }}",
             {
-                _token:      '{{ csrf_token() }}',
-                homework_id: homeworkId,
-                answers:     userAnswers,
-                hints:       hintsUsed,
+                _token:           '{{ csrf_token() }}',
+                homework_id:      ownerType === 'homework' ? homeworkId : null,
+                program_class_id: ownerType === 'program_class' ? homeworkId : null,
+                answers:          userAnswers,
+                hints:            hintsUsed,
             },
             function (response) {
                 if (response.status === 'already_submitted') {
                     alert('This quiz was already submitted.');
-                    window.location.href = "{{ route('student-panel-homeworks.index') }}";
+                    window.location.href = backUrl;
                     return;
                 }
 
