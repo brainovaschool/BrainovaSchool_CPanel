@@ -246,7 +246,13 @@
             </div>
             <div class="col-md-12 mb-2">
                 <label class="form-label mb-1" style="font-size:.85rem;">Attach quiz questions (optional)</label>
-                <input type="file" class="form-control ot-input" name="bulk_questions_file" accept=".csv,.txt">
+                <div class="ot_fileUploader left-side mb-1">
+                    <input class="form-control ot-input" type="text" id="quizCsvPlaceholder" placeholder="No file chosen" readonly>
+                    <button class="primary-btn-small-input" type="button">
+                        <label class="btn btn-lg ot-btn-primary" for="quizCsvBrowse">Browse</label>
+                        <input type="file" class="d-none" name="bulk_questions_file" id="quizCsvBrowse" accept=".csv,.txt">
+                    </button>
+                </div>
                 <small class="text-secondary d-block mt-1">
                     Upload a CSV of multiple-choice questions to turn this into an auto-graded quiz students take right here, instead of a plain link — the Link field above will be filled in for you.
                     <a href="{{ route('program-class.quiz-sample-csv') }}">Download a sample CSV</a>.
@@ -337,6 +343,23 @@
     wireRepeater('addMaterialRow', 'materialsWrap', 'materialRowTemplate');
     wireRepeater('addActivityRow', 'activitiesWrap', 'activityRowTemplate');
     wireRepeater('addOutcomeRow', 'outcomesWrap', 'outcomeRowTemplate');
+
+    // Same "Browse" file-picker look used throughout the admin theme
+    // (.ot_fileUploader) - the real <input type="file"> stays hidden
+    // (every input[type=file] on the page gets .hide()'d by main.js) and
+    // this just mirrors the chosen filename onto the visible placeholder
+    // text, scoped to this one field by id rather than relying on the
+    // theme's own fragile hardcoded fileBrouse/fileBrouse2/.../placeholder
+    // id pairs (only 4 slots, easily clashing with other fields on a page).
+    var quizCsvInput = document.getElementById('quizCsvBrowse');
+    var quizCsvPlaceholder = document.getElementById('quizCsvPlaceholder');
+    if (quizCsvInput && quizCsvPlaceholder) {
+        quizCsvInput.addEventListener('change', function () {
+            if (this.files && this.files[0]) {
+                quizCsvPlaceholder.value = this.files[0].name;
+            }
+        });
+    }
 })();
 </script>
 @endpush
