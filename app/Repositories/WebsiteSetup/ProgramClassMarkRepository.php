@@ -82,7 +82,13 @@ class ProgramClassMarkRepository
         $students = $program->students()->orderBy('first_name')->get();
         $classes  = $program->programClasses()->with('marks')->orderBy('sort_order')->get();
 
-        $studentTotals = $students->mapWithKeys(fn ($s) => [$s->id => ['obtained' => 0.0, 'possible' => 0.0, 'graded' => 0]]);
+        // A plain array, not a Collection - the loop below does nested
+        // increments like $studentTotals[$id]['graded']++, which throws
+        // "Indirect modification of overloaded element" against a
+        // Collection (its ArrayAccess returns values by copy, not
+        // reference) the moment there's an actual graded mark to count.
+        // Never surfaced before this exact program had any real marks.
+        $studentTotals = $students->mapWithKeys(fn ($s) => [$s->id => ['obtained' => 0.0, 'possible' => 0.0, 'graded' => 0]])->all();
 
         $lessonRows  = [];
         $totalGraded = 0;
