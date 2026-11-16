@@ -45,7 +45,7 @@
                 var matched = null;
                 details.querySelectorAll('.cc-cd-sub[data-section]').forEach(function (sec) {
                     var isMatch = sec.getAttribute('data-section') === target;
-                    sec.style.display = isMatch ? '' : 'none';
+                    sec.open = isMatch;
                     if (isMatch) { matched = sec; }
                 });
                 if (matched) {
@@ -59,7 +59,7 @@
                 var row = summary.closest('details.cc-cd-lesson');
                 if (row && !row.open) {
                     row.querySelectorAll('.cc-cd-sub[data-section]').forEach(function (sec) {
-                        sec.style.display = '';
+                        sec.open = true;
                     });
                 }
             }
@@ -307,99 +307,141 @@
                         @endif
 
                         @if ($pc->materials->isNotEmpty())
-                            <div class="cc-cd-sub" data-section="materials">
-                                <span class="cc-cd-section-pill cc-cd-section-pill--resources">Resources</span>
-                                <ul class="cc-cd-res-list">
-                                    @foreach ($pc->materials as $m)
-                                        <li>
-                                            <span class="cc-cd-ico">{{ $m->storage_key ? '📄' : '🔗' }}</span>
-                                            <a href="{{ $m->downloadUrl() }}" target="_blank" rel="noopener">{{ $m->label }}</a>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
+                            <details class="cc-cd-sub" data-section="materials" open>
+                                <summary>
+                                    <span class="cc-cd-section-pill cc-cd-section-pill--resources">Resources</span>
+                                    <span class="cc-cd-sub-count">{{ $pc->materials->count() }}</span>
+                                    <span class="cc-cd-sub-chev">&#9662;</span>
+                                </summary>
+                                <div class="cc-cd-sub-body">
+                                    <ul class="cc-cd-res-list">
+                                        @foreach ($pc->materials as $m)
+                                            <li>
+                                                <span class="cc-cd-ico">{{ $m->storage_key ? '📄' : '🔗' }}</span>
+                                                <a href="{{ $m->downloadUrl() }}" target="_blank" rel="noopener">{{ $m->label }}</a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </details>
                         @endif
 
                         @if ($pc->hasQuiz())
-                            <div class="cc-cd-sub" data-section="quiz">
-                                <span class="cc-cd-section-pill cc-cd-section-pill--quiz">Quiz</span>
-                                <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->quiz_title }}</p>
-                                @if ($pc->quiz_description)
-                                    <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->quiz_description }}</p>
-                                @endif
-                                @if ($pc->quiz_link_url)
-                                    <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->quiz_link_url }}" target="_blank" rel="noopener">Open quiz &rarr;</a></p>
-                                @endif
-                            </div>
+                            @php $cd_quizUrl = $pc->hasQuizQuestions() ? $pc->quiz_link_url : ($pc->hasFile('quiz') ? $pc->fileDownloadUrl('quiz') : $pc->quiz_link_url); @endphp
+                            <details class="cc-cd-sub" data-section="quiz" open>
+                                <summary>
+                                    <span class="cc-cd-section-pill cc-cd-section-pill--quiz">Quiz</span>
+                                    <span class="cc-cd-sub-chev">&#9662;</span>
+                                </summary>
+                                <div class="cc-cd-sub-body">
+                                    <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->quiz_title }}</p>
+                                    @if ($pc->quiz_description)
+                                        <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->quiz_description }}</p>
+                                    @endif
+                                    @if ($cd_quizUrl)
+                                        <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $cd_quizUrl }}" target="_blank" rel="noopener">Open quiz &rarr;</a></p>
+                                    @endif
+                                </div>
+                            </details>
                         @endif
 
                         @if ($pc->hasProject())
-                            <div class="cc-cd-sub" data-section="project">
-                                <span class="cc-cd-section-pill cc-cd-section-pill--project">Project</span>
-                                <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->project_title }}</p>
-                                @if ($pc->project_description)
-                                    <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->project_description }}</p>
-                                @endif
-                                @if ($pc->project_link_url)
-                                    <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->project_link_url }}" target="_blank" rel="noopener">Open project &rarr;</a></p>
-                                @endif
-                            </div>
+                            @php $cd_projectUrl = $pc->hasFile('project') ? $pc->fileDownloadUrl('project') : $pc->project_link_url; @endphp
+                            <details class="cc-cd-sub" data-section="project" open>
+                                <summary>
+                                    <span class="cc-cd-section-pill cc-cd-section-pill--project">Project</span>
+                                    <span class="cc-cd-sub-chev">&#9662;</span>
+                                </summary>
+                                <div class="cc-cd-sub-body">
+                                    <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->project_title }}</p>
+                                    @if ($pc->project_description)
+                                        <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->project_description }}</p>
+                                    @endif
+                                    @if ($cd_projectUrl)
+                                        <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $cd_projectUrl }}" target="_blank" rel="noopener">Open project &rarr;</a></p>
+                                    @endif
+                                </div>
+                            </details>
                         @endif
 
                         @if ($pc->hasWorksheet())
-                            <div class="cc-cd-sub" data-section="worksheet">
-                                <span class="cc-cd-section-pill cc-cd-section-pill--worksheet">Worksheet</span>
-                                <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->worksheet_title }}</p>
-                                @if ($pc->worksheet_description)
-                                    <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->worksheet_description }}</p>
-                                @endif
-                                @if ($pc->worksheet_link_url)
-                                    <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->worksheet_link_url }}" target="_blank" rel="noopener">Open worksheet &rarr;</a></p>
-                                @endif
-                            </div>
+                            @php $cd_worksheetUrl = $pc->hasFile('worksheet') ? $pc->fileDownloadUrl('worksheet') : $pc->worksheet_link_url; @endphp
+                            <details class="cc-cd-sub" data-section="worksheet" open>
+                                <summary>
+                                    <span class="cc-cd-section-pill cc-cd-section-pill--worksheet">Worksheet</span>
+                                    <span class="cc-cd-sub-chev">&#9662;</span>
+                                </summary>
+                                <div class="cc-cd-sub-body">
+                                    <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->worksheet_title }}</p>
+                                    @if ($pc->worksheet_description)
+                                        <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->worksheet_description }}</p>
+                                    @endif
+                                    @if ($cd_worksheetUrl)
+                                        <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $cd_worksheetUrl }}" target="_blank" rel="noopener">Open worksheet &rarr;</a></p>
+                                    @endif
+                                </div>
+                            </details>
                         @endif
 
                         @if ($pc->hasAssignment())
-                            <div class="cc-cd-sub" data-section="assignment">
-                                <span class="cc-cd-section-pill cc-cd-section-pill--assignment">Assignment</span>
-                                <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->assignment_title }}</p>
-                                @if ($pc->assignment_description)
-                                    <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->assignment_description }}</p>
-                                @endif
-                                @if ($pc->assignment_link_url)
-                                    <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $pc->assignment_link_url }}" target="_blank" rel="noopener">Open assignment &rarr;</a></p>
-                                @endif
-                            </div>
+                            @php $cd_assignmentUrl = $pc->hasFile('assignment') ? $pc->fileDownloadUrl('assignment') : $pc->assignment_link_url; @endphp
+                            <details class="cc-cd-sub" data-section="assignment" open>
+                                <summary>
+                                    <span class="cc-cd-section-pill cc-cd-section-pill--assignment">Assignment</span>
+                                    <span class="cc-cd-sub-chev">&#9662;</span>
+                                </summary>
+                                <div class="cc-cd-sub-body">
+                                    <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->assignment_title }}</p>
+                                    @if ($pc->assignment_description)
+                                        <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->assignment_description }}</p>
+                                    @endif
+                                    @if ($cd_assignmentUrl)
+                                        <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $cd_assignmentUrl }}" target="_blank" rel="noopener">Open assignment &rarr;</a></p>
+                                    @endif
+                                </div>
+                            </details>
                         @endif
 
                         @if ($pc->activities->isNotEmpty())
-                            <div class="cc-cd-sub" data-section="activities">
-                                <span class="cc-cd-section-pill cc-cd-section-pill--activities">Activities</span>
-                                <ul class="cc-cd-out-list">
-                                    @foreach ($pc->activities as $a)
-                                        <li>
-                                            <strong>{{ $a->title }}.</strong> {{ $a->description }}
-                                            @if ($a->storage_key || $a->link_url)
-                                                <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
-                                            @endif
-                                            @if ($a->video_url)
-                                                <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
-                                            @endif
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
+                            <details class="cc-cd-sub" data-section="activities" open>
+                                <summary>
+                                    <span class="cc-cd-section-pill cc-cd-section-pill--activities">Activities</span>
+                                    <span class="cc-cd-sub-count">{{ $pc->activities->count() }}</span>
+                                    <span class="cc-cd-sub-chev">&#9662;</span>
+                                </summary>
+                                <div class="cc-cd-sub-body">
+                                    <ul class="cc-cd-out-list">
+                                        @foreach ($pc->activities as $a)
+                                            <li>
+                                                <strong>{{ $a->title }}.</strong> {{ $a->description }}
+                                                @if ($a->storage_key || $a->link_url)
+                                                    <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
+                                                @endif
+                                                @if ($a->video_url)
+                                                    <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
+                                                @endif
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </details>
                         @endif
 
                         @if ($pc->outcomes->isNotEmpty())
-                            <div class="cc-cd-sub" data-section="outcomes">
-                                <span class="cc-cd-section-pill cc-cd-section-pill--outcomes">Learning outcomes</span>
-                                <ul class="cc-cd-out-list">
-                                    @foreach ($pc->outcomes as $o)
-                                        <li>{{ $o->outcome_text }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
+                            <details class="cc-cd-sub" data-section="outcomes" open>
+                                <summary>
+                                    <span class="cc-cd-section-pill cc-cd-section-pill--outcomes">Learning outcomes</span>
+                                    <span class="cc-cd-sub-count">{{ $pc->outcomes->count() }}</span>
+                                    <span class="cc-cd-sub-chev">&#9662;</span>
+                                </summary>
+                                <div class="cc-cd-sub-body">
+                                    <ul class="cc-cd-out-list">
+                                        @foreach ($pc->outcomes as $o)
+                                            <li>{{ $o->outcome_text }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </details>
                         @endif
                     </div>
                 </details>
@@ -440,77 +482,109 @@
                                 @endif
 
                                 @if ($lesson->materials->isNotEmpty())
-                                    <div class="cc-cd-sub">
-                                        <span class="cc-cd-section-pill cc-cd-section-pill--resources">Resources</span>
-                                        <ul class="cc-cd-res-list">
-                                            @foreach ($lesson->materials as $m)
-                                                <li>
-                                                    <span class="cc-cd-ico">{{ $m->storage_key ? '📄' : '🔗' }}</span>
-                                                    <a href="{{ $m->downloadUrl() }}" target="_blank" rel="noopener">{{ $m->label }}</a>
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
+                                    <details class="cc-cd-sub" open>
+                                        <summary>
+                                            <span class="cc-cd-section-pill cc-cd-section-pill--resources">Resources</span>
+                                            <span class="cc-cd-sub-count">{{ $lesson->materials->count() }}</span>
+                                            <span class="cc-cd-sub-chev">&#9662;</span>
+                                        </summary>
+                                        <div class="cc-cd-sub-body">
+                                            <ul class="cc-cd-res-list">
+                                                @foreach ($lesson->materials as $m)
+                                                    <li>
+                                                        <span class="cc-cd-ico">{{ $m->storage_key ? '📄' : '🔗' }}</span>
+                                                        <a href="{{ $m->downloadUrl() }}" target="_blank" rel="noopener">{{ $m->label }}</a>
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    </details>
                                 @endif
 
                                 @if ($lesson->hasQuiz())
-                                    <div class="cc-cd-sub">
-                                        <span class="cc-cd-section-pill cc-cd-section-pill--quiz">Quiz</span>
-                                        <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $lesson->quiz_title }}</p>
-                                        @if ($lesson->quiz_description)
-                                            <p class="cc-cd-desc cc-cd-desc--sm">{{ $lesson->quiz_description }}</p>
-                                        @endif
-                                        @if ($lesson->quiz_link_url)
-                                            <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $lesson->quiz_link_url }}" target="_blank" rel="noopener">Open quiz &rarr;</a></p>
-                                        @endif
-                                    </div>
+                                    <details class="cc-cd-sub" open>
+                                        <summary>
+                                            <span class="cc-cd-section-pill cc-cd-section-pill--quiz">Quiz</span>
+                                            <span class="cc-cd-sub-chev">&#9662;</span>
+                                        </summary>
+                                        <div class="cc-cd-sub-body">
+                                            <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $lesson->quiz_title }}</p>
+                                            @if ($lesson->quiz_description)
+                                                <p class="cc-cd-desc cc-cd-desc--sm">{{ $lesson->quiz_description }}</p>
+                                            @endif
+                                            @if ($lesson->quiz_link_url)
+                                                <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $lesson->quiz_link_url }}" target="_blank" rel="noopener">Open quiz &rarr;</a></p>
+                                            @endif
+                                        </div>
+                                    </details>
                                 @endif
 
                                 @if ($lesson->hasProject())
-                                    <div class="cc-cd-sub">
-                                        <span class="cc-cd-section-pill cc-cd-section-pill--project">Project</span>
-                                        <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $lesson->project_title }}</p>
-                                        @if ($lesson->project_description)
-                                            <p class="cc-cd-desc cc-cd-desc--sm">{{ $lesson->project_description }}</p>
-                                        @endif
-                                        @if ($lesson->project_link_url)
-                                            <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $lesson->project_link_url }}" target="_blank" rel="noopener">Open project &rarr;</a></p>
-                                        @endif
-                                    </div>
+                                    <details class="cc-cd-sub" open>
+                                        <summary>
+                                            <span class="cc-cd-section-pill cc-cd-section-pill--project">Project</span>
+                                            <span class="cc-cd-sub-chev">&#9662;</span>
+                                        </summary>
+                                        <div class="cc-cd-sub-body">
+                                            <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $lesson->project_title }}</p>
+                                            @if ($lesson->project_description)
+                                                <p class="cc-cd-desc cc-cd-desc--sm">{{ $lesson->project_description }}</p>
+                                            @endif
+                                            @if ($lesson->project_link_url)
+                                                <p class="cc-cd-desc cc-cd-desc--sm"><a href="{{ $lesson->project_link_url }}" target="_blank" rel="noopener">Open project &rarr;</a></p>
+                                            @endif
+                                        </div>
+                                    </details>
                                 @endif
 
                                 @if ($lesson->activities->isNotEmpty())
-                                    <div class="cc-cd-sub">
-                                        <span class="cc-cd-section-pill cc-cd-section-pill--activities">Activities</span>
-                                        <ul class="cc-cd-out-list">
-                                            @foreach ($lesson->activities as $a)
-                                                <li>
-                                                    <strong>{{ $a->title }}.</strong> {{ $a->description }}
-                                                    @if ($a->storage_key || $a->link_url)
-                                                        <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
-                                                    @endif
-                                                    @if ($a->video_url)
-                                                        <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
-                                                    @endif
-                                                </li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
+                                    <details class="cc-cd-sub" open>
+                                        <summary>
+                                            <span class="cc-cd-section-pill cc-cd-section-pill--activities">Activities</span>
+                                            <span class="cc-cd-sub-count">{{ $lesson->activities->count() }}</span>
+                                            <span class="cc-cd-sub-chev">&#9662;</span>
+                                        </summary>
+                                        <div class="cc-cd-sub-body">
+                                            <ul class="cc-cd-out-list">
+                                                @foreach ($lesson->activities as $a)
+                                                    <li>
+                                                        <strong>{{ $a->title }}.</strong> {{ $a->description }}
+                                                        @if ($a->storage_key || $a->link_url)
+                                                            <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
+                                                        @endif
+                                                        @if ($a->video_url)
+                                                            <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
+                                                        @endif
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    </details>
                                 @endif
 
                                 @if ($lesson->outcomes->isNotEmpty())
-                                    <div class="cc-cd-sub">
-                                        <span class="cc-cd-section-pill cc-cd-section-pill--outcomes">Learning outcomes</span>
-                                        <ul class="cc-cd-out-list">
-                                            @foreach ($lesson->outcomes as $o)
-                                                <li>{{ $o->outcome_text }}</li>
-                                            @endforeach
-                                        </ul>
-                                    </div>
+                                    <details class="cc-cd-sub" open>
+                                        <summary>
+                                            <span class="cc-cd-section-pill cc-cd-section-pill--outcomes">Learning outcomes</span>
+                                            <span class="cc-cd-sub-count">{{ $lesson->outcomes->count() }}</span>
+                                            <span class="cc-cd-sub-chev">&#9662;</span>
+                                        </summary>
+                                        <div class="cc-cd-sub-body">
+                                            <ul class="cc-cd-out-list">
+                                                @foreach ($lesson->outcomes as $o)
+                                                    <li>{{ $o->outcome_text }}</li>
+                                                @endforeach
+                                            </ul>
+                                        </div>
+                                    </details>
                                 @endif
 
-                                <div class="cc-cd-sub hw-gamified">
-                                    <h5>📚 Homework &amp; assignments</h5>
+                                <details class="cc-cd-sub hw-gamified" open>
+                                    <summary>
+                                        <span class="cc-cd-section-pill cc-cd-section-pill--resources">📚 Homework &amp; assignments</span>
+                                        <span class="cc-cd-sub-chev">&#9662;</span>
+                                    </summary>
+                                    <div class="cc-cd-sub-body">
                                     @if ($lesson->homeworks->isEmpty())
                                         <p class="cc-cd-empty-sub">No homework task linked to this class yet.</p>
                                     @else
@@ -549,7 +623,8 @@
                                             @endforeach
                                         </div>
                                     @endif
-                                </div>
+                                    </div>
+                                </details>
                             </div>
                         </details>
                     @endforeach
@@ -657,7 +732,31 @@
         .cc-cd-lesson-chev { color: #8b93a3; transition: transform .15s ease; flex-shrink: 0; }
         details[open] .cc-cd-lesson-chev { transform: rotate(180deg); }
         .cc-cd-lesson-body { padding: 0 1rem 1rem 3.25rem; border-top: 1px solid var(--ot-border-basic-table, #e4e7ec); }
-        .cc-cd-sub { margin-top: 0.9rem; }
+        {{-- Each content section is its own collapsible white card (like a
+             dashboard "Today's Goals" tile) - a side arrow to expand/
+             collapse, only the heading pill showing while collapsed. --}}
+        .cc-cd-sub {
+            margin-top: 0.9rem;
+            background: #fff;
+            border: 1px solid #eef0f3;
+            border-radius: 14px;
+            box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+            overflow: hidden;
+        }
+        .cc-cd-sub > summary {
+            display: flex; align-items: center; gap: 0.6rem;
+            padding: 0.85rem 1.1rem;
+            cursor: pointer; list-style: none;
+        }
+        .cc-cd-sub > summary::-webkit-details-marker { display: none; }
+        .cc-cd-sub > summary .cc-cd-section-pill { margin-bottom: 0; }
+        .cc-cd-sub-count {
+            font-size: 0.78rem; font-weight: 700; color: #8b93a3;
+            background: #f1f3f6; border-radius: 999px; padding: 0.1rem 0.5rem;
+        }
+        .cc-cd-sub-chev { margin-left: auto; color: #8b93a3; transition: transform .15s ease; flex-shrink: 0; }
+        .cc-cd-sub[open] > summary .cc-cd-sub-chev { transform: rotate(180deg); }
+        .cc-cd-sub-body { padding: 0 1.1rem 1.05rem; border-top: 1px solid #f1f3f6; padding-top: .85rem; }
         .cc-cd-sub h5 { font-size: 0.83rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #8b93a3; margin: 0 0 0.5rem; }
         .cc-cd-section-pill {
             display: inline-block;

@@ -120,17 +120,23 @@
                         @endif
 
                         @if ($pc->materials->isNotEmpty())
-                            <div class="cc-cd-sub" data-section="materials">
-                                <span class="cc-cd-section-pill cc-cd-section-pill--resources">Resources</span>
-                                <ul class="cc-cd-res-list">
-                                    @foreach ($pc->materials as $m)
-                                        <li>
-                                            <span class="cc-cd-ico">{{ $m->storage_key ? '📄' : '🔗' }}</span>
-                                            <a href="{{ $m->downloadUrl() }}" target="_blank" rel="noopener">{{ $m->label }}</a>
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
+                            <details class="cc-cd-sub" data-section="materials" open>
+                                <summary>
+                                    <span class="cc-cd-section-pill cc-cd-section-pill--resources">Resources</span>
+                                    <span class="cc-cd-sub-count">{{ $pc->materials->count() }}</span>
+                                    <span class="cc-cd-sub-chev">&#9662;</span>
+                                </summary>
+                                <div class="cc-cd-sub-body">
+                                    <ul class="cc-cd-res-list">
+                                        @foreach ($pc->materials as $m)
+                                            <li>
+                                                <span class="cc-cd-ico">{{ $m->storage_key ? '📄' : '🔗' }}</span>
+                                                <a href="{{ $m->downloadUrl() }}" target="_blank" rel="noopener">{{ $m->label }}</a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </details>
                         @endif
 
                         @foreach ($sp_gradable as $sp_type => $sp_meta)
@@ -147,8 +153,12 @@
                                 $sp_isCsvQuiz = $sp_type === 'quiz' && $pc->hasQuizQuestions();
                             @endphp
                             @if ($pc->$sp_hasFn())
-                                <div class="cc-cd-sub" data-section="{{ $sp_type }}">
+                                <details class="cc-cd-sub" data-section="{{ $sp_type }}" open>
+                                <summary>
                                     <span class="cc-cd-section-pill cc-cd-section-pill--{{ $sp_type }}">{{ $sp_meta['label'] }}</span>
+                                    <span class="cc-cd-sub-chev">&#9662;</span>
+                                </summary>
+                                <div class="cc-cd-sub-body">
                                     <p class="cc-cd-desc cc-cd-desc--sm cc-cd-sub-title">{{ $pc->{$sp_type . '_title'} }}</p>
                                     @if ($pc->{$sp_type . '_description'})
                                         <p class="cc-cd-desc cc-cd-desc--sm">{{ $pc->{$sp_type . '_description'} }}</p>
@@ -208,37 +218,50 @@
                                         </form>
                                     @endif
                                 </div>
+                                </details>
                             @endif
                         @endforeach
 
                         @if ($pc->activities->isNotEmpty())
-                            <div class="cc-cd-sub" data-section="activities">
-                                <span class="cc-cd-section-pill cc-cd-section-pill--activities">Activities</span>
-                                <ul class="cc-cd-out-list">
-                                    @foreach ($pc->activities as $a)
-                                        <li>
-                                            <strong>{{ $a->title }}.</strong> {{ $a->description }}
-                                            @if ($a->storage_key || $a->link_url)
-                                                <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
-                                            @endif
-                                            @if ($a->video_url)
-                                                <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
-                                            @endif
-                                        </li>
-                                    @endforeach
-                                </ul>
-                            </div>
+                            <details class="cc-cd-sub" data-section="activities" open>
+                                <summary>
+                                    <span class="cc-cd-section-pill cc-cd-section-pill--activities">Activities</span>
+                                    <span class="cc-cd-sub-count">{{ $pc->activities->count() }}</span>
+                                    <span class="cc-cd-sub-chev">&#9662;</span>
+                                </summary>
+                                <div class="cc-cd-sub-body">
+                                    <ul class="cc-cd-out-list">
+                                        @foreach ($pc->activities as $a)
+                                            <li>
+                                                <strong>{{ $a->title }}.</strong> {{ $a->description }}
+                                                @if ($a->storage_key || $a->link_url)
+                                                    <a href="{{ $a->downloadUrl() }}" target="_blank" rel="noopener">Open &rarr;</a>
+                                                @endif
+                                                @if ($a->video_url)
+                                                    <a href="{{ $a->video_url }}" target="_blank" rel="noopener">Watch video &rarr;</a>
+                                                @endif
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </details>
                         @endif
 
                         @if ($pc->outcomes->isNotEmpty())
-                            <div class="cc-cd-sub" data-section="outcomes">
-                                <span class="cc-cd-section-pill cc-cd-section-pill--outcomes">Learning outcomes</span>
-                                <ul class="cc-cd-out-list">
-                                    @foreach ($pc->outcomes as $o)
-                                        <li>{{ $o->outcome_text }}</li>
-                                    @endforeach
-                                </ul>
-                            </div>
+                            <details class="cc-cd-sub" data-section="outcomes" open>
+                                <summary>
+                                    <span class="cc-cd-section-pill cc-cd-section-pill--outcomes">Learning outcomes</span>
+                                    <span class="cc-cd-sub-count">{{ $pc->outcomes->count() }}</span>
+                                    <span class="cc-cd-sub-chev">&#9662;</span>
+                                </summary>
+                                <div class="cc-cd-sub-body">
+                                    <ul class="cc-cd-out-list">
+                                        @foreach ($pc->outcomes as $o)
+                                            <li>{{ $o->outcome_text }}</li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            </details>
                         @endif
                     </div>
                 </details>
@@ -308,7 +331,31 @@
         .cc-cd-lesson-chev { color: #8b93a3; transition: transform .15s ease; flex-shrink: 0; }
         details[open] .cc-cd-lesson-chev { transform: rotate(180deg); }
         .cc-cd-lesson-body { padding: 0 1rem 1rem 3.25rem; border-top: 1px solid var(--ot-border-basic-table, #e4e7ec); }
-        .cc-cd-sub { margin-top: 0.9rem; }
+        {{-- Each content section is its own collapsible white card (like a
+             dashboard "Today's Goals" tile) - a side arrow to expand/
+             collapse, only the heading pill showing while collapsed. --}}
+        .cc-cd-sub {
+            margin-top: 0.9rem;
+            background: #fff;
+            border: 1px solid #eef0f3;
+            border-radius: 14px;
+            box-shadow: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+            overflow: hidden;
+        }
+        .cc-cd-sub > summary {
+            display: flex; align-items: center; gap: 0.6rem;
+            padding: 0.85rem 1.1rem;
+            cursor: pointer; list-style: none;
+        }
+        .cc-cd-sub > summary::-webkit-details-marker { display: none; }
+        .cc-cd-sub > summary .cc-cd-section-pill { margin-bottom: 0; }
+        .cc-cd-sub-count {
+            font-size: 0.78rem; font-weight: 700; color: #8b93a3;
+            background: #f1f3f6; border-radius: 999px; padding: 0.1rem 0.5rem;
+        }
+        .cc-cd-sub-chev { margin-left: auto; color: #8b93a3; transition: transform .15s ease; flex-shrink: 0; }
+        .cc-cd-sub[open] > summary .cc-cd-sub-chev { transform: rotate(180deg); }
+        .cc-cd-sub-body { padding: 0 1.1rem 1.05rem; border-top: 1px solid #f1f3f6; padding-top: .85rem; }
         .cc-cd-section-pill {
             display: inline-block;
             font-size: 0.73rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;
