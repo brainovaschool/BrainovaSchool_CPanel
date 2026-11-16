@@ -363,7 +363,11 @@ if (!function_exists('teachesInCategory')) {
             return false;
         }
         return \App\Models\WebsiteSetup\Program::whereHas('category', fn ($q) => $q->where('name', $categoryName))
-            ->whereHas('teachers', fn ($q) => $q->where('staff_id', $user->staff->id))
+            // $q here queries the `staff` table itself (teachers() is a
+            // belongsToMany to Staff) - matching on the related model's
+            // own id, qualified, since an unqualified "staff_id" is
+            // ambiguous between this and the pivot table also in scope.
+            ->whereHas('teachers', fn ($q) => $q->where('staff.id', $user->staff->id))
             ->exists();
     }
 }
