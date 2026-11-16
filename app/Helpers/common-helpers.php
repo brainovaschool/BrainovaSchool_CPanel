@@ -349,6 +349,25 @@ if (!function_exists('isTeachingStaff')) {
     }
 }
 
+if (!function_exists('teachesInCategory')) {
+    /** The logged-in user has a Staff record listed as a teacher (see
+     *  Program::teachers()) on at least one Program under the Course
+     *  Catalogue category with this exact name - the real, per-program
+     *  signal the sidebar's per-category sections need, unlike
+     *  isTeachingStaff() above (which only says "is a teacher at all",
+     *  not "teaches something in THIS category specifically"). */
+    function teachesInCategory(string $categoryName): bool
+    {
+        $user = \Illuminate\Support\Facades\Auth::user();
+        if (!$user || !$user->staff) {
+            return false;
+        }
+        return \App\Models\WebsiteSetup\Program::whereHas('category', fn ($q) => $q->where('name', $categoryName))
+            ->whereHas('teachers', fn ($q) => $q->where('staff_id', $user->staff->id))
+            ->exists();
+    }
+}
+
 if (!function_exists('schoolSettingsBlockedRoleSlugs')) {
     /**
      * Role slugs that must not access school CMS / system settings (routes + sidebar).

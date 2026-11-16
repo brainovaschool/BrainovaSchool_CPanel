@@ -19,9 +19,14 @@
                      Homeschooling, Academics Boost (was "Core Academics" -
                      route/controller keep the old internal name, only the
                      category name changed), Beyond Academics, Beyond
-                     Screens. Social Clubs doesn't have one yet. All
-                     admin-only for now except Beyond Academics, which also
-                     opens for a teacher assigned to teach in it. --}}
+                     Screens. Social Clubs doesn't have one yet. Homeschooling
+                     and Beyond Screens stay admin-only for now. Academics
+                     Boost and Beyond Academics also open for a teacher who's
+                     actually assigned (Program::teachers()) to a program in
+                     that specific category - isTeachingStaff() alone (just
+                     "is a teacher at all") used to gate Beyond Academics,
+                     which wrongly opened it for every teacher regardless of
+                     what they're actually assigned to. --}}
                 @if (auth()->user()?->role_id == 1)
                     <li class="sidebar-menu-item {{ set_menu(['homeschooling*']) }}">
                         <a class="parent-item-content has-arrow">
@@ -40,7 +45,9 @@
                             </li>
                         </ul>
                     </li>
+                @endif
 
+                @if (auth()->user()?->role_id == 1 || teachesInCategory('Academics Boost'))
                     <li class="sidebar-menu-item {{ set_menu(['core-academics*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-school"></i>
@@ -60,7 +67,7 @@
                     </li>
                 @endif
 
-                @if (auth()->user()?->role_id == 1 || isTeachingStaff() || hasPermission('class_content_coordinator_review'))
+                @if (auth()->user()?->role_id == 1 || teachesInCategory('Beyond Academics') || hasPermission('class_content_coordinator_review'))
                     <li class="sidebar-menu-item {{ set_menu(['beyond-academics*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-rocket"></i>
