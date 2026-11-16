@@ -327,7 +327,10 @@
                         @endif
 
                         @if ($pc->hasQuiz())
-                            @php $cd_quizUrl = $pc->hasQuizQuestions() ? $pc->quiz_link_url : ($pc->hasFile('quiz') ? $pc->fileDownloadUrl('quiz') : $pc->quiz_link_url); @endphp
+                            {{-- Quiz has no generic file attachment of its own - just the
+                                 plain link, or the real take-quiz page once a question
+                                 CSV is attached (see QuizEngineService). --}}
+                            @php $cd_quizUrl = $pc->quiz_link_url; @endphp
                             <details class="cc-cd-sub" data-section="quiz" open>
                                 <summary>
                                     <span class="cc-cd-section-pill cc-cd-section-pill--quiz">Quiz</span>

@@ -193,7 +193,6 @@ class ProgramClassController extends Controller
             'quiz_description'    => 'nullable|string|max:3000',
             'quiz_link_url'       => 'nullable|string|max:500',
             'quiz_max_marks'      => 'nullable|integer|min:0',
-            'quiz_file'           => 'nullable|file|max:51200',
             // Optional - a quiz can still just be a plain link, exactly as
             // today. Same mimes/size limit as Homework's own quiz upload.
             'bulk_questions_file' => 'nullable|file|mimes:csv,txt|max:5120',

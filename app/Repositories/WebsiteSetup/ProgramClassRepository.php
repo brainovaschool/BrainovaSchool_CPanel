@@ -323,6 +323,14 @@ class ProgramClassRepository
             $row->{"{$type}_max_marks"}   = $request->input("{$type}_max_marks") ?: null;
             $row->{"{$type}_link_url"}    = trim((string) $request->input("{$type}_link_url")) ?: null;
 
+            // Quiz has no generic file upload of its own - its "Browse"
+            // button is the question-CSV uploader (applyQuizCsv()), kept
+            // deliberately singular rather than offering two different
+            // uploads on the same card.
+            if ($type === 'quiz') {
+                continue;
+            }
+
             $file = $request->file("{$type}_file");
             if ($file && !$file->isValid()) {
                 $warnings[] = ucfirst($type) . ": the file didn't upload properly (code {$file->getError()}) - try again.";

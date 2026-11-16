@@ -287,17 +287,6 @@
                 <textarea class="form-control ot-textarea" name="quiz_description" rows="2" placeholder="What the quiz covers">{{ old('quiz_description', $l->quiz_description ?? '') }}</textarea>
             </div>
             <div class="col-md-12 mb-2">
-                <label class="form-label mb-1" style="font-size:.85rem;">Attach a file (optional)</label>
-                <div class="ot_fileUploader left-side mb-1">
-                    <input class="form-control ot-input" type="text" value="{{ $l->quiz_original_filename ?? '' }}" placeholder="No file chosen" readonly>
-                    <button class="primary-btn-small-input ot-browse-btn" type="button"><span class="btn btn-lg ot-btn-primary">Browse</span></button>
-                    <input type="file" class="d-none" name="quiz_file">
-                </div>
-                @if ($l && $l->quiz_original_filename)
-                    <small class="text-secondary d-block">Choosing a new file replaces this one.</small>
-                @endif
-            </div>
-            <div class="col-md-12 mb-2">
                 <label class="form-label mb-1" style="font-size:.85rem;">Attach quiz questions (optional)</label>
                 <div class="ot_fileUploader left-side mb-1">
                     <input class="form-control ot-input" type="text" value="" placeholder="No file chosen" readonly>
