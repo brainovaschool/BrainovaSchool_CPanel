@@ -4541,6 +4541,126 @@ class MigrationRunnerController extends Controller
         return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
     }
 
+    /** Fills in realistic-looking submissions/grades for a Program's
+     *  already-enrolled students, so Progress & Report / Course Details
+     *  show a populated example instead of every row reading zero - for
+     *  trying the new look out, not real coursework. Pass ?program_id=N
+     *  for the one Program to seed; with no program_id, lists every
+     *  Program (id, category, enrolled students, gradable lessons) so
+     *  the right one can be picked. ADDITIVE ONLY - a (lesson, item,
+     *  student) combo that already has a ProgramClassMark row (real or
+     *  from a previous run of this) is left untouched, never overwritten. */
+    public function seedProgramClassDemoData(string $key)
+    {
+        if (!hash_equals(self::KEY, $key)) {
+            abort(404);
+        }
+
+        if (!Auth::check() || (int) Auth::user()->role_id !== 1) {
+            abort(403, 'Log in as the main administrator first, then reload this page.');
+        }
+
+        $programId = (int) request()->query('program_id', 0);
+
+        if ($programId < 1) {
+            $lines = ['Pass ?program_id=N to seed that Program. Candidates:', ''];
+            \App\Models\WebsiteSetup\Program::with(['category', 'students', 'programClasses'])
+                ->orderBy('id')
+                ->get()
+                ->each(function ($program) use (&$lines) {
+                    $gradable = $program->programClasses->filter(fn ($c) => !empty($c->gradableItems()))->count();
+                    $lines[] = sprintf(
+                        "#%d  \"%s\"  category: %s  |  %d student(s) enrolled  |  %d of %d lesson(s) gradable",
+                        $program->id,
+                        $program->title,
+                        $program->category?->name ?: '(none)',
+                        $program->students->count(),
+                        $gradable,
+                        $program->programClasses->count()
+                    );
+                });
+
+            return response('<pre style="font:13px/1.6 monospace;padding:24px;white-space:pre-wrap;">' . e(implode("\n", $lines)) . '</pre>');
+        }
+
+        $program = \App\Models\WebsiteSetup\Program::with(['students', 'programClasses'])->find($programId);
+        if (!$program) {
+            return response("No Program #{$programId}.", 404);
+        }
+
+        $students = $program->students;
+        $lessons  = $program->programClasses->filter(fn ($c) => !empty($c->gradableItems()))->values();
+
+        if ($students->isEmpty() || $lessons->isEmpty()) {
+            return response("Program #{$programId} needs at least one enrolled student and one lesson with a quiz/project/worksheet/assignment before this can seed anything.", 422);
+        }
+
+        $graderStaffId = Auth::user()->staff?->id;
+        $sampleNotes = [
+            "Here's my work for this one - let me know if anything needs fixing!",
+            "I found this one tricky but I think I got it.",
+            "Finished early, hope it's good!",
+            null, null, // some students leave no note at all
+        ];
+
+        $created = 0;
+        $graded  = 0;
+        $now     = now();
+
+        foreach ($lessons as $lessonIndex => $class) {
+            foreach ($class->gradableItems() as $type => $item) {
+                foreach ($students as $studentIndex => $student) {
+                    $exists = \App\Models\WebsiteSetup\ProgramClassMark::where([
+                        'program_class_id' => $class->id,
+                        'assessment_type'  => $type,
+                        'student_id'       => $student->id,
+                    ])->exists();
+                    if ($exists) {
+                        continue;
+                    }
+
+                    // A spread of outcomes rather than everyone identical -
+                    // later lessons/students trail off, so the class-wise
+                    // table and segmented bar show a real mix of
+                    // Completed/In Progress/Not Started, not one flat state.
+                    $roll = ($lessonIndex + $studentIndex) % 4;
+                    if ($roll === 3) {
+                        continue; // this student hasn't touched this item at all
+                    }
+
+                    $mark = new \App\Models\WebsiteSetup\ProgramClassMark();
+                    $mark->program_class_id   = $class->id;
+                    $mark->assessment_type    = $type;
+                    $mark->student_id         = $student->id;
+                    $mark->submission_link_url = 'https://drive.google.com/example-demo-submission';
+                    $mark->submission_note    = $sampleNotes[($lessonIndex + $studentIndex) % count($sampleNotes)];
+                    $mark->submitted_at       = $now->copy()->subDays(rand(0, 6))->subHours(rand(0, 23));
+
+                    if ($roll <= 1) {
+                        // Graded - a believable score, skewed decent rather
+                        // than a flat percentage for every single row.
+                        $maxMarks   = $item['max_marks'] ?: 10;
+                        $mark->marks       = rand((int) round($maxMarks * 0.55), $maxMarks);
+                        $mark->graded_by   = $graderStaffId;
+                        $mark->graded_at   = $mark->submitted_at->copy()->addHours(rand(1, 36));
+                        $graded++;
+                    }
+                    // $roll === 2: submitted, left ungraded on purpose - the
+                    // "waiting on you" pile Recent Activity/pendingSubmissions
+                    // is meant to show.
+
+                    $mark->save();
+                    $created++;
+                }
+            }
+        }
+
+        return response(
+            "Seeded Program #{$programId} (\"{$program->title}\"): {$created} submission(s) created, {$graded} of them graded.\n"
+            . "Open its Progress & Report (?program={$programId}) to see the full picture."
+        );
+    }
+
     /** Diagnoses why a staff member's mobile "Team" login fails. Shows,
      *  per Staff row: the linked User's email/role_id/status and whether
      *  the row even has a usable password hash -- without ever printing
