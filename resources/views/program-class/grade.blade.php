@@ -72,6 +72,11 @@
                                                                 <i class="fa-solid fa-paperclip"></i> {{ $item['mark']->submission_original_filename ?: 'View submission' }}
                                                             </a>
                                                             <span class="text-secondary d-block" style="font-size:11px;">{{ $item['mark']->submitted_at->diffForHumans() }}</span>
+                                                            @if ($item['mark']->submission_note)
+                                                                <span class="d-block mt-1" style="font-size:11px; font-style:italic; color:#475569;">
+                                                                    <i class="fa-solid fa-comment-dots"></i> {{ $item['mark']->submission_note }}
+                                                                </span>
+                                                            @endif
                                                         @else
                                                             <span class="text-secondary" style="font-size:12px;">Not submitted</span>
                                                         @endif

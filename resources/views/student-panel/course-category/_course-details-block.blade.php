@@ -156,6 +156,7 @@
                                 <details class="cc-cd-sub" data-section="{{ $sp_type }}" open>
                                 <summary>
                                     <span class="cc-cd-section-pill cc-cd-section-pill--{{ $sp_type }}">{{ $sp_meta['label'] }}</span>
+                                    <span class="cc-cd-sub-count">1</span>
                                     <span class="cc-cd-sub-chev">&#9662;</span>
                                 </summary>
                                 <div class="cc-cd-sub-body">
@@ -197,8 +198,13 @@
                                             <div class="cc-cd-submit-row">
                                                 <input type="text" name="link_url" class="form-control form-control-sm" placeholder="Paste a link to your work" value="{{ $sp_mark->submission_link_url }}">
                                                 <span class="cc-cd-submit-or">or</span>
-                                                <input type="file" name="file" class="form-control form-control-sm" accept="image/*,.pdf,.doc,.docx">
+                                                <div class="ot_fileUploader left-side mb-0">
+                                                    <input class="form-control form-control-sm" type="text" value="{{ $sp_mark->submission_original_filename }}" placeholder="No file chosen" readonly>
+                                                    <button class="primary-btn-small-input ot-browse-btn" type="button"><span class="btn btn-sm ot-btn-primary">Browse</span></button>
+                                                    <input type="file" class="d-none" name="file" accept="image/*,.pdf,.doc,.docx">
+                                                </div>
                                             </div>
+                                            <textarea name="note" class="form-control form-control-sm mt-2" rows="2" placeholder="Anything you want to tell your teacher? (optional)">{{ $sp_mark->submission_note }}</textarea>
                                             <button type="submit" class="btn btn-sm ot-btn-primary mt-2">Replace submission</button>
                                         </form>
                                     @else
@@ -212,8 +218,13 @@
                                             <div class="cc-cd-submit-row">
                                                 <input type="text" name="link_url" class="form-control form-control-sm" placeholder="Paste a link to your work">
                                                 <span class="cc-cd-submit-or">or</span>
-                                                <input type="file" name="file" class="form-control form-control-sm" accept="image/*,.pdf,.doc,.docx">
+                                                <div class="ot_fileUploader left-side mb-0">
+                                                    <input class="form-control form-control-sm" type="text" value="" placeholder="No file chosen" readonly>
+                                                    <button class="primary-btn-small-input ot-browse-btn" type="button"><span class="btn btn-sm ot-btn-primary">Browse</span></button>
+                                                    <input type="file" class="d-none" name="file" accept="image/*,.pdf,.doc,.docx">
+                                                </div>
                                             </div>
+                                            <textarea name="note" class="form-control form-control-sm mt-2" rows="2" placeholder="Anything you want to tell your teacher? (optional)"></textarea>
                                             <button type="submit" class="btn btn-sm ot-btn-primary mt-2">Submit</button>
                                         </form>
                                     @endif
@@ -382,5 +393,32 @@
         .cc-cd-submit-row input[type="file"] { flex: 1 1 220px; min-width: 180px; }
         .cc-cd-submit-or { font-size: 0.92rem; color: #94a3b8; font-weight: 600; }
     </style>
+    @endpush
+@endonce
+
+@once
+    @push('script')
+    <script>
+    (function () {
+        // Same delegated "Browse" control as the teacher-side lesson form
+        // (resources/views/program-class/_form.blade.php) - the real
+        // input[type=file] is hidden (every one on the page gets
+        // .hide()'d by the theme's own main.js), this is the visible
+        // trigger + filename mirror that replaces it.
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.ot-browse-btn');
+            if (!btn) return;
+            var input = btn.closest('.ot_fileUploader')?.querySelector('input[type="file"]');
+            if (input) input.click();
+        });
+        document.addEventListener('change', function (e) {
+            if (!e.target.matches('.ot_fileUploader input[type="file"]')) return;
+            var placeholder = e.target.closest('.ot_fileUploader')?.querySelector('input[type="text"]');
+            if (placeholder && e.target.files && e.target.files[0]) {
+                placeholder.value = e.target.files[0].name;
+            }
+        });
+    })();
+    </script>
     @endpush
 @endonce

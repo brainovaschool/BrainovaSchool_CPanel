@@ -169,6 +169,11 @@ class ProgramClassMarkRepository
                 'total'   => $lessonSlots,
                 'avgPct'  => $lessonPossible > 0 ? round($lessonObtained / $lessonPossible * 100, 1) : null,
                 'status'  => $lessonStatus,
+                // Short, chart/table-friendly label - this lesson's position
+                // within THIS list (gradable-only), not its raw sort_order,
+                // so "L1" in the trend chart always lines up with row 1 of
+                // the table right below it, with no gaps for skipped lessons.
+                'label'   => 'L' . (count($lessonRows) + 1),
             ];
         }
 
@@ -332,7 +337,8 @@ class ProgramClassMarkRepository
             return $this->responseWithError('Add a link or choose a file before submitting.', []);
         }
 
-        $mark->submitted_at = now();
+        $mark->submission_note = trim((string) $request->input('note')) ?: null;
+        $mark->submitted_at    = now();
         $mark->save();
 
         return $this->responseWithSuccess('Submitted.', []);

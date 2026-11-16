@@ -99,6 +99,7 @@ class CourseCategoryController extends Controller
             'assessment_type'  => 'required|string|in:quiz,project,worksheet,assignment',
             'link_url'         => 'nullable|string|max:500',
             'file'             => 'nullable|file|max:51200',
+            'note'             => 'nullable|string|max:1000',
             'category'         => ['required', 'string', \Illuminate\Validation\Rule::in(array_keys(CourseCategoryRepository::CATEGORIES))],
             'program_id'       => 'required|integer',
         ]);

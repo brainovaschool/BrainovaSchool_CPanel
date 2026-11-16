@@ -28,6 +28,12 @@
         'in_progress' => ['label' => 'In Progress',  'color' => '#c98500', 'soft' => '#fdf0d9', 'icon' => 'fa-hourglass-half'],
         'not_started' => ['label' => 'Not Started',  'color' => '#898781', 'soft' => '#eceae3', 'icon' => 'fa-circle'],
     ];
+
+    // Same L1/L2/... short labels the chart/table use, keyed by lesson id
+    // so Recent Activity's own sentences (built from a separate flat
+    // event list, not $lessonRows) can use the same short reference
+    // instead of a possibly-long raw title.
+    $pr_labelByClassId = collect($pr_progress['lessonRows'] ?? [])->mapWithKeys(fn ($r) => [$r['class']->id => $r['label']]);
 @endphp
 
 <div class="cc-pr">
@@ -48,11 +54,23 @@
                 <p class="cc-pr-stat-value">{{ $pr_progress['students']->count() }}</p>
             </div>
             <div class="cc-pr-stat">
-                <span class="cc-pr-stat-icon cc-pr-stat-icon--orange"><i class="fa-solid fa-check-double"></i></span>
-                <p class="cc-pr-stat-label">Lessons Completed</p>
+                <span class="cc-pr-stat-icon cc-pr-stat-icon--orange"><i class="fa-solid fa-upload"></i></span>
+                <p class="cc-pr-stat-label">Lessons Published</p>
                 <p class="cc-pr-stat-value">{{ $pr_progress['approvedLessons'] }}/{{ $pr_progress['totalLessons'] }}</p>
                 @php $pr_lessonPct = $pr_progress['totalLessons'] > 0 ? round($pr_progress['approvedLessons'] / $pr_progress['totalLessons'] * 100) : 0; @endphp
                 <div class="cc-pr-meter"><div class="cc-pr-meter-fill" style="width: {{ $pr_lessonPct }}%;"></div></div>
+            </div>
+            <div class="cc-pr-stat">
+                {{-- This is the real answer to "is a lesson actually done" -
+                     every one of its gradable items graded for every
+                     enrolled student (statusCounts, already computed below
+                     for the segmented bar) - unlike "Lessons Published"
+                     above, which only means live/approved, not graded. --}}
+                <span class="cc-pr-stat-icon cc-pr-stat-icon--green"><i class="fa-solid fa-circle-check"></i></span>
+                <p class="cc-pr-stat-label">Lessons Graded</p>
+                <p class="cc-pr-stat-value">{{ $pr_progress['statusCounts']['completed'] }}/{{ $pr_progress['lessonsWithItems'] }}</p>
+                @php $pr_gradedLessonPct = $pr_progress['lessonsWithItems'] > 0 ? round($pr_progress['statusCounts']['completed'] / $pr_progress['lessonsWithItems'] * 100) : 0; @endphp
+                <div class="cc-pr-meter"><div class="cc-pr-meter-fill" style="width: {{ $pr_gradedLessonPct }}%;"></div></div>
             </div>
             <div class="cc-pr-stat">
                 <span class="cc-pr-stat-icon cc-pr-stat-icon--pink"><i class="fa-solid fa-trophy"></i></span>
@@ -126,7 +144,12 @@
                                 @foreach ($pr_progress['lessonRows'] as $row)
                                     @php $pr_meta = $pr_statusMeta[$row['status']]; @endphp
                                     <tr>
-                                        <td><a href="{{ route('program-class.grade.edit', $row['class']->program_id) }}">{{ $row['class']->title }}</a></td>
+                                        <td>
+                                            <a href="{{ route('program-class.grade.edit', $row['class']->program_id) }}" class="cc-pr-lesson-link" title="{{ $row['class']->title }}">
+                                                <strong>{{ $row['label'] }}</strong>
+                                                <span>{{ \Illuminate\Support\Str::limit($row['class']->title, 32) }}</span>
+                                            </a>
+                                        </td>
                                         <td>{{ implode(', ', array_map(fn ($i) => $i['title'], $row['items'])) }}</td>
                                         <td>
                                             <span class="cc-pr-pill" style="background: {{ $pr_meta['soft'] }}; color: {{ $pr_meta['color'] }};">
@@ -163,12 +186,12 @@
                                     @if ($event['type'] === 'graded')
                                         <span class="cc-pr-activity-icon cc-pr-activity-icon--good"><i class="fa-solid fa-circle-check"></i></span>
                                         <span class="cc-pr-activity-text">
-                                            <strong>{{ $event['student']->full_name }}</strong> was graded {{ $event['marks'] }}{{ $event['maxMarks'] ? '/' . $event['maxMarks'] : '' }} on <em>{{ $event['itemTitle'] }}</em> ({{ $event['class']->title }})
+                                            <strong>{{ $event['student']->full_name }}</strong> was graded {{ $event['marks'] }}{{ $event['maxMarks'] ? '/' . $event['maxMarks'] : '' }} on <em>{{ $event['itemTitle'] }}</em> ({{ $pr_labelByClassId[$event['class']->id] ?? $event['class']->title }})
                                         </span>
                                     @else
                                         <span class="cc-pr-activity-icon cc-pr-activity-icon--neutral"><i class="fa-solid fa-paper-plane"></i></span>
                                         <span class="cc-pr-activity-text">
-                                            <strong>{{ $event['student']->full_name }}</strong> submitted <em>{{ $event['itemTitle'] }}</em> ({{ $event['class']->title }})
+                                            <strong>{{ $event['student']->full_name }}</strong> submitted <em>{{ $event['itemTitle'] }}</em> ({{ $pr_labelByClassId[$event['class']->id] ?? $event['class']->title }})
                                             <a href="{{ $event['mark']->downloadUrl() }}" target="_blank" rel="noopener">View &rarr;</a>
                                         </span>
                                     @endif
@@ -221,10 +244,15 @@
         var canvas = document.getElementById('cc-pr-trend-canvas');
         if (!canvas || typeof Chart === 'undefined') { return; }
 
+        // Full titles kept for the tooltip - only the axis itself is
+        // shortened to L1/L2/... (see ProgramClassMarkRepository::
+        // progressForProgram()'s 'label' key).
+        var lessonTitles = {!! json_encode(array_map(fn ($r) => $r['class']->title, $pr_progress['lessonRows'])) !!};
+
         new Chart(canvas.getContext('2d'), {
             type: 'line',
             data: {
-                labels: {!! json_encode(array_map(fn ($r) => $r['class']->title, $pr_progress['lessonRows'])) !!},
+                labels: {!! json_encode(array_map(fn ($r) => $r['label'], $pr_progress['lessonRows'])) !!},
                 datasets: [{
                     data: {!! json_encode(array_map(fn ($r) => $r['avgPct'], $pr_progress['lessonRows'])) !!},
                     borderColor: '#0097b2',
@@ -242,7 +270,15 @@
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            title: function (items) { return lessonTitles[items[0].dataIndex] || items[0].label; },
+                            label: function (item) { return 'Average: ' + item.formattedValue + '%'; }
+                        }
+                    }
+                },
                 scales: {
                     y: { beginAtZero: true, max: 100, grid: { color: '#e1e0d9' }, ticks: { callback: function (v) { return v + '%'; } } },
                     x: { grid: { display: false } }
@@ -291,6 +327,7 @@
         .cc-pr-stat-icon--teal { background: #e1f6fa; color: #0097b2; }
         .cc-pr-stat-icon--orange { background: #fde8e0; color: #c2410c; }
         .cc-pr-stat-icon--pink { background: #fce7f3; color: #be185d; }
+        .cc-pr-stat-icon--green { background: #e3f6e3; color: #0ca30c; }
         .cc-pr-stat-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #8b93a3; margin: 0 0 0.35rem; }
         .cc-pr-stat-value { font-size: 1.5rem; font-weight: 800; color: #0f172a; margin: 0 0 0.4rem; }
         .cc-pr-meter { height: 6px; border-radius: 999px; background: #e1f6fa; overflow: hidden; }
@@ -309,6 +346,10 @@
         .cc-pr-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
         .cc-pr-table th { text-align: left; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #8b93a3; padding: 0.6rem; border-bottom: 2px solid var(--ot-border-basic-table, #e4e7ec); }
         .cc-pr-table td { padding: 0.65rem 0.6rem; border-bottom: 1px solid #e4e7ec; color: #334155; }
+        .cc-pr-lesson-link { display: flex; align-items: baseline; gap: 0.45rem; text-decoration: none; }
+        .cc-pr-lesson-link strong { font-size: 0.78rem; font-weight: 800; color: #0097b2; background: #e1f6fa; border-radius: 999px; padding: 0.05rem 0.5rem; flex-shrink: 0; }
+        .cc-pr-lesson-link span { color: #334155; }
+        .cc-pr-lesson-link:hover span { text-decoration: underline; }
         .cc-pr-table tbody tr:last-child td { border-bottom: none; }
         .cc-pr-table tbody tr:nth-child(even) { background: #f8f9fb; }
         .cc-pr-pill { display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.6rem; border-radius: 999px; }

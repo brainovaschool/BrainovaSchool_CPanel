@@ -268,7 +268,7 @@
                                     </div>
                                 </form>
                             </div>
-                        @elseif ($cd_can_manage && $cd_is_owner_or_admin && $pc->isEditableByTeacher())
+                        @elseif ($cd_can_manage && $cd_is_owner_or_admin && ($cd_is_admin || $pc->isEditableByTeacher()))
                             <div class="cc-cd-manage-row">
                                 @if ($pc->review_status === \App\Models\WebsiteSetup\ProgramClass::CHANGES_REQUESTED)
                                     @if ($pc->coordinator_feedback)
@@ -278,13 +278,25 @@
                                         <p class="cc-cd-empty-sub" style="color:#b45309;"><strong>Admin's feedback:</strong> {{ $pc->admin_feedback }}</p>
                                     @endif
                                 @endif
-                                <div class="d-flex gap-2 flex-wrap">
+                                {{-- An Admin can edit at ANY status, including Approved/live -
+                                     a Teacher only ever reaches this branch pre-approval
+                                     (isEditableByTeacher()), where "Submit for review" still
+                                     applies. Once Approved, submitting again is meaningless
+                                     (the repo itself refuses it), so that button is skipped
+                                     and the same "live" status line the read-only branch below
+                                     would otherwise show is kept visible here too. --}}
+                                @if ($pc->review_status === \App\Models\WebsiteSetup\ProgramClass::APPROVED)
+                                    <p class="cc-cd-empty-sub">Approved{{ $pc->approved_at ? ' ' . $pc->approved_at->diffForHumans() : '' }} — live on Course Details.</p>
                                     <a href="{{ route('program-class.edit', $pc->id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
-                                    <form action="{{ route('program-class.submit', $pc->id) }}" method="post" class="d-inline" onsubmit="return confirm('Submit this lesson for review?');">
-                                        @csrf
-                                        <button type="submit" class="btn btn-sm ot-btn-primary">Submit for review</button>
-                                    </form>
-                                </div>
+                                @else
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <a href="{{ route('program-class.edit', $pc->id) }}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                        <form action="{{ route('program-class.submit', $pc->id) }}" method="post" class="d-inline" onsubmit="return confirm('Submit this lesson for review?');">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm ot-btn-primary">Submit for review</button>
+                                        </form>
+                                    </div>
+                                @endif
                             </div>
                         @elseif ($cd_can_manage && $cd_is_owner_or_admin)
                             <p class="cc-cd-empty-sub">
@@ -334,6 +346,7 @@
                             <details class="cc-cd-sub" data-section="quiz" open>
                                 <summary>
                                     <span class="cc-cd-section-pill cc-cd-section-pill--quiz">Quiz</span>
+                                    <span class="cc-cd-sub-count">1</span>
                                     <span class="cc-cd-sub-chev">&#9662;</span>
                                 </summary>
                                 <div class="cc-cd-sub-body">
@@ -353,6 +366,7 @@
                             <details class="cc-cd-sub" data-section="project" open>
                                 <summary>
                                     <span class="cc-cd-section-pill cc-cd-section-pill--project">Project</span>
+                                    <span class="cc-cd-sub-count">1</span>
                                     <span class="cc-cd-sub-chev">&#9662;</span>
                                 </summary>
                                 <div class="cc-cd-sub-body">
@@ -372,6 +386,7 @@
                             <details class="cc-cd-sub" data-section="worksheet" open>
                                 <summary>
                                     <span class="cc-cd-section-pill cc-cd-section-pill--worksheet">Worksheet</span>
+                                    <span class="cc-cd-sub-count">1</span>
                                     <span class="cc-cd-sub-chev">&#9662;</span>
                                 </summary>
                                 <div class="cc-cd-sub-body">
@@ -391,6 +406,7 @@
                             <details class="cc-cd-sub" data-section="assignment" open>
                                 <summary>
                                     <span class="cc-cd-section-pill cc-cd-section-pill--assignment">Assignment</span>
+                                    <span class="cc-cd-sub-count">1</span>
                                     <span class="cc-cd-sub-chev">&#9662;</span>
                                 </summary>
                                 <div class="cc-cd-sub-body">
@@ -508,6 +524,7 @@
                                     <details class="cc-cd-sub" open>
                                         <summary>
                                             <span class="cc-cd-section-pill cc-cd-section-pill--quiz">Quiz</span>
+                                            <span class="cc-cd-sub-count">1</span>
                                             <span class="cc-cd-sub-chev">&#9662;</span>
                                         </summary>
                                         <div class="cc-cd-sub-body">
@@ -526,6 +543,7 @@
                                     <details class="cc-cd-sub" open>
                                         <summary>
                                             <span class="cc-cd-section-pill cc-cd-section-pill--project">Project</span>
+                                            <span class="cc-cd-sub-count">1</span>
                                             <span class="cc-cd-sub-chev">&#9662;</span>
                                         </summary>
                                         <div class="cc-cd-sub-body">
