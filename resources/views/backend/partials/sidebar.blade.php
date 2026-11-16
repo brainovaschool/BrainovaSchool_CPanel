@@ -470,11 +470,15 @@
                      Online Examination), and the AI/analytics tools — kept
                      apart from Staff Zone above, which is internal
                      team/social tooling, not classroom work. --}}
-                @if (((hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve')) && hasFeature('class_content'))
+                {{-- Admin-only for now, same as Homeschooling/Beyond Screens
+                     above - hidden from every teacher regardless of their
+                     class_content_*/homework_*/exam_* permissions, until
+                     this is reopened to them deliberately. --}}
+                @if (auth()->user()?->role_id == 1 && (((hasPermission('class_content_read') || hasPermission('class_content_coordinator_review') || hasPermission('class_content_approve')) && hasFeature('class_content'))
                         || (hasPermission('homework_read') && hasFeature('homework'))
                         || ((hasPermission('ai_help_teacher_read') || hasPermission('skill_mastery_report_read')) && hasFeature('teacher_tools'))
                         || ((hasPermission('exam_type_read') || hasPermission('marks_grade_read') || hasPermission('exam_assign_read') || hasPermission('marks_register_read') || hasPermission('exam_setting_read')) && hasFeature('examination'))
-                        || ((hasPermission('question_group_read') || hasPermission('question_bank_read') || hasPermission('online_exam_read') || hasPermission('online_exam_type_read')) && hasFeature('online_examination')))
+                        || ((hasPermission('question_group_read') || hasPermission('question_bank_read') || hasPermission('online_exam_read') || hasPermission('online_exam_type_read')) && hasFeature('online_examination'))))
                     <li class="sidebar-menu-item {{ set_menu(['class-content*', 'homework*', 'ai-help-teacher*', 'skill-mastery-report*', 'exam-type*', 'marks-grade*', 'exam-assign*', 'marks-register*', 'examination-settings*', 'question-group*', 'question-bank*', 'online-exam*', 'online-exam-type*']) }}">
                         <a class="parent-item-content has-arrow">
                             <i class="las la-chalkboard-teacher"></i>
