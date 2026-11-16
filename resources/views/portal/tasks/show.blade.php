@@ -44,6 +44,17 @@
                     <div class="card-body">
                         <p class="text-secondary">{!! $task->description ? linkify($task->description) : 'No description given.' !!}</p>
 
+                        @if ($task->reel && ($task->reel->hook || $task->reel->note))
+                            <div class="mb-3">
+                                @if ($task->reel->hook)
+                                    <p class="mb-2"><strong>Hook:</strong><br>{!! linkify($task->reel->hook) !!}</p>
+                                @endif
+                                @if ($task->reel->note)
+                                    <p class="mb-0"><strong>Note:</strong><br>{!! linkify($task->reel->note) !!}</p>
+                                @endif
+                            </div>
+                        @endif
+
                         @if ($data['isDocumentTrackReel'])
                             <div class="card mb-3" style="border-left:4px solid var(--bn-turquoise-text, #007585); background:rgba(var(--bn-turquoise-rgb, 0,117,133), .06);">
                                 <div class="card-body p-4">
