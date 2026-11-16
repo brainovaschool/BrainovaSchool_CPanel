@@ -386,7 +386,44 @@ class SocialRepository
             ]);
         }
 
+        $this->assignMissingReelCodes();
+
         return $this->responseWithSuccess('Saved.', []);
+    }
+
+    /** Called every time Series settings are saved, so typing in a Code
+     *  for the first time (or changing one) immediately catches up every
+     *  reel already sitting in that series with no code - not just reels
+     *  created from here on (PortalReel::booted() only ever assigns a
+     *  code once, when a reel is first saved). Additive only: a reel that
+     *  already has a code keeps it untouched, and numbering simply
+     *  continues from whatever's already assigned - this is a "fill in
+     *  the gaps" pass, not the full from-scratch renumber
+     *  regenerateReelCodes() does. Rejected ideas are skipped, same as
+     *  regenerateReelCodes() - nothing to number for an idea that's
+     *  dead. Suggested ones ARE included here (regenerateReelCodes()
+     *  skips those) - the whole point of this pass is the stack of
+     *  still-suggested reels sitting with no code at all. */
+    private function assignMissingReelCodes(): void
+    {
+        $seriesCodes = PortalReelSeries::whereNotNull('code')->where('code', '!=', '')->pluck('code', 'name');
+
+        foreach ($seriesCodes as $seriesName => $seriesCode) {
+            $next = PortalReel::where('series_name', $seriesName)->whereNotNull('code')->count() + 1;
+
+            $missing = PortalReel::where('series_name', $seriesName)
+                ->whereNull('code')
+                ->where('status', '!=', PortalReel::REJECTED)
+                ->orderBy('created_at')
+                ->orderBy('id')
+                ->get();
+
+            foreach ($missing as $reel) {
+                $reel->code = $seriesCode . $next;
+                $reel->save();
+                $next++;
+            }
+        }
     }
 
     public function deleteSeries(int $id): array
