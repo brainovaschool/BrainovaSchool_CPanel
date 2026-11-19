@@ -39,23 +39,11 @@ return [
     // B2 (Backblaze) credentials are deliberately NOT cached here - see
     // App\Services\B2Storage::credential(). This file's own compiled copy
     // went stale on this host, so that class reads env() directly instead.
-
-    'assessment_system' => [
-        // Signs the login handoff token (see AssessmentSystemController).
-        // Must also be pasted into the Google Apps Script's own Script
-        // Properties once Step 5 adds server-side verification there -
-        // until then it only shapes the token, nothing checks it yet.
-        'auth_secret' => env('ASSESSMENT_SYSTEM_AUTH_SECRET'),
-        // Where the built brainova-demo.html is actually hosted. Defaults
-        // to the copy build.js writes straight into this app's own
-        // public/ folder - override only if you ever host it elsewhere.
-        'url' => env('ASSESSMENT_SYSTEM_URL', '/assessment-system/brainova-demo.html'),
-        // The Google Apps Script web app URL (NOT the shared secret -
-        // that one stays only in the app's own Settings page). Passed
-        // along on every login so a brand-new device gets pointed at
-        // the right Sheet automatically, without anyone having to type
-        // it in by hand. See AssessmentSystemController::launch().
-        'sheets_url' => env('ASSESSMENT_SYSTEM_SHEETS_URL'),
-    ],
+    //
+    // Same reason the Assessment System's settings (AssessmentSystemController,
+    // the sidebar partials) read ASSESSMENT_SYSTEM_* straight from env()
+    // instead of living here - this app's .cpanel.yml never deploys
+    // config/ to the live server, so anything only defined in this file
+    // would be invisible in production regardless of what .env says.
 
 ];

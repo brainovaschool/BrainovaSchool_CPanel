@@ -1449,7 +1449,7 @@
                     </ul>
                 </li>
                 @endif
-                @if (config('services.assessment_system.auth_secret') && in_array((int) auth()->user()?->role_id, [1, 2, 5]))
+                @if (env('ASSESSMENT_SYSTEM_AUTH_SECRET') && in_array((int) auth()->user()?->role_id, [1, 2, 5]))
                     <li class="sidebar-menu-item">
                         <a href="{{ route('assessment-system.launch') }}" target="_blank" rel="noopener" class="parent-item-content">
                             <i class="las la-clipboard-check"></i>
