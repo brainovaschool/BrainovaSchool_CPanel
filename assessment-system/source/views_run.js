@@ -25,7 +25,7 @@ function startRun(a, studentId, preview) {
   if (a.model === 'adaptive') { ad = new Adaptive(a, S.bank, seed); if (ad.done()) { toast('No approved questions are available for this assessment yet.'); return; } const q = ad.next(); items.push(Object.assign(present(q, R, a.shuffleOpts), { _probe: !!q._probe })); }
   else { const fx = buildFixed(a, S.bank, seed); items = fx.items.map(q => present(q, R, a.shuffleOpts)); if (!items.length) { toast('No approved questions are available for this assessment yet.'); return; } }
   const now = Date.now(), perQ = a.perQuestionSec ? a.perQuestionSec * 1000 * ex : 0;
-  U.run = { a, st, preview: !!preview, seed, R, ad, items, resp: items.map(() => ({ raw: null, ms: 0, visits: 0, changed: 0, timedOut: false })), idx: 0, started: now, deadline: a.durationMin > 0 ? now + a.durationMin * 60000 * ex : null, perQ, qStart: now, phase: 'q', events: [], doneResp: [], large: ac.largeText, att: null };
+  U.run = { a, st, preview: !!preview, seed, R, ad, items, resp: items.map(() => ({ raw: null, ms: 0, visits: 0, changed: 0, timedOut: false })), idx: 0, started: now, deadline: a.durationMin > 0 ? now + a.durationMin * 60000 * ex : null, perQ, qStart: now, phase: 'q', events: [], doneResp: [], large: ac.largeText, att: null, attId: uid('att') };
   U.run.resp[0].visits = 1;
   if (a.fullscreen) { try { const p = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
   render(); scrollTop();
@@ -66,6 +66,7 @@ function advance(opt = {}) {
   if (ad) {
     const resp = makeResponse(r.doneResp.length + 1, q, e.raw, e.ms, { visited: true, changed: e.changed, visits: e.visits, timedOut: e.timedOut, probe: !!q._probe });
     r.doneResp.push(resp); r.ad.record(resp);
+    if (!r.preview && window.BrainovaAPI) window.BrainovaAPI.saveResponse(r.attId, resp, { asmtId: a.id, studentId: r.st.id, partial: true });
     if (r.ad.done()) { r.stop = r.ad.done(); r.phase = 'review'; submitRun(false); return; }
     const nq = r.ad.next(); r.items.push(Object.assign(present(nq, r.R, a.shuffleOpts), { _probe: !!nq._probe })); r.resp.push({ raw: null, ms: 0, visits: 1, changed: 0, timedOut: false }); r.idx++;
   } else {
@@ -79,11 +80,12 @@ function submitRun(forced) {
   const r = U.run; if (!r || r.submitting) return; r.submitting = true; if (r.phase === 'q') flushTime();
   const a = r.a, st = r.st, now = Date.now(), ad = a.model === 'adaptive';
   const att = makeAttempt(a, st, { started: r.started, finished: now, durationMs: now - r.started, events: r.events.concat(forced ? [{ t: now, type: 'time-up', note: 'Submitted automatically when time ran out' }] : []), preview: r.preview });
+  att.id = r.attId || att.id; // keep the id any in-progress adaptive answers were already saved under
   if (ad) { att.items = r.items.slice(0, r.doneResp.length).map(i => { const c = JSON.parse(JSON.stringify(i)); delete c._probe; return c; }); att.responses = r.doneResp; att.trace = r.ad.trace; att.stopReason = r.stop || r.ad.done() || 'Submitted'; }
   else { att.items = r.items; att.responses = r.items.map((q, i) => { const e = r.resp[i]; return makeResponse(i + 1, q, e.raw, e.ms, { visited: e.visits > 0, changed: e.changed, visits: e.visits, timedOut: e.timedOut }); }); }
   att.attemptNo = attemptsOf(a.id, st.id).length + 1; att.application = a.application; att.supervision = a.parentSupervision ? (supOf(a.id, st.id) ? { confirmed: true, by: supOf(a.id, st.id).by, at: supOf(a.id, st.id).at } : null) : null;
   att.released = a.resultVis === 'instant'; att.review = { notes: '', override: '', finalized: false };
-  if (r.preview) { U.previewAtt = att; att.released = true; } else { S.attempts.push(att); save(); }
+  if (r.preview) { U.previewAtt = att; att.released = true; } else { S.attempts.push(att); save(); if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att); }
   r.att = att; r.phase = 'done'; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } render(); scrollTop();
 }
 function doneView() {
@@ -133,6 +135,7 @@ function liveEnd() {
     const att = makeAttempt(a, s, { mode: 'live', started: L.qStart ? Date.now() - L.items.length * L.qMs : Date.now(), finished: Date.now(), durationMs: L.items.length * L.qMs });
     att.items = L.items; att.responses = L.items.map((q, i) => { const x = (L.answers[i] || {})[s.id]; return makeResponse(i + 1, q, x ? x.raw : null, x ? x.ms : 0, { visited: false }); });
     att.supervision = null; att.review = { notes: '', override: '', finalized: false }; att.released = false; att.attemptNo = attemptsOf(a.id, s.id).length + 1; S.attempts.push(att); ids.push(att.id);
+    if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att);
   });
   save(); U.live = null; U.resTab = 'class'; U.params = { asmt: a.id }; U.view = 'results'; U.role = U.role === 'admin' ? 'admin' : 'teacher'; render(); toast('Live session saved. Class report is ready.'); scrollTop();
 }

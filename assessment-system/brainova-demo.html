@@ -786,6 +786,124 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
 }
 
 
+/* ===================== GOOGLE SHEETS API ADAPTER =====================
+   Talks to a Google Apps Script web app (wired up in a later step).
+   Until BrainovaAPI.configure() is given a real url, every call below
+   is a harmless no-op and the app behaves exactly like the
+   localStorage-only demo did. Once configured: localStorage is still
+   written first on every save() (see core.js) and remains the offline
+   cache; everything sent onward also goes through this persisted
+   outbox queue, so a dropped connection never loses an attempt or an
+   answer - it just waits in localStorage until the network (or the
+   next page load) lets it through. */
+(function () {
+  const CFG_KEY = 'brainova.apiconfig.v1';
+  const QUEUE_KEY = 'brainova.outbox.v1';
+  const SNAPSHOT_COLLECTIONS = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision'];
+
+  let cfg = { url: '', token: '' };
+  try { Object.assign(cfg, JSON.parse(localStorage.getItem(CFG_KEY) || '{}')); } catch (e) { /* ignore */ }
+
+  let queue = [];
+  try { queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch (e) { /* ignore */ }
+
+  let flushing = false, syncTimer = 0, retryTimer = 0;
+
+  function isConfigured() { return !!cfg.url; }
+  function persistQueue() { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(queue)); } catch (e) { /* ignore */ } }
+
+  function configure(opts) {
+    cfg = Object.assign({}, cfg, opts || {});
+    try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) { /* ignore */ }
+    flush();
+  }
+
+  // Apps Script's doPost doesn't need a CORS preflight as long as the
+  // request body is sent as text/plain, so that's what every write uses.
+  async function post(body) {
+    const res = await fetch(cfg.url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(Object.assign({ token: cfg.token }, body))
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const data = await res.json();
+    if (data && data.ok === false) throw new Error(data.error || 'Request rejected');
+    return data;
+  }
+
+  function enqueue(kind, payload) {
+    if (!isConfigured()) return; // nothing to talk to yet - stay a no-op, same as before this adapter existed
+    queue.push({ id: 'q_' + Math.random().toString(36).slice(2, 9), kind, payload, ts: Date.now() });
+    persistQueue();
+    flush();
+  }
+
+  async function flush() {
+    if (!isConfigured() || flushing || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
+    flushing = true;
+    try {
+      while (queue.length) {
+        const item = queue[0];
+        try {
+          await post({ action: 'write', kind: item.kind, payload: item.payload });
+          queue.shift();
+          persistQueue();
+        } catch (e) {
+          scheduleRetry();
+          break; // keep order: don't send item 2 before a stuck item 1 is confirmed
+        }
+      }
+    } finally { flushing = false; }
+  }
+
+  function scheduleRetry() {
+    clearTimeout(retryTimer);
+    retryTimer = setTimeout(flush, 8000);
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('online', flush);
+    setInterval(flush, 20000); // safety net in case an 'online' event is missed
+  }
+
+  // Debounced: the "administrative" collections (not attempts - those
+  // have their own immediate path below) resync a short idle moment
+  // after the last change, so typing in a textarea doesn't fire one
+  // request per keystroke.
+  function scheduleSync(S) {
+    if (!isConfigured()) return;
+    clearTimeout(syncTimer);
+    syncTimer = setTimeout(() => {
+      const snapshot = {};
+      SNAPSHOT_COLLECTIONS.forEach(k => { if (S[k] !== undefined) snapshot[k] = S[k]; });
+      enqueue('snapshot', snapshot);
+    }, 1000);
+  }
+
+  // Immediate, per the brief: "save each attempt and its responses as
+  // soon as it is submitted (and after every answer in adaptive tests)".
+  function saveAttempt(att) { enqueue('attempt', att); }
+  function saveResponse(attemptId, resp, meta) { enqueue('response', Object.assign({ attemptId, resp }, meta || {})); }
+
+  async function fetchSnapshot() {
+    if (!isConfigured()) return null;
+    try {
+      const url = cfg.url + '?action=bootstrap&token=' + encodeURIComponent(cfg.token || '');
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return (data && data.ok !== false && data.state) ? data.state : null;
+    } catch (e) { return null; }
+  }
+
+  function pendingCount() { return queue.length; }
+
+  flush(); // in case a previous session left queued items waiting for a connection
+
+  window.BrainovaAPI = { configure, isConfigured, scheduleSync, saveAttempt, saveResponse, fetchSnapshot, pendingCount, flush };
+})();
+
 /* ===================== CORE: state, persistence, seed data, helpers ===================== */
 const LS_KEY = 'brainova.demo.v1';
 let S = null;              // persisted data (demo store)
@@ -804,8 +922,10 @@ const lvPill = i => i == null ? '<span class="lv lvn">Needs assessment</span>' :
 const sumBy = (a, f) => a.reduce((s, x) => s + f(x), 0);
 const avg = a => a.length ? sumBy(a, x => x) / a.length : null;
 
-/* ---------- persistence (demo store; production uses the Laravel API, see Integration) ---------- */
-function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) { /* storage blocked or full: app keeps working in memory */ } }
+/* ---------- persistence (localStorage is always the offline cache; source/api.js
+   syncs the same data to the Google Sheets backend once configured) ---------- */
+function persistLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) { /* storage blocked or full: app keeps working in memory */ } }
+function save() { persistLocal(); if (window.BrainovaAPI) window.BrainovaAPI.scheduleSync(S); }
 function load() { try { const t = localStorage.getItem(LS_KEY); if (t) { const d = JSON.parse(t); if (d && d.v === 1) return d; } } catch (e) { } return null; }
 
 /* ---------- lookups ---------- */
@@ -1666,7 +1786,7 @@ function startRun(a, studentId, preview) {
   if (a.model === 'adaptive') { ad = new Adaptive(a, S.bank, seed); if (ad.done()) { toast('No approved questions are available for this assessment yet.'); return; } const q = ad.next(); items.push(Object.assign(present(q, R, a.shuffleOpts), { _probe: !!q._probe })); }
   else { const fx = buildFixed(a, S.bank, seed); items = fx.items.map(q => present(q, R, a.shuffleOpts)); if (!items.length) { toast('No approved questions are available for this assessment yet.'); return; } }
   const now = Date.now(), perQ = a.perQuestionSec ? a.perQuestionSec * 1000 * ex : 0;
-  U.run = { a, st, preview: !!preview, seed, R, ad, items, resp: items.map(() => ({ raw: null, ms: 0, visits: 0, changed: 0, timedOut: false })), idx: 0, started: now, deadline: a.durationMin > 0 ? now + a.durationMin * 60000 * ex : null, perQ, qStart: now, phase: 'q', events: [], doneResp: [], large: ac.largeText, att: null };
+  U.run = { a, st, preview: !!preview, seed, R, ad, items, resp: items.map(() => ({ raw: null, ms: 0, visits: 0, changed: 0, timedOut: false })), idx: 0, started: now, deadline: a.durationMin > 0 ? now + a.durationMin * 60000 * ex : null, perQ, qStart: now, phase: 'q', events: [], doneResp: [], large: ac.largeText, att: null, attId: uid('att') };
   U.run.resp[0].visits = 1;
   if (a.fullscreen) { try { const p = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
   render(); scrollTop();
@@ -1707,6 +1827,7 @@ function advance(opt = {}) {
   if (ad) {
     const resp = makeResponse(r.doneResp.length + 1, q, e.raw, e.ms, { visited: true, changed: e.changed, visits: e.visits, timedOut: e.timedOut, probe: !!q._probe });
     r.doneResp.push(resp); r.ad.record(resp);
+    if (!r.preview && window.BrainovaAPI) window.BrainovaAPI.saveResponse(r.attId, resp, { asmtId: a.id, studentId: r.st.id, partial: true });
     if (r.ad.done()) { r.stop = r.ad.done(); r.phase = 'review'; submitRun(false); return; }
     const nq = r.ad.next(); r.items.push(Object.assign(present(nq, r.R, a.shuffleOpts), { _probe: !!nq._probe })); r.resp.push({ raw: null, ms: 0, visits: 1, changed: 0, timedOut: false }); r.idx++;
   } else {
@@ -1720,11 +1841,12 @@ function submitRun(forced) {
   const r = U.run; if (!r || r.submitting) return; r.submitting = true; if (r.phase === 'q') flushTime();
   const a = r.a, st = r.st, now = Date.now(), ad = a.model === 'adaptive';
   const att = makeAttempt(a, st, { started: r.started, finished: now, durationMs: now - r.started, events: r.events.concat(forced ? [{ t: now, type: 'time-up', note: 'Submitted automatically when time ran out' }] : []), preview: r.preview });
+  att.id = r.attId || att.id; // keep the id any in-progress adaptive answers were already saved under
   if (ad) { att.items = r.items.slice(0, r.doneResp.length).map(i => { const c = JSON.parse(JSON.stringify(i)); delete c._probe; return c; }); att.responses = r.doneResp; att.trace = r.ad.trace; att.stopReason = r.stop || r.ad.done() || 'Submitted'; }
   else { att.items = r.items; att.responses = r.items.map((q, i) => { const e = r.resp[i]; return makeResponse(i + 1, q, e.raw, e.ms, { visited: e.visits > 0, changed: e.changed, visits: e.visits, timedOut: e.timedOut }); }); }
   att.attemptNo = attemptsOf(a.id, st.id).length + 1; att.application = a.application; att.supervision = a.parentSupervision ? (supOf(a.id, st.id) ? { confirmed: true, by: supOf(a.id, st.id).by, at: supOf(a.id, st.id).at } : null) : null;
   att.released = a.resultVis === 'instant'; att.review = { notes: '', override: '', finalized: false };
-  if (r.preview) { U.previewAtt = att; att.released = true; } else { S.attempts.push(att); save(); }
+  if (r.preview) { U.previewAtt = att; att.released = true; } else { S.attempts.push(att); save(); if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att); }
   r.att = att; r.phase = 'done'; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } render(); scrollTop();
 }
 function doneView() {
@@ -1774,6 +1896,7 @@ function liveEnd() {
     const att = makeAttempt(a, s, { mode: 'live', started: L.qStart ? Date.now() - L.items.length * L.qMs : Date.now(), finished: Date.now(), durationMs: L.items.length * L.qMs });
     att.items = L.items; att.responses = L.items.map((q, i) => { const x = (L.answers[i] || {})[s.id]; return makeResponse(i + 1, q, x ? x.raw : null, x ? x.ms : 0, { visited: false }); });
     att.supervision = null; att.review = { notes: '', override: '', finalized: false }; att.released = false; att.attemptNo = attemptsOf(a.id, s.id).length + 1; S.attempts.push(att); ids.push(att.id);
+    if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att);
   });
   save(); U.live = null; U.resTab = 'class'; U.params = { asmt: a.id }; U.view = 'results'; U.role = U.role === 'admin' ? 'admin' : 'teacher'; render(); toast('Live session saved. Class report is ready.'); scrollTop();
 }
@@ -2028,10 +2151,17 @@ ACT.liveAns = el => { const L = U.live; if (L.phase !== 'q') return; L.answers[L
 ACT.liveTxtSend = () => { const L = U.live, v = document.getElementById('liveTxt').value.trim(); if (!v || L.phase !== 'q') return; L.answers[L.idx][L.device] = { raw: v, ms: Math.round(liveElapsed()) }; render(); };
 
 /* init */
+function setDefaultIds() { const g5 = S.students.find(s => s.grade === 5) || S.students[0]; U.studentId = g5 && g5.id; U.parentId = S.parents[0] && S.parents[0].id; }
 function init() {
   S = load(); if (!S) { S = seed(); save(); } ensureSample();
-  const g5 = S.students.find(s => s.grade === 5) || S.students[0]; U.studentId = g5 && g5.id; U.parentId = S.parents[0] && S.parents[0].id;
-  render();
+  setDefaultIds();
+  render(); // show the cached/local state immediately, never block on the network
+  if (window.BrainovaAPI) {
+    window.BrainovaAPI.fetchSnapshot().then(remote => {
+      if (!remote) return; // not configured yet, offline, or nothing newer - local stays authoritative
+      S = remote; anCache = new WeakMap(); ensureSample(); setDefaultIds(); persistLocal(); render();
+    }).catch(() => { /* stay on the local/cached copy */ });
+  }
 }
 init();
 

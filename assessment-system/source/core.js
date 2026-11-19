@@ -16,8 +16,10 @@ const lvPill = i => i == null ? '<span class="lv lvn">Needs assessment</span>' :
 const sumBy = (a, f) => a.reduce((s, x) => s + f(x), 0);
 const avg = a => a.length ? sumBy(a, x => x) / a.length : null;
 
-/* ---------- persistence (demo store; production uses the Laravel API, see Integration) ---------- */
-function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) { /* storage blocked or full: app keeps working in memory */ } }
+/* ---------- persistence (localStorage is always the offline cache; source/api.js
+   syncs the same data to the Google Sheets backend once configured) ---------- */
+function persistLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) { /* storage blocked or full: app keeps working in memory */ } }
+function save() { persistLocal(); if (window.BrainovaAPI) window.BrainovaAPI.scheduleSync(S); }
 function load() { try { const t = localStorage.getItem(LS_KEY); if (t) { const d = JSON.parse(t); if (d && d.v === 1) return d; } } catch (e) { } return null; }
 
 /* ---------- lookups ---------- */

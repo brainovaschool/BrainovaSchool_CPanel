@@ -211,9 +211,16 @@ ACT.liveAns = el => { const L = U.live; if (L.phase !== 'q') return; L.answers[L
 ACT.liveTxtSend = () => { const L = U.live, v = document.getElementById('liveTxt').value.trim(); if (!v || L.phase !== 'q') return; L.answers[L.idx][L.device] = { raw: v, ms: Math.round(liveElapsed()) }; render(); };
 
 /* init */
+function setDefaultIds() { const g5 = S.students.find(s => s.grade === 5) || S.students[0]; U.studentId = g5 && g5.id; U.parentId = S.parents[0] && S.parents[0].id; }
 function init() {
   S = load(); if (!S) { S = seed(); save(); } ensureSample();
-  const g5 = S.students.find(s => s.grade === 5) || S.students[0]; U.studentId = g5 && g5.id; U.parentId = S.parents[0] && S.parents[0].id;
-  render();
+  setDefaultIds();
+  render(); // show the cached/local state immediately, never block on the network
+  if (window.BrainovaAPI) {
+    window.BrainovaAPI.fetchSnapshot().then(remote => {
+      if (!remote) return; // not configured yet, offline, or nothing newer - local stays authoritative
+      S = remote; anCache = new WeakMap(); ensureSample(); setDefaultIds(); persistLocal(); render();
+    }).catch(() => { /* stay on the local/cached copy */ });
+  }
 }
 init();
