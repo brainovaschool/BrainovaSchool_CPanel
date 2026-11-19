@@ -1,0 +1,852 @@
+# PROJECT: BRAINOVA – INTELLIGENT ASSESSMENT & PLACEMENT SYSTEM
+
+## 1. YOUR ROLE
+
+Act as a Senior Educational Assessment Specialist, Psychometrician, Adaptive Testing Designer, Learning Analytics Specialist and Education Technology Architect.
+
+Your task is to design a comprehensive, intelligent and reusable assessment platform for Brainova.
+
+This platform must be capable of conducting diagnostic assessments, admission assessments, placement tests, academic assessments and topic-specific proficiency tests.
+
+It must assess not only what a student scores but also what the student understands, how quickly they respond, which concepts they have mastered and which areas require further learning.
+
+The ultimate objective is to recommend the most suitable learning level, course or academic starting point for each student.
+
+This is not an ordinary quiz application. It is an intelligent student assessment and placement system.
+
+---
+
+## 2. TWO PRIMARY APPLICATIONS
+
+The system must support two major educational requirements.
+
+### A. Brainova School
+
+The system should assess students across Grades 1–10.
+
+It must support:
+
+- Multiple academic subjects.
+- Multiple grades.
+- Different academic terms.
+- Complete syllabus assessments.
+- Topic-specific assessments.
+- Grade-level placement tests.
+- Subject-wise proficiency analysis.
+- Identification of learning gaps.
+- Recommendations for additional support or advanced learning.
+
+A teacher should be able to select an entire subject syllabus or specific topics from different units, modules and terms.
+
+### B. Brainova Short Courses
+
+The system should assess students before admission to Brainova courses.
+
+Examples:
+
+- Addition and Subtraction.
+- Multiplication and Division.
+- Fractions.
+- Mathematics Fundamentals.
+- English Grammar.
+- Reading and Comprehension.
+- Urdu Language.
+- Science Fundamentals.
+- Coding.
+- Programming.
+- Artificial Intelligence.
+- Robotics.
+- Canva and Graphic Design.
+- Any other course.
+
+For example, a student applying for a Mathematics course should be assessed on the topics relevant to that particular course.
+
+The system should then recommend whether the student should start with a foundation course, intermediate course or advanced course.
+
+Both applications must use the same underlying assessment framework while allowing different configurations.
+
+---
+
+## 3. ASSESSMENT CREATION WORKSPACE
+
+The teacher or administrator should be able to create an assessment by selecting the following:
+
+### Assessment Information
+
+- Assessment title.
+- Assessment purpose.
+- Assessment type.
+- Subject.
+- Course.
+- Grade.
+- Student age group.
+- Academic level.
+- Target learning outcomes.
+- Total duration.
+- Number of questions.
+- Time allowed per question, where applicable.
+- Passing criteria, if required.
+- Assessment instructions.
+
+### Subject and Topic Selection
+
+Allow the teacher to:
+
+- Select one or multiple subjects.
+- Select one or multiple grades.
+- Select specific topics.
+- Select multiple units or modules.
+- Select the complete syllabus.
+- Select topics from different terms.
+- Include or exclude specific learning objectives.
+
+For example, a Grade 5 Mathematics assessment may include:
+
+- Addition.
+- Subtraction.
+- Multiplication.
+- Division.
+- Fractions.
+- Decimals.
+- Geometry.
+- Measurement.
+
+The teacher should be able to select any combination of these topics.
+
+The system must support topic-wise question distribution and reporting.
+
+### Assessment Configuration
+
+Allow the teacher to configure:
+
+- Total number of questions.
+- Difficulty distribution.
+- Overall assessment duration.
+- Individual question timing.
+- Question progression.
+- Whether students can return to previous questions.
+- Whether questions can be skipped.
+- Whether answers can be changed.
+- Randomised question order.
+- Randomised answer options.
+- Number of attempts.
+- Automatic submission.
+- Feedback visibility.
+- Result visibility.
+
+Provide a clear assessment preview before publishing.
+
+---
+
+## 4. TWO ASSESSMENT DELIVERY MODES
+
+The platform must offer two distinct modes.
+
+### MODE A: TEACHER-LED LIVE ASSESSMENT
+
+This mode is designed for a teacher conducting an assessment with multiple students simultaneously.
+
+The teacher should be able to:
+
+- Create a live assessment session.
+- Invite or select students.
+- Display questions on a shared classroom screen.
+- Start and stop the assessment.
+- Control question progression.
+- Set a countdown timer.
+- Move to the next question when ready.
+- Pause an assessment when necessary.
+- Monitor student participation.
+- View individual and group responses.
+- End the assessment and generate results.
+
+#### Live Quiz Experience
+
+Questions should appear on a large, clear presentation screen.
+
+All participating students should receive the same question simultaneously.
+
+Students answer individually using their own devices.
+
+The teacher should have control over when the next question appears.
+
+The interface should display:
+
+- Current question number.
+- Question content.
+- Visuals or diagrams, where applicable.
+- Answer options or response area.
+- Countdown timer.
+- Assessment progress.
+
+The teacher should also have the option to enable automatic progression after a specified time.
+
+Support different question formats, including MCQs, short answers, numerical answers and other appropriate formats.
+
+### MODE B: INDEPENDENT TIMED ASSESSMENT
+
+This mode is designed for students taking assessments independently.
+
+The student receives access to an assessment through their account or a secure invitation.
+
+The experience should include:
+
+- Assessment instructions.
+- Time limit.
+- Start confirmation.
+- Countdown timer.
+- Question navigation, if permitted.
+- Progress indicator.
+- Automatic submission when time expires.
+- Submission confirmation.
+
+The teacher or administrator should decide whether students can:
+
+- Review previous questions.
+- Change their answers.
+- Skip questions.
+- Return to unanswered questions.
+
+The system should record the time spent on every question.
+
+### Parent Supervision
+
+For young learners, provide an option requiring parent supervision.
+
+Before the assessment begins, display a parent supervision confirmation.
+
+Ask the parent to ensure that:
+
+- The student works independently.
+- No external assistance is provided.
+- ChatGPT or other AI answer-generation tools are not used.
+- The student does not receive help from another person.
+- The assessment environment is appropriate.
+
+Allow the parent to confirm supervision.
+
+The platform must be honest about its limitations: a browser-based application cannot guarantee that students will not access other devices or external applications. Provide reasonable safeguards without claiming that cheating is impossible.
+
+Where technically supported, offer full-screen assessment mode, randomized question variants, question timing, shuffled answer options and visibility of assessment activity.
+
+Do not use invasive surveillance, facial recognition or unnecessary collection of personal information.
+
+---
+
+## 5. TWO QUESTION SELECTION AND DIFFICULTY MODELS
+
+This is a critical feature.
+
+The system must offer two different assessment models.
+
+### MODEL 1: FIXED-DIFFICULTY ASSESSMENT
+
+The teacher defines the number of questions from each difficulty category.
+
+Use three standard categories:
+
+**STRENGTHEN**
+- Foundation knowledge.
+- Basic concepts.
+- Simple questions.
+- Guided application.
+- Fundamental skills.
+
+**HARD**
+- Intermediate and challenging questions.
+- Multi-step reasoning.
+- Conceptual understanding.
+- Application-based problems.
+
+**EXTEND**
+- Advanced questions.
+- Higher-order thinking.
+- Complex problem-solving.
+- Unfamiliar applications.
+- Advanced conceptual understanding.
+
+The teacher should decide how many questions are included from each category.
+
+Example:
+
+Total: 20 questions.
+
+- Strengthen: 6 questions.
+- Hard: 8 questions.
+- Extend: 6 questions.
+
+The system must respect the selected distribution.
+
+The teacher should also be able to adjust the distribution and the total number of questions.
+
+### MODEL 2: ADAPTIVE ASSESSMENT
+
+Design an intelligent assessment inspired by adaptive testing approaches used in standardised examinations such as the GRE.
+
+The difficulty of the next question should depend on the student's previous performance.
+
+The system should operate as follows:
+
+1. Start with an appropriate baseline question based on the selected grade, age and topic.
+2. If the student answers correctly, consider a more challenging question.
+3. If the student repeatedly answers correctly at higher difficulty levels, increase the difficulty progressively.
+4. If the student answers incorrectly, consider a question at a lower difficulty level or test the prerequisite concept.
+5. If performance fluctuates, continue assessing at an appropriate level rather than making extreme difficulty changes.
+6. Identify the student's estimated proficiency for each topic.
+7. Stop when sufficient evidence is collected or the configured assessment limit is reached.
+
+Do not simply increase difficulty after every correct answer or decrease it after every incorrect answer.
+
+Use the student's overall response pattern, accuracy, question difficulty and topic performance.
+
+The adaptive system should assess the student's actual ability rather than merely their speed.
+
+Response time can provide supporting information but must not independently determine whether a student is capable of answering difficult questions.
+
+The system must be transparent about the adaptive logic and provide a teacher-reviewable explanation of its recommendations.
+
+---
+
+## 6. QUESTION BANK AND QUESTION GENERATION
+
+Build a reusable question bank.
+
+Every question should have relevant metadata.
+
+Include:
+
+- Unique question ID.
+- Subject.
+- Grade.
+- Topic.
+- Unit and module, where applicable.
+- Learning objective.
+- Difficulty level.
+- Question type.
+- Question content.
+- Images, diagrams or supporting resources.
+- Correct answer.
+- Explanation.
+- Marking criteria.
+- Estimated answering time.
+- Prerequisite concept.
+- Source or reference.
+
+Support different question types:
+
+- Multiple-choice questions.
+- True or false.
+- Fill in the blanks.
+- Numerical answers.
+- Short answers.
+- Long answers.
+- Matching.
+- Ordering or sequencing.
+- Image-based questions.
+- Diagram labelling.
+- Reading comprehension.
+- Practical or scenario-based questions.
+- Coding questions and output prediction.
+- Subject-specific question types.
+
+The system should allow teachers to:
+
+- Add questions manually.
+- Edit existing questions.
+- Import questions in bulk.
+- Generate questions using AI.
+- Generate different versions of the same question.
+- Review and approve generated questions.
+- Organise questions by subject, grade, topic and difficulty.
+- Reuse approved questions across different assessments.
+
+All generated questions must be academically correct and appropriate for the target age group.
+
+For adaptive assessments, maintain a sufficiently large pool of questions at different difficulty levels for each selected topic.
+
+---
+
+## 7. ASSESSMENT ANALYTICS AND STUDENT PERFORMANCE
+
+The system must record detailed performance data.
+
+For every question, capture:
+
+- Question ID.
+- Topic.
+- Difficulty.
+- Correct or incorrect response.
+- Whether it was skipped.
+- Student's answer.
+- Correct answer.
+- Time taken to answer.
+- Number of attempts, if permitted.
+- Marks awarded.
+- Whether the answer was changed.
+- Question sequence.
+
+Calculate:
+
+### Overall Performance
+
+- Total questions.
+- Questions attempted.
+- Correct answers.
+- Incorrect answers.
+- Skipped questions.
+- Accuracy percentage.
+- Total time taken.
+- Average response time.
+- Marks obtained.
+- Completion percentage.
+
+### Difficulty-Wise Performance
+
+Show:
+
+- Strengthen questions attempted and answered correctly.
+- Hard questions attempted and answered correctly.
+- Extend questions attempted and answered correctly.
+
+Identify the difficulty level at which the student performs consistently.
+
+### Topic-Wise Performance
+
+For each topic, show:
+
+- Number of questions.
+- Correct answers.
+- Incorrect answers.
+- Accuracy.
+- Average response time.
+- Estimated proficiency.
+- Concepts mastered.
+- Areas requiring improvement.
+
+### Error Analysis
+
+Identify patterns such as:
+
+- Conceptual misunderstanding.
+- Calculation errors.
+- Misreading questions.
+- Incorrect application of formulas.
+- Weak foundational knowledge.
+- Incomplete understanding.
+- Guessing indicators, where supported by evidence.
+
+Do not automatically assume that every incorrect answer represents a conceptual weakness. Provide evidence-based interpretations.
+
+---
+
+## 8. STUDENT PROFICIENCY AND PLACEMENT RECOMMENDATION
+
+This is the primary purpose of the platform.
+
+After completing the assessment, generate a comprehensive diagnostic report.
+
+The report should recommend an appropriate learning level.
+
+Possible recommendations include:
+
+- Foundation / Beginner.
+- Developing.
+- Intermediate.
+- Proficient.
+- Advanced.
+
+The teacher should be able to customise the proficiency categories.
+
+For example, a student applying for an Addition course might receive:
+
+**Assessment Findings**
+
+- Basic addition: Strong.
+- Addition with carrying: Proficient.
+- Multi-digit addition: Developing.
+- Word problems: Needs support.
+- Mental mathematics: Advanced.
+
+**Recommendation**
+
+The student does not need to start with basic addition. Recommend a course focusing on multi-digit addition, carrying and mathematical word problems.
+
+For a full Mathematics assessment, the recommendation should be topic-specific.
+
+For example:
+
+- Addition: Advanced.
+- Subtraction: Proficient.
+- Multiplication: Developing.
+- Division: Foundation.
+- Fractions: Needs assessment.
+
+Do not force the student into one overall level when their proficiency differs across topics.
+
+The system should recommend:
+
+1. Most suitable course or level.
+2. Topics the student is ready to learn.
+3. Topics requiring revision.
+4. Missing prerequisite concepts.
+5. Recommended learning sequence.
+6. Suggested additional assessments, if necessary.
+
+Provide an explanation for every major recommendation.
+
+Assessment results should support teacher judgement rather than automatically making irreversible admission decisions.
+
+---
+
+## 9. STUDENT DIAGNOSTIC REPORT
+
+Generate an individual report for every student.
+
+The report should contain:
+
+### Student Information
+- Student name.
+- Student ID.
+- Grade.
+- Age group, where appropriate.
+- Subject.
+- Assessment name.
+- Assessment date.
+
+### Performance Summary
+- Overall score.
+- Accuracy.
+- Completion rate.
+- Total time.
+- Difficulty-wise performance.
+
+### Topic Mastery
+Provide a clear visual breakdown of performance across all selected topics.
+
+Use graphs, progress indicators, tables and proficiency labels.
+
+### Strengths
+Identify concepts the student has understood well.
+
+### Learning Gaps
+Identify weak areas and prerequisite concepts requiring attention.
+
+### Placement Recommendation
+Recommend the appropriate course, grade-level starting point or academic level.
+
+### Suggested Learning Plan
+Provide a short learning pathway showing what the student should study next.
+
+### Teacher Notes
+Allow the teacher to add observations and modify the final recommendation.
+
+Provide a printable and downloadable report.
+
+---
+
+## 10. TEACHER AND ADMINISTRATOR DASHBOARD
+
+Provide a central dashboard showing:
+
+- Total assessments created.
+- Active assessments.
+- Completed assessments.
+- Registered students.
+- Student performance summaries.
+- Subject-wise performance.
+- Grade-wise performance.
+- Topic-wise learning gaps.
+- Students requiring support.
+- Students ready for advanced learning.
+
+Allow filtering by:
+
+- Date.
+- Student.
+- Subject.
+- Grade.
+- Course.
+- Assessment.
+- Topic.
+- Proficiency level.
+
+Provide a class-level report for teacher-led assessments.
+
+The teacher should be able to compare students' performance without exposing individual student information to other students.
+
+---
+
+## 11. STUDENT AND PARENT EXPERIENCE
+
+Provide a simple student interface.
+
+Students should be able to:
+
+- Log in.
+- View assigned assessments.
+- Read instructions.
+- Start an assessment.
+- Answer questions.
+- View remaining time.
+- Submit answers.
+- Receive a completion confirmation.
+
+Parents should be able to:
+
+- Confirm supervision where required.
+- View assessment completion status.
+- Access reports where authorised.
+- Understand their child's strengths and learning gaps.
+- View recommended next learning steps.
+
+Do not expose correct answers or detailed solutions before the teacher has decided that results should be released.
+
+---
+
+## 12. MULTI-SUBJECT AND MULTI-GRADE FLEXIBILITY
+
+The platform must not be designed specifically for Mathematics.
+
+It must support all academic subjects and technical or creative courses.
+
+Examples include:
+
+- Mathematics.
+- English.
+- Urdu.
+- Science.
+- Social Studies.
+- History.
+- Geography.
+- Islamiat.
+- Computer Science.
+- Coding.
+- Artificial Intelligence.
+- Robotics.
+- Graphic Design.
+- Canva.
+- Communication Skills.
+- Any future Brainova subject.
+
+Question formats, assessment criteria and difficulty definitions should adapt to the subject.
+
+For example:
+
+Mathematics assessments may focus on calculation accuracy, reasoning and problem-solving.
+
+English assessments may evaluate grammar, vocabulary, comprehension, reading and writing.
+
+Science assessments may evaluate conceptual understanding, scientific reasoning and application.
+
+Coding assessments may evaluate logical thinking, debugging and programming skills.
+
+Creative courses may require practical tasks, portfolios and rubrics rather than conventional MCQs.
+
+---
+
+## 13. CONNECTION WITH THE BRAINOVA WEBSITE AND LMS
+
+This system is intended to become part of the wider Brainova educational ecosystem.
+
+It must support integration with the existing Brainova website and LMS.
+
+The existing learning platform is built around Laravel, Blade, Bootstrap and jQuery, with a Repository Pattern architecture. Design the assessment solution to be compatible with this environment.
+
+Support the following integration requirements:
+
+- Existing student accounts and IDs.
+- Teacher accounts and permissions.
+- Parent accounts where available.
+- Course and subject records.
+- Grade information.
+- Assessment assignments.
+- Assessment attempts.
+- Student responses.
+- Assessment results.
+- Diagnostic reports.
+- Recommended courses and levels.
+
+Student assessment data should be stored persistently and associated with the correct student.
+
+The system must not rely on temporary browser storage as its only database.
+
+Allow administrators to configure the connection between the assessment platform and Brainova LMS.
+
+If the existing website does not yet expose the necessary API endpoints, clearly identify the required endpoints, data fields and integration requirements.
+
+Do not assume access to the production database or pretend that a connection exists when it has not been configured.
+
+The system must include secure access controls and role-based permissions.
+
+---
+
+## 14. DATA MANAGEMENT AND EXPORT
+
+Provide data management and export capabilities.
+
+Support:
+
+- Student assessment history.
+- Multiple assessment attempts.
+- Assessment configurations.
+- Question bank records.
+- Topic-wise performance history.
+- Placement recommendations.
+- Teacher observations.
+
+Allow exports in:
+
+- CSV.
+- Excel-compatible format.
+- Printable PDF reports.
+
+Include a bulk export option for student performance and assessment results.
+
+Maintain consistent IDs and relationships so that assessment records can be imported into or linked with the Brainova LMS.
+
+---
+
+## 15. ASSESSMENT INTEGRITY AND FAIRNESS
+
+The system should reduce opportunities for external assistance while maintaining a positive assessment experience.
+
+Include configurable safeguards:
+
+- Timed assessments.
+- Question randomisation.
+- Randomised answer options.
+- Question pools and alternative versions.
+- Full-screen mode where supported.
+- Restricted navigation where configured.
+- Automatic submission.
+- Assessment session logging.
+- Parent supervision confirmation.
+- Teacher monitoring for live assessments.
+
+Record unusual interruptions and technical events without automatically classifying them as cheating.
+
+Provide reasonable accommodations for students who need additional time or accessibility support.
+
+Allow teachers to configure these accommodations without compromising the assessment's learning objectives.
+
+The platform must never claim that online anti-cheating measures can guarantee independent work.
+
+---
+
+## 16. DESIGN AND USER EXPERIENCE
+
+Create a premium, modern and professional educational technology platform.
+
+The platform should feel like a sophisticated assessment and learning analytics system.
+
+Suggested Brainova brand palette:
+
+- Deep navy: #17233B.
+- Purple: #5420A8.
+- Turquoise: #14B8A6.
+- White: #FFFFFF.
+- Light grey backgrounds.
+
+Design separate experiences for:
+
+1. Administrator.
+2. Teacher.
+3. Student.
+4. Parent.
+
+The teacher dashboard should prioritise assessment creation, student monitoring and analytics.
+
+The student assessment screen should be distraction-free, simple and easy to understand.
+
+The live assessment screen should be visually clear and suitable for classroom projection.
+
+The diagnostic report should use meaningful charts and visual summaries.
+
+Ensure the platform is responsive across desktop, tablet and mobile.
+
+Avoid unnecessary animations, visual clutter and complicated navigation.
+
+---
+
+## 17. COMPLETE ASSESSMENT WORKFLOW
+
+The platform should support this complete workflow:
+
+1. Teacher creates a new assessment.
+2. Teacher selects the assessment purpose.
+3. Teacher selects subjects, grades, courses and topics.
+4. Teacher selects fixed or adaptive assessment.
+5. Teacher configures difficulty and question distribution.
+6. Teacher selects teacher-led or independent mode.
+7. Teacher configures timing and assessment rules.
+8. Teacher reviews the questions.
+9. Teacher publishes the assessment.
+10. Students complete the assessment.
+11. System records detailed responses and timing.
+12. System evaluates performance.
+13. System analyses topic-wise proficiency.
+14. System generates the diagnostic report.
+15. System recommends an appropriate learning level.
+16. Teacher reviews and finalises the recommendation.
+17. Results are saved and linked to the student's Brainova profile.
+
+---
+
+## 18. IMPORTANT ACADEMIC AND TECHNICAL PRINCIPLES
+
+Follow these principles throughout development:
+
+- Do not treat speed as the only measure of intelligence or ability.
+- Do not use the overall percentage as the only basis for placement.
+- Assess every selected topic independently.
+- Use age-appropriate questions.
+- Ensure difficulty levels are academically meaningful.
+- Avoid repeated or overly similar questions.
+- Ensure answer keys are accurate.
+- Use sufficient questions to support reliable recommendations.
+- Distinguish between unanswered, skipped and incorrect questions.
+- Make adaptive decisions based on performance evidence.
+- Keep the assessment fair and transparent.
+- Preserve assessment history.
+- Protect student data.
+- Allow teacher review and intervention.
+- Keep all student reports connected to their original assessments.
+
+For adaptive testing, explain that the result is an estimated proficiency based on the questions administered. Avoid presenting a small diagnostic test as a definitive measure of a student's entire academic ability.
+
+---
+
+## 19. EXPECTED FINAL PRODUCT
+
+Create a complete, functional and reusable application named:
+
+**BRAINOVA – INTELLIGENT ASSESSMENT & PLACEMENT SYSTEM**
+
+The application must support:
+
+- School-wide academic assessments.
+- Course admission assessments.
+- Topic-specific diagnostic tests.
+- Fixed-difficulty tests.
+- Adaptive assessments.
+- Teacher-led live quizzes.
+- Independent timed assessments.
+- Question bank management.
+- Student accounts and assessment history.
+- Detailed learning analytics.
+- Topic-wise proficiency reports.
+- Course and grade-level placement recommendations.
+- CSV and report exports.
+- Future integration with the Brainova website and LMS.
+
+Do not deliver merely a static HTML design or a collection of non-functional buttons.
+
+The complete assessment experience should be demonstrable, including assessment creation, question delivery, response recording, scoring, analytics and reporting.
+
+If persistent storage, AI generation, authentication or LMS integration requires a backend service, clearly distinguish functional demonstration features from production-ready capabilities and specify the required integrations.
+
+**THE CENTRAL OBJECTIVE:**
+
+Brainova should be able to assess a student's actual learning level before admission, understand their strengths and weaknesses across individual topics, and recommend the most appropriate starting point for their educational journey.
+
+The platform should be reusable for years of school assessments and an unlimited variety of Brainova short courses.
