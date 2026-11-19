@@ -874,16 +874,26 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
   function scheduleSync(S) {
     if (!isConfigured()) return;
     clearTimeout(syncTimer);
-    syncTimer = setTimeout(() => {
-      const snapshot = {};
-      SNAPSHOT_COLLECTIONS.forEach(k => { if (S[k] !== undefined) snapshot[k] = S[k]; });
-      enqueue('snapshot', snapshot);
-    }, 1000);
+    syncTimer = setTimeout(() => { enqueue('snapshot', buildSnapshot(S)); }, 1000);
+  }
+
+  // Every collection becomes an array of {id, ...} records, even the two
+  // that aren't naturally arrays in the app's own state - that way the
+  // backend only ever needs one generic "upsert these records" routine.
+  function buildSnapshot(S) {
+    const out = {};
+    SNAPSHOT_COLLECTIONS.forEach(k => {
+      const v = S[k];
+      if (Array.isArray(v)) out[k] = v;
+      else if (k === 'settings' && v !== undefined) out[k] = [{ id: 'main', json: JSON.stringify(v) }];
+      else if (k === 'supervision' && v && typeof v === 'object') out[k] = Object.keys(v).map(id => Object.assign({ id }, v[id]));
+    });
+    return out;
   }
 
   // Immediate, per the brief: "save each attempt and its responses as
   // soon as it is submitted (and after every answer in adaptive tests)".
-  function saveAttempt(att) { enqueue('attempt', att); }
+  function saveAttempt(att, analysis) { enqueue('attempt', { attempt: att, analysis: analysis || null }); }
   function saveResponse(attemptId, resp, meta) { enqueue('response', Object.assign({ attemptId, resp }, meta || {})); }
 
   async function fetchSnapshot() {
@@ -898,10 +908,11 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
   }
 
   function pendingCount() { return queue.length; }
+  function getConfig() { return { url: cfg.url, token: cfg.token }; }
 
   flush(); // in case a previous session left queued items waiting for a connection
 
-  window.BrainovaAPI = { configure, isConfigured, scheduleSync, saveAttempt, saveResponse, fetchSnapshot, pendingCount, flush };
+  window.BrainovaAPI = { configure, isConfigured, getConfig, scheduleSync, saveAttempt, saveResponse, fetchSnapshot, pendingCount, flush };
 })();
 
 /* ===================== CORE: state, persistence, seed data, helpers ===================== */
@@ -1745,10 +1756,14 @@ VIEWS.integration = function () {
 function sharingTable(editable) {
   return `<div class="tw"><table><thead><tr><th>Detail</th><th>Administrator</th><th>Teacher</th><th>Parent</th><th>Student</th></tr></thead><tbody>${SHARE_SECTIONS.map(x => `<tr><td>${esc(x[1])}</td><td><span class="pill ok">Yes</span></td>${['teacher', 'parent', 'student'].map(a => { const on = !!sharingFor(a)[x[0]]; return `<td>${editable ? `<label class="chk"><input type="checkbox" data-a="shareTgl" data-aud="${a}" data-k="${x[0]}" ${on ? 'checked' : ''} aria-label="${esc(x[1])} for ${AUD_NAME[a]}"><span>${on ? 'Shared' : 'Hidden'}</span></label>` : (on ? '<span class="pill ok">Yes</span>' : '<span class="muted">Hidden</span>')}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
-const RBAC = [['Create and edit assessments', 1, 1, 0, 0], ['Manage and approve questions', 1, 1, 0, 0], ['Run live sessions', 1, 1, 0, 0], ['View all students’ results', 1, 1, 0, 0], ['Release results and finalise recommendations', 1, 1, 0, 0], ['Export data', 1, 1, 0, 0], ['Configure the LMS connection and proficiency levels', 1, 0, 0, 0], ['Take assigned assessments', 0, 0, 1, 0], ['View own results after release', 0, 0, 1, 0], ['Confirm supervision and view a child’s released results', 0, 0, 0, 1]];
+const RBAC = [['Create and edit assessments', 1, 1, 0, 0], ['Manage and approve questions', 1, 1, 0, 0], ['Run live sessions', 1, 1, 0, 0], ['View all students’ results', 1, 1, 0, 0], ['Release results and finalise recommendations', 1, 1, 0, 0], ['Export data', 1, 1, 0, 0], ['Configure the Google Sheets backend, LMS connection and proficiency levels', 1, 0, 0, 0], ['Take assigned assessments', 0, 0, 1, 0], ['View own results after release', 0, 0, 1, 0], ['Confirm supervision and view a child’s released results', 0, 0, 0, 1]];
 VIEWS.settings = function () {
   if (U.role !== 'admin') return '<div class="empty">Settings are available to administrators. Switch to the Administrator role.</div>';
+  const gcfg = (window.BrainovaAPI && window.BrainovaAPI.getConfig()) || { url: '', token: '' };
   return `<div class="page-head"><div><h1>Settings</h1></div></div>
+  <div class="card"><h2>Google Sheets backend</h2><p class="muted small" style="margin-bottom:10px">Connects this app's data to your Google Sheet. Create the Sheet and deploy the Apps Script first (see the setup guide), then put the same secret token in both places: the script's Project Settings &rarr; Script Properties on the Google side, and the field below here. The token stays only in this browser - it is never written into any file this app ships.</p>
+    <div class="grid g2">${field('Web App URL', `<input type="url" id="gUrl" value="${esc(gcfg.url)}" placeholder="https://script.google.com/macros/s/.../exec">`)}${field('Shared token', `<input type="password" id="gTok" value="${esc(gcfg.token)}" autocomplete="off">`)}</div>
+    <div class="row" style="margin-top:12px"><button class="btn" data-a="gcfgSave">Save</button><button class="btn ghost" data-a="gcfgTest">Test connection</button><span class="pill ${gcfg.url ? 'ok' : ''}">${gcfg.url ? 'Configured' : 'Not configured - data stays in this browser only'}</span>${window.BrainovaAPI && window.BrainovaAPI.pendingCount() ? `<span class="pill warn">${window.BrainovaAPI.pendingCount()} change(s) waiting to sync</span>` : ''}</div></div>
   <div class="card"><h2>Proficiency levels</h2><p class="muted small" style="margin-bottom:10px">Rename the levels and set where each begins on the ability scale (about −2 to +2). Higher means stronger.</p><div class="grid g3">${(U.lvDraft || levels()).map((l, i) => `<div class="sub stack"><span class="lv lv${i}" style="align-self:flex-start">Level ${i + 1}</span>${field('Name', inp('lvl.' + i + '.name', l.name))}${i ? field('Starts at', inp('lvl.' + i + '.min', l.min, 'number', 'step="0.05"')) : '<span class="muted small">Starts at the bottom of the scale</span>'}</div>`).join('')}</div>
     ${U.lvErr ? `<div class="banner bad" style="margin-top:10px">${esc(U.lvErr)}</div>` : ''}<div class="row" style="margin-top:12px"><button class="btn" data-a="lvSave">Apply levels</button><button class="btn ghost" data-a="lvReset">Restore defaults</button></div></div>
   <div class="card"><h2>Report sharing</h2><p class="muted small" style="margin-bottom:10px">Choose which details each audience receives in reports and exports. The administrator version always includes everything.</p>${sharingTable(true)}
@@ -1846,7 +1861,7 @@ function submitRun(forced) {
   else { att.items = r.items; att.responses = r.items.map((q, i) => { const e = r.resp[i]; return makeResponse(i + 1, q, e.raw, e.ms, { visited: e.visits > 0, changed: e.changed, visits: e.visits, timedOut: e.timedOut }); }); }
   att.attemptNo = attemptsOf(a.id, st.id).length + 1; att.application = a.application; att.supervision = a.parentSupervision ? (supOf(a.id, st.id) ? { confirmed: true, by: supOf(a.id, st.id).by, at: supOf(a.id, st.id).at } : null) : null;
   att.released = a.resultVis === 'instant'; att.review = { notes: '', override: '', finalized: false };
-  if (r.preview) { U.previewAtt = att; att.released = true; } else { S.attempts.push(att); save(); if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att); }
+  if (r.preview) { U.previewAtt = att; att.released = true; } else { S.attempts.push(att); save(); if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att, AN(att)); }
   r.att = att; r.phase = 'done'; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } render(); scrollTop();
 }
 function doneView() {
@@ -1896,7 +1911,7 @@ function liveEnd() {
     const att = makeAttempt(a, s, { mode: 'live', started: L.qStart ? Date.now() - L.items.length * L.qMs : Date.now(), finished: Date.now(), durationMs: L.items.length * L.qMs });
     att.items = L.items; att.responses = L.items.map((q, i) => { const x = (L.answers[i] || {})[s.id]; return makeResponse(i + 1, q, x ? x.raw : null, x ? x.ms : 0, { visited: false }); });
     att.supervision = null; att.review = { notes: '', override: '', finalized: false }; att.released = false; att.attemptNo = attemptsOf(a.id, s.id).length + 1; S.attempts.push(att); ids.push(att.id);
-    if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att);
+    if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att, AN(att));
   });
   save(); U.live = null; U.resTab = 'class'; U.params = { asmt: a.id }; U.view = 'results'; U.role = U.role === 'admin' ? 'admin' : 'teacher'; render(); toast('Live session saved. Class report is ready.'); scrollTop();
 }
@@ -2114,6 +2129,18 @@ ACT.expBulk = async () => { const names = { attempts: 'brainova-attempts.csv', r
 ACT.expLms = () => saveFile('brainova-lms-import.json', JSON.stringify(lmsPayload(), null, 2));
 ACT.expAssess = () => saveFile('brainova-assessments.json', JSON.stringify(S.assessments, null, 2));
 ACT.dlKit = () => saveFile('brainova-laravel-integration-kit.md', LARAVEL_KIT);
+ACT.gcfgSave = () => {
+  const url = document.getElementById('gUrl').value.trim(), token = document.getElementById('gTok').value.trim();
+  if (!window.BrainovaAPI) { toast('The Google Sheets adapter did not load.'); return; }
+  window.BrainovaAPI.configure({ url, token });
+  render(); toast(url ? 'Saved. It will sync quietly in the background from now on.' : 'Cleared. This app will stay local-only.');
+};
+ACT.gcfgTest = async () => {
+  if (!window.BrainovaAPI || !window.BrainovaAPI.isConfigured()) { toast('Enter the URL and token, then Save, first.'); return; }
+  toast('Testing…');
+  const state = await window.BrainovaAPI.fetchSnapshot();
+  toast(state ? 'Connected - the backend responded.' : 'Could not reach it. Check the URL, the token (must match Script Properties exactly) and that the deployment access is set to "Anyone".');
+};
 ACT.lmsSave = () => { save(); toast('Settings saved in this browser.'); };
 ACT.lmsTest = async () => {
   const l = S.settings.lms; if (!l.baseUrl) { toast('Enter the LMS base URL first.'); return; }

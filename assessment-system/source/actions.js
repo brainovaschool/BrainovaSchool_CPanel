@@ -174,6 +174,18 @@ ACT.expBulk = async () => { const names = { attempts: 'brainova-attempts.csv', r
 ACT.expLms = () => saveFile('brainova-lms-import.json', JSON.stringify(lmsPayload(), null, 2));
 ACT.expAssess = () => saveFile('brainova-assessments.json', JSON.stringify(S.assessments, null, 2));
 ACT.dlKit = () => saveFile('brainova-laravel-integration-kit.md', LARAVEL_KIT);
+ACT.gcfgSave = () => {
+  const url = document.getElementById('gUrl').value.trim(), token = document.getElementById('gTok').value.trim();
+  if (!window.BrainovaAPI) { toast('The Google Sheets adapter did not load.'); return; }
+  window.BrainovaAPI.configure({ url, token });
+  render(); toast(url ? 'Saved. It will sync quietly in the background from now on.' : 'Cleared. This app will stay local-only.');
+};
+ACT.gcfgTest = async () => {
+  if (!window.BrainovaAPI || !window.BrainovaAPI.isConfigured()) { toast('Enter the URL and token, then Save, first.'); return; }
+  toast('Testing…');
+  const state = await window.BrainovaAPI.fetchSnapshot();
+  toast(state ? 'Connected - the backend responded.' : 'Could not reach it. Check the URL, the token (must match Script Properties exactly) and that the deployment access is set to "Anyone".');
+};
 ACT.lmsSave = () => { save(); toast('Settings saved in this browser.'); };
 ACT.lmsTest = async () => {
   const l = S.settings.lms; if (!l.baseUrl) { toast('Enter the LMS base URL first.'); return; }

@@ -85,7 +85,7 @@ function submitRun(forced) {
   else { att.items = r.items; att.responses = r.items.map((q, i) => { const e = r.resp[i]; return makeResponse(i + 1, q, e.raw, e.ms, { visited: e.visits > 0, changed: e.changed, visits: e.visits, timedOut: e.timedOut }); }); }
   att.attemptNo = attemptsOf(a.id, st.id).length + 1; att.application = a.application; att.supervision = a.parentSupervision ? (supOf(a.id, st.id) ? { confirmed: true, by: supOf(a.id, st.id).by, at: supOf(a.id, st.id).at } : null) : null;
   att.released = a.resultVis === 'instant'; att.review = { notes: '', override: '', finalized: false };
-  if (r.preview) { U.previewAtt = att; att.released = true; } else { S.attempts.push(att); save(); if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att); }
+  if (r.preview) { U.previewAtt = att; att.released = true; } else { S.attempts.push(att); save(); if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att, AN(att)); }
   r.att = att; r.phase = 'done'; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } render(); scrollTop();
 }
 function doneView() {
@@ -135,7 +135,7 @@ function liveEnd() {
     const att = makeAttempt(a, s, { mode: 'live', started: L.qStart ? Date.now() - L.items.length * L.qMs : Date.now(), finished: Date.now(), durationMs: L.items.length * L.qMs });
     att.items = L.items; att.responses = L.items.map((q, i) => { const x = (L.answers[i] || {})[s.id]; return makeResponse(i + 1, q, x ? x.raw : null, x ? x.ms : 0, { visited: false }); });
     att.supervision = null; att.review = { notes: '', override: '', finalized: false }; att.released = false; att.attemptNo = attemptsOf(a.id, s.id).length + 1; S.attempts.push(att); ids.push(att.id);
-    if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att);
+    if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att, AN(att));
   });
   save(); U.live = null; U.resTab = 'class'; U.params = { asmt: a.id }; U.view = 'results'; U.role = U.role === 'admin' ? 'admin' : 'teacher'; render(); toast('Live session saved. Class report is ready.'); scrollTop();
 }

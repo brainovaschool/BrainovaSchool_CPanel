@@ -86,16 +86,26 @@
   function scheduleSync(S) {
     if (!isConfigured()) return;
     clearTimeout(syncTimer);
-    syncTimer = setTimeout(() => {
-      const snapshot = {};
-      SNAPSHOT_COLLECTIONS.forEach(k => { if (S[k] !== undefined) snapshot[k] = S[k]; });
-      enqueue('snapshot', snapshot);
-    }, 1000);
+    syncTimer = setTimeout(() => { enqueue('snapshot', buildSnapshot(S)); }, 1000);
+  }
+
+  // Every collection becomes an array of {id, ...} records, even the two
+  // that aren't naturally arrays in the app's own state - that way the
+  // backend only ever needs one generic "upsert these records" routine.
+  function buildSnapshot(S) {
+    const out = {};
+    SNAPSHOT_COLLECTIONS.forEach(k => {
+      const v = S[k];
+      if (Array.isArray(v)) out[k] = v;
+      else if (k === 'settings' && v !== undefined) out[k] = [{ id: 'main', json: JSON.stringify(v) }];
+      else if (k === 'supervision' && v && typeof v === 'object') out[k] = Object.keys(v).map(id => Object.assign({ id }, v[id]));
+    });
+    return out;
   }
 
   // Immediate, per the brief: "save each attempt and its responses as
   // soon as it is submitted (and after every answer in adaptive tests)".
-  function saveAttempt(att) { enqueue('attempt', att); }
+  function saveAttempt(att, analysis) { enqueue('attempt', { attempt: att, analysis: analysis || null }); }
   function saveResponse(attemptId, resp, meta) { enqueue('response', Object.assign({ attemptId, resp }, meta || {})); }
 
   async function fetchSnapshot() {
@@ -110,8 +120,9 @@
   }
 
   function pendingCount() { return queue.length; }
+  function getConfig() { return { url: cfg.url, token: cfg.token }; }
 
   flush(); // in case a previous session left queued items waiting for a connection
 
-  window.BrainovaAPI = { configure, isConfigured, scheduleSync, saveAttempt, saveResponse, fetchSnapshot, pendingCount, flush };
+  window.BrainovaAPI = { configure, isConfigured, getConfig, scheduleSync, saveAttempt, saveResponse, fetchSnapshot, pendingCount, flush };
 })();
