@@ -40,4 +40,14 @@ return [
     // App\Services\B2Storage::credential(). This file's own compiled copy
     // went stale on this host, so that class reads env() directly instead.
 
+    'assessment_system' => [
+        // Signs the login handoff token (see AssessmentSystemController).
+        // Must also be pasted into the Google Apps Script's own Script
+        // Properties once Step 5 adds server-side verification there -
+        // until then it only shapes the token, nothing checks it yet.
+        'auth_secret' => env('ASSESSMENT_SYSTEM_AUTH_SECRET'),
+        // Where the built brainova-demo.html is actually hosted.
+        'url' => env('ASSESSMENT_SYSTEM_URL'),
+    ],
+
 ];

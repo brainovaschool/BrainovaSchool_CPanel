@@ -226,12 +226,13 @@ ACT.liveTxtSend = () => { const L = U.live, v = document.getElementById('liveTxt
 function setDefaultIds() { const g5 = S.students.find(s => s.grade === 5) || S.students[0]; U.studentId = g5 && g5.id; U.parentId = S.parents[0] && S.parents[0].id; }
 function init() {
   S = load(); if (!S) { S = seed(); save(); } ensureSample();
-  setDefaultIds();
+  const signedIn = applyLmsIdentity(); // true when a real LMS login token took over role/identity
+  if (!signedIn) setDefaultIds();
   render(); // show the cached/local state immediately, never block on the network
   if (window.BrainovaAPI) {
     window.BrainovaAPI.fetchSnapshot().then(remote => {
       if (!remote) return; // not configured yet, offline, or nothing newer - local stays authoritative
-      S = remote; anCache = new WeakMap(); ensureSample(); setDefaultIds(); persistLocal(); render();
+      S = remote; anCache = new WeakMap(); ensureSample(); if (!signedIn) setDefaultIds(); persistLocal(); render();
     }).catch(() => { /* stay on the local/cached copy */ });
   }
 }

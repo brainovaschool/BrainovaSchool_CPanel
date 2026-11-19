@@ -1449,6 +1449,14 @@
                     </ul>
                 </li>
                 @endif
+                @if (config('services.assessment_system.url') && in_array((int) auth()->user()?->role_id, [1, 2, 5]))
+                    <li class="sidebar-menu-item">
+                        <a href="{{ route('assessment-system.launch') }}" target="_blank" rel="noopener" class="parent-item-content">
+                            <i class="las la-clipboard-check"></i>
+                            <span class="on-half-expanded">Assessment System</span>
+                        </a>
+                    </li>
+                @endif
                 <!-- School Feature Access start: Brainova's own Super Admin only --
                      every tenant has its own role_id=1 "Super Admin", so this also
                      checks which tenant is actually logged in, not just the role. -->

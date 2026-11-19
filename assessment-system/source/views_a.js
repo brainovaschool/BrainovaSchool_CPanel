@@ -22,13 +22,20 @@ function render() {
   const nav = NAV[U.role];
   const viewFn = VIEWS[U.view] || VIEWS[HOME[U.role]];
   let body = ''; try { body = viewFn(); } catch (e) { console.error(e); body = `<div class="banner bad">Something went wrong while drawing this page: ${esc(e.message)}</div>`; }
-  const asRole = U.role === 'student' ? field('Viewing as', `<select data-m="studentId" data-r aria-label="Student">${optList(S.students.map(s => ({ v: s.id, l: `${s.name} (Grade ${s.grade})` })), U.studentId)}</select>`) :
+  // Once the LMS has signed someone in (see identity.js), the role and
+  // the student/parent being viewed are fixed by their login token, not
+  // a free picker - otherwise a logged-in student could just select
+  // someone else's name here and see their data.
+  const asRole = U.lms ? '' : U.role === 'student' ? field('Viewing as', `<select data-m="studentId" data-r aria-label="Student">${optList(S.students.map(s => ({ v: s.id, l: `${s.name} (Grade ${s.grade})` })), U.studentId)}</select>`) :
     U.role === 'parent' ? field('Viewing as', `<select data-m="parentId" data-r aria-label="Parent">${optList(S.parents.map(p => ({ v: p.id, l: p.name })), U.parentId)}</select>`) : '';
+  const roleArea = U.lms
+    ? `<div class="pill ok" title="Opened from the Brainova LMS with a signed login link.">${esc(U.lms.name || ROLE_NAME[U.lms.role])} &middot; ${ROLE_NAME[U.lms.role]}</div>`
+    : `<div class="roles" role="group" aria-label="Demo role">${['admin', 'teacher', 'student', 'parent'].map(r => `<button data-a="role" data-v="${r}" aria-pressed="${U.role === r}">${ROLE_NAME[r]}</button>`).join('')}</div>`;
   root.innerHTML = `<div class="app"><aside class="side"><div class="brand">${LOGO}<div><b>BRAINOVA</b><span>Assessment &amp; Placement</span></div></div>
     <nav class="nav" aria-label="Main">${nav.map(n => `<button data-a="go" data-v="${n[0]}" ${U.view === n[0] || (U.view === 'report' && n[0] === 'results') || (U.view === 'builder' && n[0] === 'assess') ? 'aria-current="page"' : ''}>${ico(n[2])}${n[1]}</button>`).join('')}</nav>
     <div class="note">${S.sample ? 'Sample data is loaded so you can explore every screen. Reset or clear it in Settings (Administrator).' : 'Your data is stored in this browser only.'}</div></aside>
-    <div class="main"><div class="topbar"><div class="row"><div class="roles" role="group" aria-label="Demo role">${['admin', 'teacher', 'student', 'parent'].map(r => `<button data-a="role" data-v="${r}" aria-pressed="${U.role === r}">${ROLE_NAME[r]}</button>`).join('')}</div>${asRole ? `<div style="min-width:220px">${asRole}</div>` : ''}</div>
-    <span class="pill pur" title="Roles here are a demonstration. Production uses Brainova LMS sign-in and role-based permissions.">Demo roles, no sign-in</span></div>
+    <div class="main"><div class="topbar"><div class="row">${roleArea}${asRole ? `<div style="min-width:220px">${asRole}</div>` : ''}</div>
+    <span class="pill ${U.lms ? 'ok' : 'pur'}" title="${U.lms ? 'Opened from the Brainova LMS with a signed login link. The role above is not a choice.' : 'Roles here are a demonstration. Production uses Brainova LMS sign-in and role-based permissions.'}">${U.lms ? 'Signed in via LMS' : 'Demo roles, no sign-in'}</span></div>
     <div class="page">${body}</div></div></div><div id="toast" class="toast" role="status" ${U.toast ? '' : 'hidden'}>${esc(U.toast)}</div>`;
   afterRender();
 }

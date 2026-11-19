@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Config;
 use App\Http\Controllers\PDFController;
 use App\Http\Controllers\TaxController;
+use App\Http\Controllers\AssessmentSystemController;
 use Illuminate\Support\Facades\Artisan;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ManagerController;
@@ -52,6 +53,10 @@ use App\Http\Controllers\Settings\NotificaticaSettingController;
 
 Route::middleware(saasMiddleware())->group(function () {
 
+    // Open the standalone Assessment & Placement System as whoever is
+    // logged in here, admin/teacher/student/parent alike - see
+    // AssessmentSystemController for the signed token this builds.
+    Route::middleware(['auth.routes'])->get('/assessment-system/launch', [AssessmentSystemController::class, 'launch'])->name('assessment-system.launch');
 
 
 

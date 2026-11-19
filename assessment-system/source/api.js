@@ -16,6 +16,12 @@
   let cfg = { url: '', token: '' };
   try { Object.assign(cfg, JSON.parse(localStorage.getItem(CFG_KEY) || '{}')); } catch (e) { /* ignore */ }
 
+  // The signed per-user token from the LMS handoff (see identity.js).
+  // Deliberately kept in memory only, never in the persisted cfg above -
+  // it's short-lived by design, so caching it across visits would just
+  // mean resending a stale one. Set via setAuthToken() on every login.
+  let authToken = '';
+
   let queue = [];
   try { queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch (e) { /* ignore */ }
 
@@ -36,7 +42,7 @@
     const res = await fetch(cfg.url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(Object.assign({ token: cfg.token }, body))
+      body: JSON.stringify(Object.assign({ token: cfg.token, authToken }, body))
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
@@ -111,7 +117,7 @@
   async function fetchSnapshot() {
     if (!isConfigured()) return null;
     try {
-      const url = cfg.url + '?action=bootstrap&token=' + encodeURIComponent(cfg.token || '');
+      const url = cfg.url + '?action=bootstrap&token=' + encodeURIComponent(cfg.token || '') + '&authToken=' + encodeURIComponent(authToken || '');
       const res = await fetch(url);
       if (!res.ok) return null;
       const data = await res.json();
@@ -121,8 +127,9 @@
 
   function pendingCount() { return queue.length; }
   function getConfig() { return { url: cfg.url, token: cfg.token }; }
+  function setAuthToken(t) { authToken = t || ''; }
 
   flush(); // in case a previous session left queued items waiting for a connection
 
-  window.BrainovaAPI = { configure, isConfigured, getConfig, scheduleSync, saveAttempt, saveResponse, fetchSnapshot, pendingCount, flush };
+  window.BrainovaAPI = { configure, isConfigured, getConfig, setAuthToken, scheduleSync, saveAttempt, saveResponse, fetchSnapshot, pendingCount, flush };
 })();

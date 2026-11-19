@@ -1,7 +1,7 @@
 /* ===================== CORE: state, persistence, seed data, helpers ===================== */
 const LS_KEY = 'brainova.demo.v1';
 let S = null;              // persisted data (demo store)
-const U = { role: 'teacher', view: 'dash', params: {}, filters: { range: 'all', subject: '', grade: '', course: '', asmt: '', topic: '', level: '', student: '' }, draft: null, step: 1, run: null, live: null, toast: '', bankSel: null, bankFilter: { q: '', subject: '', topic: '', diff: '', type: '', status: '', grade: '' }, studentId: null, parentId: null, resTab: 'attempts', stuSel: null };
+const U = { role: 'teacher', view: 'dash', params: {}, filters: { range: 'all', subject: '', grade: '', course: '', asmt: '', topic: '', level: '', student: '' }, draft: null, step: 1, run: null, live: null, toast: '', bankSel: null, bankFilter: { q: '', subject: '', topic: '', diff: '', type: '', status: '', grade: '' }, studentId: null, parentId: null, resTab: 'attempts', stuSel: null, lms: null };
 let anCache = new WeakMap();
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));

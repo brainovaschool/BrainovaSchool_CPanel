@@ -218,6 +218,14 @@
                         </a>
                     </li>
                 @endif
+                @if (config('services.assessment_system.url'))
+                    <li class="sidebar-menu-item">
+                        <a href="{{ route('assessment-system.launch') }}" target="_blank" rel="noopener" class="parent-item-content">
+                            <i class="las la-clipboard-check"></i>
+                            <span class="on-half-expanded">Assessment System</span>
+                        </a>
+                    </li>
+                @endif
                 @if (hasFeature('attendance'))
                     <li class="sidebar-menu-item {{ set_menu(['student-panel-attendance*']) }}">
                         <a href="{{ route('student-panel-attendance.index') }}" class="parent-item-content">

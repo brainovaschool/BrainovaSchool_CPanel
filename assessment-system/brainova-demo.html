@@ -804,6 +804,12 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
   let cfg = { url: '', token: '' };
   try { Object.assign(cfg, JSON.parse(localStorage.getItem(CFG_KEY) || '{}')); } catch (e) { /* ignore */ }
 
+  // The signed per-user token from the LMS handoff (see identity.js).
+  // Deliberately kept in memory only, never in the persisted cfg above -
+  // it's short-lived by design, so caching it across visits would just
+  // mean resending a stale one. Set via setAuthToken() on every login.
+  let authToken = '';
+
   let queue = [];
   try { queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch (e) { /* ignore */ }
 
@@ -824,7 +830,7 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
     const res = await fetch(cfg.url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(Object.assign({ token: cfg.token }, body))
+      body: JSON.stringify(Object.assign({ token: cfg.token, authToken }, body))
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
@@ -899,7 +905,7 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
   async function fetchSnapshot() {
     if (!isConfigured()) return null;
     try {
-      const url = cfg.url + '?action=bootstrap&token=' + encodeURIComponent(cfg.token || '');
+      const url = cfg.url + '?action=bootstrap&token=' + encodeURIComponent(cfg.token || '') + '&authToken=' + encodeURIComponent(authToken || '');
       const res = await fetch(url);
       if (!res.ok) return null;
       const data = await res.json();
@@ -909,16 +915,99 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
 
   function pendingCount() { return queue.length; }
   function getConfig() { return { url: cfg.url, token: cfg.token }; }
+  function setAuthToken(t) { authToken = t || ''; }
 
   flush(); // in case a previous session left queued items waiting for a connection
 
-  window.BrainovaAPI = { configure, isConfigured, getConfig, scheduleSync, saveAttempt, saveResponse, fetchSnapshot, pendingCount, flush };
+  window.BrainovaAPI = { configure, isConfigured, getConfig, setAuthToken, scheduleSync, saveAttempt, saveResponse, fetchSnapshot, pendingCount, flush };
 })();
+
+/* ===================== LMS IDENTITY (signed login handoff) =====================
+   When the Brainova LMS opens this app, it appends a short-lived signed
+   token to the URL (?t=...) instead of leaving the old role switcher on
+   screen. This file only reads the token's own claims (uid/role/name/exp)
+   to know who is using the app, and hands the raw token to the Google
+   Sheets backend (api.js) on every request from here on.
+
+   It does NOT verify the signature - there is no secret in the browser
+   to verify it with, by design (see backend/Code.gs's own header comment).
+   That verification is Step 5's job, on the server. Until Step 5 lands,
+   treat this as "who the LMS says is using it", not yet a security
+   boundary - the Sheet itself is still only gated by the one shared
+   token from Step 3. When no token is present (or it's missing/expired),
+   the app falls back to the old role switcher so it stays testable on
+   its own without the LMS. */
+const LMS_SESSION_KEY = 'brainova.lmsidentity.v1';
+
+function b64urlDecode_(s) {
+  s = s.replace(/-/g, '+').replace(/_/g, '/');
+  while (s.length % 4) s += '=';
+  return decodeURIComponent(atob(s).split('').map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0')).join(''));
+}
+
+function parseLmsToken_(token) {
+  try {
+    const payload = token.split('.')[0];
+    if (!payload) return null;
+    const claims = JSON.parse(b64urlDecode_(payload));
+    if (!claims || !claims.role || !claims.uid || !claims.exp) return null;
+    if (claims.exp * 1000 < Date.now()) return null;
+    return claims;
+  } catch (e) { return null; }
+}
+
+// The LMS puts the token on the URL only once, on handoff. It's kept in
+// sessionStorage (not localStorage) from then on, so it survives a page
+// refresh inside that same tab/iframe but never lingers once it's closed.
+function readLmsToken_() {
+  const fromUrl = new URLSearchParams(location.search).get('t');
+  if (fromUrl) { try { sessionStorage.setItem(LMS_SESSION_KEY, fromUrl); } catch (e) { /* ignore */ } return fromUrl; }
+  try { return sessionStorage.getItem(LMS_SESSION_KEY); } catch (e) { return null; }
+}
+
+// Called once at startup. Returns true when a real LMS identity takes
+// over (role switcher stays hidden); false when the app is on its own.
+function applyLmsIdentity() {
+  const token = readLmsToken_();
+  const claims = token && parseLmsToken_(token);
+  if (!claims) { U.lms = null; return false; }
+
+  U.lms = { token, uid: claims.uid, role: claims.role, name: claims.name || '' };
+  U.role = claims.role;
+  U.view = HOME[claims.role] || U.view;
+
+  if (claims.role === 'student') {
+    U.studentId = claims.uid;
+    // First time this LMS student opens the tool: give them a minimal
+    // row so every existing "find the student" lookup has something to
+    // find. Name comes from the token; grade/accommodations stay blank
+    // until an admin fills them in on the Students page, or a later
+    // sync pass maps the LMS's own class/grade data onto this field.
+    if (!S.students.find(s => s.id === claims.uid)) {
+      S.students.push({ id: claims.uid, name: claims.name || 'Student', grade: null });
+      save();
+    }
+  }
+  if (claims.role === 'parent') {
+    U.parentId = claims.uid;
+    const existing = S.parents.find(p => p.id === claims.uid);
+    if (!existing) {
+      S.parents.push({ id: claims.uid, name: claims.name || 'Parent', childIds: claims.children || [] });
+      save();
+    } else if (claims.children) {
+      existing.childIds = claims.children;
+      save();
+    }
+  }
+
+  if (window.BrainovaAPI) window.BrainovaAPI.setAuthToken(token);
+  return true;
+}
 
 /* ===================== CORE: state, persistence, seed data, helpers ===================== */
 const LS_KEY = 'brainova.demo.v1';
 let S = null;              // persisted data (demo store)
-const U = { role: 'teacher', view: 'dash', params: {}, filters: { range: 'all', subject: '', grade: '', course: '', asmt: '', topic: '', level: '', student: '' }, draft: null, step: 1, run: null, live: null, toast: '', bankSel: null, bankFilter: { q: '', subject: '', topic: '', diff: '', type: '', status: '', grade: '' }, studentId: null, parentId: null, resTab: 'attempts', stuSel: null };
+const U = { role: 'teacher', view: 'dash', params: {}, filters: { range: 'all', subject: '', grade: '', course: '', asmt: '', topic: '', level: '', student: '' }, draft: null, step: 1, run: null, live: null, toast: '', bankSel: null, bankFilter: { q: '', subject: '', topic: '', diff: '', type: '', status: '', grade: '' }, studentId: null, parentId: null, resTab: 'attempts', stuSel: null, lms: null };
 let anCache = new WeakMap();
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1101,13 +1190,20 @@ function render() {
   const nav = NAV[U.role];
   const viewFn = VIEWS[U.view] || VIEWS[HOME[U.role]];
   let body = ''; try { body = viewFn(); } catch (e) { console.error(e); body = `<div class="banner bad">Something went wrong while drawing this page: ${esc(e.message)}</div>`; }
-  const asRole = U.role === 'student' ? field('Viewing as', `<select data-m="studentId" data-r aria-label="Student">${optList(S.students.map(s => ({ v: s.id, l: `${s.name} (Grade ${s.grade})` })), U.studentId)}</select>`) :
+  // Once the LMS has signed someone in (see identity.js), the role and
+  // the student/parent being viewed are fixed by their login token, not
+  // a free picker - otherwise a logged-in student could just select
+  // someone else's name here and see their data.
+  const asRole = U.lms ? '' : U.role === 'student' ? field('Viewing as', `<select data-m="studentId" data-r aria-label="Student">${optList(S.students.map(s => ({ v: s.id, l: `${s.name} (Grade ${s.grade})` })), U.studentId)}</select>`) :
     U.role === 'parent' ? field('Viewing as', `<select data-m="parentId" data-r aria-label="Parent">${optList(S.parents.map(p => ({ v: p.id, l: p.name })), U.parentId)}</select>`) : '';
+  const roleArea = U.lms
+    ? `<div class="pill ok" title="Opened from the Brainova LMS with a signed login link.">${esc(U.lms.name || ROLE_NAME[U.lms.role])} &middot; ${ROLE_NAME[U.lms.role]}</div>`
+    : `<div class="roles" role="group" aria-label="Demo role">${['admin', 'teacher', 'student', 'parent'].map(r => `<button data-a="role" data-v="${r}" aria-pressed="${U.role === r}">${ROLE_NAME[r]}</button>`).join('')}</div>`;
   root.innerHTML = `<div class="app"><aside class="side"><div class="brand">${LOGO}<div><b>BRAINOVA</b><span>Assessment &amp; Placement</span></div></div>
     <nav class="nav" aria-label="Main">${nav.map(n => `<button data-a="go" data-v="${n[0]}" ${U.view === n[0] || (U.view === 'report' && n[0] === 'results') || (U.view === 'builder' && n[0] === 'assess') ? 'aria-current="page"' : ''}>${ico(n[2])}${n[1]}</button>`).join('')}</nav>
     <div class="note">${S.sample ? 'Sample data is loaded so you can explore every screen. Reset or clear it in Settings (Administrator).' : 'Your data is stored in this browser only.'}</div></aside>
-    <div class="main"><div class="topbar"><div class="row"><div class="roles" role="group" aria-label="Demo role">${['admin', 'teacher', 'student', 'parent'].map(r => `<button data-a="role" data-v="${r}" aria-pressed="${U.role === r}">${ROLE_NAME[r]}</button>`).join('')}</div>${asRole ? `<div style="min-width:220px">${asRole}</div>` : ''}</div>
-    <span class="pill pur" title="Roles here are a demonstration. Production uses Brainova LMS sign-in and role-based permissions.">Demo roles, no sign-in</span></div>
+    <div class="main"><div class="topbar"><div class="row">${roleArea}${asRole ? `<div style="min-width:220px">${asRole}</div>` : ''}</div>
+    <span class="pill ${U.lms ? 'ok' : 'pur'}" title="${U.lms ? 'Opened from the Brainova LMS with a signed login link. The role above is not a choice.' : 'Roles here are a demonstration. Production uses Brainova LMS sign-in and role-based permissions.'}">${U.lms ? 'Signed in via LMS' : 'Demo roles, no sign-in'}</span></div>
     <div class="page">${body}</div></div></div><div id="toast" class="toast" role="status" ${U.toast ? '' : 'hidden'}>${esc(U.toast)}</div>`;
   afterRender();
 }
@@ -2181,12 +2277,13 @@ ACT.liveTxtSend = () => { const L = U.live, v = document.getElementById('liveTxt
 function setDefaultIds() { const g5 = S.students.find(s => s.grade === 5) || S.students[0]; U.studentId = g5 && g5.id; U.parentId = S.parents[0] && S.parents[0].id; }
 function init() {
   S = load(); if (!S) { S = seed(); save(); } ensureSample();
-  setDefaultIds();
+  const signedIn = applyLmsIdentity(); // true when a real LMS login token took over role/identity
+  if (!signedIn) setDefaultIds();
   render(); // show the cached/local state immediately, never block on the network
   if (window.BrainovaAPI) {
     window.BrainovaAPI.fetchSnapshot().then(remote => {
       if (!remote) return; // not configured yet, offline, or nothing newer - local stays authoritative
-      S = remote; anCache = new WeakMap(); ensureSample(); setDefaultIds(); persistLocal(); render();
+      S = remote; anCache = new WeakMap(); ensureSample(); if (!signedIn) setDefaultIds(); persistLocal(); render();
     }).catch(() => { /* stay on the local/cached copy */ });
   }
 }
