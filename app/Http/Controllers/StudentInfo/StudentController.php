@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\StudentInfo;
 
 use App\Models\LeaveRequest;
+use App\Services\AssessmentReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use App\Imports\StudentsImport;
@@ -296,7 +297,9 @@ class StudentController extends Controller
 
 
 
-        return view('backend.student-info.student.show', compact('data', 'siblings', 'fees', 'attendances', 'leave_data', 'marks_registers','examTypeMarksSum','examAssigns','attendDaysInMonth'));
+        $assessmentReport = AssessmentReport::forStudent((int) $id);
+
+        return view('backend.student-info.student.show', compact('data', 'siblings', 'fees', 'attendances', 'leave_data', 'marks_registers','examTypeMarksSum','examAssigns','attendDaysInMonth', 'assessmentReport'));
     }
 
 

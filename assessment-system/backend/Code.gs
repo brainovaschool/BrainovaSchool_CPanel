@@ -215,6 +215,37 @@ function handleWrite_(kind, payload) {
 
 function truthy_(v) { return v === true || v === 'true' || v === 'TRUE' || v === 1; }
 
+// IDs are compared as strings throughout this file: one might come
+// from a URL parameter (always a string), another from JSON (whatever
+// type the sender used), another from a Sheet cell (a number unless
+// someone's formatted that column as text) - string comparison is the
+// one thing that's never surprised by which of those it's looking at.
+function idEq_(a, b) { return String(a) === String(b); }
+function idIn_(list, v) { return (list || []).some(x => idEq_(x, v)); }
+
+// One student's most recent RELEASED, non-preview attempt, boiled down
+// to the handful of fields the LMS shows on that student's profile
+// (see Step 8: AssessmentSystemController / App\Services\AssessmentReport
+// on the Laravel side). Returns null if there's nothing released yet.
+function latestReleasedReport_(studentId) {
+  // studentId arrives as a URL parameter (always a string), while the
+  // Sheet may have stored it as a real number if it was ever written
+  // from a raw numeric id - compare as strings so neither type trips
+  // this up.
+  const attempts = readAll_('attempts')
+    .filter(a => String(a.studentId) === String(studentId) && truthy_(a.released) && !truthy_(a.preview))
+    .sort((a, b) => (b.finished || 0) - (a.finished || 0));
+  if (!attempts.length) return null;
+  const att = attempts[0];
+  const pl = readAll_('placements').find(p => p.attemptId === att.id) || null;
+  return {
+    assessmentTitle: att.title || '',
+    finished: att.finished || null,
+    overallLabel: pl ? (pl.overallLabel || null) : null,
+    recommendation: (pl && Array.isArray(pl.lines) && pl.lines.length) ? pl.lines[0] : null
+  };
+}
+
 // null claims (legacy/admin shared-token access) or role admin/teacher
 // get everything, same as before this step. A signed-in student/parent
 // gets only their own (or their linked children's) RELEASED attempts,
@@ -237,14 +268,14 @@ function buildBootstrapState_(claims) {
   let students = list('students'), parents = list('parents'), attempts = list('attempts');
 
   if (claims && claims.role === 'student') {
-    attempts = attempts.filter(a => a.studentId === claims.uid && truthy_(a.released));
-    students = students.filter(s => s.id === claims.uid);
-    parents = parents.filter(p => Array.isArray(p.childIds) && p.childIds.indexOf(claims.uid) >= 0);
+    attempts = attempts.filter(a => idEq_(a.studentId, claims.uid) && truthy_(a.released));
+    students = students.filter(s => idEq_(s.id, claims.uid));
+    parents = parents.filter(p => idIn_(p.childIds, claims.uid));
   } else if (claims && claims.role === 'parent') {
     const kids = claims.children || [];
-    attempts = attempts.filter(a => kids.indexOf(a.studentId) >= 0 && truthy_(a.released));
-    students = students.filter(s => kids.indexOf(s.id) >= 0);
-    parents = parents.filter(p => p.id === claims.uid);
+    attempts = attempts.filter(a => idIn_(kids, a.studentId) && truthy_(a.released));
+    students = students.filter(s => idIn_(kids, s.id));
+    parents = parents.filter(p => idEq_(p.id, claims.uid));
   }
 
   return {
@@ -317,9 +348,24 @@ function jsonOut_(obj) {
 }
 
 function doGet(e) {
-  const auth = authenticate_((e.parameter && e.parameter.token) || '', (e.parameter && e.parameter.authToken) || '');
-  if (!auth.ok) return jsonOut_({ ok: false, error: 'unauthorized' });
   const action = e.parameter && e.parameter.action;
+  const token = (e.parameter && e.parameter.token) || '';
+
+  if (action === 'report') {
+    // A third, separate credential (REPORT_TOKEN) - read-only, meant
+    // for a server-to-server call from the LMS itself (never a
+    // browser), so if it ever leaked it could only read one student's
+    // own latest released summary at a time, never write anything or
+    // read a full snapshot the way API_TOKEN/AUTH_SECRET can.
+    const reportSecret = PropertiesService.getScriptProperties().getProperty('REPORT_TOKEN');
+    if (!reportSecret || token !== reportSecret) return jsonOut_({ ok: false, error: 'unauthorized' });
+    const studentId = e.parameter && e.parameter.studentId;
+    if (!studentId) return jsonOut_({ ok: false, error: 'studentId required' });
+    return jsonOut_({ ok: true, report: latestReleasedReport_(studentId) });
+  }
+
+  const auth = authenticate_(token, (e.parameter && e.parameter.authToken) || '');
+  if (!auth.ok) return jsonOut_({ ok: false, error: 'unauthorized' });
   if (action === 'bootstrap') return jsonOut_({ ok: true, state: buildBootstrapState_(auth.claims) });
   return jsonOut_({ ok: false, error: 'unknown action' });
 }
@@ -339,13 +385,13 @@ function writeAllowed_(claims, kind, payload) {
   if (kind === 'self') {
     const wantsOwnStudentRow = claims.role === 'student' && payload.collection === 'students';
     const wantsOwnParentRow = claims.role === 'parent' && payload.collection === 'parents';
-    return (wantsOwnStudentRow || wantsOwnParentRow) && payload.record && payload.record.id === claims.uid;
+    return (wantsOwnStudentRow || wantsOwnParentRow) && payload.record && idEq_(payload.record.id, claims.uid);
   }
 
   if (claims.role !== 'student') return false; // parents never submit assessment data
   if (kind === 'snapshot') return false;
   const sid = (payload && payload.studentId) || (payload && payload.attempt && payload.attempt.studentId);
-  return sid === claims.uid;
+  return idEq_(sid, claims.uid);
 }
 
 function doPost(e) {

@@ -84,6 +84,10 @@ password.
    (the same Web App URL from step 4 above — not secret, just the
    address).
 
+Nothing breaks if you skip this for now — until `AUTH_SECRET` exists on
+both sides, every request still falls back to the one shared `API_TOKEN`
+the way it's worked since Step 3.
+
 ## 7. Where it's hosted
 
 Nothing for you to upload by hand: `node build.js` writes the built
@@ -97,6 +101,21 @@ Opening the LMS sidebar's **Assessment System** link goes through that
 same address, with the login token and Sheet URL attached - that's the
 one to actually use day to day, not the bare link above.
 
-Nothing breaks if you skip this for now — until `AUTH_SECRET` exists on
-both sides, every request still falls back to the one shared `API_TOKEN`
-the way it's worked since Step 3.
+## 8. Show a student's result on their LMS profile
+
+Same "edit Code.gs again, add one Script Property" pattern as section 6,
+for the piece that reads a result back OUT: a student's own profile
+page (Student Info → that student → the new **Assessment** tab) now
+shows their latest released result, pulled straight from the Sheet.
+
+1. Re-paste `Code.gs` the same way as section 6 (it's grown a `report`
+   action) and deploy a **New version**, same clicks as before.
+2. Add one more Script Property: `REPORT_TOKEN` — another long random
+   value, different from `API_TOKEN` and `AUTH_SECRET`. This one is
+   read-only and never reaches a browser; only your Laravel server uses
+   it, to ask "what's this one student's latest released result."
+3. Tell me once it's deployed — I'll need that value as
+   `ASSESSMENT_SYSTEM_REPORT_TOKEN` in the live `.env`.
+
+Until that's set, the Assessment tab on a student's profile just shows
+"No released assessment result yet" - nothing breaks either way.

@@ -156,6 +156,10 @@
                     role="tab">{{ ___('student.Result') }} </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="assessment-tab" data-bs-toggle="tab" data-bs-target="#assessment"
+                    type="button" role="tab">Assessment</button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="exam-tab" data-bs-toggle="tab" data-bs-target="#exam" type="button"
                     role="tab">{{ ___('student.Exam') }} </button>
             </li>
@@ -185,6 +189,9 @@
             </div>
             <div class="tab-pane fade" id="result" role="tabpanel">
                 @include('backend.student-info.student.details_tab_contents.student_result_details')
+            </div>
+            <div class="tab-pane fade" id="assessment" role="tabpanel">
+                @include('backend.student-info.student.details_tab_contents.student_assessment_details')
             </div>
             <div class="tab-pane fade" id="exam" role="tabpanel">
                 @include('backend.student-info.student.details_tab_contents.student_exam_details')
