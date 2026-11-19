@@ -11,4 +11,11 @@ ${css}
 ${js}
 </script>
 `;
-fs.writeFileSync('../brainova-demo.html',html);console.log('built ../brainova-demo.html,',html.length,'chars');
+// Written straight into the Laravel app's public/ folder, so a normal
+// git deploy serves the latest build automatically - no separate
+// upload step, and no new Laravel route (public/.htaccess already
+// serves any file that exists on disk before it ever reaches index.php).
+const outDir = '../../public/assessment-system';
+fs.mkdirSync(outDir, { recursive: true });
+fs.writeFileSync(outDir + '/brainova-demo.html', html);
+console.log('built ' + outDir + '/brainova-demo.html,', html.length, 'chars');

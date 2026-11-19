@@ -23,7 +23,7 @@ class AssessmentSystemController extends Controller
         $url = config('services.assessment_system.url');
 
         if (! $secret || ! $url) {
-            abort(500, 'The Assessment System is not configured yet. Set ASSESSMENT_SYSTEM_AUTH_SECRET and ASSESSMENT_SYSTEM_URL in .env.');
+            abort(500, 'The Assessment System is not configured yet. Set ASSESSMENT_SYSTEM_AUTH_SECRET in .env (see assessment-system/backend/DEPLOY.md).');
         }
 
         $claims = $this->claimsForUser($request->user());

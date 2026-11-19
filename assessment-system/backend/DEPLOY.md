@@ -39,7 +39,7 @@ This is the password that lets the app talk to your Sheet. You make it up; you n
 
 ## 5. Connect the app to it
 
-1. Open the Brainova assessment app (`brainova-demo.html`) in your browser, as **Administrator**.
+1. Open the Brainova assessment app in your browser, as **Administrator** — either `https://your-site.example/assessment-system/brainova-demo.html` once it's deployed (see "Where it's hosted" below), or the local `brainova-demo.html` file directly while testing.
 2. Go to **Settings** → **Google Sheets backend**.
 3. Paste the Web App URL into **Web App URL**, and the same secret you made up in step 3 into **Shared token**.
 4. Click **Save**, then **Test connection**. It should say "Connected."
@@ -82,8 +82,20 @@ password.
    `AUTH_SECRET` value pasted into the Laravel app's live `.env` as
    `ASSESSMENT_SYSTEM_AUTH_SECRET`, alongside `ASSESSMENT_SYSTEM_SHEETS_URL`
    (the same Web App URL from step 4 above — not secret, just the
-   address) and `ASSESSMENT_SYSTEM_URL` (wherever `brainova-demo.html`
-   ends up hosted, once that's decided).
+   address).
+
+## 7. Where it's hosted
+
+Nothing for you to upload by hand: `node build.js` writes the built
+file straight into this Laravel app's own `public/assessment-system/`
+folder, so a normal git deploy serves it automatically at
+`https://your-site.example/assessment-system/brainova-demo.html` -
+no separate hosting step, no `ASSESSMENT_SYSTEM_URL` needed unless you
+ever want it to live somewhere else.
+
+Opening the LMS sidebar's **Assessment System** link goes through that
+same address, with the login token and Sheet URL attached - that's the
+one to actually use day to day, not the bare link above.
 
 Nothing breaks if you skip this for now — until `AUTH_SECRET` exists on
 both sides, every request still falls back to the one shared `API_TOKEN`

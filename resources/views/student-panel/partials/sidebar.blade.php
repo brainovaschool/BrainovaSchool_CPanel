@@ -218,7 +218,7 @@
                         </a>
                     </li>
                 @endif
-                @if (config('services.assessment_system.url'))
+                @if (config('services.assessment_system.auth_secret'))
                     <li class="sidebar-menu-item">
                         <a href="{{ route('assessment-system.launch') }}" target="_blank" rel="noopener" class="parent-item-content">
                             <i class="las la-clipboard-check"></i>

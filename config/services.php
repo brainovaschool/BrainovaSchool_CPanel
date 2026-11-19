@@ -46,8 +46,10 @@ return [
         // Properties once Step 5 adds server-side verification there -
         // until then it only shapes the token, nothing checks it yet.
         'auth_secret' => env('ASSESSMENT_SYSTEM_AUTH_SECRET'),
-        // Where the built brainova-demo.html is actually hosted.
-        'url' => env('ASSESSMENT_SYSTEM_URL'),
+        // Where the built brainova-demo.html is actually hosted. Defaults
+        // to the copy build.js writes straight into this app's own
+        // public/ folder - override only if you ever host it elsewhere.
+        'url' => env('ASSESSMENT_SYSTEM_URL', '/assessment-system/brainova-demo.html'),
         // The Google Apps Script web app URL (NOT the shared secret -
         // that one stays only in the app's own Settings page). Passed
         // along on every login so a brand-new device gets pointed at
