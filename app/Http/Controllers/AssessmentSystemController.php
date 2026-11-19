@@ -8,12 +8,12 @@ use Illuminate\Http\Request;
 /**
  * Hands a logged-in LMS user off to the standalone Assessment & Placement
  * System (assessment-system/) with a signed, short-lived token instead of
- * that app's old demo role switcher. The token only carries who the LMS
- * says this is (uid/role/name) - the assessment app's front end reads
- * those claims to set its own role/identity, but nothing here checks the
- * signature on the way back in yet. That's Step 5: the Google Apps
- * Script backend verifying this same signature on every request, once
- * ASSESSMENT_SYSTEM_AUTH_SECRET is also pasted into its Script Properties.
+ * that app's old demo role switcher. The token carries who the LMS says
+ * this is (uid/role/name/children) - the Google Apps Script backend
+ * (assessment-system/backend/Code.gs) verifies this same signature on
+ * every request and scopes a student/parent to their own data, as long
+ * as ASSESSMENT_SYSTEM_AUTH_SECRET here matches the AUTH_SECRET pasted
+ * into that script's Script Properties.
  */
 class AssessmentSystemController extends Controller
 {
@@ -38,7 +38,17 @@ class AssessmentSystemController extends Controller
         $signature = $this->base64UrlEncode(hash_hmac('sha256', $payload, $secret, true));
         $token = $payload.'.'.$signature;
 
-        return redirect(rtrim($url, '/').'?t='.$token);
+        $query = ['t' => $token];
+
+        // Not a secret - just points a brand-new device at the right
+        // Sheet automatically. The shared write-access token itself is
+        // never sent here; it stays only in the app's own Settings page.
+        $sheetsUrl = config('services.assessment_system.sheets_url');
+        if ($sheetsUrl) {
+            $query['su'] = $sheetsUrl;
+        }
+
+        return redirect(rtrim($url, '/').'?'.http_build_query($query));
     }
 
     private function claimsForUser($user): ?array

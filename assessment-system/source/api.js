@@ -113,6 +113,12 @@
   // soon as it is submitted (and after every answer in adaptive tests)".
   function saveAttempt(att, analysis) { enqueue('attempt', { attempt: att, analysis: analysis || null }); }
   function saveResponse(attemptId, resp, meta) { enqueue('response', Object.assign({ attemptId, resp }, meta || {})); }
+  // Narrower than scheduleSync's full snapshot: upserts exactly one
+  // record in one collection. This is the only write kind the backend
+  // lets a signed-in student/parent make outside their own attempts -
+  // used by identity.js to register their own roster row on first
+  // login, without ever letting their browser touch anyone else's data.
+  function saveSelf(collection, record) { enqueue('self', { collection, record }); }
 
   async function fetchSnapshot() {
     if (!isConfigured()) return null;
@@ -131,5 +137,5 @@
 
   flush(); // in case a previous session left queued items waiting for a connection
 
-  window.BrainovaAPI = { configure, isConfigured, getConfig, setAuthToken, scheduleSync, saveAttempt, saveResponse, fetchSnapshot, pendingCount, flush };
+  window.BrainovaAPI = { configure, isConfigured, getConfig, setAuthToken, scheduleSync, saveAttempt, saveResponse, saveSelf, fetchSnapshot, pendingCount, flush };
 })();

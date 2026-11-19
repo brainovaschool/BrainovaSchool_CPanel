@@ -19,7 +19,15 @@ const avg = a => a.length ? sumBy(a, x => x) / a.length : null;
 /* ---------- persistence (localStorage is always the offline cache; source/api.js
    syncs the same data to the Google Sheets backend once configured) ---------- */
 function persistLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) { /* storage blocked or full: app keeps working in memory */ } }
-function save() { persistLocal(); if (window.BrainovaAPI) window.BrainovaAPI.scheduleSync(S); }
+// A signed-in student/parent (see identity.js) is only ever allowed to
+// write their own attempt/response on the backend, never a full
+// administrative snapshot - so this skips sending one at all for them,
+// instead of enqueuing a write that would just come back "forbidden"
+// and retry forever.
+function save() {
+  persistLocal();
+  if (window.BrainovaAPI && (!U.lms || U.lms.role === 'admin' || U.lms.role === 'teacher')) window.BrainovaAPI.scheduleSync(S);
+}
 function load() { try { const t = localStorage.getItem(LS_KEY); if (t) { const d = JSON.parse(t); if (d && d.v === 1) return d; } } catch (e) { } return null; }
 
 /* ---------- lookups ---------- */

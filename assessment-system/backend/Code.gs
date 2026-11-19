@@ -27,12 +27,16 @@
 
    WHAT THIS CANNOT DO (said plainly, not hidden)
    ----------------------------------------------------------------
-   - This is a shared-secret gate (one token everyone's browser sends),
-     not per-user login. Anyone who has the token can write anything.
-     A later step layers a signed, per-user, expiring token on top of
-     this for real access control (students see only their own data,
-     etc). Until then, treat this as good enough for a school's own
-     diagnostic tool, not as hardened security.
+   - Two keys now gate access (see authenticate_): the original shared
+     API_TOKEN (anyone who has it can do anything - that's still how
+     your own admin browser works when you open the app directly,
+     outside the LMS), and AUTH_SECRET, which verifies a per-user signed
+     token the LMS hands a student/teacher/parent on login. A verified
+     student/parent token gets filtered to their own (or their linked
+     children's) released data only (see buildBootstrapState_ and
+     writeAllowed_). This is still "good enough for a school's own
+     tool," not independently audited security - there's no rate
+     limiting or logging of failed attempts, for instance.
    - Answer keys for questions are already shipped to every browser in
      the app's own JS bundle today, and saving a question's full record
      here doesn't make that any more or less exposed than it already
@@ -193,39 +197,119 @@ function writeResponse_(p) {
     p.resp));
 }
 
+// A single record in a single collection - the one write a signed-in
+// student/parent may make outside their own attempts (see
+// writeAllowed_), so they can register themselves in the roster on
+// first login without ever touching anyone else's row.
+function writeSelf_(p) { upsertRow_(p.collection, p.record); }
+
 function handleWrite_(kind, payload) {
   if (kind === 'snapshot') return writeSnapshot_(payload);
   if (kind === 'attempt') return writeAttempt_(payload.attempt || payload, payload.analysis);
   if (kind === 'response') return writeResponse_(payload);
+  if (kind === 'self') return writeSelf_(payload);
   throw new Error('unknown kind: ' + kind);
 }
 
 /* ---------- read path (what a fresh browser loads on startup) ---------- */
 
-function buildBootstrapState_() {
+function truthy_(v) { return v === true || v === 'true' || v === 'TRUE' || v === 1; }
+
+// null claims (legacy/admin shared-token access) or role admin/teacher
+// get everything, same as before this step. A signed-in student/parent
+// gets only their own (or their linked children's) RELEASED attempts,
+// and only their own roster rows - never another family's data, even
+// though it's sitting in the same spreadsheet.
+//
+// assessments/bank/settings are left unfiltered for every role: the
+// adaptive engine runs and grades entirely in the browser (see engine.js
+// and this file's own header comment), so the device administering a
+// test already needs the question bank, including its answer keys, to
+// function at all - that's a limitation of this static-front-end
+// design, not something a read filter here can fix.
+function buildBootstrapState_(claims) {
   const list = tab => readAll_(tab);
   const settingsRows = list('settings');
   const settings = settingsRows.length ? safeParse_(settingsRows[0].json) : null;
   const supervision = {};
   list('supervision').forEach(r => { const rec = Object.assign({}, r); const id = rec.id; delete rec.id; supervision[id] = rec; });
+
+  let students = list('students'), parents = list('parents'), attempts = list('attempts');
+
+  if (claims && claims.role === 'student') {
+    attempts = attempts.filter(a => a.studentId === claims.uid && truthy_(a.released));
+    students = students.filter(s => s.id === claims.uid);
+    parents = parents.filter(p => Array.isArray(p.childIds) && p.childIds.indexOf(claims.uid) >= 0);
+  } else if (claims && claims.role === 'parent') {
+    const kids = claims.children || [];
+    attempts = attempts.filter(a => kids.indexOf(a.studentId) >= 0 && truthy_(a.released));
+    students = students.filter(s => kids.indexOf(s.id) >= 0);
+    parents = parents.filter(p => p.id === claims.uid);
+  }
+
   return {
     v: 1, sample: false,
-    students: list('students'),
-    parents: list('parents'),
+    students: students,
+    parents: parents,
     assessments: list('assessments'),
     bank: list('bank'),
     settings: settings,
-    attempts: list('attempts'),
+    attempts: attempts,
     supervision: supervision,
     sessions: []
   };
 }
 
-/* ---------- auth + entry points ---------- */
+/* ---------- auth + entry points ----------
+   Two independent ways in, either is enough on its own:
+     - API_TOKEN: the one shared secret from Step 3's setup. Anyone who
+       has it can do anything - this is what your own admin browser
+       still uses when you open the app directly (not through the LMS)
+       to use Settings.
+     - a per-user signed token (AUTH_SECRET): what the LMS hands a
+       student/teacher/parent on login (see AssessmentSystemController
+       in the Laravel app). It proves WHO is asking, so requests that
+       carry one get scoped to that person's own role automatically -
+       no shared secret ever needs to reach a student's browser at all. */
 
-function checkToken_(token) {
+function base64UrlEncodeBytes_(bytes) {
+  return Utilities.base64Encode(bytes).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function base64UrlDecodeToString_(str) {
+  str = String(str).replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  return Utilities.newBlob(Utilities.base64Decode(str)).getDataAsString();
+}
+
+// Verifies the HMAC-SHA256 signature itself (same scheme as the Laravel
+// side) and checks expiry. Returns the decoded claims {uid,role,name,
+// children?,exp} if the token is genuine and still valid, else null -
+// never throws, so a malformed token just fails authentication.
+function verifyAuthToken_(token) {
+  if (!token || token.indexOf('.') < 0) return null;
+  const secret = PropertiesService.getScriptProperties().getProperty('AUTH_SECRET');
+  if (!secret) return null;
+  const parts = token.split('.');
+  const payload = parts[0], sig = parts[1];
+  const expected = base64UrlEncodeBytes_(Utilities.computeHmacSha256Signature(payload, secret));
+  if (expected !== sig) return null;
+  let claims;
+  try { claims = JSON.parse(base64UrlDecodeToString_(payload)); } catch (e) { return null; }
+  if (!claims || !claims.role || claims.uid === undefined || !claims.exp) return null;
+  if (claims.exp * 1000 < Date.now()) return null;
+  return claims;
+}
+
+// claims === null means "legacy/admin access via the shared token" -
+// unrestricted, same as every step before this one. A non-null claims
+// means a verified per-user login - callers use its role/uid/children
+// to decide what that specific person may read or write.
+function authenticate_(token, authToken) {
+  const claims = verifyAuthToken_(authToken);
+  if (claims) return { ok: true, claims: claims };
   const secret = PropertiesService.getScriptProperties().getProperty('API_TOKEN');
-  return !!secret && token === secret;
+  if (secret && token === secret) return { ok: true, claims: null };
+  return { ok: false, claims: null };
 }
 
 function jsonOut_(obj) {
@@ -233,17 +317,45 @@ function jsonOut_(obj) {
 }
 
 function doGet(e) {
-  const token = (e.parameter && e.parameter.token) || '';
-  if (!checkToken_(token)) return jsonOut_({ ok: false, error: 'unauthorized' });
+  const auth = authenticate_((e.parameter && e.parameter.token) || '', (e.parameter && e.parameter.authToken) || '');
+  if (!auth.ok) return jsonOut_({ ok: false, error: 'unauthorized' });
   const action = e.parameter && e.parameter.action;
-  if (action === 'bootstrap') return jsonOut_({ ok: true, state: buildBootstrapState_() });
+  if (action === 'bootstrap') return jsonOut_({ ok: true, state: buildBootstrapState_(auth.claims) });
   return jsonOut_({ ok: false, error: 'unknown action' });
+}
+
+// A signed-in student may only write their OWN attempt/response, never
+// someone else's id, and never a full administrative snapshot. A
+// teacher/admin (or the legacy shared-token path, claims === null) can
+// write anything, same as every step before this one - teachers submit
+// attempts on behalf of a whole room during a live class.
+function writeAllowed_(claims, kind, payload) {
+  if (!claims) return true;
+  if (claims.role === 'teacher' || claims.role === 'admin') return true;
+
+  // Either role may register/update exactly their own roster row (how
+  // identity.js adds a brand-new LMS student/parent to the Sheet, and
+  // keeps a parent's childIds current) - never anyone else's.
+  if (kind === 'self') {
+    const wantsOwnStudentRow = claims.role === 'student' && payload.collection === 'students';
+    const wantsOwnParentRow = claims.role === 'parent' && payload.collection === 'parents';
+    return (wantsOwnStudentRow || wantsOwnParentRow) && payload.record && payload.record.id === claims.uid;
+  }
+
+  if (claims.role !== 'student') return false; // parents never submit assessment data
+  if (kind === 'snapshot') return false;
+  const sid = (payload && payload.studentId) || (payload && payload.attempt && payload.attempt.studentId);
+  return sid === claims.uid;
 }
 
 function doPost(e) {
   let body;
   try { body = JSON.parse(e.postData.contents); } catch (err) { return jsonOut_({ ok: false, error: 'bad json' }); }
-  if (!checkToken_(body.token)) return jsonOut_({ ok: false, error: 'unauthorized' });
+  const auth = authenticate_(body.token, body.authToken);
+  if (!auth.ok) return jsonOut_({ ok: false, error: 'unauthorized' });
+  if (body.action === 'write' && !writeAllowed_(auth.claims, body.kind, body.payload)) {
+    return jsonOut_({ ok: false, error: 'forbidden' });
+  }
 
   const lock = LockService.getScriptLock();
   let gotLock = false;

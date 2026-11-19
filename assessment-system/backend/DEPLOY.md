@@ -55,3 +55,36 @@ Saving the script editor is not enough to make a change live — you deployed a 
 3. Under **Version**, choose **New version** → **Deploy**.
 
 This keeps the same URL (so nothing else needs to change) but makes it run your edited code. If you forget this step, the URL keeps serving the old code and it'll look like your edit "didn't work."
+
+## 6. Turn on real per-person access control
+
+You already did steps 1–5 once and sent me the Web App URL — this part
+is new, and it's the same "edit Code.gs again" update as above, plus
+one more secret. It makes a signed-in student only ever see their own
+(released) results, a parent only their own child's, and a teacher/
+admin see everything — instead of everyone sharing one all-or-nothing
+password.
+
+1. Re-open the Apps Script editor for this project (same Sheet →
+   **Extensions** → **Apps Script**).
+2. Select everything in `Code.gs` and replace it with the current
+   contents of `assessment-system/backend/Code.gs` from this project —
+   it's grown a new `authenticate_`/`verifyAuthToken_` section, the rest
+   is the same file as before.
+3. **Project Settings** (gear icon) → **Script Properties** → **Add
+   script property**. Property: `AUTH_SECRET`. Value: another long
+   random string, different from your `API_TOKEN` — same rules as
+   before, mash the keyboard, you'll only ever paste it.
+4. **Deploy** → **Manage deployments** → pencil icon → **Version: New
+   version** → **Deploy**, exactly like the section above. The URL
+   stays the same.
+5. Tell me you've done this (not the value) — I'll need the *same*
+   `AUTH_SECRET` value pasted into the Laravel app's live `.env` as
+   `ASSESSMENT_SYSTEM_AUTH_SECRET`, alongside `ASSESSMENT_SYSTEM_SHEETS_URL`
+   (the same Web App URL from step 4 above — not secret, just the
+   address) and `ASSESSMENT_SYSTEM_URL` (wherever `brainova-demo.html`
+   ends up hosted, once that's decided).
+
+Nothing breaks if you skip this for now — until `AUTH_SECRET` exists on
+both sides, every request still falls back to the one shared `API_TOKEN`
+the way it's worked since Step 3.

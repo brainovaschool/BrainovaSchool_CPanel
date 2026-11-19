@@ -48,6 +48,12 @@ return [
         'auth_secret' => env('ASSESSMENT_SYSTEM_AUTH_SECRET'),
         // Where the built brainova-demo.html is actually hosted.
         'url' => env('ASSESSMENT_SYSTEM_URL'),
+        // The Google Apps Script web app URL (NOT the shared secret -
+        // that one stays only in the app's own Settings page). Passed
+        // along on every login so a brand-new device gets pointed at
+        // the right Sheet automatically, without anyone having to type
+        // it in by hand. See AssessmentSystemController::launch().
+        'sheets_url' => env('ASSESSMENT_SYSTEM_SHEETS_URL'),
     ],
 
 ];

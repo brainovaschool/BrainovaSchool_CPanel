@@ -52,6 +52,10 @@ function applyLmsIdentity() {
   U.role = claims.role;
   U.view = HOME[claims.role] || U.view;
 
+  // Registering this person's own roster row (below) uses saveSelf(),
+  // not save()'s full scheduleSync - a signed-in student/parent's
+  // browser is only ever allowed to write their OWN row on the backend
+  // (see Code.gs's writeAllowed_), never a full administrative snapshot.
   if (claims.role === 'student') {
     U.studentId = claims.uid;
     // First time this LMS student opens the tool: give them a minimal
@@ -60,22 +64,36 @@ function applyLmsIdentity() {
     // until an admin fills them in on the Students page, or a later
     // sync pass maps the LMS's own class/grade data onto this field.
     if (!S.students.find(s => s.id === claims.uid)) {
-      S.students.push({ id: claims.uid, name: claims.name || 'Student', grade: null });
-      save();
+      const rec = { id: claims.uid, name: claims.name || 'Student', grade: null };
+      S.students.push(rec);
+      persistLocal();
+      if (window.BrainovaAPI) window.BrainovaAPI.saveSelf('students', rec);
     }
   }
   if (claims.role === 'parent') {
     U.parentId = claims.uid;
     const existing = S.parents.find(p => p.id === claims.uid);
     if (!existing) {
-      S.parents.push({ id: claims.uid, name: claims.name || 'Parent', childIds: claims.children || [] });
-      save();
+      const rec = { id: claims.uid, name: claims.name || 'Parent', childIds: claims.children || [] };
+      S.parents.push(rec);
+      persistLocal();
+      if (window.BrainovaAPI) window.BrainovaAPI.saveSelf('parents', rec);
     } else if (claims.children) {
       existing.childIds = claims.children;
-      save();
+      persistLocal();
+      if (window.BrainovaAPI) window.BrainovaAPI.saveSelf('parents', existing);
     }
   }
 
-  if (window.BrainovaAPI) window.BrainovaAPI.setAuthToken(token);
+  if (window.BrainovaAPI) {
+    window.BrainovaAPI.setAuthToken(token);
+    // The LMS hands every device the (non-secret) Sheet URL on login,
+    // so a student's own phone/laptop gets wired up the first time they
+    // open this, without anyone manually visiting Settings on it. Only
+    // the URL travels this way - never the shared token (see
+    // AssessmentSystemController::launch() on the LMS side).
+    const sheetsUrl = new URLSearchParams(location.search).get('su');
+    if (sheetsUrl) window.BrainovaAPI.configure({ url: sheetsUrl });
+  }
   return true;
 }
