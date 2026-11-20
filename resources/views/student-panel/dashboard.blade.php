@@ -152,10 +152,19 @@
                             <div class="bn-dv2-pill">
                                 <i class="fa-solid fa-clipboard-check"></i>
                                 <div>
-                                    <div class="v">{{ $data['assessment_report']['overallLabel'] ?? '—' }}</div>
+                                    <div class="v">{{ isset($data['assessment_report']['scorePct']) ? $data['assessment_report']['scorePct'] . '%' : '—' }}</div>
                                     <div class="k">{{ $data['assessment_report']['assessmentTitle'] ?? 'Latest assessment' }}</div>
                                 </div>
                             </div>
+                            @if (!empty($data['assessment_report']['overallLabel']))
+                                <div class="bn-dv2-pill">
+                                    <i class="fa-solid fa-star"></i>
+                                    <div>
+                                        <div class="v">{{ $data['assessment_report']['overallLabel'] }}</div>
+                                        <div class="k">Level reached</div>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                         @if (!empty($data['assessment_report']['recommendation']))
                             <p style="margin-top:8px;color:#6b7280;font-size:.875rem">{{ $data['assessment_report']['recommendation'] }}</p>

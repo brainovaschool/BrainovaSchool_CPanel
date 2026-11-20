@@ -184,7 +184,12 @@ function writeAttempt_(att, an) {
     (an.topics || []).forEach(t => upsertRow_('topic_results', Object.assign(
       { id: att.id + '_' + t.topic, attemptId: att.id, studentId: att.studentId }, t)));
     upsertRow_('placements', Object.assign(
-      { id: att.id, attemptId: att.id, studentId: att.studentId, overallIdx: an.overallIdx }, an.placement));
+      { id: att.id, attemptId: att.id, studentId: att.studentId, overallIdx: an.overallIdx,
+        // The actual numeric score - overallIdx/placement are the
+        // qualitative level ("Proficient"), this is the plain percentage
+        // marks, for anywhere that needs that instead (the LMS dashboard).
+        scorePct: an.scorePct, accuracy: an.accuracy },
+      an.placement));
   }
 }
 
@@ -237,10 +242,17 @@ function latestReleasedReport_(studentId) {
     .sort((a, b) => (b.finished || 0) - (a.finished || 0));
   if (!attempts.length) return null;
   const att = attempts[0];
-  const pl = readAll_('placements').find(p => p.attemptId === att.id) || null;
+  const pl = readAll_('placements').find(p => idEq_(p.attemptId, att.id)) || null;
+  // scorePct (marks out of the assessment's own total) is the more
+  // familiar number for a fixed-questions test; accuracy (% of graded
+  // questions answered correctly) is what an adaptive placement test
+  // has instead, since it has no fixed total. Either way this ends up
+  // as a plain 0-100 number, never a fraction.
+  const pct = pl && pl.scorePct != null ? pl.scorePct : (pl && pl.accuracy != null ? pl.accuracy : null);
   return {
     assessmentTitle: att.title || '',
     finished: att.finished || null,
+    scorePct: pct != null ? Math.round(pct * 100) : null,
     overallLabel: pl ? (pl.overallLabel || null) : null,
     recommendation: (pl && Array.isArray(pl.lines) && pl.lines.length) ? pl.lines[0] : null
   };
