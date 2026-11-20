@@ -220,19 +220,43 @@ ACT.importRoster = async () => {
     toast('Could not reach the LMS roster. Make sure you opened this through the LMS, not as a local file.');
     return;
   }
+  // Laravel sends real numeric ids; this app compares ids as strings
+  // everywhere else (DOM data-id attributes are always strings, and so
+  // is every demo id) - converting once, on the way in, is what makes
+  // every existing lookup and every assign-to-student checkbox actually
+  // match a real student instead of silently finding nothing.
   let added = 0, updated = 0;
   (data.students || []).forEach(r => {
-    const ex = S.students.find(s => s.id === r.id);
-    if (ex) { ex.name = r.name; if (r.grade != null) ex.grade = r.grade; if (r.parentId) ex.parentId = r.parentId; updated++; }
-    else { S.students.push({ id: r.id, name: r.name, grade: r.grade, parentId: r.parentId || null }); added++; }
+    const id = String(r.id), parentId = r.parentId != null ? String(r.parentId) : null;
+    const ex = S.students.find(s => s.id === id);
+    if (ex) { ex.name = r.name; if (r.grade != null) ex.grade = r.grade; if (parentId) ex.parentId = parentId; updated++; }
+    else { S.students.push({ id, name: r.name, grade: r.grade, parentId }); added++; }
   });
   (data.parents || []).forEach(r => {
-    const ex = S.parents.find(p => p.id === r.id);
-    if (ex) { ex.name = r.name; ex.childIds = r.childIds || ex.childIds; }
-    else S.parents.push({ id: r.id, name: r.name, childIds: r.childIds || [] });
+    const id = String(r.id), childIds = (r.childIds || []).map(String);
+    const ex = S.parents.find(p => p.id === id);
+    if (ex) { ex.name = r.name; ex.childIds = childIds.length ? childIds : ex.childIds; }
+    else S.parents.push({ id, name: r.name, childIds });
   });
   save(); render();
   toast(`Imported from your LMS: ${added} new, ${updated} updated.`);
+};
+
+// The built-in sample roster (Ayesha Khan and the rest) always uses the
+// id pattern seedBase() gives it - BRV-26-101, 102, ... for students,
+// par_xxxxx for parents - which a real LMS id (always a plain number,
+// stringified) never matches, so this can tell them apart safely even
+// after both kinds of student are sitting in the same list.
+ACT.removeDemoStudents = () => {
+  if (U.cfm !== 'demo') { U.cfm = 'demo'; render(); return; }
+  U.cfm = null;
+  const removedIds = new Set(S.students.filter(s => String(s.id).startsWith('BRV-26-')).map(s => s.id));
+  S.students = S.students.filter(s => !String(s.id).startsWith('BRV-26-'));
+  S.parents = S.parents.filter(p => !String(p.id).startsWith('par_'));
+  S.attempts = S.attempts.filter(a => !removedIds.has(a.studentId));
+  anCache = new WeakMap();
+  save(); render();
+  toast('Removed the built-in demo students. Your imported LMS roster stays.');
 };
 
 /* live */

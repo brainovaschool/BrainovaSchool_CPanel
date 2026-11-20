@@ -48,7 +48,17 @@ function applyLmsIdentity() {
   const claims = token && parseLmsToken_(token);
   if (!claims) { U.lms = null; return false; }
 
-  U.lms = { token, uid: claims.uid, role: claims.role, name: claims.name || '' };
+  // The LMS sends uid/children as real numbers (Laravel's own integer
+  // ids). Every id already living in this app - demo data, DOM data-id
+  // attributes read off a click, you name it - is a string, and a
+  // number never === a string in JS, so every lookup and every
+  // assign-to-student checkbox would silently fail to match a real
+  // student/parent if this stayed a number. Normalize once, here, so
+  // nothing downstream has to know this distinction exists.
+  const uid = String(claims.uid);
+  const children = Array.isArray(claims.children) ? claims.children.map(String) : null;
+
+  U.lms = { token, uid, role: claims.role, name: claims.name || '' };
   U.role = claims.role;
   U.view = HOME[claims.role] || U.view;
 
@@ -57,29 +67,29 @@ function applyLmsIdentity() {
   // browser is only ever allowed to write their OWN row on the backend
   // (see Code.gs's writeAllowed_), never a full administrative snapshot.
   if (claims.role === 'student') {
-    U.studentId = claims.uid;
+    U.studentId = uid;
     // First time this LMS student opens the tool: give them a minimal
     // row so every existing "find the student" lookup has something to
     // find. Name comes from the token; grade/accommodations stay blank
     // until an admin fills them in on the Students page, or a later
     // sync pass maps the LMS's own class/grade data onto this field.
-    if (!S.students.find(s => s.id === claims.uid)) {
-      const rec = { id: claims.uid, name: claims.name || 'Student', grade: null };
+    if (!S.students.find(s => s.id === uid)) {
+      const rec = { id: uid, name: claims.name || 'Student', grade: null };
       S.students.push(rec);
       persistLocal();
       if (window.BrainovaAPI) window.BrainovaAPI.saveSelf('students', rec);
     }
   }
   if (claims.role === 'parent') {
-    U.parentId = claims.uid;
-    const existing = S.parents.find(p => p.id === claims.uid);
+    U.parentId = uid;
+    const existing = S.parents.find(p => p.id === uid);
     if (!existing) {
-      const rec = { id: claims.uid, name: claims.name || 'Parent', childIds: claims.children || [] };
+      const rec = { id: uid, name: claims.name || 'Parent', childIds: children || [] };
       S.parents.push(rec);
       persistLocal();
       if (window.BrainovaAPI) window.BrainovaAPI.saveSelf('parents', rec);
-    } else if (claims.children) {
-      existing.childIds = claims.children;
+    } else if (children) {
+      existing.childIds = children;
       persistLocal();
       if (window.BrainovaAPI) window.BrainovaAPI.saveSelf('parents', existing);
     }

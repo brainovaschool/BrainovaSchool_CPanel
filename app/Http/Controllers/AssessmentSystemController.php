@@ -154,16 +154,13 @@ class AssessmentSystemController extends Controller
         }
 
         $students = Student::active()
-            ->with('session_class_student.class')
+            ->with(['session_class_student.class', 'user'])
             ->get()
             ->map(function (Student $s) {
-                $className = optional(optional($s->session_class_student)->class)->name;
-                preg_match('/\d+/', (string) $className, $m);
-
                 return [
                     'id' => $s->id,
                     'name' => $s->full_name,
-                    'grade' => isset($m[0]) ? (int) $m[0] : null,
+                    'grade' => $this->gradeForStudent($s),
                     'parentId' => $s->parent_guardian_id,
                 ];
             })
@@ -182,6 +179,38 @@ class AssessmentSystemController extends Controller
             ->values();
 
         return response()->json(['students' => $students, 'parents' => $parents]);
+    }
+
+    /**
+     * Pakistan's usual school-age rule: grade = age in years - 5 (a
+     * 6-year-old is in Grade/Class 1, a 7-year-old in Grade 2, and so
+     * on). Uses date of birth rather than the LMS's own class/section
+     * data on purpose - editing that to carry a clean numeric grade
+     * would risk side effects on whatever else in this app depends on
+     * it, whereas date of birth is just read, never touched. Falls
+     * back to guessing a number out of the class name only if date of
+     * birth isn't on file; an admin can always correct the result by
+     * hand afterward (the Grade field on the assessment app's own
+     * Students page), this is only ever a starting guess.
+     */
+    private function gradeForStudent(Student $s): ?int
+    {
+        $dob = optional($s->user)->date_of_birth;
+
+        if ($dob) {
+            try {
+                $age = \Carbon\Carbon::parse($dob)->age;
+
+                return max(0, $age - 5);
+            } catch (\Throwable $e) {
+                // fall through to the class-name guess below
+            }
+        }
+
+        $className = optional(optional($s->session_class_student)->class)->name;
+        preg_match('/\d+/', (string) $className, $m);
+
+        return isset($m[0]) ? (int) $m[0] : null;
     }
 
     private function claimsForUser($user): ?array
