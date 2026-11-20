@@ -1688,8 +1688,8 @@ function stuPanel(s) {
   const at = S.attempts.filter(a => a.studentId === s.id && !a.preview).sort((a, b) => a.finished - b.finished), hist = {};
   at.forEach(a => AN(a).topics.forEach(t => { if (t.probe) return; (hist[t.topic] = hist[t.topic] || []).push({ idx: t.idx, d: a.finished }); }));
   const ac = s.accom || { extraPct: 0, largeText: false };
-  return `<div class="card lift"><div class="row sp"><h2>${esc(s.name)} <span class="muted small">${esc(s.id)} · Grade ${s.grade == null ? '—' : s.grade}</span></h2><button class="btn sm ghost" data-a="stuClose">Close</button></div>
-  <div class="grid g2" style="margin:10px 0"><div class="sub"><h4 style="margin-bottom:8px">Accommodations</h4><div class="grid g2">${field('Grade', `<input type="number" data-m="stuGrade" data-r min="0" max="13" value="${s.grade == null ? '' : s.grade}" placeholder="e.g. 5">`)}${field('Extra time', `<select data-m="stuAcc.extra" data-id="${s.id}">${optList([{ v: 0, l: 'None' }, { v: 25, l: '+25%' }, { v: 50, l: '+50%' }, { v: 100, l: '+100%' }], ac.extraPct)}</select>`)}${chk('stuAcc.large', ac.largeText, 'Larger text')}</div><p class="small muted" style="margin-top:6px">Grade is only auto-filled when imported from the LMS and the class name contains a number - set it here if it's missing, so this student shows up when assigning a grade-specific assessment. Extra time is added to the countdown and per-question timers. Learning objectives and questions stay the same.</p></div>
+  return `<div class="card lift"><div class="row sp"><h2>${esc(s.name)} <span class="muted small">${esc(s.id)} · Grade ${s.grade == null ? '—' : s.grade}</span></h2><div class="row">${U.lms && (U.lms.role === 'admin' || U.lms.role === 'teacher') ? `<button class="btn sm danger" data-a="stuDelete" data-id="${s.id}">${U.cfm === 'del:' + s.id ? 'Click again to confirm delete' : 'Delete student'}</button>` : ''}<button class="btn sm ghost" data-a="stuClose">Close</button></div></div>
+  <div class="grid g2" style="margin:10px 0"><div class="sub"><h4 style="margin-bottom:8px">Accommodations</h4><div class="grid g2">${field('Grade', `<input type="number" data-m="stuGrade" data-r min="0" max="13" value="${s.grade == null ? '' : s.grade}" placeholder="e.g. 5">`)}${field('Extra time', `<select data-m="stuAcc.extra" data-id="${s.id}">${optList([{ v: 0, l: 'None' }, { v: 25, l: '+25%' }, { v: 50, l: '+50%' }, { v: 100, l: '+100%' }], ac.extraPct)}</select>`)}${chk('stuAcc.large', ac.largeText, 'Larger text')}</div><p class="small muted" style="margin-top:6px">Grade is auto-filled from date of birth when imported from the LMS (age − 5) - if it's blank, that student has no date of birth on file there. Set it here by hand, or add their date of birth in the LMS and import again. Extra time is added to the countdown and per-question timers. Learning objectives and questions stay the same.</p></div>
   <div class="sub"><h4 style="margin-bottom:8px">Topic-wise history</h4>${Object.keys(hist).length ? `<ul class="ul plain small">${Object.entries(hist).map(([k, v]) => `<li><b>${esc(k)}</b>: ${v.map(x => lvPill(x.idx)).join(' → ')}</li>`).join('')}</ul>` : '<p class="muted small">No attempts yet.</p>'}</div></div>
   <h4>Assessment history</h4>${attemptTable(at.slice().reverse())}</div>`;
 }
@@ -2251,6 +2251,24 @@ ACT.trySample = () => { const a = asmtById('asm_g5check'); if (!a) { toast('The 
 ACT.dlResp = el => { const a = attById(el.dataset.id); saveFile(`brainova-responses-${a.studentName.replace(/\s+/g, '-').toLowerCase()}.csv`, toCSV([['sequence', 'question_id', 'topic', 'difficulty', 'status', 'student_answer', 'correct_answer', 'marks', 'time_s', 'answer_changed']].concat(a.responses.map(r => [r.seq, r.qid, r.topic, DIFF[r.diff].name, r.status, r.answer, r.correctAnswer, r.marks, (r.timeMs / 1000).toFixed(1), r.changed])))); };
 ACT.stuOpen = el => { U.stuSel = el.dataset.id; render(); scrollTop(); };
 ACT.stuClose = () => { U.stuSel = null; render(); };
+// Removes any one student - the built-in demo ones or a real but
+// unwanted LMS entry alike - from this app's own list only. It cannot
+// remove their old rows already written to the Google Sheet (there is
+// no delete action there, only upsert); harmless leftover rows, not
+// something that resurfaces in this app. If the student is still
+// active in the LMS, Import from LMS will bring them back - deactivate
+// or delete them there first for a removal that sticks.
+ACT.stuDelete = el => {
+  const id = el.dataset.id;
+  if (U.cfm !== 'del:' + id) { U.cfm = 'del:' + id; render(); return; }
+  U.cfm = null;
+  S.students = S.students.filter(s => s.id !== id);
+  S.attempts = S.attempts.filter(a => a.studentId !== id);
+  U.stuSel = null;
+  anCache = new WeakMap();
+  save(); render();
+  toast('Removed from this app. Still active in the LMS? Import from LMS will bring them back - deactivate them there first if you don’t want that.');
+};
 
 /* student */
 ACT.intro = el => { U.supTick = []; U.supName = ''; go('intro', { id: el.dataset.id }); };

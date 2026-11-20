@@ -146,6 +146,24 @@ ACT.trySample = () => { const a = asmtById('asm_g5check'); if (!a) { toast('The 
 ACT.dlResp = el => { const a = attById(el.dataset.id); saveFile(`brainova-responses-${a.studentName.replace(/\s+/g, '-').toLowerCase()}.csv`, toCSV([['sequence', 'question_id', 'topic', 'difficulty', 'status', 'student_answer', 'correct_answer', 'marks', 'time_s', 'answer_changed']].concat(a.responses.map(r => [r.seq, r.qid, r.topic, DIFF[r.diff].name, r.status, r.answer, r.correctAnswer, r.marks, (r.timeMs / 1000).toFixed(1), r.changed])))); };
 ACT.stuOpen = el => { U.stuSel = el.dataset.id; render(); scrollTop(); };
 ACT.stuClose = () => { U.stuSel = null; render(); };
+// Removes any one student - the built-in demo ones or a real but
+// unwanted LMS entry alike - from this app's own list only. It cannot
+// remove their old rows already written to the Google Sheet (there is
+// no delete action there, only upsert); harmless leftover rows, not
+// something that resurfaces in this app. If the student is still
+// active in the LMS, Import from LMS will bring them back - deactivate
+// or delete them there first for a removal that sticks.
+ACT.stuDelete = el => {
+  const id = el.dataset.id;
+  if (U.cfm !== 'del:' + id) { U.cfm = 'del:' + id; render(); return; }
+  U.cfm = null;
+  S.students = S.students.filter(s => s.id !== id);
+  S.attempts = S.attempts.filter(a => a.studentId !== id);
+  U.stuSel = null;
+  anCache = new WeakMap();
+  save(); render();
+  toast('Removed from this app. Still active in the LMS? Import from LMS will bring them back - deactivate them there first if you don’t want that.');
+};
 
 /* student */
 ACT.intro = el => { U.supTick = []; U.supName = ''; go('intro', { id: el.dataset.id }); };
