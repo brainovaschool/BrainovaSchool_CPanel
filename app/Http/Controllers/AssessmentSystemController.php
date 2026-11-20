@@ -52,7 +52,17 @@ class AssessmentSystemController extends Controller
             $query['su'] = $sheetsUrl;
         }
 
-        return redirect(rtrim($url, '/').'?'.http_build_query($query));
+        // Built from the CURRENT request's own host rather than trusting
+        // redirect()'s default root resolution (APP_URL / tenancy root) -
+        // this app is multi-tenant and .env.example's own APP_URL is a
+        // placeholder domain, so a bare redirect($relativePath) risks
+        // sending the browser to the wrong host entirely. getSchemeAndHttpHost()
+        // is always exactly the domain the person is on right now.
+        $target = preg_match('#^https?://#i', $url)
+            ? $url
+            : $request->getSchemeAndHttpHost().'/'.ltrim($url, '/');
+
+        return redirect($target.'?'.http_build_query($query));
     }
 
     private function claimsForUser($user): ?array
