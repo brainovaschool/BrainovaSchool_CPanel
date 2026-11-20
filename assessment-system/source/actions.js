@@ -165,6 +165,42 @@ ACT.stuDelete = el => {
   toast('Removed from this app. Still active in the LMS? Import from LMS will bring them back - deactivate them there first if you don’t want that.');
 };
 
+/* bulk student actions (Students page toolbar) */
+ACT.stuBulkTgl = el => {
+  const id = el.dataset.id, i = (U.stuBulk || (U.stuBulk = [])).indexOf(id);
+  if (i >= 0) U.stuBulk.splice(i, 1); else U.stuBulk.push(id);
+  render();
+};
+ACT.stuBulkAll = () => { U.stuBulk = S.students.map(s => s.id); render(); };
+ACT.stuBulkNone = () => { U.stuBulk = []; U.cfm = null; render(); };
+// Same caveat as the single-student delete above: local only, never
+// touches the Google Sheet or the LMS itself.
+ACT.stuBulkDelete = () => {
+  if (!U.stuBulk || !U.stuBulk.length) return;
+  if (U.cfm !== 'bulkdel') { U.cfm = 'bulkdel'; render(); return; }
+  U.cfm = null;
+  const ids = new Set(U.stuBulk);
+  S.students = S.students.filter(s => !ids.has(s.id));
+  S.attempts = S.attempts.filter(a => !ids.has(a.studentId));
+  const n = U.stuBulk.length;
+  U.stuBulk = [];
+  anCache = new WeakMap();
+  save(); render();
+  toast(`Removed ${n} student(s) from this app.`);
+};
+ACT.stuBulkAssign = el => {
+  const asmtId = el.value;
+  if (!asmtId || !U.stuBulk || !U.stuBulk.length) { el.value = ''; return; }
+  const a = asmtById(asmtId);
+  if (!a) { el.value = ''; return; }
+  const set = new Set(a.assignedTo);
+  U.stuBulk.forEach(id => set.add(id));
+  a.assignedTo = [...set];
+  const n = U.stuBulk.length;
+  save(); render();
+  toast(`Assigned ${n} student(s) to "${a.title || 'Untitled'}".`);
+};
+
 /* student */
 ACT.intro = el => { U.supTick = []; U.supName = ''; go('intro', { id: el.dataset.id }); };
 ACT.supTick = el => { U.supTick = U.supTick || []; U.supTick[+el.dataset.i] = el.checked; };

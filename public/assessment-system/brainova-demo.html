@@ -1048,7 +1048,7 @@ function applyLmsIdentity() {
 /* ===================== CORE: state, persistence, seed data, helpers ===================== */
 const LS_KEY = 'brainova.demo.v1';
 let S = null;              // persisted data (demo store)
-const U = { role: 'teacher', view: 'dash', params: {}, filters: { range: 'all', subject: '', grade: '', course: '', asmt: '', topic: '', level: '', student: '' }, draft: null, step: 1, run: null, live: null, toast: '', bankSel: null, bankFilter: { q: '', subject: '', topic: '', diff: '', type: '', status: '', grade: '' }, studentId: null, parentId: null, resTab: 'attempts', stuSel: null, lms: null };
+const U = { role: 'teacher', view: 'dash', params: {}, filters: { range: 'all', subject: '', grade: '', course: '', asmt: '', topic: '', level: '', student: '' }, draft: null, step: 1, run: null, live: null, toast: '', bankSel: null, bankFilter: { q: '', subject: '', topic: '', diff: '', type: '', status: '', grade: '' }, studentId: null, parentId: null, resTab: 'attempts', stuSel: null, lms: null, stuBulk: [] };
 let anCache = new WeakMap();
 
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1686,10 +1686,19 @@ function reportDoc(att, aud) {
 /* ---------- Students ---------- */
 VIEWS.students = function () {
   const sel = U.stuSel && studentById(U.stuSel);
+  const canManage = U.lms && (U.lms.role === 'admin' || U.lms.role === 'teacher');
+  const bulk = U.stuBulk || [];
+  const bulkBar = canManage ? `<div class="row" style="margin-bottom:10px;align-items:center">
+    <button class="btn sm ghost" data-a="stuBulkAll">Select all</button>
+    <button class="btn sm ghost" data-a="stuBulkNone">Clear selection</button>
+    <span class="muted small">${bulk.length} selected</span>
+    ${bulk.length ? `<button class="btn sm danger" data-a="stuBulkDelete">${U.cfm === 'bulkdel' ? 'Click again to confirm delete' : `Delete ${bulk.length} selected`}</button>
+    <select data-a="stuBulkAssign" style="max-width:260px"><option value="">Assign selected to…</option>${S.assessments.map(a => `<option value="${a.id}">${esc(a.title || 'Untitled')}${a.status === 'draft' ? ' (draft)' : ''}</option>`).join('')}</select>` : ''}
+  </div>` : '';
   return `<div class="page-head"><div><h1>Students</h1><p>Registered students, accommodations and assessment history.</p></div>
-  ${U.lms && (U.lms.role === 'admin' || U.lms.role === 'teacher') ? '<button class="btn" data-a="importRoster">Import from LMS</button>' : ''}</div>
-  ${sel ? stuPanel(sel) : ''}<div class="card"><div class="tw"><table><thead><tr><th>Student</th><th>ID</th><th>Grade</th><th>Parent</th><th>Accommodations</th><th class="num">Attempts</th><th>Latest level</th></tr></thead><tbody>${S.students.map(s => { const at = S.attempts.filter(a => a.studentId === s.id && !a.preview).sort((a, b) => b.finished - a.finished), p = S.parents.find(x => x.id === s.parentId), ac = s.accom || {};
-    return `<tr class="click" data-a="stuOpen" data-id="${s.id}"><td><b>${esc(s.name)}</b></td><td class="mono small">${esc(s.id)}</td><td>${s.grade == null ? '—' : s.grade}</td><td>${p ? esc(p.name) : '—'}</td><td>${ac.extraPct ? '+' + ac.extraPct + '% time ' : ''}${ac.largeText ? 'Larger text' : ''}${!ac.extraPct && !ac.largeText ? '—' : ''}</td><td class="num">${at.length}</td><td>${at[0] ? lvPill(AN(at[0]).overallIdx) : '—'}</td></tr>`; }).join('')}</tbody></table></div></div>`;
+  ${canManage ? '<button class="btn" data-a="importRoster">Import from LMS</button>' : ''}</div>
+  ${sel ? stuPanel(sel) : ''}<div class="card">${bulkBar}<div class="tw"><table><thead><tr>${canManage ? '<th></th>' : ''}<th>Student</th><th>ID</th><th>Grade</th><th>Parent</th><th>Accommodations</th><th class="num">Attempts</th><th>Latest level</th></tr></thead><tbody>${S.students.map(s => { const at = S.attempts.filter(a => a.studentId === s.id && !a.preview).sort((a, b) => b.finished - a.finished), p = S.parents.find(x => x.id === s.parentId), ac = s.accom || {};
+    return `<tr class="click" data-a="stuOpen" data-id="${s.id}">${canManage ? `<td><input type="checkbox" data-a="stuBulkTgl" data-id="${s.id}" ${bulk.includes(s.id) ? 'checked' : ''}></td>` : ''}<td><b>${esc(s.name)}</b></td><td class="mono small">${esc(s.id)}</td><td>${s.grade == null ? '—' : s.grade}</td><td>${p ? esc(p.name) : '—'}</td><td>${ac.extraPct ? '+' + ac.extraPct + '% time ' : ''}${ac.largeText ? 'Larger text' : ''}${!ac.extraPct && !ac.largeText ? '—' : ''}</td><td class="num">${at.length}</td><td>${at[0] ? lvPill(AN(at[0]).overallIdx) : '—'}</td></tr>`; }).join('')}</tbody></table></div></div>`;
 };
 function stuPanel(s) {
   const at = S.attempts.filter(a => a.studentId === s.id && !a.preview).sort((a, b) => a.finished - b.finished), hist = {};
@@ -2275,6 +2284,42 @@ ACT.stuDelete = el => {
   anCache = new WeakMap();
   save(); render();
   toast('Removed from this app. Still active in the LMS? Import from LMS will bring them back - deactivate them there first if you don’t want that.');
+};
+
+/* bulk student actions (Students page toolbar) */
+ACT.stuBulkTgl = el => {
+  const id = el.dataset.id, i = (U.stuBulk || (U.stuBulk = [])).indexOf(id);
+  if (i >= 0) U.stuBulk.splice(i, 1); else U.stuBulk.push(id);
+  render();
+};
+ACT.stuBulkAll = () => { U.stuBulk = S.students.map(s => s.id); render(); };
+ACT.stuBulkNone = () => { U.stuBulk = []; U.cfm = null; render(); };
+// Same caveat as the single-student delete above: local only, never
+// touches the Google Sheet or the LMS itself.
+ACT.stuBulkDelete = () => {
+  if (!U.stuBulk || !U.stuBulk.length) return;
+  if (U.cfm !== 'bulkdel') { U.cfm = 'bulkdel'; render(); return; }
+  U.cfm = null;
+  const ids = new Set(U.stuBulk);
+  S.students = S.students.filter(s => !ids.has(s.id));
+  S.attempts = S.attempts.filter(a => !ids.has(a.studentId));
+  const n = U.stuBulk.length;
+  U.stuBulk = [];
+  anCache = new WeakMap();
+  save(); render();
+  toast(`Removed ${n} student(s) from this app.`);
+};
+ACT.stuBulkAssign = el => {
+  const asmtId = el.value;
+  if (!asmtId || !U.stuBulk || !U.stuBulk.length) { el.value = ''; return; }
+  const a = asmtById(asmtId);
+  if (!a) { el.value = ''; return; }
+  const set = new Set(a.assignedTo);
+  U.stuBulk.forEach(id => set.add(id));
+  a.assignedTo = [...set];
+  const n = U.stuBulk.length;
+  save(); render();
+  toast(`Assigned ${n} student(s) to "${a.title || 'Untitled'}".`);
 };
 
 /* student */
