@@ -23,8 +23,15 @@ class AssessmentSystemController extends Controller
         // this app's .cpanel.yml deploy script doesn't copy config/ to the
         // live server, so a config() value here would always be stale/null
         // in production regardless of what's set in .env.
-        $secret = env('ASSESSMENT_SYSTEM_AUTH_SECRET');
-        $url = env('ASSESSMENT_SYSTEM_URL', '/assessment-system/brainova-demo.html');
+        $secret = trim((string) env('ASSESSMENT_SYSTEM_AUTH_SECRET'));
+        // A blank or whitespace-only .env value (e.g. ASSESSMENT_SYSTEM_URL=" ")
+        // still counts as "set" to env() - trim it and treat blank the
+        // same as missing, so this always falls back to the real default
+        // instead of redirecting to a literal space.
+        $url = trim((string) env('ASSESSMENT_SYSTEM_URL'));
+        if ($url === '') {
+            $url = '/assessment-system/brainova-demo.html';
+        }
 
         if (! $secret || ! $url) {
             abort(500, 'The Assessment System is not configured yet. Set ASSESSMENT_SYSTEM_AUTH_SECRET in .env (see assessment-system/backend/DEPLOY.md).');
@@ -47,8 +54,8 @@ class AssessmentSystemController extends Controller
         // Not a secret - just points a brand-new device at the right
         // Sheet automatically. The shared write-access token itself is
         // never sent here; it stays only in the app's own Settings page.
-        $sheetsUrl = env('ASSESSMENT_SYSTEM_SHEETS_URL');
-        if ($sheetsUrl) {
+        $sheetsUrl = trim((string) env('ASSESSMENT_SYSTEM_SHEETS_URL'));
+        if ($sheetsUrl !== '') {
             $query['su'] = $sheetsUrl;
         }
 
