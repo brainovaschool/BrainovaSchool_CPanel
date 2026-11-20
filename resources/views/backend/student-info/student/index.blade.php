@@ -107,14 +107,13 @@
                                             <th style="width:36px"><input type="checkbox" id="bulkSelectAll"></th>
                                         @endif
                                         <th class="serial">{{ ___('common.sr_no') }}</th>
-                                        <th class="purchase">{{ ___('student_info.admission_no') }}</th>
                                         <th class="purchase">{{ ___('student_info.roll_no') }}</th>
-                                        <th class="purchase">{{ ___('student_info.Department') }}</th>
                                         <th class="purchase">{{ ___('student_info.name') }}</th>
+                                        <th class="purchase">Email</th>
+                                        <th class="purchase">Age</th>
                                         <th class="purchase">{{ ___('academic.class') }} ({{ ___('academic.section') }})</th>
-                                        <th class="purchase">{{ ___('student_info.guardian') }}</th>
-                                        <th class="purchase">{{ ___('common.gender') }}</th>
-                                        <th class="purchase">{{ ___('student_info.mobile') }}</th>
+                                        <th class="purchase">Parent Name</th>
+                                        <th class="purchase">Phone Number</th>
                                         @if (hasPermission('student_update') || hasPermission('student_delete'))
                                             <th class="action">{{ ___('common.action') }}</th>
                                         @endif
@@ -133,9 +132,7 @@
                                                 <td></td>
                                             @endif
                                             <td class="serial">{{ ++$key }}</td>
-                                            <td class="serial">{{ @$row->student->admission_no }}</td>
                                             <td class="serial">{{ @$row->roll }}</td>
-                                            <td class="serial">{{ @$row->student->department->name }}</td>
                                             <td>
                                                 <div class="">
                                                     <a href="{{ route('student.show', @$row->student->id) }}">
@@ -152,6 +149,8 @@
                                                     </a>
                                                 </div>
                                             </td>
+                                            <td>{{ @$row->student->user->email }}</td>
+                                            <td>{{ @$row->student->user->date_of_birth ? \Carbon\Carbon::parse(@$row->student->user->date_of_birth)->age : '' }}</td>
                                             <td>
                                                 {{ @$row->class->name }} ({{ @$row->section->name }})
                                                 @if (@$row->enrollment_type === 'secondary')
@@ -159,9 +158,7 @@
                                                 @endif
                                             </td>
                                             <td>{{ @$row->student->parent->guardian_name }}</td>
-
-                                            <td>{{ @$row->student->gender->name }}</td>
-                                            <td>{{ @$row->student->mobile }}</td>
+                                            <td>{{ @$row->student->parent->guardian_mobile }}</td>
 
                                             @if (hasPermission('student_update') || hasPermission('student_delete'))
                                                 <td class="action">
