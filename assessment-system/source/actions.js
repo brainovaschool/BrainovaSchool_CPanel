@@ -7,6 +7,7 @@ function setModel(el) {
   if (root === 'lms') { S.settings.lms[parts[1]] = v; save(); return; }
   if (root === 'lvl') { if (!U.lvDraft) U.lvDraft = JSON.parse(JSON.stringify(levels())); U.lvDraft[+parts[1]][parts[2]] = parts[2] === 'min' ? Number(v) : v; return; }
   if (root === 'stuAcc') { const s = studentById(U.stuSel); if (!s) return; s.accom = s.accom || { extraPct: 0, largeText: false }; if (parts[1] === 'extra') s.accom.extraPct = Number(v); else s.accom.largeText = !!v; save(); return; }
+  if (root === 'stuGrade') { const s = studentById(U.stuSel); if (!s) return; s.grade = v === '' ? null : Number(v); save(); return; }
   setPath(U, m, v);
 }
 const ACT = {};
@@ -262,6 +263,14 @@ function init() {
   if (window.BrainovaAPI) {
     window.BrainovaAPI.fetchSnapshot().then(remote => {
       if (!remote) return; // not configured yet, offline, or nothing newer - local stays authoritative
+      // The Sheet's own "settings" tab starts out empty until someone
+      // saves something there - an empty/missing settings on a fetch
+      // just means "nothing saved there yet", never "erase the local
+      // defaults", so this keeps whatever's already here instead of
+      // replacing it with nothing (ensureSample() below repairs it
+      // either way, but keeping real local values is still better than
+      // falling back to bare defaults every time).
+      if (!remote.settings) remote.settings = S.settings;
       S = remote; anCache = new WeakMap(); ensureSample(); if (!signedIn) setDefaultIds(); persistLocal(); render();
     }).catch(() => { /* stay on the local/cached copy */ });
   }

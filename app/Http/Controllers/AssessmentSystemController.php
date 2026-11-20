@@ -74,6 +74,68 @@ class AssessmentSystemController extends Controller
         return redirect($target.'?'.http_build_query($query));
     }
 
+    /** Admin-only upload form for replacing the live assessment HTML. */
+    public function deployForm(Request $request)
+    {
+        if (! in_array((int) $request->user()->role_id, [RoleEnum::SUPERADMIN, RoleEnum::ADMIN], true)) {
+            abort(403);
+        }
+
+        return view('backend.assessment-system.deploy');
+    }
+
+    /**
+     * Replaces the live assessment HTML with an uploaded file, no git or
+     * cPanel needed - this is the "do it myself if Claude isn't here"
+     * tool. It will only deploy a file that still contains the Google
+     * Sheets/LMS wiring (checked by looking for the two markers every
+     * integrated build has), unless the person explicitly confirms they
+     * want to deploy an unwired file anyway. The previously-live file is
+     * always kept as a timestamped backup first, so this is reversible.
+     */
+    public function deploy(Request $request)
+    {
+        if (! in_array((int) $request->user()->role_id, [RoleEnum::SUPERADMIN, RoleEnum::ADMIN], true)) {
+            abort(403);
+        }
+
+        $request->validate([
+            'html' => ['required', 'file', 'max:10240'], // 10MB
+        ]);
+
+        $file = $request->file('html');
+        $ext = strtolower($file->getClientOriginalExtension());
+
+        if (! in_array($ext, ['html', 'htm'], true)) {
+            return back()->with('deployError', 'That file is not an .html file.');
+        }
+
+        $content = file_get_contents($file->getRealPath());
+        $wired = str_contains($content, 'BrainovaAPI') && str_contains($content, 'applyLmsIdentity');
+
+        if (! $wired && ! $request->boolean('confirm')) {
+            return back()->with('deployWarning', 'This file does not look wired up to your Google Sheet or LMS login yet - it is missing the integration code a developer needs to add first. If you deploy it anyway, assessments taken through it will not save anywhere, and signing in through the LMS link will not work.')
+                ->with('pendingUpload', true);
+        }
+
+        $live = public_path('assessment-system/brainova-demo.html');
+        $backupDir = public_path('assessment-system/backups');
+
+        if (! is_dir($backupDir)) {
+            mkdir($backupDir, 0755, true);
+        }
+
+        if (file_exists($live)) {
+            copy($live, $backupDir.'/brainova-demo-'.now()->format('Y-m-d-His').'.html');
+        }
+
+        file_put_contents($live, $content);
+
+        return back()->with('deploySuccess', $wired
+            ? 'Deployed. The Assessment System is now running this file.'
+            : 'Deployed anyway, as confirmed. Remember: it will not save data or respond to LMS logins until the integration code is added.');
+    }
+
     /**
      * The admin/teacher's own "Import from LMS" button (Students page)
      * calls this to pull the current roster into the assessment app, so

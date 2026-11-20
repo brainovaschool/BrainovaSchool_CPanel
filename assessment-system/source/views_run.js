@@ -102,7 +102,7 @@ VIEWS.live = function () {
   return `<div class="page-head"><div><h1>Live class</h1><p>Show one question at a time on a shared screen. Students answer on their own devices. In this preview the class is simulated on one screen.</p></div></div>
   <div class="card"><div class="grid g2">${field('Assessment', `<select data-a="liveSel">${optList(live.map(x => ({ v: x.id, l: x.title })), a.id)}</select>`)}<div class="kpi"><b>${sumBy(DIFF_KEYS, k => a.dist[k] || 0)}</b><span>questions · ${a.perQuestionSec || 30}s each</span></div></div>
     <div class="row sp" style="margin-top:14px"><h3>Students joining (${ids.length})</h3><div class="row"><button class="btn sm ghost" data-a="liveAll">Select assigned</button><button class="btn sm ghost" data-a="liveNone">Clear</button></div></div>
-    <div class="grid g3" style="margin-top:8px">${S.students.filter(s => !a.grades.length || a.grades.includes(s.grade) || ids.includes(s.id)).map(s => `<label class="chk"><input type="checkbox" data-a="liveTgl" data-id="${s.id}" ${ids.includes(s.id) ? 'checked' : ''}><span>${esc(s.name)} <span class="muted small">Grade ${s.grade}</span></span></label>`).join('')}</div>
+    <div class="grid g3" style="margin-top:8px">${S.students.filter(s => !a.grades.length || a.grades.includes(s.grade) || ids.includes(s.id)).map(s => `<label class="chk"><input type="checkbox" data-a="liveTgl" data-id="${s.id}" ${ids.includes(s.id) ? 'checked' : ''}><span>${esc(s.name)} <span class="muted small">Grade ${s.grade == null ? '—' : s.grade}</span></span></label>`).join('')}</div>
     <div class="row" style="margin-top:16px"><button class="btn teal lg" data-a="liveStart" ${ids.length ? '' : 'disabled'}>Open lobby</button></div></div>`;
 };
 function liveStartSession(a, ids) {

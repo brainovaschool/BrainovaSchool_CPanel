@@ -1457,6 +1457,14 @@
                         </a>
                     </li>
                 @endif
+                @if (in_array((int) auth()->user()?->role_id, [1, 2]))
+                    <li class="sidebar-menu-item {{ set_menu(['assessment-system/deploy']) }}">
+                        <a href="{{ route('assessment-system.deploy-form') }}" class="parent-item-content">
+                            <i class="las la-upload"></i>
+                            <span class="on-half-expanded">Deploy Assessment HTML</span>
+                        </a>
+                    </li>
+                @endif
                 <!-- School Feature Access start: Brainova's own Super Admin only --
                      every tenant has its own role_id=1 "Super Admin", so this also
                      checks which tenant is actually logged in, not just the role. -->

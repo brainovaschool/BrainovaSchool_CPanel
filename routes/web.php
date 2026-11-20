@@ -60,6 +60,10 @@ Route::middleware(saasMiddleware())->group(function () {
     // Same-origin JSON the assessment app's own "Import from LMS" button
     // calls (see source/actions.js's ACT.importRoster).
     Route::middleware(['auth.routes'])->get('/assessment-system/roster', [AssessmentSystemController::class, 'roster'])->name('assessment-system.roster');
+    // Admin-only "replace the live HTML myself" tool - see
+    // AssessmentSystemController::deploy() for what it checks first.
+    Route::middleware(['auth.routes'])->get('/assessment-system/deploy', [AssessmentSystemController::class, 'deployForm'])->name('assessment-system.deploy-form');
+    Route::middleware(['auth.routes'])->post('/assessment-system/deploy', [AssessmentSystemController::class, 'deploy'])->name('assessment-system.deploy');
 
 
 

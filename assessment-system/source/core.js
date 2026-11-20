@@ -10,6 +10,15 @@ const pct = x => x == null ? '—' : Math.round(x * 100) + '%';
 const fmtDate = t => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 const fmtDur = ms => { const s = Math.round(ms / 1000), m = Math.floor(s / 60); return m ? `${m}m ${String(s % 60).padStart(2, '0')}s` : `${s}s`; };
 const clock = ms => { ms = Math.max(0, ms); const s = Math.ceil(ms / 1000); return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); };
+// The shape seedBase() gives settings on a brand-new install. Used to
+// repair S.settings if it's ever missing/null - e.g. the Sheet's own
+// "settings" tab was still empty the first time this browser fetched
+// a snapshot from it, which used to wipe out the local defaults
+// (including the proficiency levels every report depends on) with
+// nothing at all. See ensureSample() and init()'s remote-merge.
+function defaultSettings() {
+  return { levels: DEFAULT_LEVELS.map(l => ({ ...l })), school: 'Brainova', lms: { baseUrl: '', token: '', tenant: 'brainova', status: 'Not configured' }, sharing: JSON.parse(JSON.stringify(DEFAULT_SHARING)) };
+}
 const levels = () => S.settings.levels;
 const lvName = i => i == null ? 'Needs assessment' : levels()[i].name;
 const lvPill = i => i == null ? '<span class="lv lvn">Needs assessment</span>' : `<span class="lv lv${i}">${esc(levels()[i].name)}</span>`;
@@ -163,6 +172,8 @@ function addSampleCheck(D) {
 }
 function seed() { const d = seedBase(); d.settings.sharing = JSON.parse(JSON.stringify(DEFAULT_SHARING)); addSampleCheck(d); return d; }
 function ensureSample() {
+  if (!S.settings) S.settings = defaultSettings();
+  if (!S.settings.levels || !S.settings.levels.length) S.settings.levels = DEFAULT_LEVELS.map(l => ({ ...l }));
   if (!S.settings.sharing) S.settings.sharing = JSON.parse(JSON.stringify(DEFAULT_SHARING));
   if (!S.sampleCheckAdded && S.students.length) addSampleCheck(S);
   save();
