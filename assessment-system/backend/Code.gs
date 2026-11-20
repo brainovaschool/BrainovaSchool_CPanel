@@ -154,8 +154,47 @@ const SNAPSHOT_TABS_ = ['students', 'parents', 'assessments', 'bank', 'settings'
 function writeSnapshot_(payload) {
   SNAPSHOT_TABS_.forEach(tab => {
     const list = payload[tab];
-    if (Array.isArray(list)) list.forEach(rec => upsertRow_(tab, rec));
+    if (Array.isArray(list) && list.length) upsertManyRows_(tab, list);
   });
+}
+
+// Batched version of upsertRow_, for writing many records to one tab
+// in a single pass - upsertRow_ itself does 3-4 separate Sheet API
+// calls per record (read the header, look up the row, read the row,
+// write the row), so a snapshot with a few hundred records across all
+// tabs could add up to well over a thousand of those round trips and
+// run long enough to hit the script lock's 10s wait or simply time
+// out, leaving every change behind it stuck in the browser's retry
+// queue. This reads the whole tab once, applies every change in
+// memory, and writes it back in at most two range calls total,
+// regardless of how many records are in the batch.
+function upsertManyRows_(tabName, records) {
+  const sheet = getSheet_(tabName);
+  let idx = headerIndex_(sheet);
+  const keys = {};
+  records.forEach(r => Object.keys(flatten_(r)).forEach(k => { keys[k] = true; }));
+  if (ensureColumns_(sheet, idx, Object.keys(keys))) idx = headerIndex_(sheet);
+
+  const width = sheet.getLastColumn();
+  const lastRow = sheet.getLastRow();
+  const existing = lastRow >= 2 ? sheet.getRange(2, 1, lastRow - 1, width).getValues() : [];
+  const idCol = idx.id - 1;
+  const rowByKey = {};
+  existing.forEach((row, i) => { if (row[idCol] !== '') rowByKey[String(row[idCol])] = i; });
+
+  const toAppend = [];
+  records.forEach(rec => {
+    if (rec.id === undefined || rec.id === null || rec.id === '') return; // same guard as upsertRow_
+    const flat = flatten_(rec);
+    const key = String(flat.id);
+    const i = rowByKey.hasOwnProperty(key) ? rowByKey[key] : null;
+    const rowArr = i !== null ? existing[i] : new Array(width).fill('');
+    Object.keys(flat).forEach(k => { rowArr[idx[k] - 1] = flat[k] === null || flat[k] === undefined ? '' : flat[k]; });
+    if (i !== null) existing[i] = rowArr; else { rowByKey[key] = existing.length + toAppend.length; toAppend.push(rowArr); }
+  });
+
+  if (existing.length) sheet.getRange(2, 1, existing.length, width).setValues(existing);
+  if (toAppend.length) sheet.getRange(lastRow + 1, 1, toAppend.length, width).setValues(toAppend);
 }
 
 function writeAttempt_(att, an) {

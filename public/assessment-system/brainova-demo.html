@@ -833,12 +833,26 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
 
   // Apps Script's doPost doesn't need a CORS preflight as long as the
   // request body is sent as text/plain, so that's what every write uses.
+  // A hard timeout matters here specifically because a slow write (a
+  // big snapshot, or Apps Script itself being slow to respond) would
+  // otherwise leave flush() waiting forever on this one fetch, with
+  // flushing staying true and every later retry silently doing nothing -
+  // the queue would look permanently "stuck" with no error ever shown.
   async function post(body) {
-    const res = await fetch(cfg.url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(Object.assign({ token: cfg.token, authToken }, body))
-    });
+    const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), 25000) : 0;
+    let res;
+    try {
+      res = await fetch(cfg.url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(Object.assign({ token: cfg.token, authToken }, body)),
+        signal: ctrl ? ctrl.signal : undefined
+      });
+    } catch (e) {
+      if (e && e.name === 'AbortError') throw new Error('timed out waiting for a response');
+      throw e;
+    } finally { clearTimeout(timer); }
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data && data.ok === false) throw new Error(data.error || 'Request rejected');
