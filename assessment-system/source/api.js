@@ -57,6 +57,12 @@
     flush();
   }
 
+  // A stuck sync used to fail completely silently - the Settings page's
+  // "N change(s) waiting to sync" pill was the only clue something was
+  // wrong, with no way to see why. Surfacing the actual error (once per
+  // distinct message, not on every 8s retry) is what makes this
+  // diagnosable at all instead of a guessing game.
+  let lastSyncError = '';
   async function flush() {
     if (!isConfigured() || flushing || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
     flushing = true;
@@ -67,7 +73,13 @@
           await post({ action: 'write', kind: item.kind, payload: item.payload });
           queue.shift();
           persistQueue();
+          lastSyncError = '';
         } catch (e) {
+          const msg = (e && e.message) || 'unknown error';
+          if (msg !== lastSyncError) {
+            lastSyncError = msg;
+            if (typeof toast === 'function') toast('Could not save a change to the Sheet: ' + msg);
+          }
           scheduleRetry();
           break; // keep order: don't send item 2 before a stuck item 1 is confirmed
         }
