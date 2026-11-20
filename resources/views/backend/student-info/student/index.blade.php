@@ -67,6 +67,27 @@
                             </div>
 
                             <div class="single_large_selectBox">
+                                <select class="nice-select niceSelect bordered_style wide @error('department') is-invalid @enderror"
+                                    name="department">
+                                    <option value="">Select Department</option>
+                                    @foreach ($data['departments'] as $id => $name)
+                                        <option {{ old('department', @$data['request']->department) == $id ? 'selected' : '' }}
+                                            value="{{ $id }}">{{ $name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="single_large_selectBox">
+                                <input type="number" class="form-control ot-input" name="age" min="0"
+                                    placeholder="Age" value="{{ old('age', @$data['request']->age) }}">
+                            </div>
+
+                            <div class="single_large_selectBox">
+                                <input class="form-control ot-input" name="parent_name"
+                                    placeholder="Parent name" value="{{ old('parent_name', @$data['request']->parent_name) }}">
+                            </div>
+
+                            <div class="single_large_selectBox">
                                 <input class="form-control ot-input" name="keyword" list="datalistOptions"
                                     id="exampleDataList" placeholder="{{ ___('student_info.enter_keyword') }}"
                                     value="{{ old('keyword', @$data['request']->keyword) }}">
@@ -111,7 +132,9 @@
                                         <th class="purchase">{{ ___('student_info.name') }}</th>
                                         <th class="purchase">Email</th>
                                         <th class="purchase">Age</th>
-                                        <th class="purchase">{{ ___('academic.class') }} ({{ ___('academic.section') }})</th>
+                                        <th class="purchase">{{ ___('student_info.Department') }}</th>
+                                        <th class="purchase">{{ ___('academic.class') }}</th>
+                                        <th class="purchase">{{ ___('academic.section') }}</th>
                                         <th class="purchase">Parent Name</th>
                                         <th class="purchase">Phone Number</th>
                                         @if (hasPermission('student_update') || hasPermission('student_delete'))
@@ -151,12 +174,14 @@
                                             </td>
                                             <td>{{ @$row->student->user->email }}</td>
                                             <td>{{ @$row->student->user->date_of_birth ? \Carbon\Carbon::parse(@$row->student->user->date_of_birth)->age : '' }}</td>
+                                            <td>{{ @$row->student->department->name }}</td>
                                             <td>
-                                                {{ @$row->class->name }} ({{ @$row->section->name }})
+                                                {{ @$row->class->name }}
                                                 @if (@$row->enrollment_type === 'secondary')
                                                     <br><span class="badge-basic-success-text">Short course</span>
                                                 @endif
                                             </td>
+                                            <td>{{ @$row->section->name }}</td>
                                             <td>{{ @$row->student->parent->guardian_name }}</td>
                                             <td>{{ @$row->student->parent->guardian_mobile }}</td>
 

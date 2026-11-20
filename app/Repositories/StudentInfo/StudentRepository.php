@@ -155,6 +155,21 @@ class StudentRepository implements StudentInterface
                     ->orWhere('dob', 'LIKE', "%{$request->keyword}%");
             });
         }
+        if ($request->department != "") {
+            $students = $students->whereHas('student', function ($query) use ($request) {
+                $query->where('department_id', $request->department);
+            });
+        }
+        if ($request->age != "") {
+            $students = $students->whereHas('student.user', function ($query) use ($request) {
+                $query->whereRaw('TIMESTAMPDIFF(YEAR, date_of_birth, CURDATE()) = ?', [$request->age]);
+            });
+        }
+        if ($request->parent_name != "") {
+            $students = $students->whereHas('student.parent', function ($query) use ($request) {
+                $query->where('guardian_name', 'LIKE', "%{$request->parent_name}%");
+            });
+        }
 
         return $students->paginate(Settings::PAGINATE);
     }

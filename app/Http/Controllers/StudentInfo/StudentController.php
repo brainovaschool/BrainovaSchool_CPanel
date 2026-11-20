@@ -97,6 +97,7 @@ class StudentController extends Controller
             ? $this->classSetupRepo->assignedClassSetupsForTeacher($staffId)
             : $this->classRepo->assignedAll();
         $data['sections'] = [];
+        $data['departments'] = $this->departmentRepo->getAsOptions();
         $data['title']    = ___('student_info.student_list');
         $data['students'] = $staffId !== null
             ? $this->repo->getPaginateAllForTeacher($staffId)
@@ -114,6 +115,7 @@ class StudentController extends Controller
         $data['sections'] = $staffId !== null
             ? $this->classSetupRepo->getSectionsForTeacher($request->class, $staffId)
             : $this->classSetupRepo->getSections($request->class);
+        $data['departments'] = $this->departmentRepo->getAsOptions();
         $data['request']  = $request;
         $data['title']    = ___('student_info.student_list');
         $data['students'] = $this->repo->searchStudents($request, $staffId);
