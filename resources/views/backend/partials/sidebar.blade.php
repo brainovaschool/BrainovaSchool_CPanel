@@ -1449,7 +1449,7 @@
                     </ul>
                 </li>
                 @endif
-                @if (env('ASSESSMENT_SYSTEM_AUTH_SECRET') && in_array((int) auth()->user()?->role_id, [1, 2, 5]))
+                @if (env('ASSESSMENT_SYSTEM_AUTH_SECRET') && assessmentSystemRoleAllowed((int) auth()->user()?->role_id))
                     <li class="sidebar-menu-item">
                         <a href="{{ route('assessment-system.launch') }}" target="_blank" rel="noopener" class="parent-item-content">
                             <i class="las la-clipboard-check"></i>
@@ -1462,6 +1462,12 @@
                         <a href="{{ route('assessment-system.deploy-form') }}" class="parent-item-content">
                             <i class="las la-upload"></i>
                             <span class="on-half-expanded">Deploy Assessment HTML</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-menu-item {{ set_menu(['assessment-system/access']) }}">
+                        <a href="{{ route('assessment-system.access-form') }}" class="parent-item-content">
+                            <i class="las la-user-shield"></i>
+                            <span class="on-half-expanded">Assessment Staff Access</span>
                         </a>
                     </li>
                 @endif

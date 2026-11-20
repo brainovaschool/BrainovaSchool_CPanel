@@ -18,6 +18,7 @@ class FeatureAccess extends \App\Models\BaseModel
         'avatar'     => 'Avatar',
         'island'     => 'Learning Island',
         'ai_helper'  => 'AI Helper',
+        'assessment' => 'Assessment System',
     ];
 
     public static function isVisibleFor(string $featureKey, int $studentId): bool

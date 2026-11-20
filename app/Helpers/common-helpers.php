@@ -334,6 +334,37 @@ if (!function_exists('hasPermission')) {
     }
 }
 
+if (!function_exists('assessmentSystemAllowedRoleIds')) {
+    /** Which staff roles (besides Superadmin/Admin, who always get in)
+     *  may open the Assessment System - a dedicated checklist
+     *  (Assessment System -> Staff Access) rather than a hardcoded
+     *  role_id list, since "staff" here isn't just Teacher - any custom
+     *  role (Coordinator, HR, etc.) can be granted or denied the same
+     *  way. Defaults to Teacher only until an admin explicitly saves
+     *  this setting, matching how it behaved before this existed. */
+    function assessmentSystemAllowedRoleIds(): array
+    {
+        $setting = Setting::where('name', 'assessment_system_allowed_roles')->first();
+        if (!$setting) {
+            return [5]; // RoleEnum::TEACHER
+        }
+        return array_map('intval', (array) $setting->value);
+    }
+}
+
+if (!function_exists('assessmentSystemRoleAllowed')) {
+    function assessmentSystemRoleAllowed(?int $roleId): bool
+    {
+        if ($roleId === null) {
+            return false;
+        }
+        if (in_array($roleId, [1, 2], true)) {
+            return true; // Superadmin/Admin
+        }
+        return in_array($roleId, assessmentSystemAllowedRoleIds(), true);
+    }
+}
+
 if (!function_exists('isTeachingStaff')) {
     /** The logged-in user has a Staff record whose role carries
      *  class_content_create - the same "is a teacher" signal used

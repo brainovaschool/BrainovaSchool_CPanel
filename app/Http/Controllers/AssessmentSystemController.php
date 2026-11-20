@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\RoleEnum;
+use App\Models\LearningEngine\FeatureAccess;
+use App\Models\Role;
+use App\Models\Setting;
 use App\Models\StudentInfo\ParentGuardian;
 use App\Models\StudentInfo\Student;
 use Illuminate\Http\Request;
@@ -213,38 +216,86 @@ class AssessmentSystemController extends Controller
         return isset($m[0]) ? (int) $m[0] : null;
     }
 
+    /**
+     * Two separate gates, deliberately kept apart because they're
+     * decided by two different people for two different reasons:
+     *   - Students: the existing per-student "Feature Access" toggle
+     *     (App\Models\LearningEngine\FeatureAccess) - visible to nobody
+     *     until an admin either flips it on for everyone or checks
+     *     individual students on that existing screen.
+     *   - Any other staff role (Teacher, or a custom role like
+     *     Coordinator/HR): see assessmentSystemRoleAllowed() - a
+     *     dedicated small checklist (Assessment System -> Staff Access)
+     *     rather than this hardcoding which roles count as "staff".
+     * Admin/Superadmin always get in; parents follow their child's own
+     * link into the tool and aren't separately gated here.
+     */
     private function claimsForUser($user): ?array
     {
-        switch ((int) $user->role_id) {
-            case RoleEnum::SUPERADMIN:
-            case RoleEnum::ADMIN:
-                return ['uid' => $user->id, 'role' => 'admin', 'name' => $user->name];
+        $roleId = (int) $user->role_id;
 
-            case RoleEnum::TEACHER:
-                return ['uid' => $user->id, 'role' => 'teacher', 'name' => $user->name];
-
-            case RoleEnum::STUDENT:
-                if (! $user->student) {
-                    return null;
-                }
-
-                return ['uid' => $user->student->id, 'role' => 'student', 'name' => $user->name];
-
-            case RoleEnum::GUARDIAN:
-                if (! $user->parent) {
-                    return null;
-                }
-
-                return [
-                    'uid' => $user->parent->id,
-                    'role' => 'parent',
-                    'name' => $user->name,
-                    'children' => $user->parent->children()->pluck('id')->values()->all(),
-                ];
-
-            default:
-                return null;
+        if (in_array($roleId, [RoleEnum::SUPERADMIN, RoleEnum::ADMIN], true)) {
+            return ['uid' => $user->id, 'role' => 'admin', 'name' => $user->name];
         }
+
+        if ($roleId === RoleEnum::STUDENT) {
+            if (! $user->student) {
+                return null;
+            }
+
+            if (! FeatureAccess::isVisibleFor('assessment', $user->student->id)) {
+                return null;
+            }
+
+            return ['uid' => $user->student->id, 'role' => 'student', 'name' => $user->name];
+        }
+
+        if ($roleId === RoleEnum::GUARDIAN) {
+            if (! $user->parent) {
+                return null;
+            }
+
+            return [
+                'uid' => $user->parent->id,
+                'role' => 'parent',
+                'name' => $user->name,
+                'children' => $user->parent->children()->pluck('id')->values()->all(),
+            ];
+        }
+
+        if (assessmentSystemRoleAllowed($roleId)) {
+            return ['uid' => $user->id, 'role' => 'teacher', 'name' => $user->name];
+        }
+
+        return null;
+    }
+
+    /** Admin-only checklist of which staff roles may open the Assessment System. */
+    public function accessForm(Request $request)
+    {
+        if (! in_array((int) $request->user()->role_id, [RoleEnum::SUPERADMIN, RoleEnum::ADMIN], true)) {
+            abort(403);
+        }
+
+        $roles = Role::active()
+            ->whereNotIn('id', [RoleEnum::SUPERADMIN, RoleEnum::ADMIN])
+            ->orderBy('name')
+            ->get();
+        $allowed = assessmentSystemAllowedRoleIds();
+
+        return view('backend.assessment-system.access', compact('roles', 'allowed'));
+    }
+
+    public function accessUpdate(Request $request)
+    {
+        if (! in_array((int) $request->user()->role_id, [RoleEnum::SUPERADMIN, RoleEnum::ADMIN], true)) {
+            abort(403);
+        }
+
+        $roleIds = array_map('intval', (array) $request->input('role_ids', []));
+        Setting::updateOrCreate(['name' => 'assessment_system_allowed_roles'], ['value' => $roleIds]);
+
+        return back()->with('deploySuccess', 'Updated which staff roles can open the Assessment System.');
     }
 
     private function base64UrlEncode(string $data): string

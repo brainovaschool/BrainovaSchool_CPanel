@@ -64,6 +64,11 @@ Route::middleware(saasMiddleware())->group(function () {
     // AssessmentSystemController::deploy() for what it checks first.
     Route::middleware(['auth.routes'])->get('/assessment-system/deploy', [AssessmentSystemController::class, 'deployForm'])->name('assessment-system.deploy-form');
     Route::middleware(['auth.routes'])->post('/assessment-system/deploy', [AssessmentSystemController::class, 'deploy'])->name('assessment-system.deploy');
+    // Admin-only checklist of which staff roles may see/open it -
+    // students are gated separately via the existing Student Feature
+    // Access screen (Website Setup -> Learning Engine).
+    Route::middleware(['auth.routes'])->get('/assessment-system/access', [AssessmentSystemController::class, 'accessForm'])->name('assessment-system.access-form');
+    Route::middleware(['auth.routes'])->post('/assessment-system/access', [AssessmentSystemController::class, 'accessUpdate'])->name('assessment-system.access-update');
 
 
 

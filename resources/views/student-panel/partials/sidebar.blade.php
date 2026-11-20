@@ -218,7 +218,7 @@
                         </a>
                     </li>
                 @endif
-                @if (env('ASSESSMENT_SYSTEM_AUTH_SECRET'))
+                @if (env('ASSESSMENT_SYSTEM_AUTH_SECRET') && auth()->user()->student && \App\Models\LearningEngine\FeatureAccess::isVisibleFor('assessment', auth()->user()->student->id))
                     <li class="sidebar-menu-item">
                         <a href="{{ route('assessment-system.launch') }}" target="_blank" rel="noopener" class="parent-item-content">
                             <i class="las la-clipboard-check"></i>
