@@ -410,6 +410,10 @@ function init() {
       // if this role is allowed to see it) directly onto that attempt
       // before sending it here, so att.pathways needs no extra handling.
       S = remote; anCache = new WeakMap(); ensureSample(); if (!signedIn) setDefaultIds(); persistLocal(); render();
+      // Reset the "what have I already sent" baseline to match what the
+      // Sheet just confirmed it has, so the next edit only resyncs what
+      // actually changes from here - not everything, just to catch up.
+      if (window.BrainovaAPI.markSynced) window.BrainovaAPI.markSynced(S);
     }).catch(() => { /* stay on the local/cached copy */ });
   }
 }

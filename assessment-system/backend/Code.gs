@@ -477,7 +477,7 @@ function doPost(e) {
   const lock = LockService.getScriptLock();
   let gotLock = false;
   try {
-    gotLock = lock.tryLock(10000);
+    gotLock = lock.tryLock(15000);
     if (!gotLock) return jsonOut_({ ok: false, error: 'busy, please retry' });
     if (body.action === 'write') { handleWrite_(body.kind, body.payload); return jsonOut_({ ok: true }); }
     return jsonOut_({ ok: false, error: 'unknown action' });

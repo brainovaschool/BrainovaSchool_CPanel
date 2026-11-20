@@ -11,6 +11,7 @@
 (function () {
   const CFG_KEY = 'brainova.apiconfig.v1';
   const QUEUE_KEY = 'brainova.outbox.v1';
+  const SENT_KEY = 'brainova.lastsent.v1';
   const SNAPSHOT_COLLECTIONS = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision', 'pathways'];
 
   let cfg = { url: '', token: '' };
@@ -25,10 +26,21 @@
   let queue = [];
   try { queue = JSON.parse(localStorage.getItem(QUEUE_KEY) || '[]'); } catch (e) { /* ignore */ }
 
+  // The JSON text of each collection as it stood the last time this
+  // browser successfully wrote it to the Sheet. scheduleSync() diffs
+  // against this so an edit to one setting doesn't drag all ~450
+  // question-bank rows (or the whole roster) along for the ride every
+  // time - before this, EVERY save() resynced EVERY collection in
+  // full, which made a routine snapshot write slow enough to risk
+  // tripping the script lock or the client's own timeout.
+  let lastSent = {};
+  try { lastSent = JSON.parse(localStorage.getItem(SENT_KEY) || '{}'); } catch (e) { /* ignore */ }
+
   let flushing = false, syncTimer = 0, retryTimer = 0;
 
   function isConfigured() { return !!cfg.url; }
   function persistQueue() { try { localStorage.setItem(QUEUE_KEY, JSON.stringify(queue)); } catch (e) { /* ignore */ } }
+  function persistSent() { try { localStorage.setItem(SENT_KEY, JSON.stringify(lastSent)); } catch (e) { /* ignore */ } }
 
   function configure(opts) {
     cfg = Object.assign({}, cfg, opts || {});
@@ -45,7 +57,7 @@
   // the queue would look permanently "stuck" with no error ever shown.
   async function post(body) {
     const ctrl = typeof AbortController !== 'undefined' ? new AbortController() : null;
-    const timer = ctrl ? setTimeout(() => ctrl.abort(), 25000) : 0;
+    const timer = ctrl ? setTimeout(() => ctrl.abort(), 30000) : 0;
     let res;
     try {
       res = await fetch(cfg.url, {
@@ -88,6 +100,13 @@
           queue.shift();
           persistQueue();
           lastSyncError_ = '';
+          // Record exactly what this item actually sent (not the current
+          // live S, which may have moved on already) as the new baseline,
+          // so the next scheduleSync() only resends what changed after this.
+          if (item.kind === 'snapshot' && item.payload) {
+            Object.keys(item.payload).forEach(k => { lastSent[k] = JSON.stringify(item.payload[k]); });
+            persistSent();
+          }
         } catch (e) {
           const msg = (e && e.message) || 'unknown error';
           if (msg !== lastSyncError_) {
@@ -114,11 +133,23 @@
   // Debounced: the "administrative" collections (not attempts - those
   // have their own immediate path below) resync a short idle moment
   // after the last change, so typing in a textarea doesn't fire one
-  // request per keystroke.
+  // request per keystroke. save() calls this on almost any edit
+  // anywhere in the app, with no idea which collection actually
+  // changed - so this only ever sends the collections whose content
+  // is actually different from what was last successfully written,
+  // instead of re-sending everything (including the ~450-row question
+  // bank) on every single edit.
   function scheduleSync(S) {
     if (!isConfigured()) return;
     clearTimeout(syncTimer);
-    syncTimer = setTimeout(() => { enqueue('snapshot', buildSnapshot(S)); }, 1000);
+    syncTimer = setTimeout(() => {
+      const full = buildSnapshot(S), changed = {};
+      Object.keys(full).forEach(k => {
+        const text = JSON.stringify(full[k]);
+        if (text !== lastSent[k]) changed[k] = full[k];
+      });
+      if (Object.keys(changed).length) enqueue('snapshot', changed);
+    }, 1000);
   }
 
   // Every collection becomes an array of {id, ...} records, even the two
@@ -158,6 +189,18 @@
     } catch (e) { return null; }
   }
 
+  // Called once after a fresh fetchSnapshot() replaces S wholesale (see
+  // init() in actions.js) - without this, the very next edit would see
+  // every collection as "changed" relative to this browser's old
+  // lastSent baseline and resend all of them once, even though nothing
+  // local actually changed, just to catch up with what the Sheet
+  // already has.
+  function markSynced(S) {
+    const full = buildSnapshot(S);
+    Object.keys(full).forEach(k => { lastSent[k] = JSON.stringify(full[k]); });
+    persistSent();
+  }
+
   function pendingCount() { return queue.length; }
   function getConfig() { return { url: cfg.url, token: cfg.token }; }
   function setAuthToken(t) { authToken = t || ''; }
@@ -169,5 +212,5 @@
 
   flush(); // in case a previous session left queued items waiting for a connection
 
-  window.BrainovaAPI = { configure, isConfigured, getConfig, setAuthToken, scheduleSync, saveAttempt, saveResponse, saveSelf, fetchSnapshot, pendingCount, lastSyncError, flush };
+  window.BrainovaAPI = { configure, isConfigured, getConfig, setAuthToken, scheduleSync, saveAttempt, saveResponse, saveSelf, fetchSnapshot, markSynced, pendingCount, lastSyncError, flush };
 })();
