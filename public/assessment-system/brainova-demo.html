@@ -871,7 +871,7 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
   // wrong, with no way to see why. Surfacing the actual error (once per
   // distinct message, not on every 8s retry) is what makes this
   // diagnosable at all instead of a guessing game.
-  let lastSyncError = '';
+  let lastSyncError_ = '';
   async function flush() {
     if (!isConfigured() || flushing || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
     flushing = true;
@@ -882,11 +882,11 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
           await post({ action: 'write', kind: item.kind, payload: item.payload });
           queue.shift();
           persistQueue();
-          lastSyncError = '';
+          lastSyncError_ = '';
         } catch (e) {
           const msg = (e && e.message) || 'unknown error';
-          if (msg !== lastSyncError) {
-            lastSyncError = msg;
+          if (msg !== lastSyncError_) {
+            lastSyncError_ = msg;
             if (typeof toast === 'function') toast('Could not save a change to the Sheet: ' + msg);
           }
           scheduleRetry();
@@ -955,10 +955,15 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
   function pendingCount() { return queue.length; }
   function getConfig() { return { url: cfg.url, token: cfg.token }; }
   function setAuthToken(t) { authToken = t || ''; }
+  // A toast flashes for ~3 seconds and is easy to miss if nobody's
+  // watching the screen right when a background retry fires - this lets
+  // Settings show the same message any time someone checks, not just
+  // the instant it happens.
+  function lastSyncError() { return lastSyncError_; }
 
   flush(); // in case a previous session left queued items waiting for a connection
 
-  window.BrainovaAPI = { configure, isConfigured, getConfig, setAuthToken, scheduleSync, saveAttempt, saveResponse, saveSelf, fetchSnapshot, pendingCount, flush };
+  window.BrainovaAPI = { configure, isConfigured, getConfig, setAuthToken, scheduleSync, saveAttempt, saveResponse, saveSelf, fetchSnapshot, pendingCount, lastSyncError, flush };
 })();
 
 /* ===================== LMS IDENTITY (signed login handoff) =====================
@@ -1964,7 +1969,7 @@ VIEWS.settings = function () {
   return `<div class="page-head"><div><h1>Settings</h1></div></div>
   <div class="card"><h2>Google Sheets backend</h2><p class="muted small" style="margin-bottom:10px">Connects this app's data to your Google Sheet. Create the Sheet and deploy the Apps Script first (see the setup guide), then put the same secret token in both places: the script's Project Settings &rarr; Script Properties on the Google side, and the field below here. The token stays only in this browser - it is never written into any file this app ships.</p>
     <div class="grid g2">${field('Web App URL', `<input type="url" id="gUrl" value="${esc(gcfg.url)}" placeholder="https://script.google.com/macros/s/.../exec">`)}${field('Shared token', `<input type="password" id="gTok" value="${esc(gcfg.token)}" autocomplete="off">`)}</div>
-    <div class="row" style="margin-top:12px"><button class="btn" data-a="gcfgSave">Save</button><button class="btn ghost" data-a="gcfgTest">Test connection</button><span class="pill ${gcfg.url ? 'ok' : ''}">${gcfg.url ? 'Configured' : 'Not configured - data stays in this browser only'}</span>${window.BrainovaAPI && window.BrainovaAPI.pendingCount() ? `<span class="pill warn">${window.BrainovaAPI.pendingCount()} change(s) waiting to sync</span>` : ''}</div></div>
+    <div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="btn" data-a="gcfgSave">Save</button><button class="btn ghost" data-a="gcfgTest">Test connection</button><span class="pill ${gcfg.url ? 'ok' : ''}">${gcfg.url ? 'Configured' : 'Not configured - data stays in this browser only'}</span>${window.BrainovaAPI && window.BrainovaAPI.pendingCount() ? `<span class="pill warn">${window.BrainovaAPI.pendingCount()} change(s) waiting to sync</span>` : ''}${window.BrainovaAPI && window.BrainovaAPI.lastSyncError && window.BrainovaAPI.lastSyncError() ? `<span class="pill bad">Last error: ${esc(window.BrainovaAPI.lastSyncError())}</span>` : ''}</div></div>
   <div class="card"><h2>Proficiency levels</h2><p class="muted small" style="margin-bottom:10px">Rename the levels and set where each begins on the ability scale (about −2 to +2). Higher means stronger.</p><div class="grid g3">${(U.lvDraft || levels()).map((l, i) => `<div class="sub stack"><span class="lv lv${i}" style="align-self:flex-start">Level ${i + 1}</span>${field('Name', inp('lvl.' + i + '.name', l.name))}${i ? field('Starts at', inp('lvl.' + i + '.min', l.min, 'number', 'step="0.05"')) : '<span class="muted small">Starts at the bottom of the scale</span>'}</div>`).join('')}</div>
     ${U.lvErr ? `<div class="banner bad" style="margin-top:10px">${esc(U.lvErr)}</div>` : ''}<div class="row" style="margin-top:12px"><button class="btn" data-a="lvSave">Apply levels</button><button class="btn ghost" data-a="lvReset">Restore defaults</button></div></div>
   <div class="card"><h2>Report sharing</h2><p class="muted small" style="margin-bottom:10px">Choose which details each audience receives in reports and exports. The administrator version always includes everything.</p>${sharingTable(true)}

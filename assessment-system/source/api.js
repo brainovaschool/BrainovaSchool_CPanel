@@ -76,7 +76,7 @@
   // wrong, with no way to see why. Surfacing the actual error (once per
   // distinct message, not on every 8s retry) is what makes this
   // diagnosable at all instead of a guessing game.
-  let lastSyncError = '';
+  let lastSyncError_ = '';
   async function flush() {
     if (!isConfigured() || flushing || (typeof navigator !== 'undefined' && navigator.onLine === false)) return;
     flushing = true;
@@ -87,11 +87,11 @@
           await post({ action: 'write', kind: item.kind, payload: item.payload });
           queue.shift();
           persistQueue();
-          lastSyncError = '';
+          lastSyncError_ = '';
         } catch (e) {
           const msg = (e && e.message) || 'unknown error';
-          if (msg !== lastSyncError) {
-            lastSyncError = msg;
+          if (msg !== lastSyncError_) {
+            lastSyncError_ = msg;
             if (typeof toast === 'function') toast('Could not save a change to the Sheet: ' + msg);
           }
           scheduleRetry();
@@ -160,8 +160,13 @@
   function pendingCount() { return queue.length; }
   function getConfig() { return { url: cfg.url, token: cfg.token }; }
   function setAuthToken(t) { authToken = t || ''; }
+  // A toast flashes for ~3 seconds and is easy to miss if nobody's
+  // watching the screen right when a background retry fires - this lets
+  // Settings show the same message any time someone checks, not just
+  // the instant it happens.
+  function lastSyncError() { return lastSyncError_; }
 
   flush(); // in case a previous session left queued items waiting for a connection
 
-  window.BrainovaAPI = { configure, isConfigured, getConfig, setAuthToken, scheduleSync, saveAttempt, saveResponse, saveSelf, fetchSnapshot, pendingCount, flush };
+  window.BrainovaAPI = { configure, isConfigured, getConfig, setAuthToken, scheduleSync, saveAttempt, saveResponse, saveSelf, fetchSnapshot, pendingCount, lastSyncError, flush };
 })();
