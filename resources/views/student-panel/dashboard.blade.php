@@ -143,6 +143,24 @@
                             </div>
                         </div>
                     @endif
+                    @if (!empty($data['assessment_report']) && dashboard_feature_enabled('student', 'assessment_result'))
+                        {{-- Latest released result from the separate Assessment &
+                             Placement System (Google Sheets-backed) - read-only here,
+                             taking/reviewing the assessment itself still happens in
+                             that tool, reached via the sidebar link. --}}
+                        <div class="bn-dv2-pill-row">
+                            <div class="bn-dv2-pill">
+                                <i class="fa-solid fa-clipboard-check"></i>
+                                <div>
+                                    <div class="v">{{ $data['assessment_report']['overallLabel'] ?? '—' }}</div>
+                                    <div class="k">{{ $data['assessment_report']['assessmentTitle'] ?? 'Latest assessment' }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        @if (!empty($data['assessment_report']['recommendation']))
+                            <p style="margin-top:8px;color:#6b7280;font-size:.875rem">{{ $data['assessment_report']['recommendation'] }}</p>
+                        @endif
+                    @endif
                 </div>
             </div>
         </div>

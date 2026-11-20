@@ -54,6 +54,7 @@ class DashboardController extends Controller
                 $data['reflection_today']   = $this->reflectionJournal->today($data['student']->id);
                 $data['avatar_profile']     = $this->avatar->getOrCreateProfile($data['student']->id);
                 $data['avatar_layers']      = $this->avatar->equippedLayers($data['student']->id);
+                $data['assessment_report']  = \App\Services\AssessmentReport::forStudent($data['student']->id);
             } catch (\Throwable $th) {
                 report($th);
             }
