@@ -333,6 +333,23 @@ ACT.liveTxtSend = () => { const L = U.live, v = document.getElementById('liveTxt
 
 /* init */
 function setDefaultIds() { const g5 = S.students.find(s => s.grade === 5) || S.students[0]; U.studentId = g5 && g5.id; U.parentId = S.parents[0] && S.parents[0].id; }
+// The admin-managed collections (students/parents/assessments/bank) sync
+// to the Sheet on a short debounce after every save() - if this page gets
+// reloaded (e.g. the user re-opens Assessment System from the LMS menu)
+// in that short window, the fetch below would otherwise return the
+// Sheet's still-older copy and silently wipe out whatever was added
+// locally seconds earlier (a freshly imported student, a new question,
+// a brand-new assessment) before it finished saving. Merging by id - the
+// Sheet's copy of anything it already has, plus anything only the local
+// copy knows about - means a record can never just disappear because of
+// that timing, no matter how slow or fast the sync turns out to be.
+function mergeById(localArr, remoteArr) {
+  if (!Array.isArray(remoteArr)) return Array.isArray(localArr) ? localArr : [];
+  if (!Array.isArray(localArr) || !localArr.length) return remoteArr;
+  const seen = new Set(remoteArr.map(r => r.id));
+  const localOnly = localArr.filter(r => !seen.has(r.id));
+  return localOnly.length ? remoteArr.concat(localOnly) : remoteArr;
+}
 function init() {
   S = load(); if (!S) { S = seed(); save(); } ensureSample();
   const signedIn = applyLmsIdentity(); // true when a real LMS login token took over role/identity
@@ -349,6 +366,7 @@ function init() {
       // either way, but keeping real local values is still better than
       // falling back to bare defaults every time).
       if (!remote.settings) remote.settings = S.settings;
+      ['students', 'parents', 'assessments', 'bank'].forEach(k => { remote[k] = mergeById(S[k], remote[k]); });
       S = remote; anCache = new WeakMap(); ensureSample(); if (!signedIn) setDefaultIds(); persistLocal(); render();
     }).catch(() => { /* stay on the local/cached copy */ });
   }

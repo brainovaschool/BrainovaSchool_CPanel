@@ -99,10 +99,19 @@ let toastTimer = 0;
 function toast(msg) { U.toast = msg; const el = document.getElementById('toast'); if (el) { el.textContent = msg; el.hidden = false; } clearTimeout(toastTimer); toastTimer = setTimeout(() => { U.toast = ''; const e = document.getElementById('toast'); if (e) e.hidden = true; }, 3200); }
 async function saveFile(name, data) {
   try {
-    const d = window.claude && await window.claude.use('downloads');
-    if (!d) { toast('Downloads are not available in this view. Open the page in the Claude app or browser to export.'); return; }
-    await d.save({ filename: name, data }); toast('Saved ' + name);
-  } catch (e) { if (e && e.code === 'declined') return; toast('Could not save the file' + (e && e.message ? ': ' + e.message : '')); }
+    const type = /\.json$/i.test(name) ? 'application/json'
+      : /\.csv$/i.test(name) ? 'text/csv'
+      : /\.html?$/i.test(name) ? 'text/html'
+      : /\.md$/i.test(name) ? 'text/markdown'
+      : 'text/plain';
+    const blob = new Blob([data], { type: type + ';charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; a.style.display = 'none';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast('Saved ' + name);
+  } catch (e) { toast('Could not save the file' + (e && e.message ? ': ' + e.message : '')); }
 }
 const csvCell = v => { v = v == null ? '' : String(v); return /[",\n\r]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
 const toCSV = rows => '﻿' + rows.map(r => r.map(csvCell).join(',')).join('\r\n');
