@@ -57,6 +57,9 @@ Route::middleware(saasMiddleware())->group(function () {
     // logged in here, admin/teacher/student/parent alike - see
     // AssessmentSystemController for the signed token this builds.
     Route::middleware(['auth.routes'])->get('/assessment-system/launch', [AssessmentSystemController::class, 'launch'])->name('assessment-system.launch');
+    // Same-origin JSON the assessment app's own "Import from LMS" button
+    // calls (see source/actions.js's ACT.importRoster).
+    Route::middleware(['auth.routes'])->get('/assessment-system/roster', [AssessmentSystemController::class, 'roster'])->name('assessment-system.roster');
 
 
 

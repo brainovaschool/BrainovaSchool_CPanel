@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Enums\RoleEnum;
+use App\Models\StudentInfo\ParentGuardian;
+use App\Models\StudentInfo\Student;
 use Illuminate\Http\Request;
 
 /**
@@ -70,6 +72,54 @@ class AssessmentSystemController extends Controller
             : $request->getSchemeAndHttpHost().'/'.ltrim($url, '/');
 
         return redirect($target.'?'.http_build_query($query));
+    }
+
+    /**
+     * The admin/teacher's own "Import from LMS" button (Students page)
+     * calls this to pull the current roster into the assessment app, so
+     * a student can be assigned an assessment without ever having to
+     * log into the tool themselves first. Same-origin JSON, no CORS -
+     * the assessment app is hosted on this app's own domain (Step 7),
+     * so a plain fetch() with the existing LMS session cookie is enough;
+     * nothing new needs opening up.
+     */
+    public function roster(Request $request)
+    {
+        $user = $request->user();
+
+        if (! in_array((int) $user->role_id, [RoleEnum::SUPERADMIN, RoleEnum::ADMIN, RoleEnum::TEACHER], true)) {
+            abort(403);
+        }
+
+        $students = Student::active()
+            ->with('session_class_student.class')
+            ->get()
+            ->map(function (Student $s) {
+                $className = optional(optional($s->session_class_student)->class)->name;
+                preg_match('/\d+/', (string) $className, $m);
+
+                return [
+                    'id' => $s->id,
+                    'name' => $s->full_name,
+                    'grade' => isset($m[0]) ? (int) $m[0] : null,
+                    'parentId' => $s->parent_guardian_id,
+                ];
+            })
+            ->values();
+
+        $parents = ParentGuardian::active()
+            ->with(['user', 'children'])
+            ->get()
+            ->map(function (ParentGuardian $p) {
+                return [
+                    'id' => $p->id,
+                    'name' => optional($p->user)->name ?: 'Parent',
+                    'childIds' => $p->children->pluck('id')->values()->all(),
+                ];
+            })
+            ->values();
+
+        return response()->json(['students' => $students, 'parents' => $parents]);
     }
 
     private function claimsForUser($user): ?array

@@ -204,6 +204,36 @@ ACT.restore = el => { const f = el.files[0]; if (!f) return; const r = new FileR
 ACT.resetSample = () => { if (U.cfm !== 'reset') { U.cfm = 'reset'; render(); return; } U.cfm = null; S = seed(); anCache = new WeakMap(); save(); U.studentId = S.students.find(s => s.grade === 5).id; U.parentId = S.parents[0].id; render(); toast('Sample data restored.'); };
 ACT.clearData = () => { if (U.cfm !== 'clear') { U.cfm = 'clear'; render(); return; } U.cfm = null; S.students = []; S.parents = []; S.assessments = []; S.attempts = []; S.supervision = {}; S.sample = false; anCache = new WeakMap(); save(); render(); toast('Sample students and results removed.'); };
 
+// Pulls the LMS's current roster in (same-origin, uses the browser's
+// existing LMS login - see AssessmentSystemController::roster()), and
+// upserts into S.students/S.parents by id so this can be clicked again
+// any time a class list changes, without ever creating a duplicate.
+ACT.importRoster = async () => {
+  toast('Importing from your LMS…'); render();
+  let data;
+  try {
+    const res = await fetch('/assessment-system/roster', { credentials: 'same-origin' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    data = await res.json();
+  } catch (e) {
+    toast('Could not reach the LMS roster. Make sure you opened this through the LMS, not as a local file.');
+    return;
+  }
+  let added = 0, updated = 0;
+  (data.students || []).forEach(r => {
+    const ex = S.students.find(s => s.id === r.id);
+    if (ex) { ex.name = r.name; if (r.grade != null) ex.grade = r.grade; if (r.parentId) ex.parentId = r.parentId; updated++; }
+    else { S.students.push({ id: r.id, name: r.name, grade: r.grade, parentId: r.parentId || null }); added++; }
+  });
+  (data.parents || []).forEach(r => {
+    const ex = S.parents.find(p => p.id === r.id);
+    if (ex) { ex.name = r.name; ex.childIds = r.childIds || ex.childIds; }
+    else S.parents.push({ id: r.id, name: r.name, childIds: r.childIds || [] });
+  });
+  save(); render();
+  toast(`Imported from your LMS: ${added} new, ${updated} updated.`);
+};
+
 /* live */
 ACT.liveSel = el => { U.liveSetup = { asmtId: el.value, ids: null }; render(); };
 const liveIds = () => { const ls = U.liveSetup || {}, a = asmtById(ls.asmtId) || S.assessments.find(x => x.mode === 'live'); return ls.ids || a.assignedTo.slice(); };

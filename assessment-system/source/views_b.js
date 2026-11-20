@@ -205,7 +205,8 @@ function reportDoc(att, aud) {
 /* ---------- Students ---------- */
 VIEWS.students = function () {
   const sel = U.stuSel && studentById(U.stuSel);
-  return `<div class="page-head"><div><h1>Students</h1><p>Registered students, accommodations and assessment history. In production these come from the Brainova LMS accounts.</p></div></div>
+  return `<div class="page-head"><div><h1>Students</h1><p>Registered students, accommodations and assessment history.</p></div>
+  ${U.lms && (U.lms.role === 'admin' || U.lms.role === 'teacher') ? '<button class="btn" data-a="importRoster">Import from LMS</button>' : ''}</div>
   ${sel ? stuPanel(sel) : ''}<div class="card"><div class="tw"><table><thead><tr><th>Student</th><th>ID</th><th>Grade</th><th>Parent</th><th>Accommodations</th><th class="num">Attempts</th><th>Latest level</th></tr></thead><tbody>${S.students.map(s => { const at = S.attempts.filter(a => a.studentId === s.id && !a.preview).sort((a, b) => b.finished - a.finished), p = S.parents.find(x => x.id === s.parentId), ac = s.accom || {};
     return `<tr class="click" data-a="stuOpen" data-id="${s.id}"><td><b>${esc(s.name)}</b></td><td class="mono small">${esc(s.id)}</td><td>${s.grade}</td><td>${p ? esc(p.name) : '—'}</td><td>${ac.extraPct ? '+' + ac.extraPct + '% time ' : ''}${ac.largeText ? 'Larger text' : ''}${!ac.extraPct && !ac.largeText ? '—' : ''}</td><td class="num">${at.length}</td><td>${at[0] ? lvPill(AN(at[0]).overallIdx) : '—'}</td></tr>`; }).join('')}</tbody></table></div></div>`;
 };

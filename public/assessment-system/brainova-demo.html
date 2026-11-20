@@ -1658,7 +1658,8 @@ function reportDoc(att, aud) {
 /* ---------- Students ---------- */
 VIEWS.students = function () {
   const sel = U.stuSel && studentById(U.stuSel);
-  return `<div class="page-head"><div><h1>Students</h1><p>Registered students, accommodations and assessment history. In production these come from the Brainova LMS accounts.</p></div></div>
+  return `<div class="page-head"><div><h1>Students</h1><p>Registered students, accommodations and assessment history.</p></div>
+  ${U.lms && (U.lms.role === 'admin' || U.lms.role === 'teacher') ? '<button class="btn" data-a="importRoster">Import from LMS</button>' : ''}</div>
   ${sel ? stuPanel(sel) : ''}<div class="card"><div class="tw"><table><thead><tr><th>Student</th><th>ID</th><th>Grade</th><th>Parent</th><th>Accommodations</th><th class="num">Attempts</th><th>Latest level</th></tr></thead><tbody>${S.students.map(s => { const at = S.attempts.filter(a => a.studentId === s.id && !a.preview).sort((a, b) => b.finished - a.finished), p = S.parents.find(x => x.id === s.parentId), ac = s.accom || {};
     return `<tr class="click" data-a="stuOpen" data-id="${s.id}"><td><b>${esc(s.name)}</b></td><td class="mono small">${esc(s.id)}</td><td>${s.grade}</td><td>${p ? esc(p.name) : '—'}</td><td>${ac.extraPct ? '+' + ac.extraPct + '% time ' : ''}${ac.largeText ? 'Larger text' : ''}${!ac.extraPct && !ac.largeText ? '—' : ''}</td><td class="num">${at.length}</td><td>${at[0] ? lvPill(AN(at[0]).overallIdx) : '—'}</td></tr>`; }).join('')}</tbody></table></div></div>`;
 };
@@ -2286,6 +2287,36 @@ ACT.backup = () => saveFile('brainova-backup.json', JSON.stringify(S));
 ACT.restore = el => { const f = el.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { try { const d = JSON.parse(r.result); if (d.v !== 1 || !Array.isArray(d.bank) || !Array.isArray(d.attempts)) throw 0; S = d; anCache = new WeakMap(); save(); render(); toast('Backup restored.'); } catch (e) { toast('That file is not a Brainova backup.'); } el.value = ''; }; r.readAsText(f); };
 ACT.resetSample = () => { if (U.cfm !== 'reset') { U.cfm = 'reset'; render(); return; } U.cfm = null; S = seed(); anCache = new WeakMap(); save(); U.studentId = S.students.find(s => s.grade === 5).id; U.parentId = S.parents[0].id; render(); toast('Sample data restored.'); };
 ACT.clearData = () => { if (U.cfm !== 'clear') { U.cfm = 'clear'; render(); return; } U.cfm = null; S.students = []; S.parents = []; S.assessments = []; S.attempts = []; S.supervision = {}; S.sample = false; anCache = new WeakMap(); save(); render(); toast('Sample students and results removed.'); };
+
+// Pulls the LMS's current roster in (same-origin, uses the browser's
+// existing LMS login - see AssessmentSystemController::roster()), and
+// upserts into S.students/S.parents by id so this can be clicked again
+// any time a class list changes, without ever creating a duplicate.
+ACT.importRoster = async () => {
+  toast('Importing from your LMS…'); render();
+  let data;
+  try {
+    const res = await fetch('/assessment-system/roster', { credentials: 'same-origin' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    data = await res.json();
+  } catch (e) {
+    toast('Could not reach the LMS roster. Make sure you opened this through the LMS, not as a local file.');
+    return;
+  }
+  let added = 0, updated = 0;
+  (data.students || []).forEach(r => {
+    const ex = S.students.find(s => s.id === r.id);
+    if (ex) { ex.name = r.name; if (r.grade != null) ex.grade = r.grade; if (r.parentId) ex.parentId = r.parentId; updated++; }
+    else { S.students.push({ id: r.id, name: r.name, grade: r.grade, parentId: r.parentId || null }); added++; }
+  });
+  (data.parents || []).forEach(r => {
+    const ex = S.parents.find(p => p.id === r.id);
+    if (ex) { ex.name = r.name; ex.childIds = r.childIds || ex.childIds; }
+    else S.parents.push({ id: r.id, name: r.name, childIds: r.childIds || [] });
+  });
+  save(); render();
+  toast(`Imported from your LMS: ${added} new, ${updated} updated.`);
+};
 
 /* live */
 ACT.liveSel = el => { U.liveSetup = { asmtId: el.value, ids: null }; render(); };
