@@ -11,7 +11,7 @@
 (function () {
   const CFG_KEY = 'brainova.apiconfig.v1';
   const QUEUE_KEY = 'brainova.outbox.v1';
-  const SNAPSHOT_COLLECTIONS = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision'];
+  const SNAPSHOT_COLLECTIONS = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision', 'pathways'];
 
   let cfg = { url: '', token: '' };
   try { Object.assign(cfg, JSON.parse(localStorage.getItem(CFG_KEY) || '{}')); } catch (e) { /* ignore */ }
@@ -128,7 +128,8 @@
     const out = {};
     SNAPSHOT_COLLECTIONS.forEach(k => {
       const v = S[k];
-      if (Array.isArray(v)) out[k] = v;
+      if (k === 'pathways') out[k] = (S.attempts || []).filter(a => a.pathways).map(a => ({ id: a.id, json: JSON.stringify(a.pathways) }));
+      else if (Array.isArray(v)) out[k] = v;
       else if (k === 'settings' && v !== undefined) out[k] = [{ id: 'main', json: JSON.stringify(v) }];
       else if (k === 'supervision' && v && typeof v === 'object') out[k] = Object.keys(v).map(id => Object.assign({ id }, v[id]));
     });

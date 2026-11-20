@@ -28,6 +28,7 @@ function startRun(a, studentId, preview) {
   U.run = { a, st, preview: !!preview, seed, R, ad, items, resp: items.map(() => ({ raw: null, ms: 0, visits: 0, changed: 0, timedOut: false })), idx: 0, started: now, deadline: a.durationMin > 0 ? now + a.durationMin * 60000 * ex : null, perQ, qStart: now, phase: 'q', events: [], doneResp: [], large: ac.largeText, att: null, attId: uid('att') };
   U.run.resp[0].visits = 1;
   if (a.fullscreen) { try { const p = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
+  voiceStart();
   render(); scrollTop();
 }
 function runLog(type, note) { if (U.run && U.run.phase === 'q') U.run.events.push({ t: Date.now(), type, note }); }
@@ -52,7 +53,7 @@ function runView() {
   return `<div class="runner-wrap ${r.large ? 'large' : ''}">${head}<div class="run-body"><div><div class="row sp small muted" style="margin-bottom:6px"><span>Question ${r.idx + 1}${ad ? '' : ' of ' + n}${q._probe ? '' : ''}</span><span>${DIFF[q.diff] ? '' : ''}${esc(q.topic)}</span></div><div class="progress" role="progressbar" aria-valuenow="${Math.round(pctDone)}" aria-valuemin="0" aria-valuemax="100" aria-label="Progress"><i style="width:${pctDone}%"></i></div></div>
     <div class="qcard">${qBody(q, raw)}${answerInput(q, raw)}</div>
     ${free ? `<div class="dots" aria-label="Question navigator">${r.items.map((it, i) => `<button class="${isBlank(r.resp[i].raw) ? '' : 'ans'} ${i === r.idx ? 'cur' : ''}" data-a="jump" data-i="${i}" aria-label="Go to question ${i + 1}">${i + 1}</button>`).join('')}</div>` : ''}
-    <div class="row sp"><div class="row">${free && r.idx > 0 ? '<button class="btn ghost" data-a="prevQ">Back</button>' : ''}${a.allowSkip ? '<button class="btn ghost" data-a="skipQ">Skip</button>' : ''}</div><button class="btn lg" data-a="nextQ">${last ? 'Finish' : 'Next'}</button></div></div></div>`;
+    <div class="row sp"><div class="row">${free && r.idx > 0 ? '<button class="btn ghost" data-a="prevQ">Back</button>' : ''}${a.allowSkip ? '<button class="btn ghost" data-a="skipQ">Skip</button>' : ''}${voiceBtns()}</div><button class="btn lg" data-a="nextQ">${last ? 'Finish' : 'Next'}</button></div></div></div>`;
 }
 function runTick() {
   const r = U.run; if (!r || r.phase !== 'q') return;
@@ -74,7 +75,7 @@ function advance(opt = {}) {
     else r.idx++;
     if (r.phase === 'q') r.resp[r.idx].visits++;
   }
-  r.qStart = Date.now(); render(); scrollTop();
+  r.qStart = Date.now(); voiceNext(); render(); scrollTop();
 }
 function submitRun(forced) {
   const r = U.run; if (!r || r.submitting) return; r.submitting = true; if (r.phase === 'q') flushTime();
@@ -86,12 +87,12 @@ function submitRun(forced) {
   att.attemptNo = attemptsOf(a.id, st.id).length + 1; att.application = a.application; att.supervision = a.parentSupervision ? (supOf(a.id, st.id) ? { confirmed: true, by: supOf(a.id, st.id).by, at: supOf(a.id, st.id).at } : null) : null;
   att.released = a.resultVis === 'instant'; att.review = { notes: '', override: '', finalized: false };
   if (r.preview) { U.previewAtt = att; att.released = true; } else { S.attempts.push(att); save(); if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att, AN(att)); }
-  r.att = att; r.phase = 'done'; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } render(); scrollTop();
+  r.att = att; r.phase = 'done'; voiceFinish(); setTimeout(rewardFx, 120); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } render(); scrollTop();
 }
 function doneView() {
   const r = U.run, att = r.att;
-  return `<div class="runner-wrap"><div class="run-head"><b>${esc(r.a.title)}</b></div><div class="run-body"><div class="qcard" style="text-align:center;padding:36px 22px"><div style="font-size:44px;color:var(--ok)" aria-hidden="true">✓</div><h1 style="margin:8px 0">Submitted</h1><p class="muted">${esc(r.st.name.split(' ')[0])}, your answers were saved. You answered ${att.responses.filter(x => x.status !== 'unanswered' && x.status !== 'skipped').length} of ${att.responses.length} questions in ${fmtDur(att.durationMs)}.</p>
-    ${att.released ? '<p style="margin-top:10px">Your results are ready.</p>' : '<p style="margin-top:10px">Your teacher will share your results.</p>'}<div class="row" style="justify-content:center;margin-top:18px">${att.released ? `<button class="btn teal" data-a="finishRun" data-view="report">View results</button>` : ''}<button class="btn ghost" data-a="finishRun" data-view="home">${r.preview ? 'Back to the builder' : 'Done'}</button></div></div></div></div>`;
+  return `<div class="runner-wrap"><div class="run-head"><b>${esc(r.a.title)}</b></div><div class="run-body"><div class="qcard" style="text-align:center;padding:36px 22px">${rewardBlock(att)}<h1 style="margin:8px 0">Submitted</h1><p class="muted">${esc(r.st.name.split(' ')[0])}, your answers were saved. You answered ${att.responses.filter(x => x.status !== 'unanswered' && x.status !== 'skipped').length} of ${att.responses.length} questions in ${fmtDur(att.durationMs)}.</p>
+    ${att.released ? '<p style="margin-top:10px">Your results are ready.</p>' : '<p style="margin-top:10px">Your teacher will assess your test and give you insights on how you can cover your weak areas.</p>'}<div class="row" style="justify-content:center;margin-top:18px">${att.released ? `<button class="btn teal" data-a="finishRun" data-view="report">View results</button>` : ''}<button class="btn ghost" data-a="finishRun" data-view="home">${r.preview ? 'Back to the builder' : 'Done'}</button></div></div></div></div>`;
 }
 
 /* ===================== TEACHER-LED LIVE CLASS ===================== */

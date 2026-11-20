@@ -149,7 +149,7 @@ function readAll_(tabName) {
 // (students, parents, assessments, bank, plus settings/supervision
 // already turned into that shape by the front end before sending).
 // Add a name here - nothing else - to start syncing a new collection.
-const SNAPSHOT_TABS_ = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision'];
+const SNAPSHOT_TABS_ = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision', 'pathways'];
 
 function writeSnapshot_(payload) {
   SNAPSHOT_TABS_.forEach(tab => {
@@ -316,6 +316,13 @@ function buildBootstrapState_(claims) {
   const supervision = {};
   list('supervision').forEach(r => { const rec = Object.assign({}, r); const id = rec.id; delete rec.id; supervision[id] = rec; });
 
+  // One JSON-blob row per attempt (same trick as the settings tab's
+  // single row) - keyed here by attempt id so it can be attached
+  // straight onto the matching attempt below, instead of travelling as
+  // its own top-level collection the front end would have to re-join.
+  const pathwaysById_ = {};
+  list('pathways').forEach(r => { pathwaysById_[r.id] = safeParse_(r.json); });
+
   let students = list('students'), parents = list('parents'), attempts = list('attempts');
 
   if (claims && claims.role === 'student') {
@@ -328,6 +335,19 @@ function buildBootstrapState_(claims) {
     students = students.filter(s => idIn_(kids, s.id));
     parents = parents.filter(p => idEq_(p.id, claims.uid));
   }
+
+  // Learning pathways: teachers/admins (claims === null, or an explicit
+  // teacher/admin login) see whatever has been generated, draft or not.
+  // A parent only ever sees one once it has been shared - never while
+  // it is still a draft or waiting on the administrator. A student
+  // never sees their own pathway at all, however far along it is.
+  attempts.forEach(a => {
+    const pw = pathwaysById_[a.id];
+    if (!pw) return;
+    if (claims && claims.role === 'student') return;
+    if (claims && claims.role === 'parent' && pw.status !== 'shared') return;
+    a.pathways = pw;
+  });
 
   return {
     v: 1, sample: false,

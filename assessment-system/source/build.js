@@ -1,5 +1,5 @@
 const fs=require('fs');
-const js=['engine.js','api.js','identity.js','core.js','views_a.js','views_b.js','views_c.js','views_run.js','actions.js'].map(f=>fs.readFileSync(f,'utf8').replace(/^if \(typeof module[^\n]*\n?/m,'')).join('\n');
+const js=['engine.js','api.js','identity.js','core.js','views_a.js','views_b.js','views_c.js','views_run.js','pathways.js','voice.js','rewards.js','actions.js'].map(f=>fs.readFileSync(f,'utf8').replace(/^if \(typeof module[^\n]*\n?/m,'')).join('\n');
 const css=fs.readFileSync('style.css','utf8');
 // The page had no <!DOCTYPE>/<html>/<head> at all before, which left a
 // browser guessing at its character encoding whenever the server's own
@@ -14,6 +14,7 @@ const html=`<!DOCTYPE html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Brainova Intelligent Assessment &amp; Placement System</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style id="appcss">
 ${css}
 </style>

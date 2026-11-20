@@ -1,13 +1,14 @@
 /* ===================== BRAINOVA ENGINE (pure logic, no DOM) ===================== */
-const DIFF = { S: { name: 'Strengthen', b: -1.1 }, H: { name: 'Hard', b: 0 }, E: { name: 'Extend', b: 1.1 } };
-const DIFF_KEYS = ['S', 'H', 'E'];
+const DIFF = { S: { name: 'Strengthen', b: -1.1 }, H: { name: 'Hard', b: 0 }, E: { name: 'Extend', b: 1.1 }, C: { name: 'Challenging', b: 1.7 }, M: { name: 'Mastery', b: 2.3 }, X: { name: 'Exceptional', b: 2.9 } };
+const DIFF_KEYS = ['S', 'H', 'E', 'C', 'M', 'X'];
 const ERR = {
   calc: 'Calculation slip', concept: 'Conceptual misunderstanding', misread: 'Misread the question',
   formula: 'Incorrect formula or method', foundation: 'Weak foundation', incomplete: 'Incomplete working'
 };
 const DEFAULT_LEVELS = [
   { name: 'Foundation', min: -99 }, { name: 'Developing', min: -1.0 }, { name: 'Intermediate', min: -0.35 },
-  { name: 'Proficient', min: 0.35 }, { name: 'Advanced', min: 1.0 }
+  { name: 'Proficient', min: 0.35 }, { name: 'Advanced', min: 1.0 },
+  { name: 'Challenging', min: 1.5 }, { name: 'Mastery', min: 2.0 }, { name: 'Exceptional', min: 2.5 }
 ];
 const PREREQ = {
   Subtraction: 'Addition', Multiplication: 'Addition', Division: 'Multiplication', Fractions: 'Division',
@@ -152,9 +153,135 @@ function mkOptions(R, correct, wrongs) {
 function bFor(id, diff) { return +(DIFF[diff].b + ((hashStr(id) % 61) - 30) / 100).toFixed(2); }
 function cFor(type) { return type === 'mcq' ? 0.22 : type === 'tf' ? 0.45 : 0.02; }
 
+/* ---------- stretch tiers: Challenging (C), Mastery (M), Exceptional (X) ----------
+   C = every question is a word problem (one idea, real context)
+   M = two concepts in one question: find one thing first, then use it
+   X = long, multi-logic questions with common traps, a little above the usual grade level */
+const money = n => 'Rs ' + Number(n).toLocaleString('en-US');
+const NAMES = ['Ayesha', 'Hamza', 'Fatima', 'Ali', 'Sara', 'Bilal', 'Hina', 'Usman', 'Zainab', 'Omar'];
+Object.assign(GEN.Addition, {
+  C: R => { const n = R.pick(NAMES), a = R.int(1245, 4890), b = R.int(1378, 4990), c = a + b;
+    return { type: 'mcq', text: `${n} walked ${a.toLocaleString('en-US')} steps in the morning and ${b.toLocaleString('en-US')} steps in the evening. How many steps did ${n} walk in all?`, correct: c, obj: 'Solve a one-step addition word problem with four-digit numbers', time: 60, expl: `${a} + ${b} = ${c}.`,
+      wrongs: [[addNoCarry(a, b), 'concept', 'Forgot to regroup (carry)'], [c - 100, 'calc', 'Carry slip in the hundreds'], [c + 1000, 'calc', 'Carried an extra thousand'], [Math.abs(a - b), 'concept', 'Subtracted instead of adding']] }; },
+  M: R => { const a = R.int(145, 480), k = R.int(3, 5), c = a + k * a;
+    return { type: 'num', text: `A shop sold ${a} pens on Monday. On Tuesday it sold ${k} times as many pens as on Monday. How many pens did the shop sell on the two days together?`, correct: c, obj: 'Combine a multiplication step and an addition step', time: 90, expl: `Tuesday: ${k} × ${a} = ${k * a}. Together: ${a} + ${k * a} = ${c}.`,
+      wrongs: [[k * a, 'incomplete', 'Found Tuesday only'], [a + k, 'misread', 'Added the number of times instead of multiplying'], [a * (k + 1) + a, 'concept', 'Counted Monday twice'], [a * k - a, 'concept', 'Subtracted instead of adding']] }; },
+  X: R => { const A = R.int(12, 30) * 50, d = R.int(10, 30) * 10, mv = R.int(5, 15) * 10, B = A - d, C = 2 * B, c = A + C;
+    return { type: 'num', text: `A school has three libraries. Library A has ${A.toLocaleString('en-US')} books. Library B has ${d} fewer books than Library A. Library C has twice as many books as Library B. Then ${mv} books are moved from Library C to Library A. How many books are there in Library A and Library C together now?`, correct: c, obj: 'Solve a long multi-step problem and notice that moving items does not change a total', time: 150,
+      expl: `B = ${A} − ${d} = ${B}. C = 2 × ${B} = ${C}. Moving books between A and C does not change their total: ${A} + ${C} = ${c}.`,
+      wrongs: [[c + mv, 'concept', 'Added the moved books a second time'], [c - mv, 'concept', 'Subtracted the moved books even though they only changed library'], [A + B + C, 'misread', 'Included Library B'], [A + B, 'misread', 'Used Library B instead of Library C']] }; }
+});
+Object.assign(GEN.Subtraction, {
+  C: R => { const T = R.int(4, 9) * 1000, u = R.int(1120, 3890), c = T - u;
+    return { type: 'mcq', text: `A water tank holds ${T.toLocaleString('en-US')} litres when full. ${u.toLocaleString('en-US')} litres have been used. How many litres are left in the tank?`, correct: c, obj: 'Solve a one-step subtraction word problem with four-digit numbers', time: 60, expl: `${T} − ${u} = ${c}.`,
+      wrongs: [[absDiffDigits(T, u), 'concept', 'Subtracted the smaller digit from the larger in each column'], [c + 100, 'calc', 'Borrowing slip'], [c - 100, 'calc', 'Borrowing slip'], [T + u, 'concept', 'Added instead of subtracting']] }; },
+  M: R => { const n = R.pick(NAMES), M0 = R.int(40, 90) * 100, bag = R.int(8, 20) * 100, less = R.int(2, 5) * 100, shoes = bag - less, c = M0 - bag - shoes;
+    return { type: 'num', text: `${n} had ${money(M0)}. ${n} bought a bag for ${money(bag)} and shoes that cost ${money(less)} less than the bag. How much money does ${n} have left?`, correct: c, obj: 'Find an unknown price first, then subtract both purchases', time: 100, expl: `Shoes: ${bag} − ${less} = ${shoes}. Left: ${M0} − ${bag} − ${shoes} = ${c}.`,
+      wrongs: [[M0 - bag - less, 'misread', `Used ${money(less)} as the price of the shoes`], [M0 - bag, 'incomplete', 'Forgot the shoes'], [M0 - 2 * bag, 'concept', 'Assumed the shoes cost the same as the bag'], [M0 - shoes, 'incomplete', 'Forgot the bag']] }; },
+  X: R => { let S, p0, on1, off2, on2, people; do { S = R.int(40, 60) * 10; p0 = R.int(15, 25) * 10; on1 = R.int(8, 15) * 10; off2 = R.int(4, 7) * 10; on2 = R.int(6, 12) * 10; people = p0 + on1 - off2 + on2; } while (people >= S - 20);
+    const c = S - people;
+    return { type: 'num', text: `A train has ${S} seats. It leaves the first station with ${p0} passengers. At the second station ${on1} passengers get on. At the third station ${off2} passengers get off and ${on2} get on. How many seats are empty after the third station?`, correct: c, obj: 'Track a quantity through several changes and answer what was actually asked', time: 150,
+      expl: `Passengers: ${p0} + ${on1} − ${off2} + ${on2} = ${people}. Empty seats: ${S} − ${people} = ${c}.`,
+      wrongs: [[people, 'misread', 'Found the number of passengers, not the empty seats'], [S - (p0 + on1 + off2 + on2), 'concept', 'Treated the passengers who got off as if they got on'], [S - p0 - on1, 'incomplete', 'Stopped after the second station'], [S - (p0 + on1) + off2 - on2, 'concept', 'Mixed up who got on and who got off']] }; }
+});
+Object.assign(GEN.Multiplication, {
+  C: R => { const a = R.int(24, 68), b = R.int(12, 45), c = a * b, n = R.pick(NAMES);
+    return { type: 'mcq', text: `Each tray at ${n}’s shop holds ${a} eggs. The shop has ${b} trays. How many eggs are there in all?`, correct: c, obj: 'Solve a multiplication word problem with two-digit numbers', time: 70, expl: `${a} × ${b} = ${c}.`,
+      wrongs: [[a * (b % 10) + a * Math.floor(b / 10), 'concept', 'Did not shift the second partial product (place value)'], [c + a, 'calc', 'Counted one tray too many'], [c - a, 'calc', 'Counted one tray too few'], [a + b, 'concept', 'Added instead of multiplying']] }; },
+  M: R => { const p = R.int(12, 24), k = R.int(15, 30), pr = R.int(3, 9), c = p * k * pr;
+    return { type: 'num', text: `A baker puts ${p} biscuits in each packet and makes ${k} packets. Each biscuit is sold for ${money(pr)}. How much money does the baker get if every biscuit is sold?`, correct: c, obj: 'Use two multiplications in one problem', time: 110, expl: `Biscuits: ${p} × ${k} = ${p * k}. Money: ${p * k} × ${pr} = ${c}.`,
+      wrongs: [[p * k, 'incomplete', 'Found the number of biscuits only'], [(p + k) * pr, 'concept', 'Added packets and biscuits'], [p * pr + k, 'concept', 'Multiplied only part of the quantities'], [k * pr, 'misread', 'Ignored the biscuits in each packet']] }; },
+  X: R => { let g, p, n, ce; do { g = R.int(4, 6); p = R.int(20, 50); n = R.int(20, 35); ce = Math.ceil(n / g); } while (n % g === 0 || ce * p >= 500);
+    const c = 500 - ce * p;
+    return { type: 'num', text: `A shop sells pencils only in sets of ${g}. One set costs ${money(p)}. Hina needs ${n} pencils, so she buys the fewest sets that give her enough. She pays with a ${money(500)} note. How much change does she get?`, correct: c, obj: 'Round up to whole sets, then find change', time: 140,
+      expl: `${n} ÷ ${g} = ${(n / g).toFixed(2)}, so she needs ${ce} whole sets. Cost: ${ce} × ${p} = ${ce * p}. Change: 500 − ${ce * p} = ${c}.`,
+      wrongs: [[500 - Math.floor(n / g) * p, 'concept', 'Ignored the pencils that need one more set'], [Math.round((500 - (n / g) * p) * 100) / 100, 'concept', 'Bought part of a set'], [ce * p, 'incomplete', 'Found the cost but not the change'], [500 - (ce + 1) * p, 'calc', 'Bought one set too many']] }; }
+});
+Object.assign(GEN.Division, {
+  C: R => { const k = R.int(4, 9), q = R.int(35, 99), n = q * k, nm = R.pick(NAMES);
+    return { type: 'mcq', text: `${nm} packs ${n} books equally into ${k} boxes. How many books are in each box?`, correct: q, obj: 'Solve a division word problem with a three-digit number', time: 65, expl: `${n} ÷ ${k} = ${q}.`,
+      wrongs: [[q + 10, 'calc', 'Tens slip'], [q - 10, 'calc', 'Tens slip'], [n - k, 'concept', 'Subtracted instead of dividing'], [Math.floor(q / 10), 'concept', 'Lost a place value']] }; },
+  M: R => { const k = R.int(6, 9), m = R.int(12, 35), n = k * m, pr = R.int(12, 25), c = m * pr;
+    return { type: 'num', text: `A rope ${n} m long is cut into pieces of ${k} m each. Each piece is sold for ${money(pr)}. How much money is made if all the pieces are sold?`, correct: c, obj: 'Divide first, then multiply by the price', time: 110, expl: `Pieces: ${n} ÷ ${k} = ${m}. Money: ${m} × ${pr} = ${c}.`,
+      wrongs: [[m, 'incomplete', 'Found the number of pieces only'], [n * pr, 'concept', 'Multiplied the length by the price and ignored the cutting'], [m + pr, 'concept', 'Added instead of multiplying'], [Math.round(n / (k * pr)), 'formula', 'Divided by the price as well']] }; },
+  X: R => { let N, I, K, P, full, need;
+    do { N = R.int(150, 250); I = R.int(8, 24); K = R.int(12, 18); P = R.int(15, 40) * 100; need = Math.ceil((N - I) / K); full = Math.ceil(N / K); } while ((N - I) % K === 0 || need === full);
+    const c = need * P;
+    return { type: 'num', text: `A school plans a trip for ${N} students, but ${I} of them are ill and stay at home. Each van carries ${K} students and costs ${money(P)}. What is the smallest amount the school must pay for vans?`, correct: c, obj: 'Subtract first, divide, then round up to whole vans before finding the cost', time: 150,
+      expl: `Students going: ${N} − ${I} = ${N - I}. ${N - I} ÷ ${K} = ${((N - I) / K).toFixed(2)}, so ${need} vans are needed. Cost: ${need} × ${P} = ${c}.`,
+      wrongs: [[full * P, 'misread', 'Forgot the students who stay at home'], [Math.floor((N - I) / K) * P, 'concept', 'Did not add a van for the leftover students'], [Math.round(((N - I) / K) * P), 'concept', 'Paid for part of a van'], [(need + 1) * P, 'calc', 'Hired one van too many']] }; }
+});
+Object.assign(GEN.Fractions, {
+  C: R => { const [p, q] = R.pick([[3, 8], [2, 5], [3, 4], [5, 6], [2, 3], [4, 9]]), W = q * R.int(8, 25), c = p * W / q, n = R.pick(NAMES);
+    return { type: 'mcq', text: `${n} reads ${p}/${q} of a ${W}-page book. How many pages has ${n} read?`, correct: c, obj: 'Find a fraction of a quantity in a word problem', time: 70, expl: `${W} ÷ ${q} = ${W / q}; ${W / q} × ${p} = ${c}.`,
+      wrongs: [[W - c, 'misread', 'Found the pages not yet read'], [p * W, 'concept', 'Multiplied by the numerator only'], [W / q, 'incomplete', 'Found one part only'], [c + q, 'calc', 'Close but incorrect']] }; },
+  M: R => { let W, f1, f2, rem, used, left, tries = 0;
+    do { W = 60 * R.int(3, 9); f1 = R.pick([[1, 4], [1, 3], [1, 5], [1, 6]]); f2 = R.pick([[1, 2], [1, 3], [1, 4], [2, 3]]); rem = W * (f1[1] - f1[0]) / f1[1]; used = rem * f2[0] / f2[1]; left = rem - used; tries++; } while (!(Number.isInteger(rem) && Number.isInteger(used)) && tries < 50);
+    return { type: 'num', text: `A tank holds ${W} litres of water. ${f1[0]}/${f1[1]} of the water leaks out. Then ${f2[0]}/${f2[1]} of the water that is still in the tank is used. How many litres are left?`, correct: left, obj: 'Take a fraction of what is left after a first fraction', time: 120,
+      expl: `Left after the leak: ${W} − ${W * f1[0] / f1[1]} = ${rem}. Used: ${f2[0]}/${f2[1]} of ${rem} = ${used}. Left: ${rem} − ${used} = ${left}.`,
+      wrongs: [[Math.round(W - W * f1[0] / f1[1] - W * f2[0] / f2[1]), 'concept', 'Took the second fraction from the whole amount'], [rem, 'incomplete', 'Stopped after the leak'], [Math.round(W * f1[0] / f1[1] + used), 'misread', 'Found the water lost, not the water left'], [used, 'incomplete', 'Gave the amount used']] }; },
+  X: R => { const f = R.pick([{ a1: 2, b1: 5, a2: 1, b2: 2 }, { a1: 1, b1: 4, a2: 1, b2: 3 }, { a1: 1, b1: 3, a2: 1, b2: 2 }, { a1: 3, b1: 5, a2: 1, b2: 2 }]);
+    const start = f.b1 * f.b2 * R.int(5, 25), r1 = start * (f.b1 - f.a1) / f.b1, left = r1 * (f.b2 - f.a2) / f.b2, nm = R.pick(NAMES);
+    const sumFrac = f.a1 / f.b1 + f.a2 / f.b2;
+    return { type: 'num', text: `${nm} spends ${f.a1}/${f.b1} of the money on a book. ${nm} then spends ${f.a2}/${f.b2} of the money that is left on lunch. After this, ${nm} has ${money(left)}. How much money did ${nm} have at the start?`, correct: start, obj: 'Work backwards through two fractions of a changing amount', time: 170,
+      expl: `Before lunch he had ${left} ÷ ${(f.b2 - f.a2)}/${f.b2} = ${r1}. Before the book he had ${r1} ÷ ${(f.b1 - f.a1)}/${f.b1} = ${start}.`,
+      wrongs: [[r1, 'incomplete', 'Went back one step only (the money before lunch)'], [Math.round(left / (1 - sumFrac)), 'concept', 'Added the two fractions as if both were parts of the original amount'], [Math.round(left * f.b1 / (f.b1 - f.a1)), 'concept', 'Undid the first fraction but skipped the second'], [left * f.b1, 'concept', 'Multiplied by the denominator']] }; }
+});
+Object.assign(GEN.Decimals, {
+  C: R => { const pr = R.int(850, 2475) / 100, k = R.int(4, 9), c = Math.round(pr * k * 100) / 100, n = R.pick(NAMES);
+    return { type: 'num', tol: 0.001, text: `Ribbon costs ${money(dec(pr))} per metre. ${n} buys ${k} metres. How much does ${n} pay?`, correct: c, obj: 'Multiply a decimal amount of money in a word problem', time: 80, expl: `${dec(pr)} × ${k} = ${dec(c)}.`,
+      wrongs: [[dec(c * 10), 'concept', 'Misplaced the decimal point'], [dec(c / 10), 'concept', 'Misplaced the decimal point'], [dec(Math.floor(pr) * k + (pr % 1)), 'calc', 'Multiplied only the whole-number part'], [dec(pr + k), 'concept', 'Added instead of multiplying']] }; },
+  M: R => { const k1 = R.pick([1.5, 2.5]), p1 = R.int(60, 95) + 0.5, k2 = R.pick([1.5, 2.5]), p2 = R.int(50, 80), total = Math.round((k1 * p1 + k2 * p2) * 100) / 100, c = Math.round((500 - total) * 100) / 100;
+    return { type: 'num', tol: 0.001, text: `Fatima buys ${k1} kg of rice at ${money(dec(p1))} per kg and ${k2} kg of sugar at ${money(p2)} per kg. She pays with a ${money(500)} note. How much change does she get?`, correct: c, obj: 'Find two decimal costs, add them, then find the change', time: 140,
+      expl: `Rice: ${k1} × ${dec(p1)} = ${dec(k1 * p1)}. Sugar: ${k2} × ${p2} = ${dec(k2 * p2)}. Total ${dec(total)}. Change: 500 − ${dec(total)} = ${dec(c)}.`,
+      wrongs: [[dec(total), 'incomplete', 'Found the total cost but not the change'], [dec(500 - k1 * p1), 'incomplete', 'Forgot the sugar'], [dec(500 - (p1 + p2)), 'concept', 'Ignored the weights'], [dec(c + 10), 'calc', 'Addition slip']] }; },
+  X: R => { const a = R.int(18, 35) / 10, b = R.int(105, 295) / 100, d = R.int(4, 7), c = Math.round((a + b) * d * 1000);
+    return { type: 'num', text: `A cyclist rides ${a} km every morning and ${b} km every evening for ${d} days. How many metres does the cyclist ride in total?`, correct: c, obj: 'Add decimals, multiply by days and convert kilometres to metres', time: 140,
+      expl: `One day: ${a} + ${b} = ${dec(a + b)} km. ${d} days: ${dec((a + b) * d)} km. In metres: × 1000 = ${c} m.`,
+      wrongs: [[dec((a + b) * d), 'incomplete', 'Left the answer in kilometres'], [Math.round((a + b) * d * 100), 'concept', 'Used 100 m in a kilometre'], [Math.round((a + b * d) * 1000), 'misread', 'Multiplied only the evening distance by the days'], [Math.round((a + b) * 1000), 'incomplete', 'Found one day only']] }; }
+});
+Object.assign(GEN.Geometry, {
+  C: R => { const l = R.int(14, 38), w = R.int(9, l - 3), c = 2 * (l + w);
+    return { type: 'mcq', text: `A rectangular garden is ${l} m long and ${w} m wide. How many metres of fence are needed to go all the way around it?`, correct: c, obj: 'Find the perimeter of a rectangle in a word problem', time: 70, expl: `Perimeter = 2 × (${l} + ${w}) = ${c} m.`,
+      wrongs: [[l * w, 'formula', 'Found the area, not the perimeter'], [l + w, 'incomplete', 'Added length and width only once'], [2 * l + w, 'calc', 'Counted one side too few'], [4 * l, 'misread', 'Treated the garden as a square']] }; },
+  M: R => { const l = R.int(4, 9), w = R.int(3, l - 1), s = R.pick([20, 25, 50]), per = (100 / s) ** 2, c = l * w * per;
+    return { type: 'num', text: `A rectangular room is ${l} m long and ${w} m wide. It is covered with square tiles whose sides are ${s} cm. How many tiles are needed?`, correct: c, obj: 'Find an area, then divide by the area of one tile (unit conversion)', time: 130,
+      expl: `Room area: ${l} × ${w} = ${l * w} m². One tile: ${s / 100} m × ${s / 100} m = ${(s / 100) ** 2} m². Tiles: ${l * w} ÷ ${(s / 100) ** 2} = ${c}.`,
+      wrongs: [[l * w, 'incomplete', 'Found the floor area only'], [Math.round(l * w / (s / 100)), 'concept', 'Divided by the side of a tile instead of its area'], [Math.round(l * w * 100 / s), 'concept', 'Used the tile side, not the tile area'], [Math.round(2 * (l + w) / (s / 100)), 'formula', 'Used the perimeter']] }; },
+  X: R => { let l, w, sd, cover, area, c, alt;
+    do { l = R.int(18, 36); w = R.int(12, 24); sd = R.int(3, 8); cover = R.pick([8, 10, 12, 15, 16, 20]); area = l * w - sd * sd; c = Math.ceil(area / cover); alt = Math.ceil(l * w / cover); } while (area % cover === 0 || alt === c);
+    return { type: 'num', text: `A rectangular playground is ${l} m long and ${w} m wide. A square sandpit with sides of ${sd} m is built inside it, and the rest is covered with grass. One packet of grass seed covers ${cover} m². What is the smallest number of packets needed for the grassy part?`, correct: c, obj: 'Combine area, subtraction of a part, and rounding up to whole packets', time: 160,
+      expl: `Playground: ${l} × ${w} = ${l * w} m². Sandpit: ${sd} × ${sd} = ${sd * sd} m². Grass: ${area} m². ${area} ÷ ${cover} = ${(area / cover).toFixed(2)}, so ${c} packets.`,
+      wrongs: [[alt, 'incomplete', 'Forgot to subtract the sandpit'], [Math.floor(area / cover), 'concept', 'Did not round up for the last part'], [Math.ceil(2 * (l + w) / cover), 'formula', 'Used the perimeter'], [c + 1, 'calc', 'Bought one packet too many']] }; }
+});
+Object.assign(GEN.Measurement, {
+  C: R => { const n = R.int(6, 16), ml = R.pick([250, 350, 450, 750]), c = n * ml / 1000, nm = R.pick(NAMES);
+    return { type: 'num', tol: 0.001, text: `Each bottle of juice holds ${ml} ml. ${nm} buys ${n} bottles. How many litres of juice is that in all?`, correct: c, obj: 'Multiply and convert millilitres to litres in a word problem', time: 80, expl: `${n} × ${ml} = ${n * ml} ml. ${n * ml} ÷ 1000 = ${dec(c)} litres.`,
+      wrongs: [[n * ml, 'incomplete', 'Left the answer in millilitres'], [dec(n * ml / 100), 'concept', 'Used 100 ml in a litre'], [dec(n * ml / 10000), 'concept', 'Divided by 10,000'], [dec(n * 1000 / ml), 'formula', 'Divided instead of multiplying']] }; },
+  M: R => { const sp = R.pick([40, 48, 60, 72]), h1 = R.int(6, 9), m1 = R.pick([0, 15, 30, 45]), dur = R.pick([90, 120, 150, 180, 210, 240]), s = h1 * 60 + m1, e = s + dur, h2 = Math.floor(e / 60), m2 = e % 60, c = sp * dur / 60;
+    return { type: 'num', text: `A bus travels at ${sp} km per hour. It leaves at ${fmtTime(s)} AM and stops at ${h2 > 12 ? fmtTime(e - 720) + ' PM' : fmtTime(e) + (h2 === 12 ? ' PM' : ' AM')}. How many kilometres does the bus travel?`, correct: c, obj: 'Find elapsed time first, then use speed to find distance', time: 130,
+      expl: `Time: ${Math.floor(dur / 60)} h ${dur % 60} min = ${dur / 60} hours. Distance: ${sp} × ${dur / 60} = ${c} km.`,
+      wrongs: [[Math.round(((h2 * 100 + m2) - (h1 * 100 + m1)) / 100 * sp * 100) / 100, 'concept', 'Subtracted the clock times as decimals'], [dur, 'incomplete', 'Gave the minutes, not the distance'], [sp * Math.floor(dur / 60), 'incomplete', 'Ignored the extra minutes'], [sp * dur / 100, 'concept', 'Treated an hour as 100 minutes']] }; },
+  X: R => { let per, b0, m, flour, bags, price;
+    do { per = R.pick([250, 300, 350, 400]); b0 = R.pick([8, 12, 15]); m = R.int(4, 9); flour = per * m; bags = Math.ceil(flour / 1000); price = R.int(12, 22) * 10; } while (flour % 1000 === 0 || Math.floor(flour / 1000) === bags);
+    const c = bags * price;
+    return { type: 'num', text: `A recipe uses ${per} g of flour for ${b0} biscuits. Zainab wants to make ${b0 * m} biscuits. Flour is sold only in 1 kg bags, and one bag costs ${money(price)}. How much must she spend on flour?`, correct: c, obj: 'Scale a recipe, convert grams to kilograms and round up to whole bags', time: 160,
+      expl: `${b0 * m} biscuits is ${m} times the recipe: ${per} × ${m} = ${flour} g = ${flour / 1000} kg. She must buy ${bags} whole bags: ${bags} × ${price} = ${c}.`,
+      wrongs: [[Math.round(flour / 1000 * price), 'concept', 'Paid for part of a bag'], [Math.floor(flour / 1000) * price, 'concept', 'Ignored the extra flour'], [m * price, 'misread', 'Bought one bag for every batch'], [(bags + 1) * price, 'calc', 'Bought one bag too many']] }; }
+});
+const STRETCH_KEYS = ['C', 'M', 'X'];
+function mathGrades(topic, diff) { const g = MATH_GRADES[topic]; return diff === 'M' ? [g[0], Math.min(10, g[1] + 1)] : diff === 'X' ? [Math.min(10, g[0] + 1), Math.min(10, g[1] + 2)] : g.slice(); }
+function capIdx(idx, byDiff) {
+  if (idx == null) return idx;
+  const n = k => (byDiff[k] && (byDiff[k].attempted != null ? byDiff[k].attempted : byDiff[k].n)) || 0;
+  const c = n('C') + n('M') + n('X'), m = n('M') + n('X'), x = n('X');
+  const cap = c >= 2 ? (m >= 2 ? (x >= 2 ? 7 : 6) : 5) : 4;
+  return Math.min(idx, cap);
+}
+
 function genMathQ(topic, diff, seed, n) {
   const R = rng(seed), g = GEN[topic][diff](R), id = `MATH-${topic.slice(0, 3).toUpperCase()}-${diff}${String(n).padStart(2, '0')}`;
-  const q = { id, subject: 'Mathematics', topic, unit: null, grades: MATH_GRADES[topic].slice(), diff, type: g.type, text: g.text, objective: g.obj, explanation: g.expl,
+  const q = { id, subject: 'Mathematics', topic, unit: null, grades: mathGrades(topic, diff), diff, type: g.type, text: g.text, objective: g.obj, explanation: g.expl,
     marks: 1, time: g.time, prereq: PREREQ[topic] || null, source: 'Brainova generator v1', status: 'approved', b: bFor(id, diff), c: cFor(g.type), marking: 'Full marks for the correct answer.' };
   if (g.type === 'mcq') { q.options = mkOptions(R, g.correct, g.wrongs); q.answer = q.options.find(o => o.ok).id; q.options.forEach(o => delete o.ok); }
   else { q.answer = g.correct; q.tol = g.tol || 0; q.wrong = g.wrongs.map(w => [Number(w[0]), w[1], w[2]]); }
@@ -324,7 +451,7 @@ const A_DISC = 1.2;
 const P = (t, b, c) => c + (1 - c) / (1 + Math.exp(-A_DISC * (t - b)));
 function eap(resps, mu = 0, sd = 1) {
   let den = 0, num = 0, num2 = 0;
-  for (let t = -3; t <= 3.0001; t += 0.1) {
+  for (let t = -3; t <= 3.6001; t += 0.1) {
     let lp = -0.5 * ((t - mu) / sd) ** 2;
     for (const r of resps) { const p = P(t, r.b, r.c); lp += Math.log(r.correct ? p : 1 - p); }
     const w = Math.exp(lp); den += w; num += w * t; num2 += w * t * t;
@@ -399,13 +526,13 @@ function makeResponse(seq, q, raw, ms, meta = {}) {
 
 /* ---------- question pools and assembly ---------- */
 const topicKey = (s, t) => s + '|' + t;
-function gradeOk(q, a) { if (!a.grades || !a.grades.length || !q.grades) return true; return a.grades.some(g => g >= q.grades[0] && g <= q.grades[1]); }
+function gradeOk(q, a) { if (!a.grades || !a.grades.length || !q.grades) return true; const st = +a.stretch || 0; return a.grades.some(g => g + st >= q.grades[0] && g <= q.grades[1]); }
 function poolFor(bank, a) {
   const keys = new Set((a.topics || []).map(t => topicKey(t.subject, t.topic))), ex = new Set(a.excludeObj || []);
   return bank.filter(q => q.status === 'approved' && keys.has(topicKey(q.subject, q.topic)) && gradeOk(q, a) && !ex.has(q.subject + '|' + q.topic + '|' + q.objective));
 }
 function poolCounts(pool, topics) {
-  return topics.map(t => { const row = { subject: t.subject, topic: t.topic, S: 0, H: 0, E: 0 }; pool.forEach(q => { if (q.subject === t.subject && q.topic === t.topic) row[q.diff]++; }); return row; });
+  return topics.map(t => { const row = { subject: t.subject, topic: t.topic, S: 0, H: 0, E: 0, C: 0, M: 0, X: 0 }; pool.forEach(q => { if (q.subject === t.subject && q.topic === t.topic) row[q.diff]++; }); return row; });
 }
 function buildFixed(a, bank, seed) {
   const R = rng(seed), pool = poolFor(bank, a), topics = a.topics.map(t => t.topic), items = [], shortages = [], used = new Set();
@@ -465,7 +592,7 @@ class Adaptive {
     if (cfg.probe && lastR && lastR.correct === false) {
       const t = lastR.topic, pre = PREREQ[t], est = this.topicEst(t);
       if (pre && !this.probed.has(pre) && est.n >= 2 && est.theta < -0.5) {
-        const pl = this.fullBank.filter(q => q.status === 'approved' && q.topic === pre && q.subject === lastR.subject && q.diff !== 'E' && !this.used.has(q.id) && gradeOk(q, this.a));
+        const pl = this.fullBank.filter(q => q.status === 'approved' && q.topic === pre && q.subject === lastR.subject && !['E', 'C', 'M', 'X'].includes(q.diff) && !this.used.has(q.id) && gradeOk(q, this.a));
         if (pl.length) {
           this.probed.add(pre);
           const q = pl.sort((x, y) => Math.abs(x.b - (est.theta - 0.3)) - Math.abs(y.b - (est.theta - 0.3)))[0];
@@ -511,7 +638,8 @@ function analyze(att, levels, courseOrNull) {
     totalTimeMs: att.durationMs || sum(rs, r => r.timeMs), avgTimeMs: attempted.length ? sum(attempted, r => r.timeMs) / attempted.length : 0, theta: ov.theta, sd: ov.sd, overallIdx: graded.length ? levelIdx(ov.theta, levels) : null };
   an.byDiff = {}; DIFF_KEYS.forEach(d => { const x = rs.filter(r => r.diff === d && !r.probe), g = x.filter(done), c = x.filter(r => r.status === 'correct').length; an.byDiff[d] = { n: x.length, attempted: g.length, correct: c, acc: g.length ? c / g.length : null }; });
   const ok = d => an.byDiff[d].attempted >= 2 && an.byDiff[d].acc >= 0.67;
-  an.consistent = ok('E') && ok('H') ? 'Extend' : ok('H') ? 'Hard' : ok('S') ? 'Strengthen' : 'Below Strengthen';
+  an.consistent = 'Below Strengthen'; DIFF_KEYS.forEach((k, i) => { if (!ok(k)) return; const lo = i ? DIFF_KEYS[i - 1] : null; if (lo && an.byDiff[lo].attempted >= 2 && !ok(lo)) return; an.consistent = DIFF[k].name; });
+  an.overallIdx = capIdx(an.overallIdx, an.byDiff);
   // topics
   const names = []; rs.forEach(r => { if (!names.includes(r.topic)) names.push(r.topic); });
   an.topics = names.map(t => {
@@ -520,7 +648,7 @@ function analyze(att, levels, courseOrNull) {
     const bd = {}; DIFF_KEYS.forEach(d => { const y = x.filter(r => r.diff === d && done(r)); bd[d] = { n: y.length, c: y.filter(r => r.status === 'correct').length }; });
     const objs = {}; g.forEach(r => { const o = objs[r.objective] = objs[r.objective] || { n: 0, c: 0 }; o.n++; if (r.status === 'correct') o.c++; });
     const conf = g.length < 2 ? 'none' : g.length < 4 ? 'limited' : 'adequate';
-    const idx = conf === 'none' ? null : levelIdx(est.theta, levels);
+    const idx = conf === 'none' ? null : capIdx(levelIdx(est.theta, levels), bd);
     const wrongTags = {}; x.filter(r => r.status === 'incorrect' && r.tag).forEach(r => wrongTags[r.tag] = (wrongTags[r.tag] || 0) + 1);
     const evidence = DIFF_KEYS.filter(d => bd[d].n).map(d => `${bd[d].c}/${bd[d].n} ${DIFF[d].name}`).join(', ');
     return { topic: t, subject: x[0].subject, n: x.length, attempted: g.length, correct: c, incorrect: g.length - c, skipped: x.filter(r => r.status === 'skipped').length, acc: g.length ? c / g.length : null,
@@ -556,7 +684,8 @@ function placement(an, att, levels, course) {
     const g = att.grade;
     out.grade = oi <= 1 ? `Below expected level for Grade ${g}: begin with Grade ${Math.max(1, g - 1)} foundations in the weaker topics`
       : oi === 2 ? `At the expected level for Grade ${g}: begin Grade ${g} content` : oi === 3 ? `Secure at Grade ${g}: begin Grade ${g} with extension tasks`
-      : `Ahead of Grade ${g}: consider Grade ${g + 1} content or enrichment`;
+      : oi === 4 ? `Ahead of Grade ${g}: consider Grade ${g + 1} content or enrichment`
+      : `Well ahead of Grade ${g}, with success on questions above the usual level: discuss acceleration or an enrichment programme with the teacher`;
     out.lines.unshift(`${out.grade}. Estimated overall level: ${lvl(oi)}.`);
   }
   if (out.mixed) out.lines.push('The profile is mixed across topics, so the topic-wise recommendations below matter more than the single overall level.');

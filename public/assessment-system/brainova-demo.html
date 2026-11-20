@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Brainova Intelligent Assessment &amp; Placement System</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style id="appcss">
 /* Layout: persistent role sidebar + working area; student runner and live stage are separate full-width modes. */
 :root {
@@ -172,15 +173,16 @@ pre.code { font-family: var(--mono); font-size: 13px; background: var(--surface2
 <div id="root"><p style="padding:24px">Loading Brainova…</p></div>
 <script>
 /* ===================== BRAINOVA ENGINE (pure logic, no DOM) ===================== */
-const DIFF = { S: { name: 'Strengthen', b: -1.1 }, H: { name: 'Hard', b: 0 }, E: { name: 'Extend', b: 1.1 } };
-const DIFF_KEYS = ['S', 'H', 'E'];
+const DIFF = { S: { name: 'Strengthen', b: -1.1 }, H: { name: 'Hard', b: 0 }, E: { name: 'Extend', b: 1.1 }, C: { name: 'Challenging', b: 1.7 }, M: { name: 'Mastery', b: 2.3 }, X: { name: 'Exceptional', b: 2.9 } };
+const DIFF_KEYS = ['S', 'H', 'E', 'C', 'M', 'X'];
 const ERR = {
   calc: 'Calculation slip', concept: 'Conceptual misunderstanding', misread: 'Misread the question',
   formula: 'Incorrect formula or method', foundation: 'Weak foundation', incomplete: 'Incomplete working'
 };
 const DEFAULT_LEVELS = [
   { name: 'Foundation', min: -99 }, { name: 'Developing', min: -1.0 }, { name: 'Intermediate', min: -0.35 },
-  { name: 'Proficient', min: 0.35 }, { name: 'Advanced', min: 1.0 }
+  { name: 'Proficient', min: 0.35 }, { name: 'Advanced', min: 1.0 },
+  { name: 'Challenging', min: 1.5 }, { name: 'Mastery', min: 2.0 }, { name: 'Exceptional', min: 2.5 }
 ];
 const PREREQ = {
   Subtraction: 'Addition', Multiplication: 'Addition', Division: 'Multiplication', Fractions: 'Division',
@@ -325,9 +327,135 @@ function mkOptions(R, correct, wrongs) {
 function bFor(id, diff) { return +(DIFF[diff].b + ((hashStr(id) % 61) - 30) / 100).toFixed(2); }
 function cFor(type) { return type === 'mcq' ? 0.22 : type === 'tf' ? 0.45 : 0.02; }
 
+/* ---------- stretch tiers: Challenging (C), Mastery (M), Exceptional (X) ----------
+   C = every question is a word problem (one idea, real context)
+   M = two concepts in one question: find one thing first, then use it
+   X = long, multi-logic questions with common traps, a little above the usual grade level */
+const money = n => 'Rs ' + Number(n).toLocaleString('en-US');
+const NAMES = ['Ayesha', 'Hamza', 'Fatima', 'Ali', 'Sara', 'Bilal', 'Hina', 'Usman', 'Zainab', 'Omar'];
+Object.assign(GEN.Addition, {
+  C: R => { const n = R.pick(NAMES), a = R.int(1245, 4890), b = R.int(1378, 4990), c = a + b;
+    return { type: 'mcq', text: `${n} walked ${a.toLocaleString('en-US')} steps in the morning and ${b.toLocaleString('en-US')} steps in the evening. How many steps did ${n} walk in all?`, correct: c, obj: 'Solve a one-step addition word problem with four-digit numbers', time: 60, expl: `${a} + ${b} = ${c}.`,
+      wrongs: [[addNoCarry(a, b), 'concept', 'Forgot to regroup (carry)'], [c - 100, 'calc', 'Carry slip in the hundreds'], [c + 1000, 'calc', 'Carried an extra thousand'], [Math.abs(a - b), 'concept', 'Subtracted instead of adding']] }; },
+  M: R => { const a = R.int(145, 480), k = R.int(3, 5), c = a + k * a;
+    return { type: 'num', text: `A shop sold ${a} pens on Monday. On Tuesday it sold ${k} times as many pens as on Monday. How many pens did the shop sell on the two days together?`, correct: c, obj: 'Combine a multiplication step and an addition step', time: 90, expl: `Tuesday: ${k} × ${a} = ${k * a}. Together: ${a} + ${k * a} = ${c}.`,
+      wrongs: [[k * a, 'incomplete', 'Found Tuesday only'], [a + k, 'misread', 'Added the number of times instead of multiplying'], [a * (k + 1) + a, 'concept', 'Counted Monday twice'], [a * k - a, 'concept', 'Subtracted instead of adding']] }; },
+  X: R => { const A = R.int(12, 30) * 50, d = R.int(10, 30) * 10, mv = R.int(5, 15) * 10, B = A - d, C = 2 * B, c = A + C;
+    return { type: 'num', text: `A school has three libraries. Library A has ${A.toLocaleString('en-US')} books. Library B has ${d} fewer books than Library A. Library C has twice as many books as Library B. Then ${mv} books are moved from Library C to Library A. How many books are there in Library A and Library C together now?`, correct: c, obj: 'Solve a long multi-step problem and notice that moving items does not change a total', time: 150,
+      expl: `B = ${A} − ${d} = ${B}. C = 2 × ${B} = ${C}. Moving books between A and C does not change their total: ${A} + ${C} = ${c}.`,
+      wrongs: [[c + mv, 'concept', 'Added the moved books a second time'], [c - mv, 'concept', 'Subtracted the moved books even though they only changed library'], [A + B + C, 'misread', 'Included Library B'], [A + B, 'misread', 'Used Library B instead of Library C']] }; }
+});
+Object.assign(GEN.Subtraction, {
+  C: R => { const T = R.int(4, 9) * 1000, u = R.int(1120, 3890), c = T - u;
+    return { type: 'mcq', text: `A water tank holds ${T.toLocaleString('en-US')} litres when full. ${u.toLocaleString('en-US')} litres have been used. How many litres are left in the tank?`, correct: c, obj: 'Solve a one-step subtraction word problem with four-digit numbers', time: 60, expl: `${T} − ${u} = ${c}.`,
+      wrongs: [[absDiffDigits(T, u), 'concept', 'Subtracted the smaller digit from the larger in each column'], [c + 100, 'calc', 'Borrowing slip'], [c - 100, 'calc', 'Borrowing slip'], [T + u, 'concept', 'Added instead of subtracting']] }; },
+  M: R => { const n = R.pick(NAMES), M0 = R.int(40, 90) * 100, bag = R.int(8, 20) * 100, less = R.int(2, 5) * 100, shoes = bag - less, c = M0 - bag - shoes;
+    return { type: 'num', text: `${n} had ${money(M0)}. ${n} bought a bag for ${money(bag)} and shoes that cost ${money(less)} less than the bag. How much money does ${n} have left?`, correct: c, obj: 'Find an unknown price first, then subtract both purchases', time: 100, expl: `Shoes: ${bag} − ${less} = ${shoes}. Left: ${M0} − ${bag} − ${shoes} = ${c}.`,
+      wrongs: [[M0 - bag - less, 'misread', `Used ${money(less)} as the price of the shoes`], [M0 - bag, 'incomplete', 'Forgot the shoes'], [M0 - 2 * bag, 'concept', 'Assumed the shoes cost the same as the bag'], [M0 - shoes, 'incomplete', 'Forgot the bag']] }; },
+  X: R => { let S, p0, on1, off2, on2, people; do { S = R.int(40, 60) * 10; p0 = R.int(15, 25) * 10; on1 = R.int(8, 15) * 10; off2 = R.int(4, 7) * 10; on2 = R.int(6, 12) * 10; people = p0 + on1 - off2 + on2; } while (people >= S - 20);
+    const c = S - people;
+    return { type: 'num', text: `A train has ${S} seats. It leaves the first station with ${p0} passengers. At the second station ${on1} passengers get on. At the third station ${off2} passengers get off and ${on2} get on. How many seats are empty after the third station?`, correct: c, obj: 'Track a quantity through several changes and answer what was actually asked', time: 150,
+      expl: `Passengers: ${p0} + ${on1} − ${off2} + ${on2} = ${people}. Empty seats: ${S} − ${people} = ${c}.`,
+      wrongs: [[people, 'misread', 'Found the number of passengers, not the empty seats'], [S - (p0 + on1 + off2 + on2), 'concept', 'Treated the passengers who got off as if they got on'], [S - p0 - on1, 'incomplete', 'Stopped after the second station'], [S - (p0 + on1) + off2 - on2, 'concept', 'Mixed up who got on and who got off']] }; }
+});
+Object.assign(GEN.Multiplication, {
+  C: R => { const a = R.int(24, 68), b = R.int(12, 45), c = a * b, n = R.pick(NAMES);
+    return { type: 'mcq', text: `Each tray at ${n}’s shop holds ${a} eggs. The shop has ${b} trays. How many eggs are there in all?`, correct: c, obj: 'Solve a multiplication word problem with two-digit numbers', time: 70, expl: `${a} × ${b} = ${c}.`,
+      wrongs: [[a * (b % 10) + a * Math.floor(b / 10), 'concept', 'Did not shift the second partial product (place value)'], [c + a, 'calc', 'Counted one tray too many'], [c - a, 'calc', 'Counted one tray too few'], [a + b, 'concept', 'Added instead of multiplying']] }; },
+  M: R => { const p = R.int(12, 24), k = R.int(15, 30), pr = R.int(3, 9), c = p * k * pr;
+    return { type: 'num', text: `A baker puts ${p} biscuits in each packet and makes ${k} packets. Each biscuit is sold for ${money(pr)}. How much money does the baker get if every biscuit is sold?`, correct: c, obj: 'Use two multiplications in one problem', time: 110, expl: `Biscuits: ${p} × ${k} = ${p * k}. Money: ${p * k} × ${pr} = ${c}.`,
+      wrongs: [[p * k, 'incomplete', 'Found the number of biscuits only'], [(p + k) * pr, 'concept', 'Added packets and biscuits'], [p * pr + k, 'concept', 'Multiplied only part of the quantities'], [k * pr, 'misread', 'Ignored the biscuits in each packet']] }; },
+  X: R => { let g, p, n, ce; do { g = R.int(4, 6); p = R.int(20, 50); n = R.int(20, 35); ce = Math.ceil(n / g); } while (n % g === 0 || ce * p >= 500);
+    const c = 500 - ce * p;
+    return { type: 'num', text: `A shop sells pencils only in sets of ${g}. One set costs ${money(p)}. Hina needs ${n} pencils, so she buys the fewest sets that give her enough. She pays with a ${money(500)} note. How much change does she get?`, correct: c, obj: 'Round up to whole sets, then find change', time: 140,
+      expl: `${n} ÷ ${g} = ${(n / g).toFixed(2)}, so she needs ${ce} whole sets. Cost: ${ce} × ${p} = ${ce * p}. Change: 500 − ${ce * p} = ${c}.`,
+      wrongs: [[500 - Math.floor(n / g) * p, 'concept', 'Ignored the pencils that need one more set'], [Math.round((500 - (n / g) * p) * 100) / 100, 'concept', 'Bought part of a set'], [ce * p, 'incomplete', 'Found the cost but not the change'], [500 - (ce + 1) * p, 'calc', 'Bought one set too many']] }; }
+});
+Object.assign(GEN.Division, {
+  C: R => { const k = R.int(4, 9), q = R.int(35, 99), n = q * k, nm = R.pick(NAMES);
+    return { type: 'mcq', text: `${nm} packs ${n} books equally into ${k} boxes. How many books are in each box?`, correct: q, obj: 'Solve a division word problem with a three-digit number', time: 65, expl: `${n} ÷ ${k} = ${q}.`,
+      wrongs: [[q + 10, 'calc', 'Tens slip'], [q - 10, 'calc', 'Tens slip'], [n - k, 'concept', 'Subtracted instead of dividing'], [Math.floor(q / 10), 'concept', 'Lost a place value']] }; },
+  M: R => { const k = R.int(6, 9), m = R.int(12, 35), n = k * m, pr = R.int(12, 25), c = m * pr;
+    return { type: 'num', text: `A rope ${n} m long is cut into pieces of ${k} m each. Each piece is sold for ${money(pr)}. How much money is made if all the pieces are sold?`, correct: c, obj: 'Divide first, then multiply by the price', time: 110, expl: `Pieces: ${n} ÷ ${k} = ${m}. Money: ${m} × ${pr} = ${c}.`,
+      wrongs: [[m, 'incomplete', 'Found the number of pieces only'], [n * pr, 'concept', 'Multiplied the length by the price and ignored the cutting'], [m + pr, 'concept', 'Added instead of multiplying'], [Math.round(n / (k * pr)), 'formula', 'Divided by the price as well']] }; },
+  X: R => { let N, I, K, P, full, need;
+    do { N = R.int(150, 250); I = R.int(8, 24); K = R.int(12, 18); P = R.int(15, 40) * 100; need = Math.ceil((N - I) / K); full = Math.ceil(N / K); } while ((N - I) % K === 0 || need === full);
+    const c = need * P;
+    return { type: 'num', text: `A school plans a trip for ${N} students, but ${I} of them are ill and stay at home. Each van carries ${K} students and costs ${money(P)}. What is the smallest amount the school must pay for vans?`, correct: c, obj: 'Subtract first, divide, then round up to whole vans before finding the cost', time: 150,
+      expl: `Students going: ${N} − ${I} = ${N - I}. ${N - I} ÷ ${K} = ${((N - I) / K).toFixed(2)}, so ${need} vans are needed. Cost: ${need} × ${P} = ${c}.`,
+      wrongs: [[full * P, 'misread', 'Forgot the students who stay at home'], [Math.floor((N - I) / K) * P, 'concept', 'Did not add a van for the leftover students'], [Math.round(((N - I) / K) * P), 'concept', 'Paid for part of a van'], [(need + 1) * P, 'calc', 'Hired one van too many']] }; }
+});
+Object.assign(GEN.Fractions, {
+  C: R => { const [p, q] = R.pick([[3, 8], [2, 5], [3, 4], [5, 6], [2, 3], [4, 9]]), W = q * R.int(8, 25), c = p * W / q, n = R.pick(NAMES);
+    return { type: 'mcq', text: `${n} reads ${p}/${q} of a ${W}-page book. How many pages has ${n} read?`, correct: c, obj: 'Find a fraction of a quantity in a word problem', time: 70, expl: `${W} ÷ ${q} = ${W / q}; ${W / q} × ${p} = ${c}.`,
+      wrongs: [[W - c, 'misread', 'Found the pages not yet read'], [p * W, 'concept', 'Multiplied by the numerator only'], [W / q, 'incomplete', 'Found one part only'], [c + q, 'calc', 'Close but incorrect']] }; },
+  M: R => { let W, f1, f2, rem, used, left, tries = 0;
+    do { W = 60 * R.int(3, 9); f1 = R.pick([[1, 4], [1, 3], [1, 5], [1, 6]]); f2 = R.pick([[1, 2], [1, 3], [1, 4], [2, 3]]); rem = W * (f1[1] - f1[0]) / f1[1]; used = rem * f2[0] / f2[1]; left = rem - used; tries++; } while (!(Number.isInteger(rem) && Number.isInteger(used)) && tries < 50);
+    return { type: 'num', text: `A tank holds ${W} litres of water. ${f1[0]}/${f1[1]} of the water leaks out. Then ${f2[0]}/${f2[1]} of the water that is still in the tank is used. How many litres are left?`, correct: left, obj: 'Take a fraction of what is left after a first fraction', time: 120,
+      expl: `Left after the leak: ${W} − ${W * f1[0] / f1[1]} = ${rem}. Used: ${f2[0]}/${f2[1]} of ${rem} = ${used}. Left: ${rem} − ${used} = ${left}.`,
+      wrongs: [[Math.round(W - W * f1[0] / f1[1] - W * f2[0] / f2[1]), 'concept', 'Took the second fraction from the whole amount'], [rem, 'incomplete', 'Stopped after the leak'], [Math.round(W * f1[0] / f1[1] + used), 'misread', 'Found the water lost, not the water left'], [used, 'incomplete', 'Gave the amount used']] }; },
+  X: R => { const f = R.pick([{ a1: 2, b1: 5, a2: 1, b2: 2 }, { a1: 1, b1: 4, a2: 1, b2: 3 }, { a1: 1, b1: 3, a2: 1, b2: 2 }, { a1: 3, b1: 5, a2: 1, b2: 2 }]);
+    const start = f.b1 * f.b2 * R.int(5, 25), r1 = start * (f.b1 - f.a1) / f.b1, left = r1 * (f.b2 - f.a2) / f.b2, nm = R.pick(NAMES);
+    const sumFrac = f.a1 / f.b1 + f.a2 / f.b2;
+    return { type: 'num', text: `${nm} spends ${f.a1}/${f.b1} of the money on a book. ${nm} then spends ${f.a2}/${f.b2} of the money that is left on lunch. After this, ${nm} has ${money(left)}. How much money did ${nm} have at the start?`, correct: start, obj: 'Work backwards through two fractions of a changing amount', time: 170,
+      expl: `Before lunch he had ${left} ÷ ${(f.b2 - f.a2)}/${f.b2} = ${r1}. Before the book he had ${r1} ÷ ${(f.b1 - f.a1)}/${f.b1} = ${start}.`,
+      wrongs: [[r1, 'incomplete', 'Went back one step only (the money before lunch)'], [Math.round(left / (1 - sumFrac)), 'concept', 'Added the two fractions as if both were parts of the original amount'], [Math.round(left * f.b1 / (f.b1 - f.a1)), 'concept', 'Undid the first fraction but skipped the second'], [left * f.b1, 'concept', 'Multiplied by the denominator']] }; }
+});
+Object.assign(GEN.Decimals, {
+  C: R => { const pr = R.int(850, 2475) / 100, k = R.int(4, 9), c = Math.round(pr * k * 100) / 100, n = R.pick(NAMES);
+    return { type: 'num', tol: 0.001, text: `Ribbon costs ${money(dec(pr))} per metre. ${n} buys ${k} metres. How much does ${n} pay?`, correct: c, obj: 'Multiply a decimal amount of money in a word problem', time: 80, expl: `${dec(pr)} × ${k} = ${dec(c)}.`,
+      wrongs: [[dec(c * 10), 'concept', 'Misplaced the decimal point'], [dec(c / 10), 'concept', 'Misplaced the decimal point'], [dec(Math.floor(pr) * k + (pr % 1)), 'calc', 'Multiplied only the whole-number part'], [dec(pr + k), 'concept', 'Added instead of multiplying']] }; },
+  M: R => { const k1 = R.pick([1.5, 2.5]), p1 = R.int(60, 95) + 0.5, k2 = R.pick([1.5, 2.5]), p2 = R.int(50, 80), total = Math.round((k1 * p1 + k2 * p2) * 100) / 100, c = Math.round((500 - total) * 100) / 100;
+    return { type: 'num', tol: 0.001, text: `Fatima buys ${k1} kg of rice at ${money(dec(p1))} per kg and ${k2} kg of sugar at ${money(p2)} per kg. She pays with a ${money(500)} note. How much change does she get?`, correct: c, obj: 'Find two decimal costs, add them, then find the change', time: 140,
+      expl: `Rice: ${k1} × ${dec(p1)} = ${dec(k1 * p1)}. Sugar: ${k2} × ${p2} = ${dec(k2 * p2)}. Total ${dec(total)}. Change: 500 − ${dec(total)} = ${dec(c)}.`,
+      wrongs: [[dec(total), 'incomplete', 'Found the total cost but not the change'], [dec(500 - k1 * p1), 'incomplete', 'Forgot the sugar'], [dec(500 - (p1 + p2)), 'concept', 'Ignored the weights'], [dec(c + 10), 'calc', 'Addition slip']] }; },
+  X: R => { const a = R.int(18, 35) / 10, b = R.int(105, 295) / 100, d = R.int(4, 7), c = Math.round((a + b) * d * 1000);
+    return { type: 'num', text: `A cyclist rides ${a} km every morning and ${b} km every evening for ${d} days. How many metres does the cyclist ride in total?`, correct: c, obj: 'Add decimals, multiply by days and convert kilometres to metres', time: 140,
+      expl: `One day: ${a} + ${b} = ${dec(a + b)} km. ${d} days: ${dec((a + b) * d)} km. In metres: × 1000 = ${c} m.`,
+      wrongs: [[dec((a + b) * d), 'incomplete', 'Left the answer in kilometres'], [Math.round((a + b) * d * 100), 'concept', 'Used 100 m in a kilometre'], [Math.round((a + b * d) * 1000), 'misread', 'Multiplied only the evening distance by the days'], [Math.round((a + b) * 1000), 'incomplete', 'Found one day only']] }; }
+});
+Object.assign(GEN.Geometry, {
+  C: R => { const l = R.int(14, 38), w = R.int(9, l - 3), c = 2 * (l + w);
+    return { type: 'mcq', text: `A rectangular garden is ${l} m long and ${w} m wide. How many metres of fence are needed to go all the way around it?`, correct: c, obj: 'Find the perimeter of a rectangle in a word problem', time: 70, expl: `Perimeter = 2 × (${l} + ${w}) = ${c} m.`,
+      wrongs: [[l * w, 'formula', 'Found the area, not the perimeter'], [l + w, 'incomplete', 'Added length and width only once'], [2 * l + w, 'calc', 'Counted one side too few'], [4 * l, 'misread', 'Treated the garden as a square']] }; },
+  M: R => { const l = R.int(4, 9), w = R.int(3, l - 1), s = R.pick([20, 25, 50]), per = (100 / s) ** 2, c = l * w * per;
+    return { type: 'num', text: `A rectangular room is ${l} m long and ${w} m wide. It is covered with square tiles whose sides are ${s} cm. How many tiles are needed?`, correct: c, obj: 'Find an area, then divide by the area of one tile (unit conversion)', time: 130,
+      expl: `Room area: ${l} × ${w} = ${l * w} m². One tile: ${s / 100} m × ${s / 100} m = ${(s / 100) ** 2} m². Tiles: ${l * w} ÷ ${(s / 100) ** 2} = ${c}.`,
+      wrongs: [[l * w, 'incomplete', 'Found the floor area only'], [Math.round(l * w / (s / 100)), 'concept', 'Divided by the side of a tile instead of its area'], [Math.round(l * w * 100 / s), 'concept', 'Used the tile side, not the tile area'], [Math.round(2 * (l + w) / (s / 100)), 'formula', 'Used the perimeter']] }; },
+  X: R => { let l, w, sd, cover, area, c, alt;
+    do { l = R.int(18, 36); w = R.int(12, 24); sd = R.int(3, 8); cover = R.pick([8, 10, 12, 15, 16, 20]); area = l * w - sd * sd; c = Math.ceil(area / cover); alt = Math.ceil(l * w / cover); } while (area % cover === 0 || alt === c);
+    return { type: 'num', text: `A rectangular playground is ${l} m long and ${w} m wide. A square sandpit with sides of ${sd} m is built inside it, and the rest is covered with grass. One packet of grass seed covers ${cover} m². What is the smallest number of packets needed for the grassy part?`, correct: c, obj: 'Combine area, subtraction of a part, and rounding up to whole packets', time: 160,
+      expl: `Playground: ${l} × ${w} = ${l * w} m². Sandpit: ${sd} × ${sd} = ${sd * sd} m². Grass: ${area} m². ${area} ÷ ${cover} = ${(area / cover).toFixed(2)}, so ${c} packets.`,
+      wrongs: [[alt, 'incomplete', 'Forgot to subtract the sandpit'], [Math.floor(area / cover), 'concept', 'Did not round up for the last part'], [Math.ceil(2 * (l + w) / cover), 'formula', 'Used the perimeter'], [c + 1, 'calc', 'Bought one packet too many']] }; }
+});
+Object.assign(GEN.Measurement, {
+  C: R => { const n = R.int(6, 16), ml = R.pick([250, 350, 450, 750]), c = n * ml / 1000, nm = R.pick(NAMES);
+    return { type: 'num', tol: 0.001, text: `Each bottle of juice holds ${ml} ml. ${nm} buys ${n} bottles. How many litres of juice is that in all?`, correct: c, obj: 'Multiply and convert millilitres to litres in a word problem', time: 80, expl: `${n} × ${ml} = ${n * ml} ml. ${n * ml} ÷ 1000 = ${dec(c)} litres.`,
+      wrongs: [[n * ml, 'incomplete', 'Left the answer in millilitres'], [dec(n * ml / 100), 'concept', 'Used 100 ml in a litre'], [dec(n * ml / 10000), 'concept', 'Divided by 10,000'], [dec(n * 1000 / ml), 'formula', 'Divided instead of multiplying']] }; },
+  M: R => { const sp = R.pick([40, 48, 60, 72]), h1 = R.int(6, 9), m1 = R.pick([0, 15, 30, 45]), dur = R.pick([90, 120, 150, 180, 210, 240]), s = h1 * 60 + m1, e = s + dur, h2 = Math.floor(e / 60), m2 = e % 60, c = sp * dur / 60;
+    return { type: 'num', text: `A bus travels at ${sp} km per hour. It leaves at ${fmtTime(s)} AM and stops at ${h2 > 12 ? fmtTime(e - 720) + ' PM' : fmtTime(e) + (h2 === 12 ? ' PM' : ' AM')}. How many kilometres does the bus travel?`, correct: c, obj: 'Find elapsed time first, then use speed to find distance', time: 130,
+      expl: `Time: ${Math.floor(dur / 60)} h ${dur % 60} min = ${dur / 60} hours. Distance: ${sp} × ${dur / 60} = ${c} km.`,
+      wrongs: [[Math.round(((h2 * 100 + m2) - (h1 * 100 + m1)) / 100 * sp * 100) / 100, 'concept', 'Subtracted the clock times as decimals'], [dur, 'incomplete', 'Gave the minutes, not the distance'], [sp * Math.floor(dur / 60), 'incomplete', 'Ignored the extra minutes'], [sp * dur / 100, 'concept', 'Treated an hour as 100 minutes']] }; },
+  X: R => { let per, b0, m, flour, bags, price;
+    do { per = R.pick([250, 300, 350, 400]); b0 = R.pick([8, 12, 15]); m = R.int(4, 9); flour = per * m; bags = Math.ceil(flour / 1000); price = R.int(12, 22) * 10; } while (flour % 1000 === 0 || Math.floor(flour / 1000) === bags);
+    const c = bags * price;
+    return { type: 'num', text: `A recipe uses ${per} g of flour for ${b0} biscuits. Zainab wants to make ${b0 * m} biscuits. Flour is sold only in 1 kg bags, and one bag costs ${money(price)}. How much must she spend on flour?`, correct: c, obj: 'Scale a recipe, convert grams to kilograms and round up to whole bags', time: 160,
+      expl: `${b0 * m} biscuits is ${m} times the recipe: ${per} × ${m} = ${flour} g = ${flour / 1000} kg. She must buy ${bags} whole bags: ${bags} × ${price} = ${c}.`,
+      wrongs: [[Math.round(flour / 1000 * price), 'concept', 'Paid for part of a bag'], [Math.floor(flour / 1000) * price, 'concept', 'Ignored the extra flour'], [m * price, 'misread', 'Bought one bag for every batch'], [(bags + 1) * price, 'calc', 'Bought one bag too many']] }; }
+});
+const STRETCH_KEYS = ['C', 'M', 'X'];
+function mathGrades(topic, diff) { const g = MATH_GRADES[topic]; return diff === 'M' ? [g[0], Math.min(10, g[1] + 1)] : diff === 'X' ? [Math.min(10, g[0] + 1), Math.min(10, g[1] + 2)] : g.slice(); }
+function capIdx(idx, byDiff) {
+  if (idx == null) return idx;
+  const n = k => (byDiff[k] && (byDiff[k].attempted != null ? byDiff[k].attempted : byDiff[k].n)) || 0;
+  const c = n('C') + n('M') + n('X'), m = n('M') + n('X'), x = n('X');
+  const cap = c >= 2 ? (m >= 2 ? (x >= 2 ? 7 : 6) : 5) : 4;
+  return Math.min(idx, cap);
+}
+
 function genMathQ(topic, diff, seed, n) {
   const R = rng(seed), g = GEN[topic][diff](R), id = `MATH-${topic.slice(0, 3).toUpperCase()}-${diff}${String(n).padStart(2, '0')}`;
-  const q = { id, subject: 'Mathematics', topic, unit: null, grades: MATH_GRADES[topic].slice(), diff, type: g.type, text: g.text, objective: g.obj, explanation: g.expl,
+  const q = { id, subject: 'Mathematics', topic, unit: null, grades: mathGrades(topic, diff), diff, type: g.type, text: g.text, objective: g.obj, explanation: g.expl,
     marks: 1, time: g.time, prereq: PREREQ[topic] || null, source: 'Brainova generator v1', status: 'approved', b: bFor(id, diff), c: cFor(g.type), marking: 'Full marks for the correct answer.' };
   if (g.type === 'mcq') { q.options = mkOptions(R, g.correct, g.wrongs); q.answer = q.options.find(o => o.ok).id; q.options.forEach(o => delete o.ok); }
   else { q.answer = g.correct; q.tol = g.tol || 0; q.wrong = g.wrongs.map(w => [Number(w[0]), w[1], w[2]]); }
@@ -497,7 +625,7 @@ const A_DISC = 1.2;
 const P = (t, b, c) => c + (1 - c) / (1 + Math.exp(-A_DISC * (t - b)));
 function eap(resps, mu = 0, sd = 1) {
   let den = 0, num = 0, num2 = 0;
-  for (let t = -3; t <= 3.0001; t += 0.1) {
+  for (let t = -3; t <= 3.6001; t += 0.1) {
     let lp = -0.5 * ((t - mu) / sd) ** 2;
     for (const r of resps) { const p = P(t, r.b, r.c); lp += Math.log(r.correct ? p : 1 - p); }
     const w = Math.exp(lp); den += w; num += w * t; num2 += w * t * t;
@@ -572,13 +700,13 @@ function makeResponse(seq, q, raw, ms, meta = {}) {
 
 /* ---------- question pools and assembly ---------- */
 const topicKey = (s, t) => s + '|' + t;
-function gradeOk(q, a) { if (!a.grades || !a.grades.length || !q.grades) return true; return a.grades.some(g => g >= q.grades[0] && g <= q.grades[1]); }
+function gradeOk(q, a) { if (!a.grades || !a.grades.length || !q.grades) return true; const st = +a.stretch || 0; return a.grades.some(g => g + st >= q.grades[0] && g <= q.grades[1]); }
 function poolFor(bank, a) {
   const keys = new Set((a.topics || []).map(t => topicKey(t.subject, t.topic))), ex = new Set(a.excludeObj || []);
   return bank.filter(q => q.status === 'approved' && keys.has(topicKey(q.subject, q.topic)) && gradeOk(q, a) && !ex.has(q.subject + '|' + q.topic + '|' + q.objective));
 }
 function poolCounts(pool, topics) {
-  return topics.map(t => { const row = { subject: t.subject, topic: t.topic, S: 0, H: 0, E: 0 }; pool.forEach(q => { if (q.subject === t.subject && q.topic === t.topic) row[q.diff]++; }); return row; });
+  return topics.map(t => { const row = { subject: t.subject, topic: t.topic, S: 0, H: 0, E: 0, C: 0, M: 0, X: 0 }; pool.forEach(q => { if (q.subject === t.subject && q.topic === t.topic) row[q.diff]++; }); return row; });
 }
 function buildFixed(a, bank, seed) {
   const R = rng(seed), pool = poolFor(bank, a), topics = a.topics.map(t => t.topic), items = [], shortages = [], used = new Set();
@@ -638,7 +766,7 @@ class Adaptive {
     if (cfg.probe && lastR && lastR.correct === false) {
       const t = lastR.topic, pre = PREREQ[t], est = this.topicEst(t);
       if (pre && !this.probed.has(pre) && est.n >= 2 && est.theta < -0.5) {
-        const pl = this.fullBank.filter(q => q.status === 'approved' && q.topic === pre && q.subject === lastR.subject && q.diff !== 'E' && !this.used.has(q.id) && gradeOk(q, this.a));
+        const pl = this.fullBank.filter(q => q.status === 'approved' && q.topic === pre && q.subject === lastR.subject && !['E', 'C', 'M', 'X'].includes(q.diff) && !this.used.has(q.id) && gradeOk(q, this.a));
         if (pl.length) {
           this.probed.add(pre);
           const q = pl.sort((x, y) => Math.abs(x.b - (est.theta - 0.3)) - Math.abs(y.b - (est.theta - 0.3)))[0];
@@ -684,7 +812,8 @@ function analyze(att, levels, courseOrNull) {
     totalTimeMs: att.durationMs || sum(rs, r => r.timeMs), avgTimeMs: attempted.length ? sum(attempted, r => r.timeMs) / attempted.length : 0, theta: ov.theta, sd: ov.sd, overallIdx: graded.length ? levelIdx(ov.theta, levels) : null };
   an.byDiff = {}; DIFF_KEYS.forEach(d => { const x = rs.filter(r => r.diff === d && !r.probe), g = x.filter(done), c = x.filter(r => r.status === 'correct').length; an.byDiff[d] = { n: x.length, attempted: g.length, correct: c, acc: g.length ? c / g.length : null }; });
   const ok = d => an.byDiff[d].attempted >= 2 && an.byDiff[d].acc >= 0.67;
-  an.consistent = ok('E') && ok('H') ? 'Extend' : ok('H') ? 'Hard' : ok('S') ? 'Strengthen' : 'Below Strengthen';
+  an.consistent = 'Below Strengthen'; DIFF_KEYS.forEach((k, i) => { if (!ok(k)) return; const lo = i ? DIFF_KEYS[i - 1] : null; if (lo && an.byDiff[lo].attempted >= 2 && !ok(lo)) return; an.consistent = DIFF[k].name; });
+  an.overallIdx = capIdx(an.overallIdx, an.byDiff);
   // topics
   const names = []; rs.forEach(r => { if (!names.includes(r.topic)) names.push(r.topic); });
   an.topics = names.map(t => {
@@ -693,7 +822,7 @@ function analyze(att, levels, courseOrNull) {
     const bd = {}; DIFF_KEYS.forEach(d => { const y = x.filter(r => r.diff === d && done(r)); bd[d] = { n: y.length, c: y.filter(r => r.status === 'correct').length }; });
     const objs = {}; g.forEach(r => { const o = objs[r.objective] = objs[r.objective] || { n: 0, c: 0 }; o.n++; if (r.status === 'correct') o.c++; });
     const conf = g.length < 2 ? 'none' : g.length < 4 ? 'limited' : 'adequate';
-    const idx = conf === 'none' ? null : levelIdx(est.theta, levels);
+    const idx = conf === 'none' ? null : capIdx(levelIdx(est.theta, levels), bd);
     const wrongTags = {}; x.filter(r => r.status === 'incorrect' && r.tag).forEach(r => wrongTags[r.tag] = (wrongTags[r.tag] || 0) + 1);
     const evidence = DIFF_KEYS.filter(d => bd[d].n).map(d => `${bd[d].c}/${bd[d].n} ${DIFF[d].name}`).join(', ');
     return { topic: t, subject: x[0].subject, n: x.length, attempted: g.length, correct: c, incorrect: g.length - c, skipped: x.filter(r => r.status === 'skipped').length, acc: g.length ? c / g.length : null,
@@ -729,7 +858,8 @@ function placement(an, att, levels, course) {
     const g = att.grade;
     out.grade = oi <= 1 ? `Below expected level for Grade ${g}: begin with Grade ${Math.max(1, g - 1)} foundations in the weaker topics`
       : oi === 2 ? `At the expected level for Grade ${g}: begin Grade ${g} content` : oi === 3 ? `Secure at Grade ${g}: begin Grade ${g} with extension tasks`
-      : `Ahead of Grade ${g}: consider Grade ${g + 1} content or enrichment`;
+      : oi === 4 ? `Ahead of Grade ${g}: consider Grade ${g + 1} content or enrichment`
+      : `Well ahead of Grade ${g}, with success on questions above the usual level: discuss acceleration or an enrichment programme with the teacher`;
     out.lines.unshift(`${out.grade}. Estimated overall level: ${lvl(oi)}.`);
   }
   if (out.mixed) out.lines.push('The profile is mixed across topics, so the topic-wise recommendations below matter more than the single overall level.');
@@ -806,7 +936,7 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
 (function () {
   const CFG_KEY = 'brainova.apiconfig.v1';
   const QUEUE_KEY = 'brainova.outbox.v1';
-  const SNAPSHOT_COLLECTIONS = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision'];
+  const SNAPSHOT_COLLECTIONS = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision', 'pathways'];
 
   let cfg = { url: '', token: '' };
   try { Object.assign(cfg, JSON.parse(localStorage.getItem(CFG_KEY) || '{}')); } catch (e) { /* ignore */ }
@@ -923,7 +1053,8 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
     const out = {};
     SNAPSHOT_COLLECTIONS.forEach(k => {
       const v = S[k];
-      if (Array.isArray(v)) out[k] = v;
+      if (k === 'pathways') out[k] = (S.attempts || []).filter(a => a.pathways).map(a => ({ id: a.id, json: JSON.stringify(a.pathways) }));
+      else if (Array.isArray(v)) out[k] = v;
       else if (k === 'settings' && v !== undefined) out[k] = [{ id: 'main', json: JSON.stringify(v) }];
       else if (k === 'supervision' && v && typeof v === 'object') out[k] = Object.keys(v).map(id => Object.assign({ id }, v[id]));
     });
@@ -1130,7 +1261,7 @@ function accomFor(sid) { const s = studentById(sid); return s && s.accom ? s.acc
 
 /* ---------- seed ---------- */
 function newAsmt(over) {
-  return Object.assign({ id: uid('asm'), title: '', purpose: 'Diagnostic', application: 'school', courseId: '', grades: [5], ageGroup: '9–11 years', level: 'Grade level', outcomes: '', instructions: 'Read each question carefully and answer on your own. You may not use AI tools, other people or other devices.',
+  return Object.assign({ id: uid('asm'), title: '', purpose: 'Diagnostic', application: 'school', courseId: '', grades: [5], ageGroup: '9–11 years', stretch: 1, level: 'Grade level', outcomes: '', instructions: 'Read each question carefully and answer on your own. You may not use AI tools, other people or other devices.',
     topics: [], excludeObj: [], model: 'fixed', dist: { S: 6, H: 8, E: 6 }, adaptive: { min: 10, max: 20, minPer: 3, sdTarget: 0.7, startB: -0.5, probe: true }, mode: 'independent', durationMin: 30, perQuestionSec: 0, nav: 'free', allowBack: true, allowSkip: true, allowChange: true,
     shuffleQ: false, shuffleOpts: true, attempts: 1, autoSubmit: true, feedback: 'release', resultVis: 'release', passPct: 0, parentSupervision: false, fullscreen: true, autoAdvance: false, status: 'draft', assignedTo: [], created: Date.now() }, over || {});
 }
@@ -1175,6 +1306,11 @@ function seedBase() {
 /* ---------- toast + downloads ---------- */
 let toastTimer = 0;
 function toast(msg) { U.toast = msg; const el = document.getElementById('toast'); if (el) { el.textContent = msg; el.hidden = false; } clearTimeout(toastTimer); toastTimer = setTimeout(() => { U.toast = ''; const e = document.getElementById('toast'); if (e) e.hidden = true; }, 3200); }
+// Saves a file straight through the browser's own download mechanism -
+// works in any real browser with no special permission, unlike an
+// earlier version of this that only worked inside Claude's own preview
+// tool (window.claude.use('downloads')), which silently did nothing on
+// the live site.
 async function saveFile(name, data) {
   try {
     const type = /\.json$/i.test(name) ? 'application/json'
@@ -1228,7 +1364,7 @@ const optList = (list, sel, blank) => (blank != null ? `<option value="">${esc(b
 const field = (label, inner, cls = '') => `<label class="f ${cls}">${esc(label)}${inner}</label>`;
 const inp = (path, val, type = 'text', extra = '') => `<input type="${type}" data-m="${path}" ${type === 'number' ? 'data-t="num"' : ''} value="${esc(val)}" ${extra}>`;
 const chk = (path, val, label, rerender) => `<label class="chk"><input type="checkbox" data-m="${path}" ${rerender ? 'data-r' : ''} ${val ? 'checked' : ''}><span>${label}</span></label>`;
-function topicMeta(subject, topic) { const bankQ = S.bank.filter(q => q.subject === subject && q.topic === topic); const c = { S: 0, H: 0, E: 0 }; bankQ.forEach(q => { if (q.status === 'approved') c[q.diff]++; }); return c; }
+function topicMeta(subject, topic) { const bankQ = S.bank.filter(q => q.subject === subject && q.topic === topic); const c = { S: 0, H: 0, E: 0, C: 0, M: 0, X: 0 }; bankQ.forEach(q => { if (q.status === 'approved') c[q.diff]++; }); return c; }
 function scrollTop() { window.scrollTo(0, 0); }
 
 /* ---------- report sharing (who sees what) ---------- */
@@ -1257,19 +1393,47 @@ function addSampleCheck(D) {
   D.attempts.push(at); D.supervision = D.supervision || {}; D.supervision[a.id + '|' + st.id] = { confirmed: true, by: 'Parent of Fatima', at: Date.now() - 2.1 * 86400000 };
   D.sampleCheckAdded = true;
 }
-function seed() { const d = seedBase(); d.settings.sharing = JSON.parse(JSON.stringify(DEFAULT_SHARING)); addSampleCheck(d); return d; }
+function addStretchSample(D) {
+  if (D.assessments.some(a => a.id === 'asm_g5stretch')) return;
+  const g5 = D.students.filter(s => s.grade === 5); if (!g5.length) return;
+  const a = newAsmt({ id: 'asm_g5stretch', title: 'Grade 5 Maths Challenge: Beyond the Grade', purpose: 'Diagnostic', application: 'school', grades: [5], ageGroup: '9–11 years', stretch: 2, level: 'Mixed',
+    topics: mathTopics(['Addition', 'Subtraction', 'Multiplication', 'Division', 'Fractions', 'Decimals']), model: 'adaptive', adaptive: { min: 12, max: 24, minPer: 3, sdTarget: 0.7, startB: -0.5, maxStep: 1.2, probe: true }, durationMin: 60, parentSupervision: true,
+    outcomes: 'Find each Grade 5 student’s strongest and weakest maths topics, and show who is ready for harder work beyond the grade.',
+    instructions: 'This test starts at a comfortable level and gets harder as you answer well. Some questions are long or tricky on purpose, and some are above Grade 5. You are not expected to get them all right.\nWork on your own. Do not use a calculator, AI tools or other people.',
+    status: 'published', assignedTo: g5.map(s => s.id), resultVis: 'release', feedback: 'release', created: Date.now() - 3600000 });
+  D.assessments.unshift(a);
+  const st = g5.find(s => s.name === 'Ayesha Khan') || g5[0];
+  const at = simulateAttempt(a, D.bank, st, { theta: 1.6, byTopic: { Addition: 2.0, Subtraction: 1.7, Multiplication: 1.8, Division: -0.3, Fractions: 2.1, Decimals: 1.0 }, speed: 1, skipP: 0 }, 'g5stretch-' + st.id, Date.now() - 86400000);
+  at.released = true; at.review = { notes: 'Ayesha works well above Grade 5 in most topics. Give her multi-step and longer word problems, and check her division method.', override: '', finalized: true };
+  D.attempts.push(at); D.supervision = D.supervision || {}; D.supervision[a.id + '|' + st.id] = { confirmed: true, by: 'Parent of ' + st.name, at: Date.now() - 86500000 };
+  D.sampleStretchAdded = true;
+}
+function seed() { const d = seedBase(); d.settings.sharing = JSON.parse(JSON.stringify(DEFAULT_SHARING)); addSampleCheck(d); addStretchSample(d); return d; }
 function ensureSample() {
+  // The Sheet's own "settings" tab can come back empty (nothing saved
+  // there yet) - that must never mean "erase S.settings", since every
+  // report depends on it (proficiency levels, sharing, voice, rewards).
+  // These guards repair it from scratch if it's ever missing, instead
+  // of letting the rest of this function throw on a null read.
   if (!S.settings) S.settings = defaultSettings();
   if (!S.settings.levels || !S.settings.levels.length) S.settings.levels = DEFAULT_LEVELS.map(l => ({ ...l }));
   if (!S.settings.sharing) S.settings.sharing = JSON.parse(JSON.stringify(DEFAULT_SHARING));
+  // upgrade older saved data: three levels above Advanced, and the matching question tiers
+  const lv = S.settings.levels, old5 = lv.length === 5 && lv.every((l, i) => l.name === DEFAULT_LEVELS[i].name && l.min === DEFAULT_LEVELS[i].min);
+  if (old5) S.settings.levels = DEFAULT_LEVELS.map(l => ({ ...l }));
+  if (!S.stretchBank) { const have = new Set(S.bank.map(q => q.id)); buildBank().forEach(q => { if (STRETCH_KEYS.includes(q.diff) && !have.has(q.id)) S.bank.push(q); }); S.stretchBank = true; }
+  if (!S.sampleStretchAdded && S.students.length) addStretchSample(S);
+  if (!S.settings.voice) S.settings.voice = Object.assign({}, VOICE_DEFAULT);
+  if (!S.settings.rewards) S.settings.rewards = JSON.parse(JSON.stringify(RW_DEFAULT));
   if (!S.sampleCheckAdded && S.students.length) addSampleCheck(S);
+  if (!S.samplePathways && S.students.length) addSamplePathways(S);
   save();
 }
 
 /* ===================== SHELL, ROUTER, DASHBOARD, ASSESSMENTS, BUILDER ===================== */
 const NAV = {
-  admin: [['dash', 'Dashboard', 'dash'], ['assess', 'Assessments', 'list'], ['bank', 'Question bank', 'bank'], ['students', 'Students', 'stu'], ['results', 'Results', 'res'], ['export', 'Exports', 'exp'], ['integration', 'LMS integration', 'link'], ['settings', 'Settings', 'cog']],
-  teacher: [['dash', 'Dashboard', 'dash'], ['assess', 'Assessments', 'list'], ['live', 'Live class', 'live'], ['bank', 'Question bank', 'bank'], ['results', 'Results', 'res'], ['students', 'Students', 'stu'], ['export', 'Exports', 'exp']],
+  admin: [['dash', 'Dashboard', 'dash'], ['assess', 'Assessments', 'list'], ['bank', 'Question bank', 'bank'], ['students', 'Students', 'stu'], ['results', 'Results', 'res'], ['pathways', 'Pathways', 'list'], ['export', 'Exports', 'exp'], ['integration', 'LMS integration', 'link'], ['settings', 'Settings', 'cog']],
+  teacher: [['dash', 'Dashboard', 'dash'], ['assess', 'Assessments', 'list'], ['live', 'Live class', 'live'], ['bank', 'Question bank', 'bank'], ['results', 'Results', 'res'], ['pathways', 'Pathways', 'list'], ['students', 'Students', 'stu'], ['export', 'Exports', 'exp']],
   student: [['my', 'My assessments', 'home'], ['hist', 'History', 'hist']],
   parent: [['parent', 'My child', 'home']]
 };
@@ -1339,6 +1503,7 @@ VIEWS.dash = function () {
   const pub = S.assessments.filter(a => a.status === 'published');
   return `<div class="page-head"><div><h1>Dashboard</h1><p>Placement evidence across assessments. Levels are estimates from the questions administered and are meant to support teacher judgement.</p></div>
     <div class="row">${U.role === 'teacher' || U.role === 'admin' ? '<button class="btn" data-a="newAsmt">New assessment</button>' : ''}</div></div>
+    ${pwInbox()}
     ${asmtById('asm_g5check') && U.role !== 'student' ? '<div class="banner info"><div><b>Sample test ready: Grade 5 Mathematics Check.</b> Take it as a student, then come back to Results to see the report as Administrator, Teacher or Parent.</div><button class="btn sm teal" data-a="trySample">Take it as a Grade 5 student</button></div>' : ''}
     <div class="grid g4"><div class="card kpi"><b>${S.assessments.length}</b><span>Assessments created</span></div><div class="card kpi"><b>${pub.length}</b><span>Active (published)</span></div>
     <div class="card kpi"><b>${S.attempts.filter(a => !a.preview).length}</b><span>Completed attempts</span></div><div class="card kpi"><b>${S.students.length}</b><span>Registered students</span></div></div>
@@ -1371,6 +1536,7 @@ function attemptTable(list, opts = {}) {
 }
 
 /* ---------- Assessments list ---------- */
+const AGE_GROUPS = ['2–3 years', '3–4 years', '4–5 years', '5–6 years', '6–7 years', '7–8 years', '8–9 years', '9–10 years', '10–11 years', '11–12 years', '12–13 years', '13–14 years', '14–15 years', '15–16 years', '16+ years', '5–7 years', '7–9 years', '9–11 years', '8–12 years', '11–14 years', '12–16 years', '14+ years'];
 function asgPanel(a) {
   const cand = S.students.filter(s => !a.grades.length || a.grades.includes(s.grade));
   return `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)"><div class="row sp"><h3>Assign to students</h3><div class="row"><button class="btn sm ghost" data-a="asgAll" data-id="${a.id}">Assign all listed</button><button class="btn sm ghost" data-a="asgNone" data-id="${a.id}">Clear</button></div></div>
@@ -1408,10 +1574,11 @@ function bStep1(d) {
     ${field('Purpose', `<select data-m="draft.purpose">${optList(PURPOSES, d.purpose)}</select>`)}
     ${field('Application', `<select data-m="draft.application" data-r>${optList([{ v: 'school', l: 'Brainova School (Grades 1–10)' }, { v: 'course', l: 'Brainova Short Course' }], d.application)}</select>`)}
     ${d.application === 'course' ? field('Course', `<select data-m="draft.courseId" data-r>${optList(COURSES.map(x => ({ v: x.id, l: x.name })), d.courseId, 'Choose a course')}</select>`) : field('Assessment type', `<select data-m="draft.level">${optList(['Grade level', 'Complete syllabus', 'Topic specific', 'Placement'], d.level)}</select>`)}
-    ${field('Student age group', `<select data-m="draft.ageGroup">${optList(['5–7 years', '7–9 years', '9–11 years', '8–12 years', '11–14 years', '12–16 years', '14+ years'], d.ageGroup)}</select>`)}
-    ${field('Academic level', `<select data-m="draft.level">${optList(['Foundation', 'Grade level', 'Intermediate', 'Advanced', 'Mixed'], d.level)}</select>`)}
+    ${field('Student age group', `<select data-m="draft.ageGroup">${optList(AGE_GROUPS, d.ageGroup)}</select>`)}
+    ${field('Academic level', `<select data-m="draft.level">${optList(['Foundation', 'Grade level', 'Intermediate', 'Advanced', 'Challenging', 'Mastery', 'Exceptional', 'Mixed'], d.level)}</select>`)}
     ${field('Passing criteria (% score, 0 for none)', inp('draft.passPct', d.passPct, 'number', 'min="0" max="100"'))}</div>
     <div class="stack" style="margin-top:14px"><div><div class="eyebrow" style="margin-bottom:6px">Grades included</div><div class="chips">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(g => `<button class="chip" data-a="tglGrade" data-g="${g}" aria-pressed="${d.grades.includes(g)}">Grade ${g}</button>`).join('')}</div><p class="muted small" style="margin-top:6px">Questions are drawn only from items whose grade range overlaps these grades. Leave empty to ignore grade.</p></div>
+    <div class="sub"><div class="grid g2">${field('Allow questions above grade level', `<select data-m="draft.stretch" data-t="num">${optList([{ v: 0, l: 'No. Stay within the selected grades' }, { v: 1, l: 'Up to 1 grade above (recommended)' }, { v: 2, l: 'Up to 2 grades above' }], d.stretch == null ? 0 : d.stretch)}</select>`)}<p class="small muted" style="align-self:end">Older children and strong readers often solve work from the next grade. Use this with the age group above so that questions suit the child’s age and ability, not only the grade.</p></div></div>
     ${c ? `<div class="banner info">Course levels: ${c.levels.map(esc).join(' → ')}. <button class="btn sm ghost" data-a="useCourseTopics">Use this course’s topics</button></div>` : ''}
     ${field('Target learning outcomes', `<textarea data-m="draft.outcomes" placeholder="What should this assessment tell you?">${esc(d.outcomes)}</textarea>`)}
     ${field('Instructions shown to students', `<textarea data-m="draft.instructions">${esc(d.instructions)}</textarea>`)}</div></div>`;
@@ -1432,12 +1599,14 @@ function bStep2(d) {
 function bStep3(d) {
   const tot = sumBy(DIFF_KEYS, k => +d.dist[k] || 0);
   return `<div class="card"><h3>Question model</h3><div class="grid g2" style="margin-top:10px">
-    <label class="sub chk" style="cursor:pointer"><input type="radio" name="model" data-m="draft.model" data-r value="fixed" ${d.model === 'fixed' ? 'checked' : ''}><span><b>Fixed difficulty</b><br><span class="muted small">You decide how many Strengthen, Hard and Extend questions every student receives.</span></span></label>
+    <label class="sub chk" style="cursor:pointer"><input type="radio" name="model" data-m="draft.model" data-r value="fixed" ${d.model === 'fixed' ? 'checked' : ''}><span><b>Fixed difficulty</b><br><span class="muted small">You decide how many questions of each difficulty (Strengthen up to Exceptional) every student receives.</span></span></label>
     <label class="sub chk" style="cursor:pointer"><input type="radio" name="model" data-m="draft.model" data-r value="adaptive" ${d.model === 'adaptive' ? 'checked' : ''}><span><b>Adaptive</b><br><span class="muted small">The next question depends on the student’s evidence so far, so each student sees a different path.</span></span></label></div></div>
   ${d.model === 'fixed' ? `<div class="card"><h3>Difficulty distribution</h3><div class="grid g4" style="margin:10px 0">
-    ${DIFF_KEYS.map(k => field(DIFF[k].name, inp('draft.dist.' + k, d.dist[k], 'number', 'min="0" max="60" data-r'))).join('')}<div class="kpi" style="justify-content:flex-end"><b>${tot}</b><span>Total questions</span></div></div>
-    <div class="row"><span class="muted small">Quick split</span>${[[10, 3, 4, 3], [15, 5, 6, 4], [20, 6, 8, 6], [24, 6, 10, 8], [30, 9, 12, 9]].map(p => `<button class="btn sm ghost" data-a="splitDist" data-s="${p[1]}" data-h="${p[2]}" data-e="${p[3]}">${p[0]} questions (${p[1]}/${p[2]}/${p[3]})</button>`).join('')}</div>
-    <div class="legend" style="margin-top:12px"><span><b>Strengthen</b> foundation knowledge, basic concepts, guided application</span><span><b>Hard</b> multi-step reasoning and application</span><span><b>Extend</b> higher-order thinking and unfamiliar problems</span></div></div>
+    ${DIFF_KEYS.map(k => field(DIFF[k].name, inp('draft.dist.' + k, d.dist[k] || 0, 'number', 'min="0" max="60" data-r'))).join('')}<div class="kpi" style="justify-content:flex-end"><b>${tot}</b><span>Total questions</span></div></div>
+    <div class="row"><span class="muted small">Quick split</span>${[[10, 3, 4, 3, 0, 0, 0], [15, 5, 6, 4, 0, 0, 0], [20, 6, 8, 6, 0, 0, 0], [24, 6, 10, 8, 0, 0, 0], [24, 4, 6, 6, 4, 3, 1], [30, 9, 12, 9, 0, 0, 0]].map(p => `<button class="btn sm ghost" data-a="splitDist" data-s="${p[1]}" data-h="${p[2]}" data-e="${p[3]}" data-c="${p[4]}" data-m2="${p[5]}" data-x="${p[6]}">${p[0]} questions (${p.slice(1).filter((x, i) => i < 3 || x).join('/')})${p[4] ? ' with stretch' : ''}</button>`).join('')}</div>
+    <div class="legend" style="margin-top:12px"><span><b>Strengthen</b> foundation knowledge, basic concepts, guided application</span><span><b>Hard</b> multi-step reasoning and application</span><span><b>Extend</b> higher-order thinking and unfamiliar problems</span></div>
+    <div class="legend" style="margin-top:8px"><span><b>Challenging</b> every question is a word problem</span><span><b>Mastery</b> two concepts in one question: find one thing first, then use it</span><span><b>Exceptional</b> long, multi-step questions with common traps, a little above the usual grade level</span></div>
+    <p class="muted small" style="margin-top:8px">Challenging, Mastery and Exceptional questions are available for Mathematics. Other subjects do not have them yet, so a student can reach at most Advanced there.</p></div>
     <div class="card"><h3>Topic-wise distribution</h3><p class="muted small">Questions are spread evenly across the selected topics within each difficulty. Reports show every topic separately.</p></div>`
     : `<div class="card"><h3>Adaptive settings</h3><div class="grid g4" style="margin:10px 0">
     ${field('Minimum questions', inp('draft.adaptive.min', d.adaptive.min, 'number', 'min="3" max="60"'))}${field('Maximum questions', inp('draft.adaptive.max', d.adaptive.max, 'number', 'min="4" max="60"'))}
@@ -1508,7 +1677,7 @@ function bStep5(d) {
     <div class="row"><button class="btn ghost" data-a="previewRun" ${v.err.length ? 'disabled' : ''}>Preview as a student</button><button class="btn ghost" data-a="saveDraft">Save draft</button><button class="btn teal lg" data-a="publish" ${v.err.length ? 'disabled' : ''}>Publish assessment</button></div>`;
 }
 function pathChart(resps) {
-  const W = 640, H = 190, L = 70, Rm = 14, T = 12, B = 28, n = Math.max(resps.length, 2), x = i => L + (W - L - Rm) * (i / (n - 1)), y = b => T + (H - T - B) * (1 - (b + 1.7) / 3.4);
+  const W = 640, H = 190, L = 70, Rm = 14, T = 12, B = 28, n = Math.max(resps.length, 2), x = i => L + (W - L - Rm) * (i / (n - 1)), y = b => T + (H - T - B) * (1 - (b + 1.7) / 5.2);
   const marks = resps.map((r, i) => { const cx = x(i), cy = y(r.b); const f = r.status === 'correct' ? 'var(--ok)' : r.status === 'incorrect' ? 'var(--bad)' : 'var(--surface)'; const s = r.status === 'correct' || r.status === 'incorrect' ? 'var(--surface)' : 'var(--skip)';
     return `<circle cx="${cx}" cy="${cy}" r="5.5" fill="${f}" stroke="${s}" stroke-width="2"><title>Q${i + 1} ${esc(r.topic)} · ${DIFF[r.diff].name} · ${r.status}${r.probe ? ' · prerequisite check' : ''}</title></circle>`; }).join('');
   const line = resps.map((r, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(r.b).toFixed(1)).join(' ');
@@ -1523,10 +1692,24 @@ function pathChart(resps) {
 const QTYPES = [{ v: 'mcq', l: 'Multiple choice' }, { v: 'tf', l: 'True or false' }, { v: 'num', l: 'Numerical answer' }, { v: 'fill', l: 'Fill in the blank' }, { v: 'short', l: 'Short answer (keywords)' }, { v: 'order', l: 'Ordering' }, { v: 'match', l: 'Matching' }, { v: 'manual', l: 'Practical or long answer (teacher scored)' }];
 const qTypeName = t => (QTYPES.find(x => x.v === t) || { l: t }).l;
 
+// Only the difficulty tiers an attempt actually used - a plain S/H/E
+// test has no Challenging/Mastery/Exceptional questions, so byDiff.C/M/X
+// sit at n:0 and would otherwise pad every chart and CSV with empty rows.
+function diffKeysFor(an) { return DIFF_KEYS.filter(k => an.byDiff[k] && an.byDiff[k].n); }
 function filteredBank() {
   const f = U.bankFilter, s = f.q.toLowerCase();
   return S.bank.filter(q => (!f.subject || q.subject === f.subject) && (!f.topic || q.topic === f.topic) && (!f.diff || q.diff === f.diff) && (!f.type || q.type === f.type) && (!f.status || q.status === f.status)
     && (!f.grade || (q.grades && q.grades[0] <= +f.grade && q.grades[1] >= +f.grade)) && (!s || (q.text + ' ' + q.id + ' ' + q.objective).toLowerCase().includes(s)));
+}
+const QGUIDE = {"head": ["subject", "topic", "grade_min", "grade_max", "difficulty", "type", "text", "option_a", "option_b", "option_c", "option_d", "answer", "explanation", "objective", "time_sec", "marks", "prerequisite", "source"], "ex": [["Mathematics", "Subtraction", 2, 4, "S", "mcq", "What is 82 − 37?", "45", "55", "47", "35", "a", "82 − 37 = 45.", "Subtract two-digit numbers with regrouping", 40, 1, "", "EXAMPLE: delete this row"], ["Mathematics", "Multiplication", 3, 5, "H", "mcq", "What is the value of (6 × 5) + (4 × 8)?", "62", "54", "72", "52", "a", "6 × 5 = 30 and 4 × 8 = 32. 30 + 32 = 62.", "Use the order of operations with two products", 70, 1, "", "EXAMPLE: delete this row"], ["Mathematics", "Fractions", 4, 6, "E", "mcq", "Which fraction is between 1/3 and 1/2?", "2/5", "1/4", "3/5", "2/3", "a", "1/3 is about 0.33, 1/2 is 0.5 and 2/5 is 0.4, so 2/5 is between them.", "Compare fractions without a common picture", 100, 1, "", "EXAMPLE: delete this row"], ["Mathematics", "Multiplication", 4, 6, "C", "mcq", "A school bus has 45 seats. 12 buses go on a trip and every seat is full. How many students are on the trip?", "540", "450", "504", "57", "a", "45 × 12 = 540.", "Solve a multiplication word problem", 80, 1, "", "EXAMPLE: delete this row"], ["Mathematics", "Subtraction", 4, 7, "M", "num", "Ali buys 3 notebooks at Rs 45 each. He pays with a Rs 200 note. How much change does he get?", "", "", "", "", "65", "Notebooks: 3 × 45 = 135. Change: 200 − 135 = 65.", "Find a total first, then use it to find the change", 100, 2, "Multiplication", "EXAMPLE: delete this row"], ["Mathematics", "Division", 5, 8, "X", "num", "A shop sells pencils only in boxes of 12 for Rs 90. A teacher needs 100 pencils for her class and wants to spend as little as possible. She pays with a Rs 1,000 note. How much change does she get?", "", "", "", "", "190", "100 ÷ 12 = 8.33, so she must buy 9 whole boxes. Cost: 9 × 90 = 810. Change: 1,000 − 810 = 190. Common traps: buying 8 boxes, or paying for part of a box.", "Round up to whole boxes, then find the cost and the change", 150, 3, "Multiplication", "EXAMPLE: delete this row"], ["Mathematics", "Fractions", 4, 6, "H", "tf", "True or false: 3/4 is greater than 2/3.", "", "", "", "", "t", "3/4 = 0.75 and 2/3 is about 0.67.", "Compare two fractions", 45, 1, "", "EXAMPLE: delete this row"], ["English", "Tenses", 4, 6, "S", "fill", "Yesterday I ____ (go) to school.", "", "", "", "", "went", "The past tense of go is went.", "Use the simple past tense", 30, 1, "", "EXAMPLE: delete this row"], ["Science", "Living Things", 4, 6, "S", "short", "Name the process by which plants make their own food using sunlight.", "", "", "", "", "photosynthesis", "Plants make food by photosynthesis.", "Recall how plants make food", 40, 1, "", "EXAMPLE: delete this row"]], "levels": [["S", "Strengthen", "Tests one basic skill or fact, stated directly. No hidden steps.", "Short and plain. Usually no story. One step to the answer.", "30 to 45 seconds", "What is 82 − 37?", "Grade level and below"], ["H", "Hard", "Needs several steps or applying a rule in a simple setting.", "Two or three steps, still clear. Numbers are manageable.", "60 to 90 seconds", "(6 × 5) + (4 × 8)", "Grade level"], ["E", "Extend", "Higher-order thinking: reasoning, comparing, or an unfamiliar problem. No formula to copy.", "Ask the student to explain, compare, estimate or choose. Make the idea new but fair.", "90 to 120 seconds", "Which fraction is between 1/3 and 1/2?", "Grade level to 1 grade above"], ["C", "Challenging", "Every question is a word problem. One idea sits inside a real situation.", "Write a short story with a real context (money, distance, school). One calculation, but the student must find it in the words.", "60 to 90 seconds", "45 seats on each of 12 buses: how many students?", "Grade level to 1 grade above"], ["M", "Mastery", "Two concepts or two logics in one question. The student finds one thing first and uses it to find the final answer.", "Make the first result necessary for the second step. Never give the first result. Use a word problem.", "90 to 120 seconds", "3 notebooks at Rs 45, paid with Rs 200: change?", "1 grade above"], ["X", "Exceptional", "Long, multi-logic questions with three or more steps, wording that is easy to misread, and the mistakes children usually make. A little above the age level and hard for teachers to do quickly.", "Make it longer, with extra information and one trap built in (rounding up, moved items, a unit change, a fraction of what is left). Prefer a number answer (type num) so guessing cannot help. Explain the trap in the explanation.", "120 to 180 seconds", "Pencils sold only in boxes of 12: least cost and change", "1 to 2 grades above"]], "fields": [["subject", "Yes", "Text", "Mathematics, English, Science, Computer Science, Graphic Design, or a new subject name.", "Mathematics"], ["topic", "Yes", "Text", "The topic inside the subject. Use the same spelling every time, because reports group by topic.", "Fractions"], ["grade_min", "Recommended", "Number 1 to 10", "The lowest grade the question suits. Blank means 1.", "4"], ["grade_max", "Recommended", "Number 1 to 10", "The highest grade the question suits. Blank means 10. Must not be lower than grade_min. For Mastery and Exceptional questions, set the range 1 to 2 grades higher than the topic is usually taught.", "6"], ["difficulty", "Yes", "S, H, E, C, M or X", "Write the letter: S Strengthen, H Hard, E Extend, C Challenging, M Mastery, X Exceptional. The full word also works. See the Difficulty levels sheet. Blank means S.", "M"], ["type", "Yes", "mcq, tf, num, fill or short", "mcq multiple choice. tf true or false. num a number answer. fill a short word or phrase. short a written answer marked by keywords. Blank means mcq. Ordering, matching and teacher-marked questions cannot be imported by CSV. Add those inside the app.", "mcq"], ["text", "Yes", "Text", "The full question. Keep it clear for the grade. Put blanks as ____ for fill questions.", "What is 82 − 37?"], ["option_a to option_d", "mcq only", "Text", "Four different options. Leave blank for other types. Wrong options should come from real mistakes (see Writing options).", "45"], ["answer", "Yes", "Depends on type", "mcq: the letter a, b, c or d. tf: t or f. num: the number only (no units, no commas). fill: the accepted answer. For several accepted answers, separate with | (went | had gone). short: keywords separated with | (photosynthesis | sunlight).", "a"], ["explanation", "Recommended", "Text", "Why the answer is right, shown in review and feedback. For Exceptional questions, name the trap.", "82 − 37 = 45."], ["objective", "Recommended", "Text", "What skill the question checks, starting with a verb. Used in reports and learning plans.", "Subtract two-digit numbers with regrouping"], ["time_sec", "Optional", "Seconds", "Time a student at the right level needs. Blank means 45. Use the guide on the Difficulty levels sheet.", "40"], ["marks", "Optional", "Number", "Marks for a correct answer. Blank means 1. Use 2 or 3 for Mastery and Exceptional questions.", "1"], ["prerequisite", "Optional", "Text", "A topic the student should know first, such as Multiplication for Division. Used to find missing earlier skills.", "Multiplication"], ["source", "Optional", "Text", "Who wrote it or where it comes from. Do not copy from textbooks or exam papers that you do not have the right to use.", "Teacher name"]], "opts": [["Use real mistakes", "Every wrong option should be something a child would really do. The app records which kind of mistake was chosen and shows it in error analysis."], ["Calculation slip", "The method is right but the sum is wrong, for example forgetting to carry. Example: 48 + 27 = 65 instead of 75."], ["Concept error", "The child uses the wrong idea, for example adding instead of multiplying, or taking a fraction of the whole instead of what is left."], ["Misreading", "The child answers a different question, for example giving the cost when the change was asked."], ["Incomplete answer", "The child stops after the first step of a two-step question. This is the main wrong option for Mastery questions."], ["Wrong formula or unit", "The child uses the perimeter formula for area, or leaves the answer in grams instead of kilograms."], ["Do not", "Do not use \"all of the above\" or \"none of the above\". Do not make the correct option always a. Do not make the correct option the longest. Do not repeat an option. Do not use joke options."]], "check": [["Solve it yourself", "Work the question out step by step. Check that there is exactly one correct answer and that the explanation matches it."], ["Match the level", "Read the Difficulty levels sheet. A word problem with one step is Challenging, not Mastery. Two linked steps is Mastery. Three or more steps with a trap is Exceptional."], ["Match the grade and age", "Write for the age of the student, not only the grade. Check reading level. Avoid long sentences below Grade 3."], ["Be fair", "Do not rely on information the student could not know, such as a local sports team or a brand. Use names and money that your students know. Avoid anything unsafe, scary or upsetting."], ["Keep it clear", "One question per row. No two questions joined. Numbers and units written the same way each time. Use ____ for blanks."], ["Original work", "Write your own questions. Do not copy from textbooks, past papers or other schools unless you have permission."], ["Test the file", "Import a few rows first. Imported questions arrive as drafts. Open each one, check it and approve it before using it in a test."]], "how": [["What this file is", "A guide and a template for writing questions in bulk for the Brainova question bank. Questions that you write here are imported as drafts and must be approved before they appear in a test."], ["Step 1", "Read the sheets: Difficulty levels, Column rules, Writing options and Quality checklist."], ["Step 2", "Go to the Questions sheet. It has example rows. Delete the example rows, then type your own questions, one per row. Do not change the header row."], ["Step 3", "Save only the Questions sheet as CSV: in Excel use File, Save As, CSV UTF-8. In Google Sheets use File, Download, CSV (the current sheet). Make sure the Questions sheet is the one that is open when you save."], ["Step 4", "In Brainova open Question bank, click Import CSV and choose the file. Check the message that says how many questions were imported and how many were skipped."], ["Step 5", "Open the Drafts, review each question, and approve it. Then use it in an assessment."], ["Skipped rows", "A row is skipped when subject, topic or question text is missing, an mcq has fewer than two different options or repeats an option, a num answer is not a number, or a fill or short answer is empty. A mcq answer that is not a, b, c or d is read as a, so check it. A tf answer that does not start with t is read as false."], ["Order of levels", "Strengthen, Hard, Extend, Challenging, Mastery, Exceptional. The last three give the Challenging, Mastery and Exceptional proficiency levels and are for stronger students."]]};
+function guideCard() {
+  const t = (h, rows, cls) => `<div class="tw" style="margin:8px 0 14px"><table><thead><tr>${h.map(x => `<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(x => `<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return `<div class="card"><div class="row sp"><h2>Question writing guide</h2><div class="row"><button class="btn sm ghost" data-a="dlGuide">Download guide (CSV)</button><button class="btn sm ghost" data-a="tplBank">CSV template</button><button class="btn sm ghost" data-a="qGuideClose">Close</button></div></div>
+  <p class="muted small" style="margin:6px 0 10px">For anyone writing questions in bulk. Share this with every person who prepares questions, then import the CSV with <b>Import CSV</b>. Imported questions arrive as drafts and must be approved.</p>
+  <h3>Steps</h3><ol class="ul small" style="margin:6px 0 12px">${['Read the difficulty levels and column rules below.', 'Download the CSV template. Delete the example rows and type your own questions, one per row. Do not change the header row.', 'Save the file as CSV UTF-8 (Excel: File, Save As. Google Sheets: File, Download, CSV).', 'In the Question bank click Import CSV and choose the file. Check how many questions were imported and skipped.', 'Open the drafts, check each question and approve it. Then use it in an assessment.'].map(x => `<li>${esc(x)}</li>`).join('')}</ol>
+  <h3>Difficulty levels: what each one means</h3>${t(['Letter', 'Level', 'What it tests', 'How to write it', 'Time needed', 'Example', 'Usual grade range'], QGUIDE.levels)}
+  <h3>Column rules</h3>${t(['Column', 'Needed?', 'Format', 'Rule', 'Example'], QGUIDE.fields)}
+  <div class="grid g2"><div><h3>Writing wrong options</h3>${t(['Kind', 'Guidance'], QGUIDE.opts)}</div><div><h3>Quality checklist</h3>${t(['Check', 'What to do'], QGUIDE.check)}</div></div></div>`;
 }
 VIEWS.bank = function () {
   const f = U.bankFilter, list = filteredBank(), lim = U.bankLimit || 25;
@@ -1534,9 +1717,10 @@ VIEWS.bank = function () {
   const draftN = S.bank.filter(q => q.status !== 'approved').length;
   const cov = SYLLABUS.flatMap(s => s.units.flatMap(u => u.topics.map(t => ({ s: s.subject, t, m: topicMeta(s.subject, t), d: S.bank.filter(q => q.subject === s.subject && q.topic === t && q.status !== 'approved').length }))));
   return `<div class="page-head"><div><h1>Question bank</h1><p>${S.bank.length} questions · ${S.bank.length - draftN} approved · ${draftN} awaiting review. Only approved questions are used in assessments.</p></div>
-    <div class="row"><button class="btn" data-a="qNew">Add question</button><button class="btn ghost" data-a="qGenOpen">Generate questions</button><label class="btn ghost" for="csvq" style="cursor:pointer">Import CSV</label><input id="csvq" type="file" accept=".csv,text/csv" hidden data-a="importQ"><button class="btn ghost" data-a="exportBank">Export CSV</button><button class="btn ghost" data-a="tplBank">CSV template</button></div></div>
+    <div class="row"><button class="btn" data-a="qNew">Add question</button><button class="btn ghost" data-a="qGenOpen">Generate questions</button><label class="btn ghost" for="csvq" style="cursor:pointer">Import CSV</label><input id="csvq" type="file" accept=".csv,text/csv" hidden data-a="importQ"><button class="btn ghost" data-a="exportBank">Export CSV</button><button class="btn ghost" data-a="tplBank">CSV template</button><button class="btn ghost" data-a="qGuideOpen">Writing guide</button></div></div>
+    ${U.qGuide ? guideCard() : ''}
     ${U.qGen ? genPanel() : ''}${U.qDraft ? qEditor() : ''}
-    <details class="card"><summary>Coverage by topic and difficulty</summary><div class="tw" style="margin-top:10px"><table><thead><tr><th>Subject</th><th>Topic</th><th class="num">Strengthen</th><th class="num">Hard</th><th class="num">Extend</th><th class="num">Drafts</th></tr></thead><tbody>${cov.map(c => `<tr><td>${esc(c.s)}</td><td>${esc(c.t)}</td>${DIFF_KEYS.map(k => `<td class="num">${c.m[k] ? c.m[k] : '<span class="pill warn">0</span>'}</td>`).join('')}<td class="num">${c.d || ''}</td></tr>`).join('')}</tbody></table></div></details>
+    <details class="card"><summary>Coverage by topic and difficulty</summary><div class="tw" style="margin-top:10px"><table><thead><tr><th>Subject</th><th>Topic</th><th class="num">Strengthen</th><th class="num">Hard</th><th class="num">Extend</th><th class="num">Challenging</th><th class="num">Mastery</th><th class="num">Exceptional</th><th class="num">Drafts</th></tr></thead><tbody>${cov.map(c => `<tr><td>${esc(c.s)}</td><td>${esc(c.t)}</td>${DIFF_KEYS.map(k => `<td class="num">${c.m[k] ? c.m[k] : '<span class="pill warn">0</span>'}</td>`).join('')}<td class="num">${c.d || ''}</td></tr>`).join('')}</tbody></table></div></details>
     <div class="card"><div class="filters">${field('Search', `<input type="search" id="bsearch" data-m="bankFilter.q" data-live value="${esc(f.q)}" placeholder="Text, ID or objective">`)}
       ${field('Subject', `<select data-m="bankFilter.subject" data-r>${optList(subjects, f.subject, 'All')}</select>`)}${field('Topic', `<select data-m="bankFilter.topic" data-r>${optList(topics, f.topic, 'All')}</select>`)}
       ${field('Difficulty', `<select data-m="bankFilter.diff" data-r>${optList(DIFF_KEYS.map(k => ({ v: k, l: DIFF[k].name })), f.diff, 'All')}</select>`)}${field('Type', `<select data-m="bankFilter.type" data-r>${optList(QTYPES, f.type, 'All')}</select>`)}
@@ -1648,6 +1832,31 @@ function abilityRow(t) {
   const dot = t.idx == null ? '' : `<div class="whisk" style="left:${pos(t.theta - t.sd)}%;width:${pos(t.theta + t.sd) - pos(t.theta - t.sd)}%"></div><div class="dot" style="left:${pos(t.theta)}%" title="Estimate ${t.theta.toFixed(2)} ± ${t.sd.toFixed(2)}"></div>`;
   return `<div class="ability"><div><b>${esc(t.topic)}</b><div class="muted small">${esc(t.evidence || '')}${t.probe ? ' · prerequisite check' : ''}</div></div><div class="atrack" role="img" aria-label="${esc(t.topic)}: ${t.idx == null ? 'needs assessment' : esc(lvName(t.idx))}">${segs}${dot}</div><div class="right">${lvPill(t.idx)}<div class="muted small">${t.conf === 'adequate' ? 'Adequate evidence' : t.conf === 'limited' ? 'Limited evidence' : 'Too few answers'}</div></div></div>`;
 }
+const LV_MEANING = ['Needs the basic skills taught or revised before moving on.', 'Understands some of it but has clear gaps. Needs regular practice and support.', 'Secure on the core skills. Some harder work is still to be learned.', 'Strong. Handles harder questions well.', 'Excellent. Ready for extension and challenge.', 'Handles word problems well. Ready for longer, harder questions.', 'Solves questions that combine two ideas. Works above the usual level for the grade.', 'Handles long, tricky, multi-step questions, some above the usual age level. Needs an enrichment plan, not just more of the same.'];
+function readGuide(aud, sh, an, att) {
+  const L = levels(), five = L.length === 5 || L.length === 8, who = { parent: 'your child', student: 'you', teacher: 'the student', admin: 'the student' }[aud];
+  const intro = { parent: 'This report shows what your child already knows and where they need support. It is a guide to help teaching, <b>not a pass or fail mark</b>, and it does not describe how clever your child is. Results are estimates from one test.',
+    student: 'This report shows what you already know well and what to practise next. It is <b>not a pass or fail mark</b>. Everyone has topics that are easier and harder for them.',
+    teacher: 'This report shows where the student is secure and where to teach next, topic by topic. Use it together with what you see in class. You can change the final recommendation and add a note before releasing it.',
+    admin: 'This is the full report. Teachers, parents and students see versions with fewer details, depending on the sharing settings. Use this page to check the evidence behind a recommendation.' }[aud];
+  const items = [];
+  if (sh('summary')) items.push(['Score, accuracy, completion', 'Score is marks earned out of the total. Accuracy is the share of answered questions that were correct. Completion is the share of questions that were answered. Skipped and not reached questions are counted separately.']);
+  if (sh('timing')) items.push(['Time', 'Time is shown for information only. Working slowly or quickly never lowers the level.']);
+  if (sh('difficulty')) items.push(['Strengthen, Hard, Extend', 'Questions come at three difficulty levels. Strengthen checks the basics. Hard needs several steps. Extend uses unfamiliar problems. “Performs consistently at” shows the level where answers were mostly correct.' + (att.responses.some(r => ['C', 'M', 'X'].includes(r.diff)) ? ' Challenging questions are all word problems. Mastery questions combine two ideas. Exceptional questions are long and tricky, and a little above the usual grade level.' : '')]);
+  if (sh('topics')) items.push(['Topic mastery and evidence', 'Each topic gets its own level. “Evidence” shows how many questions the level is based on. When evidence is low, treat the level as an early sign, not a firm result.']);
+  if (sh('strengths')) items.push(['Strengths', 'Topics at ' + (five ? L[3].name + ' or higher' : 'the top levels') + '.']);
+  if (sh('gaps')) items.push(['Learning gaps', 'Topics at ' + (five ? L[0].name + ' or ' + L[1].name : 'the lowest levels') + ', and earlier skills that may be missing and are holding back later topics.']);
+  if (sh('errors')) items.push(['Error patterns', 'Wrong answers are grouped by likely cause, such as a calculation slip, a concept problem, misreading, a formula problem or an incomplete answer. This suggests why, not for certain.']);
+  if (sh('placement')) items.push(['Placement recommendation', 'The suggested starting point for learning, based on the topic levels' + (aud === 'teacher' || aud === 'admin' ? '. The teacher can override it and finalise it.' : ', checked by the teacher.') + ' It is an estimate, not a final decision.']);
+  if (sh('plan')) items.push(['Learning plan', 'The order of topics to learn or revise next, and any extra assessment suggested.']);
+  if (sh('questions')) items.push(['Question review', 'Each question with the answer given and the correct answer.']);
+  if (sh('integrity')) items.push(['Session record', 'Parent supervision, accommodations such as extra time, and interruptions. It is a record, not proof of how the test was done.']);
+  if (sh('trace') && att.model === 'adaptive') items.push(['Adaptive log', 'For adaptive tests, why each question was chosen, based on the answers so far.']);
+  return `<div class="card"><h2>How to read this report</h2><p style="margin-bottom:12px">${intro}</p>
+    <h3>What the levels mean</h3><div class="stack" style="margin:8px 0 14px">${L.map((l, i) => `<div class="row" style="align-items:flex-start;gap:10px">${lvPill(i)}<span class="small" style="flex:1;min-width:0">${five ? esc(LV_MEANING[i]) : 'Level ' + (i + 1) + ' of ' + L.length + (i === 0 ? ' (lowest).' : i === L.length - 1 ? ' (highest).' : '.')}</span></div>`).join('')}</div>
+    <p class="small" style="margin-bottom:12px"><b>Levels are not percentages.</b> A level is estimated from which questions ${who} answered correctly, giving more weight to harder questions. Two students with the same percentage can be at different levels.${L.length === 8 ? ' The top three levels can only be reached by answering Challenging, Mastery or Exceptional questions, so easier questions alone never give them.' : ''}</p>
+    <h3>What is in this report</h3><ul class="ul" style="margin-top:6px">${items.map(x => `<li><b>${esc(x[0])}:</b> ${esc(x[1])}</li>`).join('')}</ul></div>`;
+}
 function gateSections(html, sh) { return html.replace(/<!--tsec:(\w+)-->([\s\S]*?)<!--\/tsec-->/g, (m, k, b) => sh(k) ? b : '').replace(/<!--sec:(\w+)-->([\s\S]*?)<!--\/sec-->/g, (m, k, b) => sh(k) ? b : ''); }
 function reportBody(att, aud, opts = {}) {
   const sh = k => aud === 'admin' || !!sharingFor(aud)[k];
@@ -1656,13 +1865,14 @@ function reportBody(att, aud, opts = {}) {
   const P = an.placement, fin = finalLevelText(att, an), tp = an.topics.filter(t => !t.probe), strong = tp.filter(t => t.idx != null && t.idx >= 3), weak = tp.filter(t => t.idx != null && t.idx <= 1);
   const accom = accomFor(att.studentId), er = an.errors;
   return gateSections(`<div class="rep">
-  <div class="rep-head"><div><div class="eyebrow" style="color:#9FB0CF">Diagnostic report</div><h1>${esc(att.title)}</h1><div class="meta"><span><b>${esc(att.studentName)}</b></span><span>ID ${esc(st.id)}</span><span>Grade ${att.grade}</span>${a.ageGroup ? `<span>${esc(a.ageGroup)}</span>` : ''}<span>${esc(att.subjectList.join(', '))}</span><span>${fmtDate(att.finished)}</span><span>${att.mode === 'live' ? 'Teacher-led live' : att.model === 'adaptive' ? 'Adaptive' : 'Fixed difficulty'}</span></div></div>
+  <div class="rep-head"><div><div class="eyebrow" style="color:#9FB0CF">Diagnostic report</div><h1>${esc(att.title)}</h1><div class="meta"><span><b>${esc(att.studentName)}</b></span><span>ID ${esc(st.id)}</span><span>Grade ${att.grade}</span>${st.age ? `<span>Age ${st.age}</span>` : ''}${a.ageGroup ? `<span>${esc(a.ageGroup)}</span>` : ''}<span>${esc(att.subjectList.join(', '))}</span><span>${fmtDate(att.finished)}</span><span>${att.mode === 'live' ? 'Teacher-led live' : att.model === 'adaptive' ? 'Adaptive' : 'Fixed difficulty'}</span></div></div>
     <div style="text-align:right">${lvPill(an.overallIdx)}<div style="font-size:30px;font-weight:800;font-family:var(--head);margin-top:6px">${an.marks}/${an.maxMarks}</div><div class="small" style="color:#C9D3E8">${pct(an.accuracy)} accuracy</div></div></div>
   ${an.pending ? `<div class="banner warn">${an.pending} answer${an.pending > 1 ? 's are' : ' is'} waiting for teacher scoring. The level may change once they are marked.</div>` : ''}
+  ${readGuide(aud, sh, an, att)}
   <!--sec:summary--><div class="card"><h2>Performance summary</h2><div class="tiles"><div class="tile"><b>${an.total}</b><span>Questions</span></div><div class="tile"><b>${an.attempted}</b><span>Attempted</span></div><div class="tile"><b>${an.correct}</b><span>Correct</span></div><div class="tile"><b>${an.incorrect}</b><span>Incorrect</span></div><div class="tile"><b>${an.skipped}</b><span>Skipped</span></div><div class="tile"><b>${an.unanswered}</b><span>Not reached</span></div>
     <div class="tile"><b>${pct(an.completion)}</b><span>Completion</span></div><!--tsec:timing--><div class="tile"><b>${fmtDur(an.totalTimeMs)}</b><span>Total time</span></div><div class="tile"><b>${fmtDur(an.avgTimeMs)}</b><span>Average per question</span></div><!--/tsec--></div>
     ${an.slowAccurate && sh('timing') ? '<p class="small muted" style="margin-top:8px">This student worked carefully and accurately. Speed is shown for information only and is never used to set the level.</p>' : ''}</div>
-  <!--/sec--><!--sec:difficulty--><div class="grid g2"><div class="card"><h2>Difficulty-wise performance</h2>${bars(DIFF_KEYS.map(k => ({ label: DIFF[k].name, value: an.byDiff[k].acc || 0, text: an.byDiff[k].attempted ? `${an.byDiff[k].correct}/${an.byDiff[k].attempted}` : '—' })))}<p class="small" style="margin-top:10px">Performs consistently at: <b>${esc(an.consistent)}</b> <span class="muted">(at least two answers and two-thirds correct)</span></p></div>
+  <!--/sec--><!--sec:difficulty--><div class="grid g2"><div class="card"><h2>Difficulty-wise performance</h2>${bars(diffKeysFor(an).map(k => ({ label: DIFF[k].name, value: an.byDiff[k].acc || 0, text: an.byDiff[k].attempted ? `${an.byDiff[k].correct}/${an.byDiff[k].attempted}` : '—' })))}<p class="small" style="margin-top:10px">Performs consistently at: <b>${esc(an.consistent)}</b> <span class="muted">(at least two answers and two-thirds correct)</span></p></div>
   <div class="card"><h2>${teacher ? 'Question path' : 'How the questions went'}</h2>${pathChart(att.responses)}</div></div>
   <!--/sec--><!--sec:topics--><div class="card"><div class="row sp"><h2>Topic mastery</h2>${levelLegend()}</div><p class="muted small" style="margin-bottom:6px">The dot is the estimated level and the line shows how uncertain the estimate is. Each topic is judged on its own.</p>${an.topics.map(abilityRow).join('')}
     <div class="tw" style="margin-top:12px"><table><thead><tr><th>Topic</th><th class="num">Questions</th><th class="num">Correct</th><th class="num">Incorrect</th><th class="num">Skipped</th><th class="num">Accuracy</th><!--tsec:timing--><th class="num">Avg time</th><!--/tsec--></tr></thead><tbody>${an.topics.map(t => `<tr><td>${esc(t.topic)}${t.probe ? ' <span class="pill warn">prerequisite check</span>' : ''}</td><td class="num">${t.n}</td><td class="num">${t.correct}</td><td class="num">${t.incorrect}</td><td class="num">${t.skipped}</td><td class="num">${pct(t.acc)}</td><!--tsec:timing--><td class="num">${fmtDur(t.avgTimeMs)}</td><!--/tsec--></tr>`).join('')}</tbody></table></div></div>
@@ -1673,7 +1883,7 @@ function reportBody(att, aud, opts = {}) {
   <!--sec:placement--><div class="rec"><div class="eyebrow">Placement recommendation</div><h2 style="margin:4px 0 8px">${esc(fin)}</h2>${att.review.override ? `<p class="small muted" style="margin-bottom:6px">Final recommendation set by the teacher. System suggestion: ${esc(P.tier || P.grade || '—')}</p>` : ''}<ul class="ul">${P.lines.map(l => `<li>${esc(l)}</li>`).join('')}</ul></div>
   <!--/sec--><!--sec:plan--><div class="grid g2"><div class="card"><h2>Suggested learning plan</h2>${P.sequence.length ? `<ol class="ul">${P.sequence.map(s => `<li>${esc(s.replace(/^\d+\.\s*/, ''))}</li>`).join('')}</ol>` : '<p class="muted">Continue with the recommended level. No specific revision is needed.</p>'}${P.ready.length ? `<h4 style="margin-top:12px">Ready to learn</h4><ul class="ul small">${P.ready.map(r => `<li>${esc(r.topic)} (${esc(r.level)}): ${esc(r.note)}</li>`).join('')}</ul>` : ''}</div>
   <div class="card"><h2>Next steps and cautions</h2>${P.revise.length ? `<h4>Topics needing revision</h4><ul class="ul small">${P.revise.map(r => `<li>${esc(r.topic)} (${esc(r.level)}): ${esc(r.note)}</li>`).join('')}</ul>` : ''}${P.extra.length ? `<h4 style="margin-top:10px">Suggested additional assessment</h4><ul class="ul small">${P.extra.map(r => `<li>${esc(r)}</li>`).join('')}</ul>` : '<p class="muted small">The evidence is sufficient for each topic assessed.</p>'}</div></div>
-  <!--/sec--><div class="banner info">This is an estimate based on the questions this student was given. A short diagnostic is one piece of evidence and does not measure everything a student knows. ${att.review.finalized ? '' : 'The teacher has not finalised this recommendation yet.'}</div>
+  <!--/sec-->${pwSection(att, aud, opts)}<div class="banner info">This is an estimate based on the questions this student was given. A short diagnostic is one piece of evidence and does not measure everything a student knows. ${att.review.finalized ? '' : 'The teacher has not finalised this recommendation yet.'}</div>
   ${att.model === 'adaptive' && att.trace.length ? `<!--sec:trace--><details class="card"><summary>Why each question was chosen (adaptive logic)</summary><p class="muted small" style="margin:8px 0">${esc(att.stopReason || '')}</p><div class="tw"><table><thead><tr><th>#</th><th>Topic</th><th>Level</th><th>Reasoning</th></tr></thead><tbody>${att.trace.map(t => `<tr><td>${t.n}</td><td>${esc(t.topic)}${t.probe ? ' <span class="pill warn">prerequisite check</span>' : ''}</td><td>${DIFF[t.diff].name}</td><td>${esc(t.why)}</td></tr>`).join('')}</tbody></table></div></details><!--/sec-->` : ''}
   ${`<!--sec:integrity--><div class="card"><h2>Session record</h2><ul class="ul small"><li>Started ${new Date(att.started).toLocaleString('en-GB')}, finished ${new Date(att.finished).toLocaleString('en-GB')} (${fmtDur(att.durationMs)}).</li><li>Parent supervision: ${att.supervision ? 'confirmed by ' + esc(att.supervision.by || 'guardian') : (a.parentSupervision ? 'required but not recorded' : 'not required')}.</li>
     <li>Accommodations on file: ${accom.extraPct ? '+' + accom.extraPct + '% time' : 'no extra time'}${accom.largeText ? ', larger text' : ''}.</li><li>Answers changed: ${sumBy(att.responses, r => r.changed || 0)}.</li></ul>
@@ -1686,7 +1896,7 @@ VIEWS.report = function () {
   const att = attById(U.params.id); if (!att) return '<div class="empty">That report could not be found.</div>';
   const staff = U.role === 'teacher' || U.role === 'admin', aud = staff ? (U.repAud || U.role) : U.role;
   const back = U.role === 'student' ? 'hist' : U.role === 'parent' ? 'parent' : 'results';
-  if (!staff && !att.released) return `<div class="page-head"><h1>Results</h1><button class="btn ghost" data-a="go" data-v="${back}">Back</button></div><div class="empty">Your teacher has not released these results yet. You will see them here when they do.</div>`;
+  if (!staff && !(att.released || (U.role === 'parent' && pwShared(att)))) return `<div class="page-head"><h1>Results</h1><button class="btn ghost" data-a="go" data-v="${back}">Back</button></div><div class="empty">Your teacher has not released these results yet. You will see them here when they do.</div>`;
   const an = AN(att), auds = U.role === 'admin' ? ['admin', 'teacher', 'parent', 'student'] : ['teacher', 'parent', 'student'];
   const sh = k => aud === 'admin' || !!sharingFor(aud)[k], shared = SHARE_SECTIONS.filter(x => sh(x[0])).map(x => x[1]), hidden = SHARE_SECTIONS.filter(x => !sh(x[0])).map(x => x[1]);
   const viewAs = staff && !att.preview ? `<div class="card noprint"><div class="row sp"><div><div class="eyebrow">View and export this report as</div><div class="chips" style="margin-top:6px">${auds.map(x => `<button class="chip" data-a="repAud" data-v="${x}" aria-pressed="${aud === x}">${AUD_NAME[x]}</button>`).join('')}</div></div>
@@ -1698,14 +1908,14 @@ VIEWS.report = function () {
     <div class="grid g2" style="margin-top:14px">${field('Final recommendation (leave empty to use the system suggestion)', inp('att.override', att.review.override || '', 'text', `data-att="${att.id}" placeholder="${esc(an.placement.tier || an.placement.grade || '')}"`))}${field('Teacher notes (shared according to the settings above)', `<textarea data-att="${att.id}" data-m="att.notes">${esc(att.review.notes || '')}</textarea>`)}</div>
     <div class="row" style="margin-top:10px"><button class="btn" data-a="finalize" data-id="${att.id}">${att.review.finalized ? 'Recommendation finalised. Update' : 'Finalise recommendation'}</button><span class="muted small">Saving links the result to the student’s profile.</span></div></div>`
     : (!staff ? `<div class="row noprint"><button class="btn ghost" data-a="dlReport" data-id="${att.id}">Download report (HTML)</button><button class="btn ghost" data-a="dlCsv" data-id="${att.id}">Download summary (CSV)</button></div>` : '');
-  return `<div class="page-head noprint"><div><h1>${staff ? 'Diagnostic report' : 'Results'}</h1>${staff ? `<p>Showing the ${AUD_NAME[aud].toLowerCase()} version.</p>` : ''}</div><button class="btn ghost" data-a="go" data-v="${back}">Back</button></div>${viewAs}${tools}${reportBody(att, aud, { inApp: true })}`;
+  return `<div class="page-head noprint"><div><h1>${staff ? 'Diagnostic report' : 'Results'}</h1>${staff ? `<p>Showing the ${AUD_NAME[aud].toLowerCase()} version.</p>` : ''}</div><button class="btn ghost" data-a="go" data-v="${back}">Back</button></div>${viewAs}${tools}${staff && !att.preview ? pwPanel(att) : ''}${!staff && U.role === 'parent' && pwShared(att) ? `<div class="row noprint"><button class="btn teal" data-a="pwPdf" data-id="${att.id}">Download learning pathway (PDF)</button></div>` : ''}${reportBody(att, aud, { inApp: true })}`;
 };
 function reportCSV(att, aud) {
   const an = AN(att), P = an.placement, sh = k => aud === 'admin' || !!sharingFor(aud)[k], rows = [];
   rows.push(['Brainova diagnostic report', AUD_NAME[aud] + ' version'], ['Student', att.studentName], ['Student ID', att.studentId], ['Grade', att.grade], ['Assessment', att.title], ['Date', fmtDate(att.finished)], []);
   if (sh('summary')) rows.push(['Score', an.marks + '/' + an.maxMarks], ['Accuracy', pct(an.accuracy)], ['Completion', pct(an.completion)], ['Correct', an.correct], ['Incorrect', an.incorrect], ['Skipped', an.skipped], ['Not reached', an.unanswered]);
   if (sh('timing')) rows.push(['Total time (s)', Math.round(an.totalTimeMs / 1000)], ['Average per question (s)', Math.round(an.avgTimeMs / 1000)]);
-  if (sh('difficulty')) { rows.push([], ['Difficulty', 'Attempted', 'Correct']); DIFF_KEYS.forEach(k => rows.push([DIFF[k].name, an.byDiff[k].attempted, an.byDiff[k].correct])); rows.push(['Performs consistently at', an.consistent]); }
+  if (sh('difficulty')) { rows.push([], ['Difficulty', 'Attempted', 'Correct']); diffKeysFor(an).forEach(k => rows.push([DIFF[k].name, an.byDiff[k].attempted, an.byDiff[k].correct])); rows.push(['Performs consistently at', an.consistent]); }
   if (sh('topics')) { rows.push([], ['Topic', 'Attempted', 'Correct', 'Accuracy', 'Level', 'Evidence'].concat(sh('timing') ? ['Average time (s)'] : []).concat(sh('errors') ? ['Most common error pattern'] : []));
     an.topics.filter(t => !t.probe).forEach(t => { const top = Object.entries(t.wrongTags).sort((x, y) => y[1] - x[1])[0]; rows.push([t.topic, t.attempted, t.correct, pct(t.acc), lvName(t.idx), t.conf].concat(sh('timing') ? [Math.round(t.avgTimeMs / 1000)] : []).concat(sh('errors') ? [top ? ERR[top[0]] : ''] : [])); }); }
   if (sh('strengths')) rows.push([], ['Strengths'], ...an.topics.filter(t => !t.probe && t.idx != null && t.idx >= 3).map(t => [t.topic, lvName(t.idx)]));
@@ -1744,7 +1954,8 @@ function stuPanel(s) {
   const at = S.attempts.filter(a => a.studentId === s.id && !a.preview).sort((a, b) => a.finished - b.finished), hist = {};
   at.forEach(a => AN(a).topics.forEach(t => { if (t.probe) return; (hist[t.topic] = hist[t.topic] || []).push({ idx: t.idx, d: a.finished }); }));
   const ac = s.accom || { extraPct: 0, largeText: false };
-  return `<div class="card lift"><div class="row sp"><h2>${esc(s.name)} <span class="muted small">${esc(s.id)} · Grade ${s.grade == null ? '—' : s.grade}</span></h2><div class="row">${U.lms && (U.lms.role === 'admin' || U.lms.role === 'teacher') ? `<button class="btn sm danger" data-a="stuDelete" data-id="${s.id}">${U.cfm === 'del:' + s.id ? 'Click again to confirm delete' : 'Delete student'}</button>` : ''}<button class="btn sm ghost" data-a="stuClose">Close</button></div></div>
+  return `<div class="card lift"><div class="row sp"><h2>${esc(s.name)} <span class="muted small">${esc(s.id)} · Grade ${s.grade == null ? '—' : s.grade}${s.age ? ' · Age ' + s.age : ''}</span></h2><div class="row">${U.lms && (U.lms.role === 'admin' || U.lms.role === 'teacher') ? `<button class="btn sm danger" data-a="stuDelete" data-id="${s.id}">${U.cfm === 'del:' + s.id ? 'Click again to confirm delete' : 'Delete student'}</button>` : ''}<button class="btn sm ghost" data-a="stuClose">Close</button></div></div>
+  <div class="sub" style="margin:10px 0">${field('Age in years (optional)', inp('stuAge', s.age == null ? '' : s.age, 'number', `min="2" max="18" data-id="${s.id}"`))}<p class="small muted" style="margin-top:6px">Age is shown on the report. Use it with the grade when choosing an assessment, because older students often work above their grade.</p></div>
   <div class="grid g2" style="margin:10px 0"><div class="sub"><h4 style="margin-bottom:8px">Accommodations</h4><div class="grid g2">${field('Grade', `<input type="number" data-m="stuGrade" data-r min="0" max="13" value="${s.grade == null ? '' : s.grade}" placeholder="e.g. 5">`)}${field('Extra time', `<select data-m="stuAcc.extra" data-id="${s.id}">${optList([{ v: 0, l: 'None' }, { v: 25, l: '+25%' }, { v: 50, l: '+50%' }, { v: 100, l: '+100%' }], ac.extraPct)}</select>`)}${chk('stuAcc.large', ac.largeText, 'Larger text')}</div><p class="small muted" style="margin-top:6px">Grade is auto-filled from date of birth when imported from the LMS (age − 5) - if it's blank, that student has no date of birth on file there. Set it here by hand, or add their date of birth in the LMS and import again. Extra time is added to the countdown and per-question timers. Learning objectives and questions stay the same.</p></div>
   <div class="sub"><h4 style="margin-bottom:8px">Topic-wise history</h4>${Object.keys(hist).length ? `<ul class="ul plain small">${Object.entries(hist).map(([k, v]) => `<li><b>${esc(k)}</b>: ${v.map(x => lvPill(x.idx)).join(' → ')}</li>`).join('')}</ul>` : '<p class="muted small">No attempts yet.</p>'}</div></div>
   <h4>Assessment history</h4>${attemptTable(at.slice().reverse())}</div>`;
@@ -1770,7 +1981,7 @@ VIEWS.my = function () {
 VIEWS.hist = function () {
   const at = S.attempts.filter(a => a.studentId === U.studentId && !a.preview).sort((a, b) => b.finished - a.finished);
   return `<div class="page-head"><div><h1>History</h1><p>Your submitted assessments. Results appear after your teacher releases them.</p></div></div>
-  ${at.length ? `<div class="stack">${at.map(a => `<div class="card row sp"><div><h3>${esc(a.title)}</h3><p class="muted small">${fmtDate(a.finished)} · ${fmtDur(a.durationMs)}</p></div><div class="row">${a.released ? `<span class="pill ok">Results ready</span><button class="btn sm" data-a="openAtt" data-id="${a.id}">View results</button>` : '<span class="pill">Waiting for your teacher</span>'}</div></div>`).join('')}</div>` : '<div class="empty">You have not submitted any assessments yet.</div>'}`;
+  ${at.length ? `<div class="stack">${at.map(a => `<div class="card row sp"><div><h3>${esc(a.title)}</h3><p class="muted small">${fmtDate(a.finished)} · ${fmtDur(a.durationMs)}</p></div><div class="row">${a.released ? `<span class="pill ok">Results ready</span><button class="btn sm" data-a="openAtt" data-id="${a.id}">View results</button>` : '<span class="pill">Your teacher will assess your test and give you insights on how you can cover your weak areas.</span>'}</div></div>`).join('')}</div>` : '<div class="empty">You have not submitted any assessments yet.</div>'}`;
 };
 VIEWS.intro = function () {
   const a = asmtById(U.params.id), sid = U.studentId, ac = accomFor(sid); if (!a) return '<div class="empty">Assessment not found.</div>';
@@ -1788,12 +1999,12 @@ VIEWS.intro = function () {
 VIEWS.parent = function () {
   const par = S.parents.find(p => p.id === U.parentId) || S.parents[0], kids = par.childIds.map(studentById).filter(Boolean);
   const kid = studentById(U.params.kid) || kids[0];
-  const list = assignedFor(kid.id), at = S.attempts.filter(a => a.studentId === kid.id && !a.preview).sort((a, b) => b.finished - a.finished), rel = at.filter(a => a.released)[0];
+  const list = assignedFor(kid.id), at = S.attempts.filter(a => a.studentId === kid.id && !a.preview).sort((a, b) => b.finished - a.finished), rel = at.filter(a => a.released || pwShared(a))[0];
   return `<div class="page-head"><div><h1>${esc(kid.name)}</h1><p>Grade ${kid.grade} · Student ID ${esc(kid.id)}</p></div>${kids.length > 1 ? `<div class="chips">${kids.map(k => `<button class="chip" data-a="kid" data-id="${k.id}" aria-pressed="${k.id === kid.id}">${esc(k.name.split(' ')[0])}</button>`).join('')}</div>` : ''}</div>
   <div class="card"><h2>Assessments</h2>${list.length ? `<div class="stack">${list.map(a => { const sup = supOf(a.id, kid.id), s = stateFor(a, kid.id);
     return `<div class="sub"><div class="row sp"><div><b>${esc(a.title)}</b><div class="muted small">${a.mode === 'live' ? 'Live in class' : a.durationMin + ' minutes'} · ${s.at.length ? 'Submitted' : 'Not started'}</div></div><div class="row">${a.parentSupervision ? (sup ? `<span class="pill ok">Supervision confirmed</span>` : `<button class="btn sm" data-a="parOpen" data-id="${a.id}">Confirm supervision</button>`) : '<span class="pill">No supervision needed</span>'}</div></div>
     ${U.parOpen === a.id && !sup ? `<div class="stack" style="margin-top:10px">${SUP_ITEMS.map((t, i) => `<label class="chk"><input type="checkbox" data-a="supTick" data-i="${i}" ${U.supTick && U.supTick[i] ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}${field('Your name', `<input type="text" value="${esc(U.supName || par.name)}" data-m="supName">`)}<div><button class="btn" data-a="supConfirm" data-id="${a.id}" data-s="${kid.id}">Confirm</button></div></div>` : ''}</div>`; }).join('')}</div>` : '<p class="muted">No assessments are assigned.</p>'}</div>
-  <div class="card"><h2>Results</h2>${at.length ? `<div class="stack">${at.map(a => `<div class="row sp sub"><div><b>${esc(a.title)}</b><div class="muted small">${fmtDate(a.finished)}</div></div>${a.released ? `<button class="btn sm" data-a="openAtt" data-id="${a.id}">View report</button>` : '<span class="pill">Waiting for the teacher to release</span>'}</div>`).join('')}</div>` : '<p class="muted">No submitted assessments yet.</p>'}</div>
+  <div class="card"><h2>Results</h2>${at.length ? `<div class="stack">${at.map(a => `<div class="row sp sub"><div><b>${esc(a.title)}</b><div class="muted small">${fmtDate(a.finished)}</div></div>${a.released || pwShared(a) ? `<div class="row">${pwShared(a) ? `<button class="btn sm teal" data-a="pwPdf" data-id="${a.id}">Learning pathway (PDF)</button>` : ''}<button class="btn sm" data-a="openAtt" data-id="${a.id}">View report</button></div>` : '<span class="pill">Waiting for the teacher to release</span>'}</div>`).join('')}</div>` : '<p class="muted">No submitted assessments yet.</p>'}</div>
   ${rel ? parentSummary(rel) : ''}`;
 };
 function parentSummary(att) {
@@ -1809,7 +2020,7 @@ function lmsPayload() {
     attempts: S.attempts.filter(a => !a.preview).map(a => { const an = AN(a); return { uuid: a.id, assessment_uuid: a.asmtId, student_external_id: a.studentId, started_at: new Date(a.started).toISOString(), finished_at: new Date(a.finished).toISOString(), duration_ms: a.durationMs, score: { marks: an.marks, max_marks: an.maxMarks, accuracy: an.accuracy },
       responses: a.responses.map(r => ({ seq: r.seq, question_id: r.qid, topic: r.topic, difficulty: r.diff, status: r.status, answer: r.answer, marks: r.marks, time_ms: r.timeMs, changed: r.changed })),
       topic_results: an.topics.map(t => ({ topic: t.topic, attempted: t.attempted, correct: t.correct, level: t.idx == null ? null : levels()[t.idx].name, confidence: t.conf, prerequisite_probe: t.probe })),
-      recommendation: { overall_level: an.overallIdx == null ? null : lvName(an.overallIdx), system: an.placement.tier || an.placement.grade || null, final: a.review.override || null, finalised: !!a.review.finalized, notes: a.review.notes || '' }, released: !!a.released }; }) };
+      recommendation: { overall_level: an.overallIdx == null ? null : lvName(an.overallIdx), system: an.placement.tier || an.placement.grade || null, final: a.review.override || null, finalised: !!a.review.finalized, notes: a.review.notes || '' }, released: !!a.released, pathways: a.pathways && a.pathways.status !== 'draft' ? pwJson(a) : null }; }) };
 }
 const EXPORTS = {
   attempts: () => toCSV([['attempt_id', 'student_id', 'student_name', 'grade', 'assessment_id', 'assessment', 'application', 'course', 'mode', 'model', 'started', 'finished', 'questions', 'attempted', 'correct', 'incorrect', 'skipped', 'not_reached', 'accuracy', 'marks', 'max_marks', 'total_time_s', 'avg_time_s', 'overall_level', 'consistent_difficulty', 'system_recommendation', 'final_recommendation', 'finalised', 'released', 'teacher_notes']]
@@ -1827,7 +2038,7 @@ const EXPORTS = {
 VIEWS.export = function () {
   const n = S.attempts.filter(a => !a.preview).length;
   const items = [['attempts', 'Student performance summary', `${n} attempts: scores, levels, recommendations, teacher notes`, 'brainova-attempts.csv'], ['responses', 'Question-level responses', 'Every answer with timing, marks, changes and error pattern', 'brainova-responses.csv'], ['topics', 'Topic-wise performance history', 'Per attempt and topic: accuracy, estimate and level', 'brainova-topic-performance.csv'],
-    ['students', 'Students and accommodations', `${S.students.length} students`, 'brainova-students.csv'], ['notes', 'Teacher observations and final recommendations', 'Notes and overrides', 'brainova-teacher-notes.csv'], ['bank', 'Question bank', `${S.bank.length} questions in import-ready format`, 'brainova-question-bank.csv']];
+    ['students', 'Students and accommodations', `${S.students.length} students`, 'brainova-students.csv'], ['notes', 'Teacher observations and final recommendations', 'Notes and overrides', 'brainova-teacher-notes.csv'], ['bank', 'Question bank', `${S.bank.length} questions in import-ready format`, 'brainova-question-bank.csv'], ['pathways', 'Learning pathways (final or shared)', `${pwExportable().length} students`, 'brainova-pathways.csv'], ['pathwayplan', 'Learning pathway plan steps', 'One row per plan step', 'brainova-pathway-plan.csv']];
   return `<div class="page-head"><div><h1>Exports</h1><p>CSV files open directly in Excel and Google Sheets. IDs are consistent across files so records can be linked to the Brainova LMS.</p></div></div>
   <div class="grid g3">${items.map(i => `<div class="card stack"><div><h3>${i[1]}</h3><p class="muted small">${i[2]}</p></div><div><button class="btn" data-a="exp" data-k="${i[0]}" data-f="${i[3]}">Download CSV</button></div></div>`).join('')}</div>
   <div class="card"><h2>Bulk export</h2><div class="row"><button class="btn teal" data-a="expBulk">Download everything (all CSV files)</button><button class="btn ghost" data-a="expLms">LMS import file (JSON)</button><button class="btn ghost" data-a="expAssess">Assessment configurations (JSON)</button></div><p class="muted small" style="margin-top:8px">Each downloaded file asks for your confirmation. The bulk option offers the files one after another.</p></div>
@@ -1843,6 +2054,7 @@ const ENDPOINTS = [
   ['POST', '/api/assessments/v1/attempts', 'Browser → Assessment', 'Start an attempt. Server picks questions and returns the first item'], ['PUT', '/api/assessments/v1/attempts/{id}/responses', 'Browser → Assessment', 'Save answers with time spent. Adaptive attempts return the next item'],
   ['POST', '/api/assessments/v1/attempts/{id}/submit', 'Browser → Assessment', 'Submit, score and compute the report'], ['POST', '/api/assessments/v1/attempts/{id}/events', 'Browser → Assessment', 'Log interruptions (tab hidden, full screen exited, reconnects)'],
   ['GET', '/api/assessments/v1/attempts/{id}/report', 'Assessment → LMS', 'Diagnostic report as JSON (and PDF with ?format=pdf)'], ['POST', '/api/lms/v1/students/{id}/placements', 'Assessment → LMS', 'Write the teacher-approved recommended course or level to the student profile'],
+  ['GET/PUT', '/api/assessments/v1/attempts/{id}/pathways', 'Teacher/Admin → Assessment', 'Learning pathways (Short, Medium, Long). Editable while draft; admin and teacher only'], ['POST', '/api/assessments/v1/attempts/{id}/pathways/{finalise|send|share|reopen}', 'Teacher/Admin → Assessment', 'Status steps: draft, final, sent to administrator, shared with parent (admin only)'], ['GET', '/api/assessments/v1/attempts/{id}/pathways?format=csv|json|pdf', 'Assessment → LMS', 'Pathway export once final; parents get the PDF only after sharing'],
   ['GET/POST/PUT', '/api/assessments/v1/questions', 'Teacher → Assessment', 'Question bank create, update, approve and import'], ['POST', '/api/assessments/v1/live-sessions', 'Teacher → Assessment', 'Create live sessions. Student devices join over WebSockets (Laravel Reverb)'], ['WEBHOOK', 'assessment.completed', 'Assessment → LMS', 'Notify the LMS when a report is ready']
 ];
 const FIELD_MAP = [['students.id', 'student_external_id', 'Existing Brainova student ID, never re-created'], ['users.role', 'role', 'admin, teacher, student, parent (maps to Laravel roles/permissions)'], ['courses.id', 'course_id', 'Existing course record'], ['grades.id', 'grade', '1–10'], ['assessment_attempts.id', 'attempt uuid', 'Stable ID for linking reports'], ['assessment_responses.*', 'responses[]', 'Per-question record with time and marks'], ['assessment_topic_results.*', 'topic_results[]', 'Level, confidence and evidence per topic'], ['student_placements.*', 'recommendation', 'System suggestion, teacher override, finalised flag']];
@@ -1960,7 +2172,7 @@ VIEWS.integration = function () {
 
 /* ---------- Settings ---------- */
 function sharingTable(editable) {
-  return `<div class="tw"><table><thead><tr><th>Detail</th><th>Administrator</th><th>Teacher</th><th>Parent</th><th>Student</th></tr></thead><tbody>${SHARE_SECTIONS.map(x => `<tr><td>${esc(x[1])}</td><td><span class="pill ok">Yes</span></td>${['teacher', 'parent', 'student'].map(a => { const on = !!sharingFor(a)[x[0]]; return `<td>${editable ? `<label class="chk"><input type="checkbox" data-a="shareTgl" data-aud="${a}" data-k="${x[0]}" ${on ? 'checked' : ''} aria-label="${esc(x[1])} for ${AUD_NAME[a]}"><span>${on ? 'Shared' : 'Hidden'}</span></label>` : (on ? '<span class="pill ok">Yes</span>' : '<span class="muted">Hidden</span>')}</td>`; }).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return `<div class="tw"><table><thead><tr><th>Detail</th><th>Administrator</th><th>Teacher</th><th>Parent</th><th>Student</th></tr></thead><tbody>${SHARE_SECTIONS.map(x => `<tr><td>${esc(x[1])}</td><td><span class="pill ok">Yes</span></td>${['teacher', 'parent', 'student'].map(a => { const on = !!sharingFor(a)[x[0]]; return `<td>${editable ? `<label class="chk"><input type="checkbox" data-a="shareTgl" data-aud="${a}" data-k="${x[0]}" ${on ? 'checked' : ''} aria-label="${esc(x[1])} for ${AUD_NAME[a]}"><span>${on ? 'Shared' : 'Hidden'}</span></label>` : (on ? '<span class="pill ok">Yes</span>' : '<span class="muted">Hidden</span>')}</td>`; }).join('')}</tr>`).join('')}<tr><td>Learning pathways (Short, Medium, Long)</td><td><span class="pill ok">Yes</span></td><td><span class="pill ok">Yes</span></td><td><span class="muted">Only after the administrator shares</span></td><td><span class="muted">Never</span></td></tr></tbody></table></div>`;
 }
 const RBAC = [['Create and edit assessments', 1, 1, 0, 0], ['Manage and approve questions', 1, 1, 0, 0], ['Run live sessions', 1, 1, 0, 0], ['View all students’ results', 1, 1, 0, 0], ['Release results and finalise recommendations', 1, 1, 0, 0], ['Export data', 1, 1, 0, 0], ['Configure the Google Sheets backend, LMS connection and proficiency levels', 1, 0, 0, 0], ['Take assigned assessments', 0, 0, 1, 0], ['View own results after release', 0, 0, 1, 0], ['Confirm supervision and view a child’s released results', 0, 0, 0, 1]];
 VIEWS.settings = function () {
@@ -1970,8 +2182,10 @@ VIEWS.settings = function () {
   <div class="card"><h2>Google Sheets backend</h2><p class="muted small" style="margin-bottom:10px">Connects this app's data to your Google Sheet. Create the Sheet and deploy the Apps Script first (see the setup guide), then put the same secret token in both places: the script's Project Settings &rarr; Script Properties on the Google side, and the field below here. The token stays only in this browser - it is never written into any file this app ships.</p>
     <div class="grid g2">${field('Web App URL', `<input type="url" id="gUrl" value="${esc(gcfg.url)}" placeholder="https://script.google.com/macros/s/.../exec">`)}${field('Shared token', `<input type="password" id="gTok" value="${esc(gcfg.token)}" autocomplete="off">`)}</div>
     <div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="btn" data-a="gcfgSave">Save</button><button class="btn ghost" data-a="gcfgTest">Test connection</button><span class="pill ${gcfg.url ? 'ok' : ''}">${gcfg.url ? 'Configured' : 'Not configured - data stays in this browser only'}</span>${window.BrainovaAPI && window.BrainovaAPI.pendingCount() ? `<span class="pill warn">${window.BrainovaAPI.pendingCount()} change(s) waiting to sync</span>` : ''}${window.BrainovaAPI && window.BrainovaAPI.lastSyncError && window.BrainovaAPI.lastSyncError() ? `<span class="pill bad">Last error: ${esc(window.BrainovaAPI.lastSyncError())}</span>` : ''}</div></div>
-  <div class="card"><h2>Proficiency levels</h2><p class="muted small" style="margin-bottom:10px">Rename the levels and set where each begins on the ability scale (about −2 to +2). Higher means stronger.</p><div class="grid g3">${(U.lvDraft || levels()).map((l, i) => `<div class="sub stack"><span class="lv lv${i}" style="align-self:flex-start">Level ${i + 1}</span>${field('Name', inp('lvl.' + i + '.name', l.name))}${i ? field('Starts at', inp('lvl.' + i + '.min', l.min, 'number', 'step="0.05"')) : '<span class="muted small">Starts at the bottom of the scale</span>'}</div>`).join('')}</div>
+  <div class="card"><h2>Proficiency levels</h2><p class="muted small" style="margin-bottom:10px">Rename the levels and set where each begins on the ability scale (about −2 to +3). Higher means stronger.</p><div class="grid g3">${(U.lvDraft || levels()).map((l, i) => `<div class="sub stack"><span class="lv lv${i}" style="align-self:flex-start">Level ${i + 1}</span>${field('Name', inp('lvl.' + i + '.name', l.name))}${i ? field('Starts at', inp('lvl.' + i + '.min', l.min, 'number', 'step="0.05"')) : '<span class="muted small">Starts at the bottom of the scale</span>'}</div>`).join('')}</div>
     ${U.lvErr ? `<div class="banner bad" style="margin-top:10px">${esc(U.lvErr)}</div>` : ''}<div class="row" style="margin-top:12px"><button class="btn" data-a="lvSave">Apply levels</button><button class="btn ghost" data-a="lvReset">Restore defaults</button></div></div>
+  ${voiceCard()}
+  ${rewardCard()}
   <div class="card"><h2>Report sharing</h2><p class="muted small" style="margin-bottom:10px">Choose which details each audience receives in reports and exports. The administrator version always includes everything.</p>${sharingTable(true)}
     <div class="banner info" style="margin-top:12px"><div><b>Why the defaults are set this way</b><ul class="ul" style="margin-top:6px"><li><b>Teachers</b> get everything they need to act: scores, topic levels, error patterns, timing, answers, the adaptive log and the session record.</li><li><b>Parents</b> get a clear picture of their child: score, strengths, learning gaps, topic levels, the recommended starting point, next steps and the teacher’s note.</li><li>Parents do not receive per-question answers, timing, error-pattern labels or session logs by default. These can be misread out of context and can undermine the assessment if questions are reused.</li><li><b>Students</b> see the same as parents, plus the question review, so they can learn from mistakes once results are released.</li></ul></div></div>
     <div class="row" style="margin-top:12px"><button class="btn ghost" data-a="shareReset">Restore defaults</button></div></div>
@@ -2010,6 +2224,7 @@ function startRun(a, studentId, preview) {
   U.run = { a, st, preview: !!preview, seed, R, ad, items, resp: items.map(() => ({ raw: null, ms: 0, visits: 0, changed: 0, timedOut: false })), idx: 0, started: now, deadline: a.durationMin > 0 ? now + a.durationMin * 60000 * ex : null, perQ, qStart: now, phase: 'q', events: [], doneResp: [], large: ac.largeText, att: null, attId: uid('att') };
   U.run.resp[0].visits = 1;
   if (a.fullscreen) { try { const p = document.documentElement.requestFullscreen && document.documentElement.requestFullscreen(); if (p && p.catch) p.catch(() => { }); } catch (e) { } }
+  voiceStart();
   render(); scrollTop();
 }
 function runLog(type, note) { if (U.run && U.run.phase === 'q') U.run.events.push({ t: Date.now(), type, note }); }
@@ -2034,7 +2249,7 @@ function runView() {
   return `<div class="runner-wrap ${r.large ? 'large' : ''}">${head}<div class="run-body"><div><div class="row sp small muted" style="margin-bottom:6px"><span>Question ${r.idx + 1}${ad ? '' : ' of ' + n}${q._probe ? '' : ''}</span><span>${DIFF[q.diff] ? '' : ''}${esc(q.topic)}</span></div><div class="progress" role="progressbar" aria-valuenow="${Math.round(pctDone)}" aria-valuemin="0" aria-valuemax="100" aria-label="Progress"><i style="width:${pctDone}%"></i></div></div>
     <div class="qcard">${qBody(q, raw)}${answerInput(q, raw)}</div>
     ${free ? `<div class="dots" aria-label="Question navigator">${r.items.map((it, i) => `<button class="${isBlank(r.resp[i].raw) ? '' : 'ans'} ${i === r.idx ? 'cur' : ''}" data-a="jump" data-i="${i}" aria-label="Go to question ${i + 1}">${i + 1}</button>`).join('')}</div>` : ''}
-    <div class="row sp"><div class="row">${free && r.idx > 0 ? '<button class="btn ghost" data-a="prevQ">Back</button>' : ''}${a.allowSkip ? '<button class="btn ghost" data-a="skipQ">Skip</button>' : ''}</div><button class="btn lg" data-a="nextQ">${last ? 'Finish' : 'Next'}</button></div></div></div>`;
+    <div class="row sp"><div class="row">${free && r.idx > 0 ? '<button class="btn ghost" data-a="prevQ">Back</button>' : ''}${a.allowSkip ? '<button class="btn ghost" data-a="skipQ">Skip</button>' : ''}${voiceBtns()}</div><button class="btn lg" data-a="nextQ">${last ? 'Finish' : 'Next'}</button></div></div></div>`;
 }
 function runTick() {
   const r = U.run; if (!r || r.phase !== 'q') return;
@@ -2056,7 +2271,7 @@ function advance(opt = {}) {
     else r.idx++;
     if (r.phase === 'q') r.resp[r.idx].visits++;
   }
-  r.qStart = Date.now(); render(); scrollTop();
+  r.qStart = Date.now(); voiceNext(); render(); scrollTop();
 }
 function submitRun(forced) {
   const r = U.run; if (!r || r.submitting) return; r.submitting = true; if (r.phase === 'q') flushTime();
@@ -2068,12 +2283,12 @@ function submitRun(forced) {
   att.attemptNo = attemptsOf(a.id, st.id).length + 1; att.application = a.application; att.supervision = a.parentSupervision ? (supOf(a.id, st.id) ? { confirmed: true, by: supOf(a.id, st.id).by, at: supOf(a.id, st.id).at } : null) : null;
   att.released = a.resultVis === 'instant'; att.review = { notes: '', override: '', finalized: false };
   if (r.preview) { U.previewAtt = att; att.released = true; } else { S.attempts.push(att); save(); if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att, AN(att)); }
-  r.att = att; r.phase = 'done'; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } render(); scrollTop();
+  r.att = att; r.phase = 'done'; voiceFinish(); setTimeout(rewardFx, 120); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } render(); scrollTop();
 }
 function doneView() {
   const r = U.run, att = r.att;
-  return `<div class="runner-wrap"><div class="run-head"><b>${esc(r.a.title)}</b></div><div class="run-body"><div class="qcard" style="text-align:center;padding:36px 22px"><div style="font-size:44px;color:var(--ok)" aria-hidden="true">✓</div><h1 style="margin:8px 0">Submitted</h1><p class="muted">${esc(r.st.name.split(' ')[0])}, your answers were saved. You answered ${att.responses.filter(x => x.status !== 'unanswered' && x.status !== 'skipped').length} of ${att.responses.length} questions in ${fmtDur(att.durationMs)}.</p>
-    ${att.released ? '<p style="margin-top:10px">Your results are ready.</p>' : '<p style="margin-top:10px">Your teacher will share your results.</p>'}<div class="row" style="justify-content:center;margin-top:18px">${att.released ? `<button class="btn teal" data-a="finishRun" data-view="report">View results</button>` : ''}<button class="btn ghost" data-a="finishRun" data-view="home">${r.preview ? 'Back to the builder' : 'Done'}</button></div></div></div></div>`;
+  return `<div class="runner-wrap"><div class="run-head"><b>${esc(r.a.title)}</b></div><div class="run-body"><div class="qcard" style="text-align:center;padding:36px 22px">${rewardBlock(att)}<h1 style="margin:8px 0">Submitted</h1><p class="muted">${esc(r.st.name.split(' ')[0])}, your answers were saved. You answered ${att.responses.filter(x => x.status !== 'unanswered' && x.status !== 'skipped').length} of ${att.responses.length} questions in ${fmtDur(att.durationMs)}.</p>
+    ${att.released ? '<p style="margin-top:10px">Your results are ready.</p>' : '<p style="margin-top:10px">Your teacher will assess your test and give you insights on how you can cover your weak areas.</p>'}<div class="row" style="justify-content:center;margin-top:18px">${att.released ? `<button class="btn teal" data-a="finishRun" data-view="report">View results</button>` : ''}<button class="btn ghost" data-a="finishRun" data-view="home">${r.preview ? 'Back to the builder' : 'Done'}</button></div></div></div></div>`;
 }
 
 /* ===================== TEACHER-LED LIVE CLASS ===================== */
@@ -2158,6 +2373,269 @@ function liveTick() {
 }
 function liveNextQ() { const L = U.live; L.allIn = false; L.autoAt = 0; if (L.idx >= L.items.length - 1) { liveEnd(); return; } liveBegin(L.idx + 1); }
 setInterval(() => { if (U.run) runTick(); if (U.live) liveTick(); }, 250);
+
+/* ===================== LEARNING PATHWAYS =====================
+   Teacher/admin-only workflow that turns a graded attempt's weak,
+   borderline and strong topics into three course-recommendation
+   options (Short, Medium, Long). Lives on the attempt itself
+   (att.pathways), moves draft -> final -> sent -> shared, and is
+   never shown to the student it is about. */
+const PW_STATUS_NAME = { draft: 'Draft', final: 'Finalised', sent: 'Sent to administrator', shared: 'Shared with parent' };
+const pwFileStem = att => att.studentName.replace(/\s+/g, '-').toLowerCase() + '-' + att.id.slice(-4);
+
+function pwReady(att) { return AN(att).overallIdx != null; }
+function pwShared(att) { return !!(att && att.pathways && att.pathways.status === 'shared'); }
+
+function pwBuildOptions(att) {
+  const an = AN(att), P = an.placement, tp = an.topics.filter(t => !t.probe && t.idx != null);
+  const weak = tp.filter(t => t.idx <= 1).sort((a, b) => a.idx - b.idx);
+  const mid = tp.filter(t => t.idx === 2);
+  const ready = tp.filter(t => t.idx >= 3).sort((a, b) => b.idx - a.idx);
+  const line = t => `${t.topic} (${lvName(t.idx)})${t.improve.length ? ': focus on ' + t.improve[0] : ''}`;
+  const extLine = t => `Extension: ${line(t)}`;
+
+  const shortSteps = (weak.length ? weak.slice(0, 2) : mid.length ? mid.slice(0, 2) : ready.slice(0, 1)).map(line);
+  const short = { label: 'Short', weeks: 2, headline: weak.length ? `Quick revision of ${weak.slice(0, 2).map(t => t.topic).join(' and ')}` : 'Short consolidation at the current level',
+    steps: shortSteps.length ? shortSteps : ['Continue at the current level with mixed practice.'] };
+
+  const mediumSteps = weak.concat(mid).map(line).concat(ready.length ? [extLine(ready[0])] : []);
+  const medium = { label: 'Medium', weeks: 6, headline: 'A balanced plan covering weak and borderline topics, with one extension topic',
+    steps: mediumSteps.length ? mediumSteps : short.steps.slice() };
+
+  const longSteps = weak.concat(mid).map(line).concat(ready.map(extLine));
+  const long = { label: 'Long', weeks: 12, headline: 'A full-term plan: close every gap, then move into extension work',
+    steps: longSteps.length ? longSteps : medium.steps.slice() };
+
+  if (P.missing && P.missing.length) { medium.steps = P.missing.slice(0, 1).concat(medium.steps); long.steps = P.missing.concat(long.steps); }
+  return { short, medium, long };
+}
+
+function pwJson(att) {
+  const pw = att.pathways; if (!pw) return null;
+  return { attempt_id: att.id, student_external_id: att.studentId, student_name: att.studentName, grade: att.grade, status: pw.status, selected: pw.selected || null, notes: pw.notes || '',
+    updated_at: new Date(pw.updatedAt || Date.now()).toISOString(),
+    options: ['short', 'medium', 'long'].map(k => ({ tier: k, label: pw.options[k].label, weeks: pw.options[k].weeks, headline: pw.options[k].headline, steps: pw.options[k].steps })) };
+}
+function pwExportable() { return S.attempts.filter(a => !a.preview && a.pathways && a.pathways.status !== 'draft'); }
+
+const EXPORTS_PATHWAYS_HEAD = ['attempt_id', 'student_id', 'student_name', 'grade', 'assessment', 'status', 'selected_tier', 'weeks', 'headline', 'notes', 'updated'];
+Object.assign(EXPORTS, {
+  pathways: () => toCSV([EXPORTS_PATHWAYS_HEAD].concat(pwExportable().map(a => { const pw = a.pathways, o = pw.selected && pw.options[pw.selected];
+    return [a.id, a.studentId, a.studentName, a.grade, a.title, pw.status, pw.selected || '', o ? o.weeks : '', o ? o.headline : '', pw.notes || '', new Date(pw.updatedAt || a.finished).toISOString()]; }))),
+  pathwayplan: () => toCSV([['attempt_id', 'student_id', 'student_name', 'tier', 'selected', 'step_no', 'step']].concat(pwExportable().flatMap(a => { const pw = a.pathways;
+    return ['short', 'medium', 'long'].flatMap(k => pw.options[k].steps.map((s, i) => [a.id, a.studentId, a.studentName, k, pw.selected === k ? 'yes' : 'no', i + 1, s]));
+  })))
+});
+
+/* ---------- sample data (mirrors addSampleCheck / addStretchSample) ---------- */
+function addSamplePathways(D) {
+  const check = D.attempts.find(a => a.asmtId === 'asm_g5check');
+  if (check) check.pathways = { options: pwBuildOptions(check), selected: 'medium', notes: 'Shared with Fatima’s parent after the Grade 5 check.', status: 'shared', updatedAt: Date.now() - 86400000 };
+  const stretch = D.attempts.find(a => a.asmtId === 'asm_g5stretch');
+  if (stretch) stretch.pathways = { options: pwBuildOptions(stretch), selected: 'long', notes: '', status: 'final', updatedAt: Date.now() - 3600000 };
+  D.samplePathways = true;
+}
+
+/* ---------- dashboard widget ---------- */
+function pwInbox() {
+  if (U.role !== 'admin' && U.role !== 'teacher') return '';
+  const eligible = S.attempts.filter(a => !a.preview && pwReady(a));
+  if (!eligible.length) return '';
+  const needs = eligible.filter(a => !a.pathways || a.pathways.status === 'draft').length;
+  const sent = eligible.filter(a => a.pathways && a.pathways.status === 'sent').length;
+  const shared = eligible.filter(a => pwShared(a)).length;
+  return `<div class="card"><div class="row sp"><h2>Learning pathways</h2><button class="btn sm ghost" data-a="go" data-v="pathways">Open</button></div>
+    <div class="tiles"><div class="tile"><b>${needs}</b><span>Need a pathway</span></div>${U.role === 'admin' ? `<div class="tile"><b>${sent}</b><span>Waiting for your review</span></div>` : ''}<div class="tile"><b>${shared}</b><span>Shared with parents</span></div></div></div>`;
+}
+
+/* ---------- main inbox page ---------- */
+VIEWS.pathways = function () {
+  const eligible = S.attempts.filter(a => !a.preview && pwReady(a)).sort((a, b) => b.finished - a.finished);
+  const row = a => { const pw = a.pathways; return `<div class="row sp sub"><div><b>${esc(a.studentName)}</b><div class="muted small">${esc(a.title)} · ${fmtDate(a.finished)}</div></div>
+    <div class="row">${pw ? `<span class="pill ${pw.status === 'shared' ? 'ok' : pw.status === 'sent' ? 'warn' : ''}">${esc(PW_STATUS_NAME[pw.status])}</span>` : '<span class="muted small">Not generated</span>'}<button class="btn sm" data-a="openAtt" data-id="${a.id}">Open report</button></div></div>`; };
+  if (!eligible.length) return `<div class="page-head"><div><h1>Learning pathways</h1></div></div><div class="empty">No graded attempts are ready for a learning pathway yet.</div>`;
+  const needs = eligible.filter(a => !a.pathways || a.pathways.status === 'draft');
+  const sent = eligible.filter(a => a.pathways && a.pathways.status === 'sent');
+  const final = eligible.filter(a => a.pathways && a.pathways.status === 'final');
+  const shared = eligible.filter(a => pwShared(a));
+  return `<div class="page-head"><div><h1>Learning pathways</h1><p>Short, Medium and Long course recommendations built from each student's results. A pathway stays a draft until finalised, and reaches a parent only once the administrator shares it.</p></div></div>
+  <div class="card"><h2>Needs attention <span class="pill warn">${needs.length}</span></h2>${needs.length ? `<div class="stack">${needs.map(row).join('')}</div>` : '<p class="muted">Nothing waiting.</p>'}</div>
+  ${U.role === 'admin' ? `<div class="card"><h2>Sent for review <span class="pill warn">${sent.length}</span></h2>${sent.length ? `<div class="stack">${sent.map(row).join('')}</div>` : '<p class="muted">Nothing waiting for review.</p>'}</div>` : ''}
+  <div class="card"><h2>Finalised <span class="pill ok">${final.length}</span></h2>${final.length ? `<div class="stack">${final.map(row).join('')}</div>` : '<p class="muted">None yet.</p>'}</div>
+  <div class="card"><h2>Shared with parents <span class="pill ok">${shared.length}</span></h2>${shared.length ? `<div class="stack">${shared.map(row).join('')}</div>` : '<p class="muted">None yet.</p>'}</div>`;
+};
+
+/* ---------- staff editing panel (shown above a single report) ---------- */
+function pwPanel(att) {
+  if (!pwReady(att)) return `<div class="card noprint"><h2>Learning pathway</h2><p class="muted">Not enough graded answers yet to build a learning pathway for this attempt.</p></div>`;
+  const pw = att.pathways, isAdmin = U.role === 'admin';
+  if (!pw) return `<div class="card noprint"><h2>Learning pathway</h2><p class="muted small" style="margin-bottom:10px">Generate Short, Medium and Long course recommendations from this student’s results.</p><button class="btn teal" data-a="pwGen" data-id="${att.id}">Generate pathway options</button></div>`;
+  const editable = pw.status === 'draft', opts = ['short', 'medium', 'long'];
+  return `<div class="card noprint"><div class="row sp"><h2>Learning pathway</h2><span class="pill ${pw.status === 'shared' ? 'ok' : pw.status === 'sent' ? 'warn' : pw.status === 'final' ? 'ok' : ''}">${esc(PW_STATUS_NAME[pw.status])}</span></div>
+    <div class="grid g3" style="margin-top:8px">${opts.map(k => { const o = pw.options[k]; return `<label class="sub stack"><div class="row sp"><b>${esc(o.label)}</b><span class="muted small">~${o.weeks}w</span></div>
+      ${editable ? `<label class="chk"><input type="radio" name="pwSel" data-a="pwSelect" data-id="${att.id}" data-k="${k}" ${pw.selected === k ? 'checked' : ''}><span>Use this option</span></label>` : (pw.selected === k ? '<span class="pill ok">Selected</span>' : '')}
+      <p class="small">${esc(o.headline)}</p><ol class="ul small">${o.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></label>`; }).join('')}</div>
+    ${editable ? field('Notes for the administrator or parent (optional)', `<textarea data-a="pwNote" data-id="${att.id}">${esc(pw.notes || '')}</textarea>`) : (pw.notes ? `<p class="small muted" style="margin-top:10px"><b>Note:</b> ${esc(pw.notes)}</p>` : '')}
+    <div class="row" style="margin-top:12px;flex-wrap:wrap">
+      ${editable ? `<button class="btn ghost" data-a="pwGen" data-id="${att.id}">Regenerate options</button><button class="btn teal" data-a="pwFinalize" data-id="${att.id}" ${pw.selected ? '' : 'disabled'}>Finalise</button>` : ''}
+      ${pw.status === 'final' ? `<button class="btn teal" data-a="pwSend" data-id="${att.id}">Send to administrator</button>` : ''}
+      ${pw.status === 'sent' && isAdmin ? `<button class="btn teal" data-a="pwShare" data-id="${att.id}">Share with parent</button>` : ''}
+      ${pw.status !== 'draft' && isAdmin ? `<button class="btn ghost" data-a="pwReopen" data-id="${att.id}">Reopen for edits</button>` : ''}
+      ${pw.status !== 'draft' ? `<button class="btn ghost" data-a="pwPdf" data-id="${att.id}">Download PDF</button>` : ''}
+    </div></div>`;
+}
+
+/* ---------- embedded section inside the printable/shared report ---------- */
+function pwSection(att, aud, opts = {}) {
+  const pw = att.pathways;
+  if (aud === 'student' || !pw || pw.status === 'draft') return '';
+  if (aud === 'parent' && pw.status !== 'shared') return '';
+  const sel = pw.selected, opt = sel && pw.options[sel];
+  return `<div class="card"><h2>Learning pathway</h2><p class="muted small" style="margin-bottom:10px">${pw.status === 'shared' ? 'Shared with the parent.' : pw.status === 'sent' ? 'Sent to the administrator for review.' : 'Finalised by the teacher.'}</p>
+    ${opt ? `<div class="rec"><div class="eyebrow">${esc(opt.label)} pathway · about ${opt.weeks} weeks</div><b>${esc(opt.headline)}</b><ol class="ul" style="margin-top:8px">${opt.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></div>`
+      : `<div class="grid g3">${['short', 'medium', 'long'].map(k => `<div class="sub"><b>${esc(pw.options[k].label)}</b> <span class="muted small">(${pw.options[k].weeks}w)</span><p class="small" style="margin-top:4px">${esc(pw.options[k].headline)}</p></div>`).join('')}</div>`}
+    ${pw.notes ? `<p class="small muted" style="margin-top:10px">${esc(pw.notes)}</p>` : ''}</div>`;
+}
+
+/* ---------- PDF (parents only ever get this once shared) ---------- */
+async function downloadPathwayPdf(att) {
+  if (!window.jspdf || !window.jspdf.jsPDF) { toast('PDF support did not load. Try again in a moment.'); return; }
+  const pw = att.pathways; if (!pw) { toast('No pathway to download yet.'); return; }
+  const opt = pw.selected && pw.options[pw.selected];
+  const doc = new window.jspdf.jsPDF();
+  let y = 20;
+  doc.setFontSize(16); doc.text('Brainova learning pathway', 14, y); y += 10;
+  doc.setFontSize(11); doc.text(`${att.studentName} - Grade ${att.grade} - ${att.title}`, 14, y); y += 7;
+  doc.text(`Finished ${fmtDate(att.finished)}`, 14, y); y += 10;
+  if (opt) {
+    doc.setFontSize(13); doc.text(`${opt.label} pathway (about ${opt.weeks} weeks)`, 14, y); y += 8;
+    doc.setFontSize(11);
+    const head = doc.splitTextToSize(opt.headline, 180); doc.text(head, 14, y); y += head.length * 6 + 4;
+    opt.steps.forEach((s, i) => { const lines = doc.splitTextToSize(`${i + 1}. ${s}`, 180); if (y > 270) { doc.addPage(); y = 20; } doc.text(lines, 14, y); y += lines.length * 6 + 2; });
+  } else { doc.text('No pathway option has been selected yet.', 14, y); y += 8; }
+  if (pw.notes) { if (y > 260) { doc.addPage(); y = 20; } y += 4; doc.setFontSize(11); doc.text(doc.splitTextToSize('Note: ' + pw.notes, 180), 14, y); }
+  doc.save(`brainova-pathway-${pwFileStem(att)}.pdf`);
+}
+
+/* ===================== VOICE-OVER =====================
+   Spoken encouragement during a test, using the browser's built-in
+   SpeechSynthesis. Purely a comfort feature: never reads a question,
+   never reacts to whether an answer was right or wrong, and is easy
+   to mute. */
+const VOICE_DEFAULT = { enabled: true, voiceURI: '', rate: 1, volume: 1, events: { welcome: true, progress: true, halfway: true, last: true, finish: true } };
+const VOICE_MSG = {
+  welcome: n => `Hi ${n}. Let's get started. Take your time and read each question carefully.`,
+  progress: n => `Good work, ${n}. Keep going.`,
+  halfway: n => `You're halfway through, ${n}. You're doing great.`,
+  last: n => `This is the last question, ${n}. Finish strong.`,
+  finish: n => `Well done, ${n}! Your answers have been saved.`
+};
+function voiceSupported() { return typeof window !== 'undefined' && 'speechSynthesis' in window; }
+function voiceEnabled() { return voiceSupported() && S.settings.voice && S.settings.voice.enabled; }
+function voicePick() {
+  const cfg = S.settings.voice, list = window.speechSynthesis.getVoices();
+  if (cfg.voiceURI) { const v = list.find(v => v.voiceURI === cfg.voiceURI); if (v) return v; }
+  return list.find(v => /^en/i.test(v.lang)) || list[0] || null;
+}
+function voiceUtter(text) {
+  const cfg = S.settings.voice;
+  try {
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text), v = voicePick();
+    if (v) u.voice = v;
+    u.rate = cfg.rate || 1; u.volume = cfg.volume == null ? 1 : cfg.volume;
+    window.speechSynthesis.speak(u);
+  } catch (e) { /* speech synthesis is best-effort only */ }
+}
+function voiceSay(key) {
+  if (!voiceEnabled()) return;
+  const cfg = S.settings.voice; if (cfg.events && cfg.events[key] === false) return;
+  const r = U.run; if (!r) return;
+  voiceUtter(VOICE_MSG[key]((r.st.name || '').split(' ')[0]));
+}
+function voiceStart() { voiceSay('welcome'); }
+function voiceNext() {
+  const r = U.run; if (!r || r.a.model === 'adaptive') return; // progress milestones only make sense for a known, fixed question count
+  const n = r.items.length;
+  if (r.idx === n - 1) voiceSay('last');
+  else if (n > 3 && r.idx === Math.floor(n / 2)) voiceSay('halfway');
+  else if (r.idx > 0 && r.idx % 3 === 0) voiceSay('progress');
+}
+function voiceFinish() { voiceSay('finish'); }
+function voiceStop() { if (voiceSupported()) try { window.speechSynthesis.cancel(); } catch (e) { } }
+function voiceSample() { if (!voiceSupported()) { toast('Voice-over is not supported in this browser.'); return; } voiceUtter('Hi! This is how the voice-over sounds during a test.'); }
+function voiceBtns() {
+  if (!voiceSupported()) return '';
+  const on = voiceEnabled();
+  return `<button class="btn sm ghost" data-a="voiceToggle" title="${on ? 'Mute voice-over' : 'Unmute voice-over'}" aria-label="${on ? 'Mute voice-over' : 'Unmute voice-over'}">${on ? 'Mute voice' : 'Unmute voice'}</button>`;
+}
+function voiceCard() {
+  if (!voiceSupported()) return `<div class="card"><h2>Voice-over</h2><p class="muted">This browser does not support spoken voice-over.</p></div>`;
+  const v = S.settings.voice, voices = window.speechSynthesis.getVoices();
+  return `<div class="card"><h2>Voice-over</h2><p class="muted small" style="margin-bottom:10px">Spoken encouragement during a test (welcome, progress, halfway, last question, finish). Uses the browser's built-in text-to-speech and never reads questions or judges answers.</p>
+    <div class="grid g2">${chk('settings.voice.enabled', v.enabled, 'Enable voice-over', true)}${field('Voice', `<select data-m="settings.voice.voiceURI">${optList(voices.map(x => ({ v: x.voiceURI, l: x.name + ' (' + x.lang + ')' })), v.voiceURI, 'Browser default')}</select>`)}
+    ${field('Speaking rate', inp('settings.voice.rate', v.rate, 'number', 'step="0.1" min="0.5" max="2"'))}${field('Volume', inp('settings.voice.volume', v.volume, 'number', 'step="0.1" min="0" max="1"'))}</div>
+    <div class="row" style="margin-top:10px;flex-wrap:wrap">${['welcome', 'progress', 'halfway', 'last', 'finish'].map(k => chk('settings.voice.events.' + k, v.events[k], k[0].toUpperCase() + k.slice(1))).join('')}</div>
+    <div class="row" style="margin-top:10px"><button class="btn ghost" data-a="voiceTest">Play a sample</button></div></div>`;
+}
+if (voiceSupported() && 'onvoiceschanged' in window.speechSynthesis) window.speechSynthesis.onvoiceschanged = () => { if (U.view === 'settings') render(); };
+
+/* ===================== REWARDS =====================
+   A celebratory picture and confetti when a student submits a test,
+   chosen by score band. Purely a comfort feature: never affects
+   scoring, placement or the report. Admins can upload their own
+   picture per band; otherwise a built-in piece of SVG art is used. */
+const RW_BANDS = [
+  { key: 'sprout', min: 0, name: 'Great effort', icon: 'sprout' },
+  { key: 'badge', min: 0.4, name: 'Nice work', icon: 'badge' },
+  { key: 'star', min: 0.6, name: 'Well done', icon: 'star' },
+  { key: 'medal', min: 0.8, name: 'Excellent', icon: 'medal' },
+  { key: 'trophy', min: 0.95, name: 'Outstanding', icon: 'trophy' }
+];
+const RW_DEFAULT = { enabled: true, confetti: true, images: {} };
+const RW_ART = {
+  sprout: '<svg width="70" height="70" viewBox="0 0 24 24"><path d="M12 21V11" stroke="#1F6D4A" stroke-width="2" stroke-linecap="round"/><path d="M12 13c0-3.5 3-5 6-5 0 3.5-2.5 6-6 6" fill="#86EFAC" stroke="#1F6D4A" stroke-width="1.2"/><path d="M12 15c0-3-2.5-5-6-5 0 3.5 2.5 6 6 6" fill="#4ADE80" stroke="#1F6D4A" stroke-width="1.2"/></svg>',
+  badge: '<svg width="70" height="70" viewBox="0 0 24 24"><path d="M12 2l3 2 3.4-.4.6 3.4 2.6 2.2-2.6 2.2-.6 3.4-3.4-.4-3 2-3-2-3.4.4-.6-3.4L2.4 9.2 5 7l.6-3.4L9 4z" fill="#FBBF24" stroke="#B45309" stroke-width="0.8"/><circle cx="12" cy="9.6" r="2.6" fill="#fff"/></svg>',
+  star: '<svg width="70" height="70" viewBox="0 0 24 24"><path d="M12 2l2.9 6.3 6.9.7-5.2 4.6 1.6 6.8-6.2-3.6-6.2 3.6 1.6-6.8-5.2-4.6 6.9-.7z" fill="#F59E0B" stroke="#B45309" stroke-width="0.6"/></svg>',
+  medal: '<svg width="70" height="70" viewBox="0 0 24 24"><path d="M7 2l5 6-5 4L2 6z" fill="#EF4444"/><path d="M17 2l-5 6 5 4 5-6z" fill="#3B82F6"/><circle cx="12" cy="15" r="6.5" fill="#FDE68A" stroke="#B45309" stroke-width="1"/><circle cx="12" cy="15" r="3.6" fill="#FBBF24"/></svg>',
+  trophy: '<svg width="70" height="70" viewBox="0 0 24 24"><path d="M7 3h10v6a5 5 0 0 1-10 0z" fill="#FBBF24" stroke="#B45309" stroke-width="0.8"/><path d="M7 4H4a3 3 0 0 0 3 5M17 4h3a3 3 0 0 1-3 5" fill="none" stroke="#B45309" stroke-width="1.2"/><rect x="10" y="14" width="4" height="4" fill="#B45309"/><rect x="7" y="18" width="10" height="2.4" rx="1" fill="#92400E"/></svg>'
+};
+function rwBand(att) {
+  const an = AN(att), pct = an.maxMarks ? an.marks / an.maxMarks : 0;
+  let band = RW_BANDS[0]; RW_BANDS.forEach(b => { if (pct >= b.min) band = b; }); return band;
+}
+function rewardBlock(att) {
+  const rw = S.settings.rewards; if (!rw || !rw.enabled) return '';
+  const band = rwBand(att), img = rw.images && rw.images[band.key];
+  return `<div aria-hidden="true">${img ? `<img src="${esc(img)}" alt="" style="max-width:120px;max-height:120px">` : RW_ART[band.icon]}</div><div class="small" style="font-weight:700;margin-top:4px">${esc(band.name)}</div>`;
+}
+function rewardFx() {
+  const rw = S.settings.rewards; if (!rw || !rw.enabled || !rw.confetti) return;
+  try {
+    const c = document.createElement('canvas'); c.width = innerWidth; c.height = innerHeight;
+    c.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999';
+    document.body.appendChild(c);
+    const ctx = c.getContext('2d'), colors = ['#5420A8', '#14B8A6', '#F59E0B', '#EF4444', '#3B82F6'];
+    const pieces = Array.from({ length: 140 }, () => ({ x: Math.random() * c.width, y: -20 - Math.random() * c.height * 0.3, r: 4 + Math.random() * 5, col: colors[Math.floor(Math.random() * colors.length)], vy: 2 + Math.random() * 3, vx: -1.5 + Math.random() * 3, rot: Math.random() * Math.PI, vr: -0.2 + Math.random() * 0.4 }));
+    let t = 0; const dur = 2600;
+    function frame() {
+      t += 16; ctx.clearRect(0, 0, c.width, c.height);
+      pieces.forEach(p => { p.x += p.vx; p.y += p.vy; p.rot += p.vr; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.rot); ctx.fillStyle = p.col; ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 0.6); ctx.restore(); });
+      if (t < dur) requestAnimationFrame(frame); else c.remove();
+    }
+    requestAnimationFrame(frame);
+  } catch (e) { /* confetti is a visual extra, never worth failing the submit over */ }
+}
+function rewardCard() {
+  const rw = S.settings.rewards;
+  return `<div class="card"><h2>Rewards</h2><p class="muted small" style="margin-bottom:10px">A celebratory picture and confetti when a student submits a test. Never affects scoring or placement.</p>
+    <div class="row">${chk('settings.rewards.enabled', rw.enabled, 'Show a reward on submission', true)}${chk('settings.rewards.confetti', rw.confetti, 'Confetti animation', true)}</div>
+    <div class="grid g3" style="margin-top:12px">${RW_BANDS.map(b => `<div class="sub stack" style="align-items:center;text-align:center">
+      <div style="width:70px;height:70px">${rw.images && rw.images[b.key] ? `<img src="${esc(rw.images[b.key])}" style="max-width:100%;max-height:100%">` : RW_ART[b.icon]}</div>
+      <b class="small">${esc(b.name)}</b><span class="muted small">${Math.round(b.min * 100)}%+</span>
+      <label class="btn sm ghost" style="cursor:pointer">Upload image<input type="file" accept="image/*" hidden data-a="rwUpload" data-k="${b.key}"></label>
+      ${rw.images && rw.images[b.key] ? `<button class="btn sm ghost" data-a="rwClear" data-k="${b.key}">Remove</button>` : ''}</div>`).join('')}</div></div>`;
+}
 
 /* ===================== ACTIONS, EVENTS, INIT ===================== */
 function setModel(el) {
@@ -2288,6 +2766,18 @@ ACT.qGenRun = async () => {
   } catch (e) { U.qGenMsg = e && e.code === 'not_granted' ? 'Permission to use Claude was not granted.' : 'AI generation did not complete: ' + ((e && e.message) || 'unknown error'); }
   U.qGenBusy = false; render();
 };
+ACT.qGuideOpen = () => { U.qGuide = true; render(); scrollTop(); };
+ACT.qGuideClose = () => { U.qGuide = false; render(); };
+ACT.dlGuide = () => {
+  const sec = (title, head, rows) => [[title], head, ...rows, []];
+  const rows = [].concat(
+    sec('How to use this file', ['Item', 'Detail'], QGUIDE.how),
+    sec('Difficulty levels', ['Letter', 'Level', 'What it tests', 'How to write it', 'Time needed', 'Example', 'Usual grade range'], QGUIDE.levels),
+    sec('Column rules', ['Column', 'Needed?', 'Format', 'Rule', 'Example'], QGUIDE.fields),
+    sec('Writing wrong options', ['Kind', 'Guidance'], QGUIDE.opts),
+    sec('Quality checklist', ['Check', 'What to do'], QGUIDE.check));
+  saveFile('brainova-question-writing-guide.csv', toCSV(rows));
+};
 
 /* results */
 ACT.resTab = el => { U.resTab = el.dataset.v; render(); };
@@ -2386,7 +2876,7 @@ ACT.finishRun = el => { const r = U.run, att = r.att, prev = r.preview; U.run = 
 
 /* export / integration / settings */
 ACT.exp = el => saveFile(el.dataset.f, EXPORTS[el.dataset.k]());
-ACT.expBulk = async () => { const names = { attempts: 'brainova-attempts.csv', responses: 'brainova-responses.csv', topics: 'brainova-topic-performance.csv', students: 'brainova-students.csv', notes: 'brainova-teacher-notes.csv', bank: 'brainova-question-bank.csv' }; for (const k of Object.keys(names)) await saveFile(names[k], EXPORTS[k]()); };
+ACT.expBulk = async () => { const names = { attempts: 'brainova-attempts.csv', responses: 'brainova-responses.csv', topics: 'brainova-topic-performance.csv', students: 'brainova-students.csv', notes: 'brainova-teacher-notes.csv', bank: 'brainova-question-bank.csv', pathways: 'brainova-pathways.csv', pathwayplan: 'brainova-pathway-plan.csv' }; for (const k of Object.keys(names)) await saveFile(names[k], EXPORTS[k]()); };
 ACT.expLms = () => saveFile('brainova-lms-import.json', JSON.stringify(lmsPayload(), null, 2));
 ACT.expAssess = () => saveFile('brainova-assessments.json', JSON.stringify(S.assessments, null, 2));
 ACT.dlKit = () => saveFile('brainova-laravel-integration-kit.md', LARAVEL_KIT);
@@ -2492,6 +2982,33 @@ ACT.liveDev = el => { U.live.device = el.value; render(); };
 ACT.liveAns = el => { const L = U.live; if (L.phase !== 'q') return; L.answers[L.idx][L.device] = { raw: el.dataset.v, ms: Math.round(liveElapsed()) }; render(); };
 ACT.liveTxtSend = () => { const L = U.live, v = document.getElementById('liveTxt').value.trim(); if (!v || L.phase !== 'q') return; L.answers[L.idx][L.device] = { raw: v, ms: Math.round(liveElapsed()) }; render(); };
 
+/* learning pathways */
+ACT.pwGen = el => {
+  const att = attById(el.dataset.id); if (!att || !pwReady(att)) return;
+  const prev = att.pathways;
+  att.pathways = { options: pwBuildOptions(att), selected: prev ? prev.selected : null, notes: prev ? prev.notes : '', status: 'draft', updatedAt: Date.now() };
+  save(); render(); toast('Pathway options generated.');
+};
+ACT.pwSelect = el => { const att = attById(el.dataset.id); if (!att || !att.pathways) return; att.pathways.selected = el.dataset.k; att.pathways.updatedAt = Date.now(); save(); render(); };
+ACT.pwNote = el => { const att = attById(el.dataset.id); if (!att || !att.pathways) return; att.pathways.notes = el.value; save(); };
+ACT.pwFinalize = el => { const att = attById(el.dataset.id); if (!att || !att.pathways || !att.pathways.selected) { toast('Choose a pathway option first.'); return; } att.pathways.status = 'final'; att.pathways.updatedAt = Date.now(); save(); render(); toast('Pathway finalised.'); };
+ACT.pwSend = el => { const att = attById(el.dataset.id); if (!att || !att.pathways) return; att.pathways.status = 'sent'; att.pathways.updatedAt = Date.now(); save(); render(); toast('Sent to the administrator for review.'); };
+ACT.pwShare = el => { const att = attById(el.dataset.id); if (!att || !att.pathways || U.role !== 'admin') return; att.pathways.status = 'shared'; att.pathways.updatedAt = Date.now(); save(); render(); toast('Shared with the parent.'); };
+ACT.pwReopen = el => { const att = attById(el.dataset.id); if (!att || !att.pathways || U.role !== 'admin') return; att.pathways.status = 'draft'; att.pathways.updatedAt = Date.now(); save(); render(); toast('Reopened for edits.'); };
+ACT.pwPdf = el => { const att = attById(el.dataset.id); if (att) downloadPathwayPdf(att); };
+
+/* voice-over and rewards */
+ACT.voiceToggle = () => { S.settings.voice.enabled = !S.settings.voice.enabled; save(); render(); };
+ACT.voiceTest = () => voiceSample();
+ACT.rwUpload = el => {
+  const f = el.files[0]; if (!f) return;
+  if (f.size > 400 * 1024) { toast('Image is larger than 400 KB. Use a smaller file.'); el.value = ''; return; }
+  const k = el.dataset.k, r = new FileReader();
+  r.onload = () => { S.settings.rewards.images = S.settings.rewards.images || {}; S.settings.rewards.images[k] = r.result; save(); render(); };
+  r.readAsDataURL(f);
+};
+ACT.rwClear = el => { const k = el.dataset.k; if (S.settings.rewards.images) delete S.settings.rewards.images[k]; save(); render(); };
+
 /* init */
 function setDefaultIds() { const g5 = S.students.find(s => s.grade === 5) || S.students[0]; U.studentId = g5 && g5.id; U.parentId = S.parents[0] && S.parents[0].id; }
 // The admin-managed collections (students/parents/assessments/bank) sync
@@ -2528,6 +3045,9 @@ function init() {
       // falling back to bare defaults every time).
       if (!remote.settings) remote.settings = S.settings;
       ['students', 'parents', 'assessments', 'bank'].forEach(k => { remote[k] = mergeById(S[k], remote[k]); });
+      // The backend attaches each attempt's learning pathway (if any and
+      // if this role is allowed to see it) directly onto that attempt
+      // before sending it here, so att.pathways needs no extra handling.
       S = remote; anCache = new WeakMap(); ensureSample(); if (!signedIn) setDefaultIds(); persistLocal(); render();
     }).catch(() => { /* stay on the local/cached copy */ });
   }

@@ -1,7 +1,7 @@
 /* ===================== SHELL, ROUTER, DASHBOARD, ASSESSMENTS, BUILDER ===================== */
 const NAV = {
-  admin: [['dash', 'Dashboard', 'dash'], ['assess', 'Assessments', 'list'], ['bank', 'Question bank', 'bank'], ['students', 'Students', 'stu'], ['results', 'Results', 'res'], ['export', 'Exports', 'exp'], ['integration', 'LMS integration', 'link'], ['settings', 'Settings', 'cog']],
-  teacher: [['dash', 'Dashboard', 'dash'], ['assess', 'Assessments', 'list'], ['live', 'Live class', 'live'], ['bank', 'Question bank', 'bank'], ['results', 'Results', 'res'], ['students', 'Students', 'stu'], ['export', 'Exports', 'exp']],
+  admin: [['dash', 'Dashboard', 'dash'], ['assess', 'Assessments', 'list'], ['bank', 'Question bank', 'bank'], ['students', 'Students', 'stu'], ['results', 'Results', 'res'], ['pathways', 'Pathways', 'list'], ['export', 'Exports', 'exp'], ['integration', 'LMS integration', 'link'], ['settings', 'Settings', 'cog']],
+  teacher: [['dash', 'Dashboard', 'dash'], ['assess', 'Assessments', 'list'], ['live', 'Live class', 'live'], ['bank', 'Question bank', 'bank'], ['results', 'Results', 'res'], ['pathways', 'Pathways', 'list'], ['students', 'Students', 'stu'], ['export', 'Exports', 'exp']],
   student: [['my', 'My assessments', 'home'], ['hist', 'History', 'hist']],
   parent: [['parent', 'My child', 'home']]
 };
@@ -71,6 +71,7 @@ VIEWS.dash = function () {
   const pub = S.assessments.filter(a => a.status === 'published');
   return `<div class="page-head"><div><h1>Dashboard</h1><p>Placement evidence across assessments. Levels are estimates from the questions administered and are meant to support teacher judgement.</p></div>
     <div class="row">${U.role === 'teacher' || U.role === 'admin' ? '<button class="btn" data-a="newAsmt">New assessment</button>' : ''}</div></div>
+    ${pwInbox()}
     ${asmtById('asm_g5check') && U.role !== 'student' ? '<div class="banner info"><div><b>Sample test ready: Grade 5 Mathematics Check.</b> Take it as a student, then come back to Results to see the report as Administrator, Teacher or Parent.</div><button class="btn sm teal" data-a="trySample">Take it as a Grade 5 student</button></div>' : ''}
     <div class="grid g4"><div class="card kpi"><b>${S.assessments.length}</b><span>Assessments created</span></div><div class="card kpi"><b>${pub.length}</b><span>Active (published)</span></div>
     <div class="card kpi"><b>${S.attempts.filter(a => !a.preview).length}</b><span>Completed attempts</span></div><div class="card kpi"><b>${S.students.length}</b><span>Registered students</span></div></div>
@@ -103,6 +104,7 @@ function attemptTable(list, opts = {}) {
 }
 
 /* ---------- Assessments list ---------- */
+const AGE_GROUPS = ['2–3 years', '3–4 years', '4–5 years', '5–6 years', '6–7 years', '7–8 years', '8–9 years', '9–10 years', '10–11 years', '11–12 years', '12–13 years', '13–14 years', '14–15 years', '15–16 years', '16+ years', '5–7 years', '7–9 years', '9–11 years', '8–12 years', '11–14 years', '12–16 years', '14+ years'];
 function asgPanel(a) {
   const cand = S.students.filter(s => !a.grades.length || a.grades.includes(s.grade));
   return `<div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--line)"><div class="row sp"><h3>Assign to students</h3><div class="row"><button class="btn sm ghost" data-a="asgAll" data-id="${a.id}">Assign all listed</button><button class="btn sm ghost" data-a="asgNone" data-id="${a.id}">Clear</button></div></div>
@@ -140,10 +142,11 @@ function bStep1(d) {
     ${field('Purpose', `<select data-m="draft.purpose">${optList(PURPOSES, d.purpose)}</select>`)}
     ${field('Application', `<select data-m="draft.application" data-r>${optList([{ v: 'school', l: 'Brainova School (Grades 1–10)' }, { v: 'course', l: 'Brainova Short Course' }], d.application)}</select>`)}
     ${d.application === 'course' ? field('Course', `<select data-m="draft.courseId" data-r>${optList(COURSES.map(x => ({ v: x.id, l: x.name })), d.courseId, 'Choose a course')}</select>`) : field('Assessment type', `<select data-m="draft.level">${optList(['Grade level', 'Complete syllabus', 'Topic specific', 'Placement'], d.level)}</select>`)}
-    ${field('Student age group', `<select data-m="draft.ageGroup">${optList(['5–7 years', '7–9 years', '9–11 years', '8–12 years', '11–14 years', '12–16 years', '14+ years'], d.ageGroup)}</select>`)}
-    ${field('Academic level', `<select data-m="draft.level">${optList(['Foundation', 'Grade level', 'Intermediate', 'Advanced', 'Mixed'], d.level)}</select>`)}
+    ${field('Student age group', `<select data-m="draft.ageGroup">${optList(AGE_GROUPS, d.ageGroup)}</select>`)}
+    ${field('Academic level', `<select data-m="draft.level">${optList(['Foundation', 'Grade level', 'Intermediate', 'Advanced', 'Challenging', 'Mastery', 'Exceptional', 'Mixed'], d.level)}</select>`)}
     ${field('Passing criteria (% score, 0 for none)', inp('draft.passPct', d.passPct, 'number', 'min="0" max="100"'))}</div>
     <div class="stack" style="margin-top:14px"><div><div class="eyebrow" style="margin-bottom:6px">Grades included</div><div class="chips">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(g => `<button class="chip" data-a="tglGrade" data-g="${g}" aria-pressed="${d.grades.includes(g)}">Grade ${g}</button>`).join('')}</div><p class="muted small" style="margin-top:6px">Questions are drawn only from items whose grade range overlaps these grades. Leave empty to ignore grade.</p></div>
+    <div class="sub"><div class="grid g2">${field('Allow questions above grade level', `<select data-m="draft.stretch" data-t="num">${optList([{ v: 0, l: 'No. Stay within the selected grades' }, { v: 1, l: 'Up to 1 grade above (recommended)' }, { v: 2, l: 'Up to 2 grades above' }], d.stretch == null ? 0 : d.stretch)}</select>`)}<p class="small muted" style="align-self:end">Older children and strong readers often solve work from the next grade. Use this with the age group above so that questions suit the child’s age and ability, not only the grade.</p></div></div>
     ${c ? `<div class="banner info">Course levels: ${c.levels.map(esc).join(' → ')}. <button class="btn sm ghost" data-a="useCourseTopics">Use this course’s topics</button></div>` : ''}
     ${field('Target learning outcomes', `<textarea data-m="draft.outcomes" placeholder="What should this assessment tell you?">${esc(d.outcomes)}</textarea>`)}
     ${field('Instructions shown to students', `<textarea data-m="draft.instructions">${esc(d.instructions)}</textarea>`)}</div></div>`;
@@ -164,12 +167,14 @@ function bStep2(d) {
 function bStep3(d) {
   const tot = sumBy(DIFF_KEYS, k => +d.dist[k] || 0);
   return `<div class="card"><h3>Question model</h3><div class="grid g2" style="margin-top:10px">
-    <label class="sub chk" style="cursor:pointer"><input type="radio" name="model" data-m="draft.model" data-r value="fixed" ${d.model === 'fixed' ? 'checked' : ''}><span><b>Fixed difficulty</b><br><span class="muted small">You decide how many Strengthen, Hard and Extend questions every student receives.</span></span></label>
+    <label class="sub chk" style="cursor:pointer"><input type="radio" name="model" data-m="draft.model" data-r value="fixed" ${d.model === 'fixed' ? 'checked' : ''}><span><b>Fixed difficulty</b><br><span class="muted small">You decide how many questions of each difficulty (Strengthen up to Exceptional) every student receives.</span></span></label>
     <label class="sub chk" style="cursor:pointer"><input type="radio" name="model" data-m="draft.model" data-r value="adaptive" ${d.model === 'adaptive' ? 'checked' : ''}><span><b>Adaptive</b><br><span class="muted small">The next question depends on the student’s evidence so far, so each student sees a different path.</span></span></label></div></div>
   ${d.model === 'fixed' ? `<div class="card"><h3>Difficulty distribution</h3><div class="grid g4" style="margin:10px 0">
-    ${DIFF_KEYS.map(k => field(DIFF[k].name, inp('draft.dist.' + k, d.dist[k], 'number', 'min="0" max="60" data-r'))).join('')}<div class="kpi" style="justify-content:flex-end"><b>${tot}</b><span>Total questions</span></div></div>
-    <div class="row"><span class="muted small">Quick split</span>${[[10, 3, 4, 3], [15, 5, 6, 4], [20, 6, 8, 6], [24, 6, 10, 8], [30, 9, 12, 9]].map(p => `<button class="btn sm ghost" data-a="splitDist" data-s="${p[1]}" data-h="${p[2]}" data-e="${p[3]}">${p[0]} questions (${p[1]}/${p[2]}/${p[3]})</button>`).join('')}</div>
-    <div class="legend" style="margin-top:12px"><span><b>Strengthen</b> foundation knowledge, basic concepts, guided application</span><span><b>Hard</b> multi-step reasoning and application</span><span><b>Extend</b> higher-order thinking and unfamiliar problems</span></div></div>
+    ${DIFF_KEYS.map(k => field(DIFF[k].name, inp('draft.dist.' + k, d.dist[k] || 0, 'number', 'min="0" max="60" data-r'))).join('')}<div class="kpi" style="justify-content:flex-end"><b>${tot}</b><span>Total questions</span></div></div>
+    <div class="row"><span class="muted small">Quick split</span>${[[10, 3, 4, 3, 0, 0, 0], [15, 5, 6, 4, 0, 0, 0], [20, 6, 8, 6, 0, 0, 0], [24, 6, 10, 8, 0, 0, 0], [24, 4, 6, 6, 4, 3, 1], [30, 9, 12, 9, 0, 0, 0]].map(p => `<button class="btn sm ghost" data-a="splitDist" data-s="${p[1]}" data-h="${p[2]}" data-e="${p[3]}" data-c="${p[4]}" data-m2="${p[5]}" data-x="${p[6]}">${p[0]} questions (${p.slice(1).filter((x, i) => i < 3 || x).join('/')})${p[4] ? ' with stretch' : ''}</button>`).join('')}</div>
+    <div class="legend" style="margin-top:12px"><span><b>Strengthen</b> foundation knowledge, basic concepts, guided application</span><span><b>Hard</b> multi-step reasoning and application</span><span><b>Extend</b> higher-order thinking and unfamiliar problems</span></div>
+    <div class="legend" style="margin-top:8px"><span><b>Challenging</b> every question is a word problem</span><span><b>Mastery</b> two concepts in one question: find one thing first, then use it</span><span><b>Exceptional</b> long, multi-step questions with common traps, a little above the usual grade level</span></div>
+    <p class="muted small" style="margin-top:8px">Challenging, Mastery and Exceptional questions are available for Mathematics. Other subjects do not have them yet, so a student can reach at most Advanced there.</p></div>
     <div class="card"><h3>Topic-wise distribution</h3><p class="muted small">Questions are spread evenly across the selected topics within each difficulty. Reports show every topic separately.</p></div>`
     : `<div class="card"><h3>Adaptive settings</h3><div class="grid g4" style="margin:10px 0">
     ${field('Minimum questions', inp('draft.adaptive.min', d.adaptive.min, 'number', 'min="3" max="60"'))}${field('Maximum questions', inp('draft.adaptive.max', d.adaptive.max, 'number', 'min="4" max="60"'))}
@@ -240,7 +245,7 @@ function bStep5(d) {
     <div class="row"><button class="btn ghost" data-a="previewRun" ${v.err.length ? 'disabled' : ''}>Preview as a student</button><button class="btn ghost" data-a="saveDraft">Save draft</button><button class="btn teal lg" data-a="publish" ${v.err.length ? 'disabled' : ''}>Publish assessment</button></div>`;
 }
 function pathChart(resps) {
-  const W = 640, H = 190, L = 70, Rm = 14, T = 12, B = 28, n = Math.max(resps.length, 2), x = i => L + (W - L - Rm) * (i / (n - 1)), y = b => T + (H - T - B) * (1 - (b + 1.7) / 3.4);
+  const W = 640, H = 190, L = 70, Rm = 14, T = 12, B = 28, n = Math.max(resps.length, 2), x = i => L + (W - L - Rm) * (i / (n - 1)), y = b => T + (H - T - B) * (1 - (b + 1.7) / 5.2);
   const marks = resps.map((r, i) => { const cx = x(i), cy = y(r.b); const f = r.status === 'correct' ? 'var(--ok)' : r.status === 'incorrect' ? 'var(--bad)' : 'var(--surface)'; const s = r.status === 'correct' || r.status === 'incorrect' ? 'var(--surface)' : 'var(--skip)';
     return `<circle cx="${cx}" cy="${cy}" r="5.5" fill="${f}" stroke="${s}" stroke-width="2"><title>Q${i + 1} ${esc(r.topic)} · ${DIFF[r.diff].name} · ${r.status}${r.probe ? ' · prerequisite check' : ''}</title></circle>`; }).join('');
   const line = resps.map((r, i) => (i ? 'L' : 'M') + x(i).toFixed(1) + ' ' + y(r.b).toFixed(1)).join(' ');

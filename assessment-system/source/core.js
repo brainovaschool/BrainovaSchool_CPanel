@@ -52,7 +52,7 @@ function accomFor(sid) { const s = studentById(sid); return s && s.accom ? s.acc
 
 /* ---------- seed ---------- */
 function newAsmt(over) {
-  return Object.assign({ id: uid('asm'), title: '', purpose: 'Diagnostic', application: 'school', courseId: '', grades: [5], ageGroup: '9–11 years', level: 'Grade level', outcomes: '', instructions: 'Read each question carefully and answer on your own. You may not use AI tools, other people or other devices.',
+  return Object.assign({ id: uid('asm'), title: '', purpose: 'Diagnostic', application: 'school', courseId: '', grades: [5], ageGroup: '9–11 years', stretch: 1, level: 'Grade level', outcomes: '', instructions: 'Read each question carefully and answer on your own. You may not use AI tools, other people or other devices.',
     topics: [], excludeObj: [], model: 'fixed', dist: { S: 6, H: 8, E: 6 }, adaptive: { min: 10, max: 20, minPer: 3, sdTarget: 0.7, startB: -0.5, probe: true }, mode: 'independent', durationMin: 30, perQuestionSec: 0, nav: 'free', allowBack: true, allowSkip: true, allowChange: true,
     shuffleQ: false, shuffleOpts: true, attempts: 1, autoSubmit: true, feedback: 'release', resultVis: 'release', passPct: 0, parentSupervision: false, fullscreen: true, autoAdvance: false, status: 'draft', assignedTo: [], created: Date.now() }, over || {});
 }
@@ -97,6 +97,11 @@ function seedBase() {
 /* ---------- toast + downloads ---------- */
 let toastTimer = 0;
 function toast(msg) { U.toast = msg; const el = document.getElementById('toast'); if (el) { el.textContent = msg; el.hidden = false; } clearTimeout(toastTimer); toastTimer = setTimeout(() => { U.toast = ''; const e = document.getElementById('toast'); if (e) e.hidden = true; }, 3200); }
+// Saves a file straight through the browser's own download mechanism -
+// works in any real browser with no special permission, unlike an
+// earlier version of this that only worked inside Claude's own preview
+// tool (window.claude.use('downloads')), which silently did nothing on
+// the live site.
 async function saveFile(name, data) {
   try {
     const type = /\.json$/i.test(name) ? 'application/json'
@@ -150,7 +155,7 @@ const optList = (list, sel, blank) => (blank != null ? `<option value="">${esc(b
 const field = (label, inner, cls = '') => `<label class="f ${cls}">${esc(label)}${inner}</label>`;
 const inp = (path, val, type = 'text', extra = '') => `<input type="${type}" data-m="${path}" ${type === 'number' ? 'data-t="num"' : ''} value="${esc(val)}" ${extra}>`;
 const chk = (path, val, label, rerender) => `<label class="chk"><input type="checkbox" data-m="${path}" ${rerender ? 'data-r' : ''} ${val ? 'checked' : ''}><span>${label}</span></label>`;
-function topicMeta(subject, topic) { const bankQ = S.bank.filter(q => q.subject === subject && q.topic === topic); const c = { S: 0, H: 0, E: 0 }; bankQ.forEach(q => { if (q.status === 'approved') c[q.diff]++; }); return c; }
+function topicMeta(subject, topic) { const bankQ = S.bank.filter(q => q.subject === subject && q.topic === topic); const c = { S: 0, H: 0, E: 0, C: 0, M: 0, X: 0 }; bankQ.forEach(q => { if (q.status === 'approved') c[q.diff]++; }); return c; }
 function scrollTop() { window.scrollTo(0, 0); }
 
 /* ---------- report sharing (who sees what) ---------- */
@@ -179,11 +184,39 @@ function addSampleCheck(D) {
   D.attempts.push(at); D.supervision = D.supervision || {}; D.supervision[a.id + '|' + st.id] = { confirmed: true, by: 'Parent of Fatima', at: Date.now() - 2.1 * 86400000 };
   D.sampleCheckAdded = true;
 }
-function seed() { const d = seedBase(); d.settings.sharing = JSON.parse(JSON.stringify(DEFAULT_SHARING)); addSampleCheck(d); return d; }
+function addStretchSample(D) {
+  if (D.assessments.some(a => a.id === 'asm_g5stretch')) return;
+  const g5 = D.students.filter(s => s.grade === 5); if (!g5.length) return;
+  const a = newAsmt({ id: 'asm_g5stretch', title: 'Grade 5 Maths Challenge: Beyond the Grade', purpose: 'Diagnostic', application: 'school', grades: [5], ageGroup: '9–11 years', stretch: 2, level: 'Mixed',
+    topics: mathTopics(['Addition', 'Subtraction', 'Multiplication', 'Division', 'Fractions', 'Decimals']), model: 'adaptive', adaptive: { min: 12, max: 24, minPer: 3, sdTarget: 0.7, startB: -0.5, maxStep: 1.2, probe: true }, durationMin: 60, parentSupervision: true,
+    outcomes: 'Find each Grade 5 student’s strongest and weakest maths topics, and show who is ready for harder work beyond the grade.',
+    instructions: 'This test starts at a comfortable level and gets harder as you answer well. Some questions are long or tricky on purpose, and some are above Grade 5. You are not expected to get them all right.\nWork on your own. Do not use a calculator, AI tools or other people.',
+    status: 'published', assignedTo: g5.map(s => s.id), resultVis: 'release', feedback: 'release', created: Date.now() - 3600000 });
+  D.assessments.unshift(a);
+  const st = g5.find(s => s.name === 'Ayesha Khan') || g5[0];
+  const at = simulateAttempt(a, D.bank, st, { theta: 1.6, byTopic: { Addition: 2.0, Subtraction: 1.7, Multiplication: 1.8, Division: -0.3, Fractions: 2.1, Decimals: 1.0 }, speed: 1, skipP: 0 }, 'g5stretch-' + st.id, Date.now() - 86400000);
+  at.released = true; at.review = { notes: 'Ayesha works well above Grade 5 in most topics. Give her multi-step and longer word problems, and check her division method.', override: '', finalized: true };
+  D.attempts.push(at); D.supervision = D.supervision || {}; D.supervision[a.id + '|' + st.id] = { confirmed: true, by: 'Parent of ' + st.name, at: Date.now() - 86500000 };
+  D.sampleStretchAdded = true;
+}
+function seed() { const d = seedBase(); d.settings.sharing = JSON.parse(JSON.stringify(DEFAULT_SHARING)); addSampleCheck(d); addStretchSample(d); return d; }
 function ensureSample() {
+  // The Sheet's own "settings" tab can come back empty (nothing saved
+  // there yet) - that must never mean "erase S.settings", since every
+  // report depends on it (proficiency levels, sharing, voice, rewards).
+  // These guards repair it from scratch if it's ever missing, instead
+  // of letting the rest of this function throw on a null read.
   if (!S.settings) S.settings = defaultSettings();
   if (!S.settings.levels || !S.settings.levels.length) S.settings.levels = DEFAULT_LEVELS.map(l => ({ ...l }));
   if (!S.settings.sharing) S.settings.sharing = JSON.parse(JSON.stringify(DEFAULT_SHARING));
+  // upgrade older saved data: three levels above Advanced, and the matching question tiers
+  const lv = S.settings.levels, old5 = lv.length === 5 && lv.every((l, i) => l.name === DEFAULT_LEVELS[i].name && l.min === DEFAULT_LEVELS[i].min);
+  if (old5) S.settings.levels = DEFAULT_LEVELS.map(l => ({ ...l }));
+  if (!S.stretchBank) { const have = new Set(S.bank.map(q => q.id)); buildBank().forEach(q => { if (STRETCH_KEYS.includes(q.diff) && !have.has(q.id)) S.bank.push(q); }); S.stretchBank = true; }
+  if (!S.sampleStretchAdded && S.students.length) addStretchSample(S);
+  if (!S.settings.voice) S.settings.voice = Object.assign({}, VOICE_DEFAULT);
+  if (!S.settings.rewards) S.settings.rewards = JSON.parse(JSON.stringify(RW_DEFAULT));
   if (!S.sampleCheckAdded && S.students.length) addSampleCheck(S);
+  if (!S.samplePathways && S.students.length) addSamplePathways(S);
   save();
 }

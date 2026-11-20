@@ -127,6 +127,18 @@ ACT.qGenRun = async () => {
   } catch (e) { U.qGenMsg = e && e.code === 'not_granted' ? 'Permission to use Claude was not granted.' : 'AI generation did not complete: ' + ((e && e.message) || 'unknown error'); }
   U.qGenBusy = false; render();
 };
+ACT.qGuideOpen = () => { U.qGuide = true; render(); scrollTop(); };
+ACT.qGuideClose = () => { U.qGuide = false; render(); };
+ACT.dlGuide = () => {
+  const sec = (title, head, rows) => [[title], head, ...rows, []];
+  const rows = [].concat(
+    sec('How to use this file', ['Item', 'Detail'], QGUIDE.how),
+    sec('Difficulty levels', ['Letter', 'Level', 'What it tests', 'How to write it', 'Time needed', 'Example', 'Usual grade range'], QGUIDE.levels),
+    sec('Column rules', ['Column', 'Needed?', 'Format', 'Rule', 'Example'], QGUIDE.fields),
+    sec('Writing wrong options', ['Kind', 'Guidance'], QGUIDE.opts),
+    sec('Quality checklist', ['Check', 'What to do'], QGUIDE.check));
+  saveFile('brainova-question-writing-guide.csv', toCSV(rows));
+};
 
 /* results */
 ACT.resTab = el => { U.resTab = el.dataset.v; render(); };
@@ -225,7 +237,7 @@ ACT.finishRun = el => { const r = U.run, att = r.att, prev = r.preview; U.run = 
 
 /* export / integration / settings */
 ACT.exp = el => saveFile(el.dataset.f, EXPORTS[el.dataset.k]());
-ACT.expBulk = async () => { const names = { attempts: 'brainova-attempts.csv', responses: 'brainova-responses.csv', topics: 'brainova-topic-performance.csv', students: 'brainova-students.csv', notes: 'brainova-teacher-notes.csv', bank: 'brainova-question-bank.csv' }; for (const k of Object.keys(names)) await saveFile(names[k], EXPORTS[k]()); };
+ACT.expBulk = async () => { const names = { attempts: 'brainova-attempts.csv', responses: 'brainova-responses.csv', topics: 'brainova-topic-performance.csv', students: 'brainova-students.csv', notes: 'brainova-teacher-notes.csv', bank: 'brainova-question-bank.csv', pathways: 'brainova-pathways.csv', pathwayplan: 'brainova-pathway-plan.csv' }; for (const k of Object.keys(names)) await saveFile(names[k], EXPORTS[k]()); };
 ACT.expLms = () => saveFile('brainova-lms-import.json', JSON.stringify(lmsPayload(), null, 2));
 ACT.expAssess = () => saveFile('brainova-assessments.json', JSON.stringify(S.assessments, null, 2));
 ACT.dlKit = () => saveFile('brainova-laravel-integration-kit.md', LARAVEL_KIT);
@@ -331,6 +343,33 @@ ACT.liveDev = el => { U.live.device = el.value; render(); };
 ACT.liveAns = el => { const L = U.live; if (L.phase !== 'q') return; L.answers[L.idx][L.device] = { raw: el.dataset.v, ms: Math.round(liveElapsed()) }; render(); };
 ACT.liveTxtSend = () => { const L = U.live, v = document.getElementById('liveTxt').value.trim(); if (!v || L.phase !== 'q') return; L.answers[L.idx][L.device] = { raw: v, ms: Math.round(liveElapsed()) }; render(); };
 
+/* learning pathways */
+ACT.pwGen = el => {
+  const att = attById(el.dataset.id); if (!att || !pwReady(att)) return;
+  const prev = att.pathways;
+  att.pathways = { options: pwBuildOptions(att), selected: prev ? prev.selected : null, notes: prev ? prev.notes : '', status: 'draft', updatedAt: Date.now() };
+  save(); render(); toast('Pathway options generated.');
+};
+ACT.pwSelect = el => { const att = attById(el.dataset.id); if (!att || !att.pathways) return; att.pathways.selected = el.dataset.k; att.pathways.updatedAt = Date.now(); save(); render(); };
+ACT.pwNote = el => { const att = attById(el.dataset.id); if (!att || !att.pathways) return; att.pathways.notes = el.value; save(); };
+ACT.pwFinalize = el => { const att = attById(el.dataset.id); if (!att || !att.pathways || !att.pathways.selected) { toast('Choose a pathway option first.'); return; } att.pathways.status = 'final'; att.pathways.updatedAt = Date.now(); save(); render(); toast('Pathway finalised.'); };
+ACT.pwSend = el => { const att = attById(el.dataset.id); if (!att || !att.pathways) return; att.pathways.status = 'sent'; att.pathways.updatedAt = Date.now(); save(); render(); toast('Sent to the administrator for review.'); };
+ACT.pwShare = el => { const att = attById(el.dataset.id); if (!att || !att.pathways || U.role !== 'admin') return; att.pathways.status = 'shared'; att.pathways.updatedAt = Date.now(); save(); render(); toast('Shared with the parent.'); };
+ACT.pwReopen = el => { const att = attById(el.dataset.id); if (!att || !att.pathways || U.role !== 'admin') return; att.pathways.status = 'draft'; att.pathways.updatedAt = Date.now(); save(); render(); toast('Reopened for edits.'); };
+ACT.pwPdf = el => { const att = attById(el.dataset.id); if (att) downloadPathwayPdf(att); };
+
+/* voice-over and rewards */
+ACT.voiceToggle = () => { S.settings.voice.enabled = !S.settings.voice.enabled; save(); render(); };
+ACT.voiceTest = () => voiceSample();
+ACT.rwUpload = el => {
+  const f = el.files[0]; if (!f) return;
+  if (f.size > 400 * 1024) { toast('Image is larger than 400 KB. Use a smaller file.'); el.value = ''; return; }
+  const k = el.dataset.k, r = new FileReader();
+  r.onload = () => { S.settings.rewards.images = S.settings.rewards.images || {}; S.settings.rewards.images[k] = r.result; save(); render(); };
+  r.readAsDataURL(f);
+};
+ACT.rwClear = el => { const k = el.dataset.k; if (S.settings.rewards.images) delete S.settings.rewards.images[k]; save(); render(); };
+
 /* init */
 function setDefaultIds() { const g5 = S.students.find(s => s.grade === 5) || S.students[0]; U.studentId = g5 && g5.id; U.parentId = S.parents[0] && S.parents[0].id; }
 // The admin-managed collections (students/parents/assessments/bank) sync
@@ -367,6 +406,9 @@ function init() {
       // falling back to bare defaults every time).
       if (!remote.settings) remote.settings = S.settings;
       ['students', 'parents', 'assessments', 'bank'].forEach(k => { remote[k] = mergeById(S[k], remote[k]); });
+      // The backend attaches each attempt's learning pathway (if any and
+      // if this role is allowed to see it) directly onto that attempt
+      // before sending it here, so att.pathways needs no extra handling.
       S = remote; anCache = new WeakMap(); ensureSample(); if (!signedIn) setDefaultIds(); persistLocal(); render();
     }).catch(() => { /* stay on the local/cached copy */ });
   }
