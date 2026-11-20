@@ -119,3 +119,46 @@ shows their latest released result, pulled straight from the Sheet.
 
 Until that's set, the Assessment tab on a student's profile just shows
 "No released assessment result yet" - nothing breaks either way.
+
+## 9. Replacing the HTML file in the future
+
+If you ever get a redesigned or rebuilt version of the assessment tool
+from somewhere else (a different developer, a newer export, anything),
+here's exactly what does and doesn't need to happen - written down so
+this never requires re-deriving.
+
+**Three separate layers, only one of them is "the HTML":**
+
+1. **The Google Sheet + Apps Script** (Steps 1–6, 8 above) - your data,
+   your three secrets (`API_TOKEN`, `AUTH_SECRET`, `REPORT_TOKEN`), the
+   actual storage. This never changes just because the HTML changes.
+   You will not create a new Sheet, a new Apps Script, or a new secret
+   for this.
+2. **The LMS side** (`AssessmentSystemController`, the sidebar links,
+   the Student profile tab) - also untouched. It talks to whichever
+   HTML file `ASSESSMENT_SYSTEM_URL` points at; it doesn't care what's
+   inside that file.
+3. **The HTML file itself** - this is the only swappable part. A brand
+   new file doesn't automatically know how to talk to your Sheet or
+   understand the LMS's login link - that wiring (`source/api.js` and
+   `source/identity.js` in this project) has to be added into whatever
+   new file you get, the same way it was added to this one.
+
+**What actually happens when you hand me a new HTML file:**
+
+1. You give me the file (paste it, or its location).
+2. I add the same two pieces of wiring into it - no new Google account
+   steps, no new Script Properties, nothing you have to click through
+   on the Google side at all. If its internal structure is very
+   different from this one, this step might take real work on my end,
+   but it is still just *wiring*, never new infrastructure.
+3. I rebuild and push, same as every change so far.
+4. You do the exact same three clicks you already know: **Update from
+   Remote** → **Deploy HEAD Commit** → `/optimize`.
+5. To check it actually reconnected, use the **Test connection** button
+   already on the Settings page (Google Sheets backend card) - that's
+   already the "just check and click" confirmation, no new tool needed.
+
+So in short: swapping the HTML is a request to me, not a new setup
+project for you. The Apps Script/secrets ceremony in sections 1–6 and 8
+above is a one-time thing, done once, done already.
