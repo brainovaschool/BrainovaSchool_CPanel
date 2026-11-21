@@ -113,6 +113,16 @@
             lastSyncError_ = msg;
             if (typeof toast === 'function') toast('Could not save a change to the Sheet: ' + msg);
           }
+          // 'forbidden'/'unauthorized' means the backend's permission rules
+          // will never allow THIS item, no matter how many times it's
+          // retried (e.g. a stray full-snapshot write queued by a student
+          // account, which students are never allowed to send) - unlike a
+          // network hiccup or a busy lock, retrying it changes nothing. Left
+          // at the front of the queue, a single one of these would silently
+          // block every legitimate write behind it (including real test
+          // submissions) forever, since nothing else in the queue is ever
+          // tried until item 1 succeeds. Drop it and move on instead.
+          if (msg === 'forbidden' || msg === 'unauthorized') { queue.shift(); persistQueue(); continue; }
           scheduleRetry();
           break; // keep order: don't send item 2 before a stuck item 1 is confirmed
         }
