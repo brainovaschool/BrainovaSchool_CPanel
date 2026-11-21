@@ -465,33 +465,10 @@ function writeAllowed_(claims, kind, payload) {
   return idEq_(sid, claims.uid);
 }
 
-// TEMPORARY diagnostic trail - writes one row per doPost call to a
-// "debug_log" tab (auto-created, same as every other tab here) so a
-// failure can be read straight from the Sheet instead of hunting
-// through the Executions page. Safe to delete this whole function and
-// its one call site in doPost once the student-sync issue is found -
-// it is not part of the real data model.
-function debugLog_(entry) {
-  try {
-    upsertRow_('debug_log', Object.assign(
-      { id: 'dbg_' + Date.now() + '_' + Math.floor(Math.random() * 1e4), at: new Date().toISOString() },
-      entry));
-  } catch (e) { /* logging must never be why a real request fails */ }
-}
-
 function doPost(e) {
   let body;
   try { body = JSON.parse(e.postData.contents); } catch (err) { return jsonOut_({ ok: false, error: 'bad json' }); }
   const auth = authenticate_(body.token, body.authToken);
-  const allowed = auth.ok && (body.action !== 'write' || writeAllowed_(auth.claims, body.kind, body.payload));
-  debugLog_({
-    action: body.action, kind: body.kind,
-    hasToken: !!body.token, hasAuthToken: !!body.authToken,
-    authOk: auth.ok, claimsRole: auth.claims ? auth.claims.role : (auth.ok ? 'legacy-shared-token' : null),
-    claimsUid: auth.claims ? auth.claims.uid : null,
-    writeAllowed: body.action === 'write' ? allowed : null,
-    payloadStudentId: body.payload ? (body.payload.studentId || (body.payload.attempt && body.payload.attempt.studentId) || null) : null
-  });
   if (!auth.ok) return jsonOut_({ ok: false, error: 'unauthorized' });
   if (body.action === 'write' && !writeAllowed_(auth.claims, body.kind, body.payload)) {
     return jsonOut_({ ok: false, error: 'forbidden' });

@@ -390,8 +390,16 @@ function mergeById(localArr, remoteArr) {
   return localOnly.length ? remoteArr.concat(localOnly) : remoteArr;
 }
 function init() {
-  S = load(); if (!S) { S = seed(); save(); } ensureSample();
+  S = load(); if (!S) S = seed();
+  // Identity must be established BEFORE anything calls save(): save()'s
+  // own role check (see core.js) only skips scheduling a full snapshot
+  // sync for a signed-in student/parent, and U.lms is still null until
+  // this runs - calling ensureSample() (which ends with its own save())
+  // first used to fire off exactly the kind of write a student is never
+  // allowed to make, on every single page load, which a signed-in
+  // student/parent has no Settings page to ever notice or clear.
   const signedIn = applyLmsIdentity(); // true when a real LMS login token took over role/identity
+  ensureSample();
   if (!signedIn) setDefaultIds();
   render(); // show the cached/local state immediately, never block on the network
   if (window.BrainovaAPI) {
