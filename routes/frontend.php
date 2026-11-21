@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Frontend\FrontendController;
+use App\Http\Controllers\Frontend\AssessmentBookingController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -42,6 +43,9 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/reviews',            'testimonialsPage')->name('frontend.reviews');
                 Route::get('/demo-class',  'bookFreeTrial')->name('frontend.book-free-trial');
                 Route::post('/demo-class', 'storeFreeTrial')->name('frontend.book-free-trial.store');
+
+                Route::get('/book-assessment',  [AssessmentBookingController::class, 'show'])->name('frontend.book-assessment');
+                Route::post('/book-assessment', [AssessmentBookingController::class, 'store'])->name('frontend.book-assessment.store');
 
                 Route::get('/contact',          'contact')->name('frontend.contact');
                 Route::get('/online-admission', 'onlineAdmission')->name('frontend.online-admission');

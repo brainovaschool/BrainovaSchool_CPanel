@@ -70,7 +70,26 @@ Route::middleware(saasMiddleware())->group(function () {
     Route::middleware(['auth.routes'])->get('/assessment-system/access', [AssessmentSystemController::class, 'accessForm'])->name('assessment-system.access-form');
     Route::middleware(['auth.routes'])->post('/assessment-system/access', [AssessmentSystemController::class, 'accessUpdate'])->name('assessment-system.access-update');
 
-
+    // Admin management of the public "book an assessment" funnel: the
+    // bookable time slots, and the resulting leads - see
+    // AssessmentSlotController/AssessmentLeadController. Gated the same
+    // simple admin/superadmin way as the routes just above, not the
+    // permission-seeder system (this is part of Assessment System
+    // administration, not the public Course Catalogue).
+    Route::middleware(['auth.routes'])->controller(\App\Http\Controllers\WebsiteSetup\AssessmentSlotController::class)->prefix('assessment-slot')->name('assessment-slot.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/store', 'store')->name('store');
+        Route::get('/edit/{id}', 'edit')->name('edit');
+        Route::put('/update/{id}', 'update')->name('update');
+        Route::delete('/delete/{id}', 'delete')->name('delete');
+        Route::post('/bulk-delete', 'bulkDelete')->name('bulk-delete');
+        Route::post('/bulk-status', 'bulkStatus')->name('bulk-status');
+    });
+    Route::middleware(['auth.routes'])->controller(\App\Http\Controllers\WebsiteSetup\AssessmentLeadController::class)->prefix('assessment-lead')->name('assessment-lead.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/resend/{id}', 'resend')->name('resend');
+    });
 
     Route::get('/test-emails', function () {
         try {

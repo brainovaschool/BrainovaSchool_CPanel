@@ -24,6 +24,34 @@ class AssessmentSystemController extends Controller
 {
     public function launch(Request $request)
     {
+        $claims = $this->claimsForUser($request->user());
+
+        if (! $claims) {
+            abort(403, 'Your account cannot open the Assessment System.');
+        }
+
+        $claims['exp'] = now()->addHours(3)->timestamp;
+
+        $target = self::buildAssessmentLink($claims, $request);
+
+        if (! $target) {
+            abort(500, 'The Assessment System is not configured yet. Set ASSESSMENT_SYSTEM_AUTH_SECRET in .env (see assessment-system/backend/DEPLOY.md).');
+        }
+
+        return redirect($target);
+    }
+
+    /**
+     * Builds the final signed assessment-system URL for a set of claims
+     * (uid/role/name[/children], plus 'exp' already set by the caller).
+     * Shared by launch() (a logged-in LMS user - unchanged output, same
+     * bytes as before this was extracted) and
+     * AssessmentBookingController::store() (an anonymous lead whose uid
+     * is a LEAD-{id} pseudo id, never a real Laravel user). Returns null
+     * if ASSESSMENT_SYSTEM_AUTH_SECRET isn't configured.
+     */
+    public static function buildAssessmentLink(array $claims, Request $request): ?string
+    {
         // Reads .env directly rather than config('services.assessment_system.*') -
         // this app's .cpanel.yml deploy script doesn't copy config/ to the
         // live server, so a config() value here would always be stale/null
@@ -39,19 +67,11 @@ class AssessmentSystemController extends Controller
         }
 
         if (! $secret || ! $url) {
-            abort(500, 'The Assessment System is not configured yet. Set ASSESSMENT_SYSTEM_AUTH_SECRET in .env (see assessment-system/backend/DEPLOY.md).');
+            return null;
         }
 
-        $claims = $this->claimsForUser($request->user());
-
-        if (! $claims) {
-            abort(403, 'Your account cannot open the Assessment System.');
-        }
-
-        $claims['exp'] = now()->addHours(3)->timestamp;
-
-        $payload = $this->base64UrlEncode(json_encode($claims));
-        $signature = $this->base64UrlEncode(hash_hmac('sha256', $payload, $secret, true));
+        $payload = self::base64UrlEncode(json_encode($claims));
+        $signature = self::base64UrlEncode(hash_hmac('sha256', $payload, $secret, true));
         $token = $payload.'.'.$signature;
 
         $query = ['t' => $token];
@@ -74,7 +94,7 @@ class AssessmentSystemController extends Controller
             ? $url
             : $request->getSchemeAndHttpHost().'/'.ltrim($url, '/');
 
-        return redirect($target.'?'.http_build_query($query));
+        return $target.'?'.http_build_query($query);
     }
 
     /** Admin-only upload form for replacing the live assessment HTML. */
@@ -298,7 +318,7 @@ class AssessmentSystemController extends Controller
         return back()->with('deploySuccess', 'Updated which staff roles can open the Assessment System.');
     }
 
-    private function base64UrlEncode(string $data): string
+    private static function base64UrlEncode(string $data): string
     {
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }

@@ -1470,6 +1470,18 @@
                             <span class="on-half-expanded">Assessment Staff Access</span>
                         </a>
                     </li>
+                    <li class="sidebar-menu-item {{ set_menu(['assessment-slot*']) }}">
+                        <a href="{{ route('assessment-slot.index') }}" class="parent-item-content">
+                            <i class="las la-calendar-check"></i>
+                            <span class="on-half-expanded">Assessment Slots</span>
+                        </a>
+                    </li>
+                    <li class="sidebar-menu-item {{ set_menu(['assessment-lead*']) }}">
+                        <a href="{{ route('assessment-lead.index') }}" class="parent-item-content">
+                            <i class="las la-user-clock"></i>
+                            <span class="on-half-expanded">Assessment Leads</span>
+                        </a>
+                    </li>
                 @endif
                 <!-- School Feature Access start: Brainova's own Super Admin only --
                      every tenant has its own role_id=1 "Super Admin", so this also
