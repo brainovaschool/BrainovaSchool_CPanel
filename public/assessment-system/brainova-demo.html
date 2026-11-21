@@ -2345,7 +2345,13 @@ function submitRun(forced) {
     // AssessmentBookingController::completed()). Same-origin only (this
     // page is served from the LMS's own domain), never awaited, never
     // allowed to affect the student's own submit flow either way.
-    try { fetch('/assessment-completed?' + new URLSearchParams({ uid: st.id, correct: an.correct, total: an.total }), { credentials: 'same-origin' }).catch(() => { }); } catch (e) { }
+    try {
+      fetch('/assessment-completed?' + new URLSearchParams({
+        uid: st.id, total: an.total, attempted: an.attempted, correct: an.correct, incorrect: an.incorrect,
+        skipped: an.skipped, unanswered: an.unanswered, completion: an.completion, totalTimeMs: Math.round(an.totalTimeMs),
+        avgTimeMs: Math.round(an.avgTimeMs)
+      }), { credentials: 'same-origin' }).catch(() => { });
+    } catch (e) { }
   }
   r.att = att; r.phase = 'done'; voiceFinish(); setTimeout(rewardFx, 120); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } render(); scrollTop();
 }

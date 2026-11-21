@@ -130,16 +130,25 @@ class AssessmentBookingController extends Controller
         $lead->status = AssessmentLead::STATUS_TESTED;
         $lead->save();
 
-        $total = max(0, (int) $request->query('total', 0));
-        $correct = max(0, min($total, (int) $request->query('correct', 0)));
-        $wrong = $total - $correct;
+        $fmtDur = function (int $ms): string {
+            $s = (int) round($ms / 1000);
+            $m = intdiv($s, 60);
+            return $m ? $m.'m '.str_pad((string) ($s % 60), 2, '0', STR_PAD_LEFT).'s' : $s.'s';
+        };
 
         try {
             Mail::to($lead->email)->send(new AssessmentResultMail([
                 'guardian_name' => $lead->guardian_name,
                 'student_name' => $lead->student_name,
-                'wrong' => $wrong,
-                'total' => $total,
+                'total' => (int) $request->query('total', 0),
+                'attempted' => (int) $request->query('attempted', 0),
+                'correct' => (int) $request->query('correct', 0),
+                'incorrect' => (int) $request->query('incorrect', 0),
+                'skipped' => (int) $request->query('skipped', 0),
+                'unanswered' => (int) $request->query('unanswered', 0),
+                'completion' => round(((float) $request->query('completion', 0)) * 100).'%',
+                'total_time' => $fmtDur((int) $request->query('totalTimeMs', 0)),
+                'avg_time' => $fmtDur((int) $request->query('avgTimeMs', 0)),
                 'booking_link' => route('frontend.book-assessment'),
             ]));
             $lead->status = AssessmentLead::STATUS_REPORTED;
