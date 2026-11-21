@@ -297,6 +297,30 @@ function latestReleasedReport_(studentId) {
   };
 }
 
+// writeAttempt_ (above) flattens an attempt's review into three plain
+// columns (reviewNotes/reviewOverride/reviewFinalized) so a human can
+// read them directly in the Sheet - but every reader in the front end
+// (reportBody, the dashboard, exports, Pathways) expects the original
+// shape engine.js's makeAttempt() builds: a nested review object, and a
+// subjectList the Sheet never stores a column for at all (it's derived
+// once from the topics at submit time, not re-saved). Reconstructing
+// both here means any attempt that went out to the Sheet and came back
+// is shaped exactly like one that never left the browser - without
+// this, opening its report throws the moment it reads att.review.*.
+function reshapeAttempt_(a) {
+  const out = Object.assign({}, a, {
+    review: { notes: a.reviewNotes || '', override: a.reviewOverride || '', finalized: !!a.reviewFinalized }
+  });
+  delete out.reviewNotes; delete out.reviewOverride; delete out.reviewFinalized;
+  if (!out.subjectList || !out.subjectList.length) {
+    const subs = {};
+    (a.items || []).forEach(it => { if (it && it.subject) subs[it.subject] = true; });
+    out.subjectList = Object.keys(subs);
+  }
+  if (!out.scores) out.scores = {};
+  return out;
+}
+
 // null claims (legacy/admin shared-token access) or role admin/teacher
 // get everything, same as before this step. A signed-in student/parent
 // gets only their own (or their linked children's) RELEASED attempts,
@@ -323,7 +347,7 @@ function buildBootstrapState_(claims) {
   const pathwaysById_ = {};
   list('pathways').forEach(r => { pathwaysById_[r.id] = safeParse_(r.json); });
 
-  let students = list('students'), parents = list('parents'), attempts = list('attempts');
+  let students = list('students'), parents = list('parents'), attempts = list('attempts').map(reshapeAttempt_);
 
   if (claims && claims.role === 'student') {
     attempts = attempts.filter(a => idEq_(a.studentId, claims.uid) && truthy_(a.released));
