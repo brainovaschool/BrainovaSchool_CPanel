@@ -86,7 +86,18 @@ function submitRun(forced) {
   else { att.items = r.items; att.responses = r.items.map((q, i) => { const e = r.resp[i]; return makeResponse(i + 1, q, e.raw, e.ms, { visited: e.visits > 0, changed: e.changed, visits: e.visits, timedOut: e.timedOut }); }); }
   att.attemptNo = attemptsOf(a.id, st.id).length + 1; att.application = a.application; att.supervision = a.parentSupervision ? (supOf(a.id, st.id) ? { confirmed: true, by: supOf(a.id, st.id).by, at: supOf(a.id, st.id).at } : null) : null;
   att.released = a.resultVis === 'instant'; att.review = { notes: '', override: '', finalized: false };
-  if (r.preview) { U.previewAtt = att; att.released = true; } else { S.attempts.push(att); save(); if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att, AN(att)); }
+  if (r.preview) { U.previewAtt = att; att.released = true; } else {
+    S.attempts.push(att); save();
+    const an = AN(att);
+    if (window.BrainovaAPI) window.BrainovaAPI.saveAttempt(att, an);
+    // Best-effort, fire-and-forget ping so the LMS can email a result
+    // summary the moment a test finishes - a complete no-op for a real
+    // LMS student (no matching lead row exists server-side, see
+    // AssessmentBookingController::completed()). Same-origin only (this
+    // page is served from the LMS's own domain), never awaited, never
+    // allowed to affect the student's own submit flow either way.
+    try { fetch('/assessment-completed?' + new URLSearchParams({ uid: st.id, correct: an.correct, total: an.total }), { credentials: 'same-origin' }).catch(() => { }); } catch (e) { }
+  }
   r.att = att; r.phase = 'done'; voiceFinish(); setTimeout(rewardFx, 120); try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } render(); scrollTop();
 }
 function doneView() {

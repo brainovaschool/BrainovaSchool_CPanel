@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\AssessmentSystemController;
 use App\Http\Controllers\Controller;
 use App\Mail\AssessmentInviteMail;
+use App\Mail\AssessmentResultMail;
 use App\Models\WebsiteSetup\AssessmentLead;
 use App\Models\WebsiteSetup\AssessmentSlot;
 use App\Services\AssessmentSheetClient;
@@ -96,6 +97,59 @@ class AssessmentBookingController extends Controller
 
         return redirect()->route('frontend.register-assessment')
             ->with('message', 'Thanks! Check your email for the assessment link.');
+    }
+
+    /**
+     * Same-origin ping the Assessment System's own JS fires the instant
+     * ANY attempt is submitted (see views_run.js's submitRun()) - for a
+     * real LMS student this is a pure no-op (no matching lead row), so
+     * the Assessment System itself never needs to know or care what a
+     * "lead" even is. For a lead, sends the limited (wrong-count only)
+     * result email with the teacher-meeting booking link - fully
+     * automatic, no teacher review, since a bare count carries no
+     * judgment call to get wrong. Idempotent: a retried/duplicate ping
+     * can never send a second email.
+     */
+    public function completed(Request $request)
+    {
+        $uid = (string) $request->query('uid', '');
+
+        if (! str_starts_with($uid, 'LEAD-')) {
+            return response()->json(['ok' => true]);
+        }
+
+        $lead = AssessmentLead::find((int) substr($uid, 5));
+        if (! $lead || $lead->assessment_system_student_id !== $uid) {
+            return response()->json(['ok' => true]);
+        }
+
+        if (in_array($lead->status, [AssessmentLead::STATUS_REPORTED, AssessmentLead::STATUS_BOOKED_MEETING, AssessmentLead::STATUS_ENROLLED], true)) {
+            return response()->json(['ok' => true]); // already reported - never send twice
+        }
+
+        $lead->status = AssessmentLead::STATUS_TESTED;
+        $lead->save();
+
+        $total = max(0, (int) $request->query('total', 0));
+        $correct = max(0, min($total, (int) $request->query('correct', 0)));
+        $wrong = $total - $correct;
+
+        try {
+            Mail::to($lead->email)->send(new AssessmentResultMail([
+                'guardian_name' => $lead->guardian_name,
+                'student_name' => $lead->student_name,
+                'wrong' => $wrong,
+                'total' => $total,
+                'booking_link' => route('frontend.book-assessment'),
+            ]));
+            $lead->status = AssessmentLead::STATUS_REPORTED;
+            $lead->save();
+        } catch (\Throwable $e) {
+            Log::warning('Assessment result email failed: '.$e->getMessage());
+            // stays at STATUS_TESTED - visible on the leads list as "needs attention"
+        }
+
+        return response()->json(['ok' => true]);
     }
 
     private function isHoneypotTripped(Request $request): bool

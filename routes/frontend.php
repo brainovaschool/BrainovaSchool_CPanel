@@ -54,6 +54,14 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/register-assessment',  [AssessmentBookingController::class, 'registerShow'])->name('frontend.register-assessment');
                 Route::post('/register-assessment', [AssessmentBookingController::class, 'registerStore'])->name('frontend.register-assessment.store');
 
+                // Same-origin ping from the Assessment System's own JS
+                // right after a test is submitted - see
+                // AssessmentBookingController::completed() and
+                // views_run.js's submitRun(). GET, not POST: no CSRF token
+                // exists on that static page, and this is read-plus-notify,
+                // not a form submission.
+                Route::get('/assessment-completed', [AssessmentBookingController::class, 'completed'])->name('frontend.assessment-completed');
+
                 Route::get('/contact',          'contact')->name('frontend.contact');
                 Route::get('/online-admission', 'onlineAdmission')->name('frontend.online-admission');
                 Route::get('/online-admission-fees/{id}/{ref}', 'onlineAdmissionFees')->name('frontend.online-admission-fees');
