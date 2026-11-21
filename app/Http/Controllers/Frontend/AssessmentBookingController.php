@@ -51,14 +51,64 @@ class AssessmentBookingController extends Controller
 
     public function store(Request $request)
     {
-        // H10: honeypot — a real visitor never sees or fills this field, only a bot would.
-        // Pretend success so the bot doesn't learn to try elsewhere, but never save it.
-        if (trim((string) $request->input('website')) !== '') {
+        if ($this->isHoneypotTripped($request)) {
             return redirect()->route('frontend.book-assessment')
                 ->with('message', 'Thanks! We\'ve received your booking — check your email for the assessment link.');
         }
 
-        $request->validate([
+        $request->validate($this->validationRules() + [
+            'assessment_slot_id'  => 'required|integer|exists:assessment_slots,id',
+        ]);
+
+        $slot = AssessmentSlot::find($request->assessment_slot_id);
+        if (! $slot || $slot->remaining <= 0 || $slot->status != 1) {
+            return back()->withInput()->with('error', 'Sorry — that time just filled up. Please pick another.');
+        }
+        $slot->increment('booked_count');
+
+        $this->createLeadAndSend($request, $slot);
+
+        return redirect()->route('frontend.book-assessment')
+            ->with('message', 'Thanks! We\'ve received your booking — check your email for the assessment link.');
+    }
+
+    /**
+     * Simple registration - no slot/calendar at all. The assessment is
+     * taken whenever the parent opens the emailed link, not at a
+     * scheduled time - slot-booking belongs to a LATER step (booking a
+     * meeting with the teacher once a result exists), not this one.
+     */
+    public function registerShow()
+    {
+        return view('frontend.assessment-register');
+    }
+
+    public function registerStore(Request $request)
+    {
+        if ($this->isHoneypotTripped($request)) {
+            return redirect()->route('frontend.register-assessment')
+                ->with('message', 'Thanks! Check your email for the assessment link.');
+        }
+
+        $request->validate($this->validationRules());
+
+        $this->createLeadAndSend($request, null);
+
+        return redirect()->route('frontend.register-assessment')
+            ->with('message', 'Thanks! Check your email for the assessment link.');
+    }
+
+    private function isHoneypotTripped(Request $request): bool
+    {
+        // H10: honeypot — a real visitor never sees or fills this field, only a bot would.
+        // Caller still treats this as a normal success so the bot doesn't learn to try
+        // elsewhere, it just never actually saves/sends anything.
+        return trim((string) $request->input('website')) !== '';
+    }
+
+    private function validationRules(): array
+    {
+        return [
             'guardian_name'       => 'required|string|max:120',
             'student_name'        => 'required|string|max:120',
             'student_age'         => 'nullable|string|max:40',
@@ -69,16 +119,18 @@ class AssessmentBookingController extends Controller
             'whatsapp_number'     => 'required|string|max:40',
             'city'                => 'nullable|string|max:100',
             'message'             => 'nullable|string|max:2000',
-            'assessment_slot_id'  => 'required|integer|exists:assessment_slots,id',
             'consent'             => 'required|accepted',
-        ]);
+        ];
+    }
 
-        $slot = AssessmentSlot::find($request->assessment_slot_id);
-        if (! $slot || $slot->remaining <= 0 || $slot->status != 1) {
-            return back()->withInput()->with('error', 'Sorry — that time just filled up. Please pick another.');
-        }
-        $slot->increment('booked_count');
-
+    /**
+     * Shared by both entry points: creates the lead row, auto-assigns a
+     * published assessment by grade (see AssessmentSheetClient), builds
+     * the signed anonymous link, and emails it - a mail/Sheet failure
+     * never blocks the visitor's own confirmation, only gets logged.
+     */
+    private function createLeadAndSend(Request $request, ?AssessmentSlot $slot): AssessmentLead
+    {
         $lead = new AssessmentLead();
         $lead->guardian_name = $request->guardian_name;
         $lead->student_name = $request->student_name;
@@ -90,7 +142,7 @@ class AssessmentBookingController extends Controller
         $lead->whatsapp_number = $request->whatsapp_number;
         $lead->city = $request->city;
         $lead->message = $request->message;
-        $lead->assessment_slot_id = $slot->id;
+        $lead->assessment_slot_id = $slot?->id;
         $lead->status = AssessmentLead::STATUS_NEW;
         $lead->save();
 
@@ -134,7 +186,9 @@ class AssessmentBookingController extends Controller
                 Mail::to($lead->email)->send(new AssessmentInviteMail([
                     'guardian_name' => $lead->guardian_name,
                     'student_name' => $lead->student_name,
-                    'slot_label' => $slot->slot_date->format('D, d M Y').' · '.$slot->time_label,
+                    'slot_label' => $slot
+                        ? $slot->slot_date->format('D, d M Y').' · '.$slot->time_label
+                        : 'Whenever you\'re ready',
                     'subject' => $lead->subject,
                     'grade' => 'Grade '.$lead->grade,
                     'assessment_link' => $link,
@@ -148,7 +202,6 @@ class AssessmentBookingController extends Controller
 
         $lead->save();
 
-        return redirect()->route('frontend.book-assessment')
-            ->with('message', 'Thanks! We\'ve received your booking — check your email for the assessment link.');
+        return $lead;
     }
 }

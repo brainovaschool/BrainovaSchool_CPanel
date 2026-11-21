@@ -47,6 +47,13 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/book-assessment',  [AssessmentBookingController::class, 'show'])->name('frontend.book-assessment');
                 Route::post('/book-assessment', [AssessmentBookingController::class, 'store'])->name('frontend.book-assessment.store');
 
+                // Simple registration, no slot/calendar - the assessment is
+                // taken whenever the parent opens the emailed link. The
+                // slot-booking page above is reserved for a later step
+                // (booking a meeting with the teacher once a result exists).
+                Route::get('/register-assessment',  [AssessmentBookingController::class, 'registerShow'])->name('frontend.register-assessment');
+                Route::post('/register-assessment', [AssessmentBookingController::class, 'registerStore'])->name('frontend.register-assessment.store');
+
                 Route::get('/contact',          'contact')->name('frontend.contact');
                 Route::get('/online-admission', 'onlineAdmission')->name('frontend.online-admission');
                 Route::get('/online-admission-fees/{id}/{ref}', 'onlineAdmissionFees')->name('frontend.online-admission-fees');
