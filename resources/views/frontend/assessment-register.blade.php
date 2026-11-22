@@ -132,7 +132,8 @@
                                 </div>
 
                                 <div class="col-xl-12">
-                                    <button type="submit" class="theme_btn small_btn3 min_windth_200 text-center">Send me the assessment link</button>
+                                    <button type="submit" id="bnRegisterSubmit" class="theme_btn small_btn3 min_windth_200 text-center">Send me the assessment link</button>
+                                    <p id="bnRegisterWait" class="mt_10" style="display:none;color:#0097b2;">Submitting your request — please wait a moment…</p>
                                 </div>
                             </div>
                         </form>
@@ -141,5 +142,19 @@
             </div>
         </div>
     </div>
+
+@push('script')
+<script>
+(function () {
+    var form = document.getElementById('bnRegisterSubmit') && document.getElementById('bnRegisterSubmit').closest('form');
+    if (!form) return;
+    form.addEventListener('submit', function () {
+        var btn = document.getElementById('bnRegisterSubmit'), wait = document.getElementById('bnRegisterWait');
+        if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+        if (wait) wait.style.display = 'block';
+    });
+})();
+</script>
+@endpush
 
 @endsection

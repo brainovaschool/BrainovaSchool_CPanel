@@ -160,7 +160,8 @@
                                 </div>
 
                                 <div class="col-xl-12">
-                                    <button type="submit" class="theme_btn small_btn3 min_windth_200 text-center">Book the assessment</button>
+                                    <button type="submit" id="bnBookSubmit" class="theme_btn small_btn3 min_windth_200 text-center">Book the assessment</button>
+                                    <p id="bnBookWait" class="mt_10" style="display:none;color:#0097b2;">Submitting your request — please wait a moment…</p>
                                 </div>
                             </div>
                         </form>
@@ -266,6 +267,17 @@ window.bnAssessCal = {!! json_encode([
     });
 
     render();
+})();
+</script>
+<script>
+(function () {
+    var btn = document.getElementById('bnBookSubmit');
+    var form = btn && btn.closest('form');
+    if (!form) return;
+    form.addEventListener('submit', function () {
+        btn.disabled = true; btn.textContent = 'Sending…';
+        var wait = document.getElementById('bnBookWait'); if (wait) wait.style.display = 'block';
+    });
 })();
 </script>
 @endpush
