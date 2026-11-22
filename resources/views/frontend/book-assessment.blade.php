@@ -42,7 +42,13 @@
                             <div class="alert alert-danger">{{ session('error') }}</div>
                         @endif
 
-                        <form class="form-area" action="{{ route('frontend.book-assessment.store') }}" method="post">
+                        <style>
+                            /* Scoped to this form only - .ot-input/select/textarea are shared
+                               theme classes used on other pages, so this never touches them. */
+                            .bn-assess-form .ot-input, .bn-assess-form select, .bn-assess-form textarea { border: 1px solid #c7d0db !important; }
+                            .bn-assess-form .ot-input:focus, .bn-assess-form select:focus, .bn-assess-form textarea:focus { border-color: #0097b2 !important; }
+                        </style>
+                        <form class="form-area bn-assess-form" action="{{ route('frontend.book-assessment.store') }}" method="post">
                             @csrf
                             <div class="row">
                                 <div class="col-xl-6">
