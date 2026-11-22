@@ -211,16 +211,33 @@ function writeAttempt_(att, an) {
   // One self-contained row per attempt: everything needed to
   // reconstruct it lives here, so a fresh bootstrap never has to
   // stitch data back together across tabs.
-  upsertRow_('attempts', {
+  //
+  // 'released' is deliberately OMITTED here unless the client itself
+  // already knows it's released (e.g. an instant-feedback assessment) -
+  // never force-set to false. A lead's submission fires two independent
+  // writes to this same row at nearly the same moment: this one (the
+  // student's own full attempt, via the browser) and Laravel's
+  // server-to-server release flag (AssessmentSheetClient::releaseAttempt(),
+  // a {id, released:true} partial merge - see SNAPSHOT_TABS_ above).
+  // upsertRow_ only touches the columns actually present in the record
+  // it's given, so leaving 'released' out when it's false lets whichever
+  // of these two writes lands SECOND preserve what the other one set,
+  // regardless of which one actually reaches the Sheet first - sending
+  // released:false here unconditionally used to stomp Laravel's
+  // released:true right back to false whenever this write happened to
+  // land after it.
+  const attemptRow = {
     id: att.id, asmtId: att.asmtId, studentId: att.studentId, studentName: att.studentName, grade: att.grade,
     application: att.application, courseId: att.courseId || '', mode: att.mode, model: att.model, title: att.title,
     started: att.started, finished: att.finished, durationMs: att.durationMs, attemptNo: att.attemptNo,
-    released: !!att.released, preview: !!att.preview,
+    preview: !!att.preview,
     reviewNotes: (att.review && att.review.notes) || '', reviewOverride: (att.review && att.review.override) || '',
     reviewFinalized: !!(att.review && att.review.finalized),
     supervision: att.supervision || null, stopReason: att.stopReason || '',
     trace: att.trace || [], items: att.items || [], responses: att.responses || [], events: att.events || []
-  });
+  };
+  if (att.released) attemptRow.released = true;
+  upsertRow_('attempts', attemptRow);
 
   // The same data, fanned out one-row-per-item, purely so a human (or
   // the LMS, later) can read/filter it directly without parsing JSON
