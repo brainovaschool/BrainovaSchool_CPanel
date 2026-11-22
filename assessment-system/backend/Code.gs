@@ -149,7 +149,17 @@ function readAll_(tabName) {
 // (students, parents, assessments, bank, plus settings/supervision
 // already turned into that shape by the front end before sending).
 // Add a name here - nothing else - to start syncing a new collection.
-const SNAPSHOT_TABS_ = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision', 'pathways'];
+//
+// 'attempts' is included too, even though a full attempt is normally
+// written through the separate kind:'attempt' path (writeAttempt_,
+// below) - that one always sends the WHOLE attempt object, so it's
+// safe there. This path is for the Laravel app's own server-to-server
+// calls (see AssessmentSheetClient::releaseAttempt()) that only ever
+// send a couple of fields (e.g. {id, released}) for an attempt that
+// already exists - upsertManyRows_ merges by column name and leaves
+// every other existing column on that row untouched, so a partial
+// write here can never blank out the rest of the attempt.
+const SNAPSHOT_TABS_ = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision', 'pathways', 'attempts'];
 
 function writeSnapshot_(payload) {
   SNAPSHOT_TABS_.forEach(tab => {

@@ -130,25 +130,43 @@ class AssessmentBookingController extends Controller
         $lead->status = AssessmentLead::STATUS_TESTED;
         $lead->save();
 
-        $fmtDur = function (int $ms): string {
-            $s = (int) round($ms / 1000);
-            $m = intdiv($s, 60);
-            return $m ? $m.'m '.str_pad((string) ($s % 60), 2, '0', STR_PAD_LEFT).'s' : $s.'s';
-        };
+        // Marks the attempt released on the Sheet - the same flag a
+        // teacher's own "Release results" toggle sets - so the parent
+        // portal link below actually opens straight to the report
+        // instead of "waiting for the teacher to release," with no
+        // teacher action needed for this limited view specifically.
+        $attemptId = (string) $request->query('attemptId', '');
+        if ($attemptId !== '') {
+            try {
+                (new AssessmentSheetClient())->releaseAttempt($attemptId);
+            } catch (\Throwable $e) {
+                Log::warning('Assessment attempt release failed: '.$e->getMessage());
+            }
+        }
+
+        // The email itself carries no score data at all - just a link
+        // into a parent-only portal view, where reportBody() (see
+        // views_b.js) shows nothing beyond Performance summary and
+        // Difficulty-wise performance/Question path for a lead's
+        // parent, regardless of this school's normal parent sharing
+        // settings (those are for real enrolled students only). A
+        // longer expiry than the student's own 7-day link, since a
+        // parent may not open this right away and may want to revisit
+        // it again before the booked meeting.
+        $portalClaims = [
+            'uid' => 'LEADP-'.$lead->id,
+            'role' => 'parent',
+            'name' => $lead->guardian_name,
+            'children' => [$uid],
+            'exp' => now()->addDays(14)->timestamp,
+        ];
+        $portalLink = AssessmentSystemController::buildAssessmentLink($portalClaims, $request);
 
         try {
             Mail::to($lead->email)->send(new AssessmentResultMail([
                 'guardian_name' => $lead->guardian_name,
                 'student_name' => $lead->student_name,
-                'total' => (int) $request->query('total', 0),
-                'attempted' => (int) $request->query('attempted', 0),
-                'correct' => (int) $request->query('correct', 0),
-                'incorrect' => (int) $request->query('incorrect', 0),
-                'skipped' => (int) $request->query('skipped', 0),
-                'unanswered' => (int) $request->query('unanswered', 0),
-                'completion' => round(((float) $request->query('completion', 0)) * 100).'%',
-                'total_time' => $fmtDur((int) $request->query('totalTimeMs', 0)),
-                'avg_time' => $fmtDur((int) $request->query('avgTimeMs', 0)),
+                'portal_link' => $portalLink,
                 'booking_link' => route('frontend.book-assessment'),
             ]));
             $lead->status = AssessmentLead::STATUS_REPORTED;

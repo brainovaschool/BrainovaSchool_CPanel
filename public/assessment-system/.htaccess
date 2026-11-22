@@ -1,0 +1,10 @@
+# Forces UTF-8 for this folder's static HTML specifically. The page's
+# own <meta charset="utf-8"> should be enough, but a browser gives the
+# server's HTTP Content-Type header priority over it when present - if
+# the server's own default charset (set elsewhere, outside this repo)
+# isn't UTF-8, math symbols like × and ÷ render as mojibake ("Ã—")
+# despite the file on disk being correct UTF-8 either way.
+AddDefaultCharset UTF-8
+<IfModule mod_mime.c>
+    AddCharset UTF-8 .html .htm
+</IfModule>

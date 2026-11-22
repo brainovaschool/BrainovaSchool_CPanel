@@ -98,7 +98,7 @@ function submitRun(forced) {
     // allowed to affect the student's own submit flow either way.
     try {
       fetch('/assessment-completed?' + new URLSearchParams({
-        uid: st.id, total: an.total, attempted: an.attempted, correct: an.correct, incorrect: an.incorrect,
+        uid: st.id, attemptId: att.id, total: an.total, attempted: an.attempted, correct: an.correct, incorrect: an.incorrect,
         skipped: an.skipped, unanswered: an.unanswered, completion: an.completion, totalTimeMs: Math.round(an.totalTimeMs),
         avgTimeMs: Math.round(an.avgTimeMs)
       }), { credentials: 'same-origin' }).catch(() => { });
@@ -108,8 +108,17 @@ function submitRun(forced) {
 }
 function doneView() {
   const r = U.run, att = r.att;
+  // A lead from the public booking funnel never gets access to their
+  // own full report in-app - only a bare score, same spirit as the
+  // email they trigger (see submitRun()'s completion ping): the full
+  // diagnostic only ever reaches their parent, through the portal link
+  // the teacher later shares, not the student directly.
+  const isLead = String(r.st.id).startsWith('LEAD-');
+  const an = isLead ? AN(att) : null;
   return `<div class="runner-wrap"><div class="run-head"><b>${esc(r.a.title)}</b></div><div class="run-body"><div class="qcard" style="text-align:center;padding:36px 22px">${rewardBlock(att)}<h1 style="margin:8px 0">Submitted</h1><p class="muted">${esc(r.st.name.split(' ')[0])}, your answers were saved. You answered ${att.responses.filter(x => x.status !== 'unanswered' && x.status !== 'skipped').length} of ${att.responses.length} questions in ${fmtDur(att.durationMs)}.</p>
-    ${att.released ? '<p style="margin-top:10px">Your results are ready.</p>' : '<p style="margin-top:10px">Your teacher will assess your test and give you insights on how you can cover your weak areas.</p>'}<div class="row" style="justify-content:center;margin-top:18px">${att.released ? `<button class="btn teal" data-a="finishRun" data-view="report">View results</button>` : ''}<button class="btn ghost" data-a="finishRun" data-view="home">${r.preview ? 'Back to the builder' : 'Done'}</button></div></div></div></div>`;
+    ${isLead ? `<p style="margin-top:10px;font-size:22px;font-weight:700">Score: ${pct(an.accuracy)}</p><p class="muted small">Your parent will receive the full results.</p>`
+      : (att.released ? '<p style="margin-top:10px">Your results are ready.</p>' : '<p style="margin-top:10px">Your teacher will assess your test and give you insights on how you can cover your weak areas.</p>')}
+    <div class="row" style="justify-content:center;margin-top:18px">${(!isLead && att.released) ? `<button class="btn teal" data-a="finishRun" data-view="report">View results</button>` : ''}<button class="btn ghost" data-a="finishRun" data-view="home">${r.preview ? 'Back to the builder' : 'Done'}</button></div></div></div></div>`;
 }
 
 /* ===================== TEACHER-LED LIVE CLASS ===================== */

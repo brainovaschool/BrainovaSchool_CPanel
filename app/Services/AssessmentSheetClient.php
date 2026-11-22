@@ -123,4 +123,46 @@ class AssessmentSheetClient
             return false;
         }
     }
+
+    /**
+     * Flips just the `released` flag on one already-submitted attempt,
+     * without touching anything else about it - a normal full attempt
+     * write (kind:'attempt', writeAttempt_ in Code.gs) always sends the
+     * WHOLE attempt object, so sending only {id, released} through that
+     * path would blank out every other column. This instead piggybacks
+     * on the generic snapshot merge (kind:'snapshot', upsertManyRows_),
+     * which only ever touches the columns present in what's sent.
+     * Used so a lead's parent can see the limited report the moment the
+     * test is done, without a teacher manually clicking "release" -
+     * the exact same `released` flag a teacher's own toggle sets.
+     */
+    public function releaseAttempt(string $attemptId): bool
+    {
+        if (! $this->isConfigured() || $attemptId === '') {
+            return false;
+        }
+
+        try {
+            $response = Http::asJson()->timeout(10)->post($this->url(), [
+                'action' => 'write',
+                'kind' => 'snapshot',
+                'token' => $this->token(),
+                'payload' => [
+                    'attempts' => [[
+                        'id' => $attemptId,
+                        'released' => true,
+                    ]],
+                ],
+            ]);
+
+            if (! $response->ok()) {
+                return false;
+            }
+
+            return (bool) ($response->json()['ok'] ?? false);
+        } catch (\Throwable $e) {
+            Log::warning('AssessmentSheetClient::releaseAttempt failed: '.$e->getMessage());
+            return false;
+        }
+    }
 }
