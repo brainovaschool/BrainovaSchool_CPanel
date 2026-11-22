@@ -96,17 +96,24 @@ trait CommonHelperTrait
 
     public function setEnvironmentValue($envKey, $envValue)
     {
-        $envFile = app()->environmentFilePath();
-        $str     = file_get_contents($envFile);
+        // The old strpos()-based version silently mis-set the WRONG line
+        // (or corrupted the start of the file) whenever $envKey didn't
+        // already exist in .env - strpos() returning false there got
+        // used as a numeric offset (0), not detected as "not found". A
+        // missing key is common here since .env is hand-maintained on
+        // the live server, never deployed from this repo. Anchor the
+        // match to an actual line (^KEY=...$) and append a new line
+        // when it isn't found, instead of guessing.
+        $envFile  = app()->environmentFilePath();
+        $str      = file_get_contents($envFile);
+        $envValue = '"'.$envValue.'"';
+        $pattern  = '/^'.preg_quote($envKey, '/').'=.*$/m';
 
-        $str              .= "\n"; // In case the searched variable is in the last line without \n
-        $keyPosition       = strpos($str, "{$envKey}=");
-        $endOfLinePosition = strpos($str, PHP_EOL, $keyPosition);
-        $oldLine           = substr($str, $keyPosition, $endOfLinePosition - $keyPosition);
-        $envValue          = '"'.$envValue.'"';
-        // dd($envValue);
-        $str = str_replace($oldLine, "{$envKey}={$envValue}", $str);
-        $str = substr($str, 0, -1);
+        if (preg_match($pattern, $str)) {
+            $str = preg_replace($pattern, "{$envKey}={$envValue}", $str, 1);
+        } else {
+            $str = rtrim($str, "\n")."\n{$envKey}={$envValue}\n";
+        }
 
         $fp = fopen($envFile, 'w');
         fwrite($fp, $str);
