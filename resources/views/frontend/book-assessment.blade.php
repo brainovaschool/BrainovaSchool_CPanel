@@ -27,8 +27,9 @@
                 <div class="col-xl-9">
                     <div class="search_result_box mb_30">
                         @if (session('message'))
-                            <div class="section__title mb_40">
-                                <h5 class="mb-0 text-success text-center">{{ session('message') }}</h5>
+                            <div class="section__title mb_40 text-center">
+                                <h5 class="mb-0 text-success">{{ session('message') }}</h5>
+                                <a href="{{ route('frontend.book-assessment') }}" class="theme_btn small_btn3 min_windth_200 text-center mt_30 d-inline-block">Book another</a>
                             </div>
                         @else
                             <div class="section__title mb_40 text-center">
