@@ -12,6 +12,7 @@ use App\Services\AssessmentSheetClient;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Validation\Rule;
 
 /**
@@ -162,12 +163,24 @@ class AssessmentBookingController extends Controller
         ];
         $portalLink = AssessmentSystemController::buildAssessmentLink($portalClaims, $request);
 
+        // Signed, not a login: carries the lead's identity so the
+        // teacher-meeting step never re-asks the details already on
+        // file - see MeetingBookingController. Also tacked onto the
+        // portal link itself (as 'bk') so the in-app "Book a meeting"
+        // button on the restricted report (views_b.js) can use the
+        // same correct, lead-specific link instead of the old generic
+        // registration form.
+        $bookingLink = URL::signedRoute('frontend.book-meeting', ['lead' => $lead->id], now()->addDays(30));
+        if ($portalLink) {
+            $portalLink .= '&bk='.urlencode($bookingLink);
+        }
+
         try {
             Mail::to($lead->email)->send(new AssessmentResultMail([
                 'guardian_name' => $lead->guardian_name,
                 'student_name' => $lead->student_name,
                 'portal_link' => $portalLink,
-                'booking_link' => route('frontend.book-assessment'),
+                'booking_link' => $bookingLink,
             ]));
             $lead->status = AssessmentLead::STATUS_REPORTED;
             $lead->save();

@@ -184,10 +184,10 @@ function reportBody(att, aud, opts = {}) {
   const P = an.placement, fin = finalLevelText(att, an), tp = an.topics.filter(t => !t.probe), strong = tp.filter(t => t.idx != null && t.idx >= 3), weak = tp.filter(t => t.idx != null && t.idx <= 1);
   const accom = accomFor(att.studentId), er = an.errors;
   const body = gateSections(`<div class="rep">
-  <div class="rep-head"><div><div class="eyebrow" style="color:#9FB0CF">Diagnostic report</div><h1>${esc(att.title)}</h1><div class="meta"><span><b>${esc(att.studentName)}</b></span><span>ID ${esc(st.id)}</span><span>Grade ${att.grade}</span>${st.age ? `<span>Age ${st.age}</span>` : ''}${a.ageGroup ? `<span>${esc(a.ageGroup)}</span>` : ''}<span>${esc(att.subjectList.join(', '))}</span><span>${fmtDate(att.finished)}</span><span>${att.mode === 'live' ? 'Teacher-led live' : att.model === 'adaptive' ? 'Adaptive' : 'Fixed difficulty'}</span></div></div>
+  <div class="rep-head"><div><div class="eyebrow" style="color:#9FB0CF">Diagnostic report</div><h1>${esc(att.title)}</h1><div class="meta"><span><b>${esc(att.studentName)}</b></span>${isLeadForParent ? '' : `<span>ID ${esc(st.id)}</span>`}<span>Grade ${att.grade}</span>${st.age ? `<span>Age ${st.age}</span>` : ''}${a.ageGroup ? `<span>${esc(a.ageGroup)}</span>` : ''}<span>${esc(att.subjectList.join(', '))}</span><span>${fmtDate(att.finished)}</span><span>${att.mode === 'live' ? 'Teacher-led live' : att.model === 'adaptive' ? 'Adaptive' : 'Fixed difficulty'}</span></div></div>
     <div style="text-align:right">${isLeadForParent ? '' : lvPill(an.overallIdx)}<div style="font-size:30px;font-weight:800;font-family:var(--head);margin-top:6px">${an.marks}/${an.maxMarks}</div><div class="small" style="color:#C9D3E8">${pct(an.accuracy)} accuracy</div></div></div>
   ${an.pending ? `<div class="banner warn">${an.pending} answer${an.pending > 1 ? 's are' : ' is'} waiting for teacher scoring. The level may change once they are marked.</div>` : ''}
-  ${readGuide(aud, sh, an, att)}
+  ${isLeadForParent ? '' : readGuide(aud, sh, an, att)}
   <!--sec:summary--><div class="card"><h2>Performance summary</h2><div class="tiles"><div class="tile"><b>${an.total}</b><span>Questions</span></div><div class="tile"><b>${an.attempted}</b><span>Attempted</span></div><div class="tile"><b>${an.correct}</b><span>Correct</span></div><div class="tile"><b>${an.incorrect}</b><span>Incorrect</span></div><div class="tile"><b>${an.skipped}</b><span>Skipped</span></div><div class="tile"><b>${an.unanswered}</b><span>Not reached</span></div>
     <div class="tile"><b>${pct(an.completion)}</b><span>Completion</span></div><!--tsec:timing--><div class="tile"><b>${fmtDur(an.totalTimeMs)}</b><span>Total time</span></div><div class="tile"><b>${fmtDur(an.avgTimeMs)}</b><span>Average per question</span></div><!--/tsec--></div>
     ${an.slowAccurate && sh('timing') ? '<p class="small muted" style="margin-top:8px">This student worked carefully and accurately. Speed is shown for information only and is never used to set the level.</p>' : ''}</div>
@@ -210,14 +210,20 @@ function reportBody(att, aud, opts = {}) {
   ${showQ ? `<div class="card"><h2>Question review</h2><div class="tw"><table><thead><tr><th>#</th><th>Topic</th><th>Level</th><th>Result</th><th>Student answer</th><th>Correct answer</th><th class="num">Time</th></tr></thead><tbody>${att.responses.map((r, i) => `<tr><td>${r.seq}</td><td>${esc(r.topic)}${r.probe ? ' <span class="pill warn">check</span>' : ''}</td><td>${DIFF[r.diff].name}</td><td><span class="dot-${r.status === 'correct' ? 'ok' : r.status === 'incorrect' ? 'bad' : 'skip'}"></span> ${r.status === 'correct' ? 'Correct' : r.status === 'incorrect' ? 'Incorrect' : r.status === 'skipped' ? 'Skipped' : r.status === 'pending' ? 'Awaiting score' : 'Not reached'}${teacher && r.why ? `<div class="muted small">${esc(r.why)}</div>` : ''}</td><td>${esc(r.answer || '—')}</td><td>${esc(r.correctAnswer)}</td><td class="num">${fmtDur(r.timeMs)}</td></tr>`).join('')}</tbody></table></div></div>` : ''}
   <!--sec:notes-->${att.review.notes && !(opts.inApp && teacher) ? `<div class="card"><h2>Teacher’s note</h2><p style="white-space:pre-wrap">${esc(att.review.notes)}</p></div>` : ''}<!--/sec-->
   </div>`, sh);
-  const bookMeeting = isLeadForParent
-    ? `<div class="card"><h2>Next step</h2><p class="muted small" style="margin-bottom:10px">To see the detailed strengths, learning gaps and the teacher’s recommendations, book a short meeting with the concerned teacher.</p><a class="btn teal" href="/book-assessment" target="_blank" rel="noopener">Book a meeting with the teacher</a></div>`
+  // 'bk' is a lead-specific signed Laravel link tacked onto this portal
+  // URL's own query string by AssessmentBookingController::completed() -
+  // never hardcoded here, since a bare path could only ever point at the
+  // generic registration form, not this specific lead's booking step.
+  const bookLink = new URLSearchParams(location.search).get('bk');
+  const bookMeeting = isLeadForParent && bookLink
+    ? `<div class="card"><h2>Next step</h2><p class="muted small" style="margin-bottom:10px">To see the detailed strengths, learning gaps and the teacher’s recommendations, book a short meeting with the concerned teacher.</p><a class="btn teal" href="${esc(bookLink)}" target="_blank" rel="noopener">Book a meeting with the teacher</a></div>`
     : '';
   return body + bookMeeting;
 }
 VIEWS.report = function () {
   const att = attById(U.params.id); if (!att) return '<div class="empty">That report could not be found.</div>';
   const staff = U.role === 'teacher' || U.role === 'admin', aud = staff ? (U.repAud || U.role) : U.role;
+  const isLeadForParent = !staff && U.role === 'parent' && String(att.studentId || '').startsWith('LEAD-');
   const back = U.role === 'student' ? 'hist' : U.role === 'parent' ? 'parent' : 'results';
   if (!staff && !(att.released || (U.role === 'parent' && pwShared(att)))) return `<div class="page-head"><h1>Results</h1><button class="btn ghost" data-a="go" data-v="${back}">Back</button></div><div class="empty">Your teacher has not released these results yet. You will see them here when they do.</div>`;
   const an = AN(att), auds = U.role === 'admin' ? ['admin', 'teacher', 'parent', 'student'] : ['teacher', 'parent', 'student'];
@@ -230,8 +236,8 @@ VIEWS.report = function () {
     ${an.pending ? `<div style="margin-top:12px"><h3>Score teacher-marked answers</h3>${manualPanel(att)}</div>` : ''}
     <div class="grid g2" style="margin-top:14px">${field('Final recommendation (leave empty to use the system suggestion)', inp('att.override', att.review.override || '', 'text', `data-att="${att.id}" placeholder="${esc(an.placement.tier || an.placement.grade || '')}"`))}${field('Teacher notes (shared according to the settings above)', `<textarea data-att="${att.id}" data-m="att.notes">${esc(att.review.notes || '')}</textarea>`)}</div>
     <div class="row" style="margin-top:10px"><button class="btn" data-a="finalize" data-id="${att.id}">${att.review.finalized ? 'Recommendation finalised. Update' : 'Finalise recommendation'}</button><span class="muted small">Saving links the result to the student’s profile.</span></div></div>`
-    : (!staff ? `<div class="row noprint"><button class="btn ghost" data-a="dlReport" data-id="${att.id}">Download report (HTML)</button><button class="btn ghost" data-a="dlCsv" data-id="${att.id}">Download summary (CSV)</button></div>` : '');
-  return `<div class="page-head noprint"><div><h1>${staff ? 'Diagnostic report' : 'Results'}</h1>${staff ? `<p>Showing the ${AUD_NAME[aud].toLowerCase()} version.</p>` : ''}</div><button class="btn ghost" data-a="go" data-v="${back}">Back</button></div>${viewAs}${tools}${staff && !att.preview ? pwPanel(att) : ''}${!staff && U.role === 'parent' && pwShared(att) ? `<div class="row noprint"><button class="btn teal" data-a="pwPdf" data-id="${att.id}">Download learning pathway (PDF)</button></div>` : ''}${reportBody(att, aud, { inApp: true })}`;
+    : (!staff && !isLeadForParent ? `<div class="row noprint"><button class="btn ghost" data-a="dlReport" data-id="${att.id}">Download report (HTML)</button><button class="btn ghost" data-a="dlCsv" data-id="${att.id}">Download summary (CSV)</button></div>` : '');
+  return `<div class="page-head noprint"><div><h1>${staff ? 'Diagnostic report' : 'Results'}</h1>${staff ? `<p>Showing the ${AUD_NAME[aud].toLowerCase()} version.</p>` : ''}</div><button class="btn ghost" data-a="go" data-v="${back}">Back</button></div>${viewAs}${tools}${staff && !att.preview ? pwPanel(att) : ''}${!staff && U.role === 'parent' && !isLeadForParent && pwShared(att) ? `<div class="row noprint"><button class="btn teal" data-a="pwPdf" data-id="${att.id}">Download learning pathway (PDF)</button></div>` : ''}${reportBody(att, aud, { inApp: true })}`;
 };
 function reportCSV(att, aud) {
   const an = AN(att), P = an.placement, sh = k => aud === 'admin' || !!sharingFor(aud)[k], rows = [];

@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Frontend\FrontendController;
 use App\Http\Controllers\Frontend\AssessmentBookingController;
+use App\Http\Controllers\Frontend\MeetingBookingController;
 use Stancl\Tenancy\Middleware\InitializeTenancyByDomain;
 use Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains;
 
@@ -61,6 +62,14 @@ Route::middleware(saasMiddleware())->group(function () {
                 // exists on that static page, and this is read-plus-notify,
                 // not a form submission.
                 Route::get('/assessment-completed', [AssessmentBookingController::class, 'completed'])->name('frontend.assessment-completed');
+
+                // The streamlined "book a meeting" step a lead's parent
+                // reaches from their result email - identity carried by
+                // the link's own signature, so 'signed' (not a login)
+                // guards it. Never re-asks the details already on file;
+                // see MeetingBookingController.
+                Route::get('/book-meeting/{lead}', [MeetingBookingController::class, 'show'])->name('frontend.book-meeting')->middleware('signed');
+                Route::post('/book-meeting/{lead}', [MeetingBookingController::class, 'store'])->name('frontend.book-meeting.store')->middleware('signed');
 
                 Route::get('/contact',          'contact')->name('frontend.contact');
                 Route::get('/online-admission', 'onlineAdmission')->name('frontend.online-admission');
