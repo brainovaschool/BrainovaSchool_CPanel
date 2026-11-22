@@ -84,15 +84,19 @@
                                     </select>
                                     @error('syllabus')<small class="text-danger d-block mb_20">{{ $message }}</small>@enderror
                                 </div>
-                                <div class="col-xl-6">
-                                    <label class="primary_label2">Subject <span class="text-danger">*</span></label>
-                                    <select name="subject" required class="form-control ot-input mb_30 @error('subject') is-invalid @enderror">
-                                        <option value="">— Select —</option>
-                                        @foreach (['Mathematics', 'English', 'Science', 'Computer Science', 'Graphic Design', 'Urdu', 'Artificial Intelligence', 'Robotics'] as $subj)
-                                            <option value="{{ $subj }}" {{ old('subject') === $subj ? 'selected' : '' }}>{{ $subj }}</option>
+                                <div class="col-xl-12">
+                                    <label class="primary_label2">Subject(s) <span class="text-danger">*</span></label>
+                                    <div class="row mb_20">
+                                        @foreach (['Mathematics', 'English', 'Science', 'Computer Science', 'Urdu', 'Islamiyat', 'History', 'Geography'] as $subj)
+                                            <div class="col-6 col-md-3">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" name="subjects[]" id="subj_{{ $loop->index }}" value="{{ $subj }}" {{ in_array($subj, (array) old('subjects', [])) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="subj_{{ $loop->index }}">{{ $subj }}</label>
+                                                </div>
+                                            </div>
                                         @endforeach
-                                    </select>
-                                    @error('subject')<small class="text-danger d-block mb_20">{{ $message }}</small>@enderror
+                                    </div>
+                                    @error('subjects')<small class="text-danger d-block mb_20">{{ $message }}</small>@enderror
                                 </div>
                                 <div class="col-xl-6">
                                     <label class="primary_label2">Email <span class="text-danger">*</span></label>

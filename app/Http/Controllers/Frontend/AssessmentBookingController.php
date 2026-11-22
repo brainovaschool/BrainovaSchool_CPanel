@@ -26,7 +26,7 @@ use Illuminate\Validation\Rule;
  */
 class AssessmentBookingController extends Controller
 {
-    const SUBJECTS = ['Mathematics', 'English', 'Science', 'Computer Science', 'Graphic Design', 'Urdu', 'Artificial Intelligence', 'Robotics'];
+    const SUBJECTS = ['Mathematics', 'English', 'Science', 'Computer Science', 'Urdu', 'Islamiyat', 'History', 'Geography'];
     const SYLLABI = ['SNC', 'Cambridge', 'Oxford', 'Pearson Edexcel', 'Other'];
 
     public function show()
@@ -177,7 +177,14 @@ class AssessmentBookingController extends Controller
             'student_age'         => 'nullable|string|max:40',
             'grade'               => 'required|integer|between:1,10',
             'syllabus'            => ['required', 'string', Rule::in(self::SYLLABI)],
-            'subject'             => ['required', 'string', Rule::in(self::SUBJECTS)],
+            // A checklist, not a dropdown - a parent wanting more than one
+            // subject assessed picks them all in one visit instead of
+            // filling the whole form again per subject. Still saved into
+            // the single `subject` column, as a comma-joined list - see
+            // createLeadAndSend(). Per-subject assessment matching is a
+            // later upgrade (grade-only for now, same as before).
+            'subjects'            => 'required|array|min:1',
+            'subjects.*'          => Rule::in(self::SUBJECTS),
             'email'               => 'required|email|max:150',
             'whatsapp_number'     => 'required|string|max:40',
             'city'                => 'nullable|string|max:100',
@@ -200,7 +207,7 @@ class AssessmentBookingController extends Controller
         $lead->student_age = $request->student_age;
         $lead->grade = (int) $request->grade;
         $lead->syllabus = $request->syllabus;
-        $lead->subject = $request->subject;
+        $lead->subject = implode(', ', (array) $request->input('subjects', []));
         $lead->email = $request->email;
         $lead->whatsapp_number = $request->whatsapp_number;
         $lead->city = $request->city;
