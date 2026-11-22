@@ -422,7 +422,29 @@ function init() {
       // Sheet just confirmed it has, so the next edit only resyncs what
       // actually changes from here - not everything, just to catch up.
       if (window.BrainovaAPI.markSynced) window.BrainovaAPI.markSynced(S);
+      // A lead's assessment is assigned via the admin token moments
+      // before their invite email is sent (see AssessmentBookingController
+      // ::createLeadAndSend()), but a Google Sheets write can take a few
+      // seconds to become visible to the very next read - if this first
+      // bootstrap landed just before that, quietly retry instead of
+      // leaving "nothing assigned" on screen until a manual reload.
+      if (U.lms && U.lms.role === 'student' && String(U.lms.uid).startsWith('LEAD-') && !assignedFor(U.lms.uid).length) {
+        retryLeadAssignment_(0);
+      }
     }).catch(() => { /* stay on the local/cached copy */ });
   }
+}
+function retryLeadAssignment_(n) {
+  if (n >= 4 || !window.BrainovaAPI) return;
+  setTimeout(() => {
+    window.BrainovaAPI.fetchSnapshot().then(remote => {
+      if (!remote) return retryLeadAssignment_(n + 1);
+      if (!remote.settings) remote.settings = S.settings;
+      ['students', 'parents', 'assessments', 'bank'].forEach(k => { remote[k] = mergeById(S[k], remote[k]); });
+      S = remote; anCache = new WeakMap(); ensureSample(); persistLocal();
+      if (window.BrainovaAPI.markSynced) window.BrainovaAPI.markSynced(S);
+      if (assignedFor(U.lms.uid).length) render(); else retryLeadAssignment_(n + 1);
+    }).catch(() => retryLeadAssignment_(n + 1));
+  }, 4000);
 }
 init();

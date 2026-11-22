@@ -66,7 +66,7 @@
                                             <input type="hidden" name="assessment_slot_id" id="bnMeetSlotId" value="{{ old('assessment_slot_id') }}">
                                             <p class="bn-cal-note">Green dates have open times.</p>
                                         @else
-                                            <p class="bn-cal-note mb_30">No meeting times are open right now — please check back soon or contact us directly.</p>
+                                            <p class="bn-cal-note mb_30">No meeting times are open right now — please check back soon or WhatsApp us at <a href="https://wa.me/923252202555" target="_blank" rel="noopener">0325 2202555</a>.</p>
                                         @endif
                                         @error('assessment_slot_id')<small class="text-danger d-block mb_20">{{ $message }}</small>@enderror
                                     </div>

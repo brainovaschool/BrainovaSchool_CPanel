@@ -73,7 +73,13 @@ function applyLmsIdentity() {
     // find. Name comes from the token; grade/accommodations stay blank
     // until an admin fills them in on the Students page, or a later
     // sync pass maps the LMS's own class/grade data onto this field.
-    if (!S.students.find(s => s.id === uid)) {
+    // A LEAD-{id} is never "first time" in this sense - Laravel's
+    // AssessmentSheetClient::assignLead() already created this exact
+    // row with the admin token before the invite email was even sent,
+    // so this app never needs to (and, on a per-user token, usually
+    // isn't allowed to) write it itself - that duplicate attempt is
+    // what surfaced as a confusing "unauthorized" toast.
+    if (!uid.startsWith('LEAD-') && !S.students.find(s => s.id === uid)) {
       const rec = { id: uid, name: claims.name || 'Student', grade: null };
       S.students.push(rec);
       persistLocal();

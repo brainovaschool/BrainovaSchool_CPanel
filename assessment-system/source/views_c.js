@@ -7,13 +7,22 @@ function assignedFor(sid) { return S.assessments.filter(a => a.status === 'publi
 function stateFor(a, sid) { const at = attemptsOf(a.id, sid); return { at, left: Math.max(0, a.attempts - at.length) }; }
 
 VIEWS.my = function () {
-  const sid = U.studentId, st = studentById(sid), list = assignedFor(sid), ac = accomFor(sid);
+  const sid = U.studentId, st = studentById(sid) || { id: sid, name: (U.lms && U.lms.name) || 'there' }, list = assignedFor(sid), ac = accomFor(sid);
+  // A lead (see Laravel's AssessmentLead) is auto-assigned an assessment
+  // moments before the invite email is even sent, but the write can lag
+  // a few seconds behind this page's own read of the Sheet - actions.js's
+  // init() quietly retries a few times in the background, so this is
+  // "getting ready", not "nothing was ever assigned" for a lead specifically.
+  const isLead = String(sid).startsWith('LEAD-');
+  const empty = isLead
+    ? '<div class="empty">Getting your assessment ready — this usually takes under a minute. This page will update on its own, or you can refresh in a moment.</div>'
+    : '<div class="empty">Nothing is assigned to you right now.</div>';
   return `<div class="page-head"><div><h1>Hello, ${esc(st.name.split(' ')[0])}</h1><p>Your assigned assessments. Take your time, read each question carefully and do your own work.</p></div></div>
   ${ac.extraPct || ac.largeText ? `<div class="banner info">Your accommodations are active: ${ac.extraPct ? '+' + ac.extraPct + '% extra time' : ''}${ac.extraPct && ac.largeText ? ' and ' : ''}${ac.largeText ? 'larger text' : ''}.</div>` : ''}
   ${list.length ? `<div class="stack">${list.map(a => { const s = stateFor(a, sid), done = s.at.length > 0, sup = supOf(a.id, sid);
     return `<div class="card"><div class="row sp"><div><div class="row" style="margin-bottom:6px"><span class="pill pur">${esc(a.purpose)}</span>${a.mode === 'live' ? '<span class="pill">Live in class</span>' : `<span class="pill">${a.durationMin} minutes</span>`}${a.parentSupervision ? `<span class="pill ${sup ? 'ok' : 'warn'}">${sup ? 'Parent confirmed' : 'Parent confirmation needed'}</span>` : ''}</div><h3>${esc(a.title)}</h3>
       <p class="muted small">${esc(subjectsOf(a).join(', '))} · ${a.model === 'adaptive' ? 'Questions adjust to you' : sumBy(DIFF_KEYS, k => a.dist[k] || 0) + ' questions'}</p></div>
-      <div class="row">${done ? '<span class="pill ok">Submitted</span>' : ''}${a.mode === 'live' ? '<span class="muted small">Your teacher will run this one in class.</span>' : s.left ? `<button class="btn teal" data-a="intro" data-id="${a.id}">${done ? 'Try again' : 'Open'}</button>` : '<span class="muted small">No attempts left</span>'}</div></div></div>`; }).join('')}</div>` : '<div class="empty">Nothing is assigned to you right now.</div>'}`;
+      <div class="row">${done ? '<span class="pill ok">Submitted</span>' : ''}${a.mode === 'live' ? '<span class="muted small">Your teacher will run this one in class.</span>' : s.left ? `<button class="btn teal" data-a="intro" data-id="${a.id}">${done ? 'Try again' : 'Open'}</button>` : '<span class="muted small">No attempts left</span>'}</div></div></div>`; }).join('')}</div>` : empty}`;
 };
 VIEWS.hist = function () {
   const at = S.attempts.filter(a => a.studentId === U.studentId && !a.preview).sort((a, b) => b.finished - a.finished);

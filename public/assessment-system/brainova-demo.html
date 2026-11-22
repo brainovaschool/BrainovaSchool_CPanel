@@ -1225,7 +1225,13 @@ function applyLmsIdentity() {
     // find. Name comes from the token; grade/accommodations stay blank
     // until an admin fills them in on the Students page, or a later
     // sync pass maps the LMS's own class/grade data onto this field.
-    if (!S.students.find(s => s.id === uid)) {
+    // A LEAD-{id} is never "first time" in this sense - Laravel's
+    // AssessmentSheetClient::assignLead() already created this exact
+    // row with the admin token before the invite email was even sent,
+    // so this app never needs to (and, on a per-user token, usually
+    // isn't allowed to) write it itself - that duplicate attempt is
+    // what surfaced as a confusing "unauthorized" toast.
+    if (!uid.startsWith('LEAD-') && !S.students.find(s => s.id === uid)) {
       const rec = { id: uid, name: claims.name || 'Student', grade: null };
       S.students.push(rec);
       persistLocal();
@@ -2042,13 +2048,22 @@ function assignedFor(sid) { return S.assessments.filter(a => a.status === 'publi
 function stateFor(a, sid) { const at = attemptsOf(a.id, sid); return { at, left: Math.max(0, a.attempts - at.length) }; }
 
 VIEWS.my = function () {
-  const sid = U.studentId, st = studentById(sid), list = assignedFor(sid), ac = accomFor(sid);
+  const sid = U.studentId, st = studentById(sid) || { id: sid, name: (U.lms && U.lms.name) || 'there' }, list = assignedFor(sid), ac = accomFor(sid);
+  // A lead (see Laravel's AssessmentLead) is auto-assigned an assessment
+  // moments before the invite email is even sent, but the write can lag
+  // a few seconds behind this page's own read of the Sheet - actions.js's
+  // init() quietly retries a few times in the background, so this is
+  // "getting ready", not "nothing was ever assigned" for a lead specifically.
+  const isLead = String(sid).startsWith('LEAD-');
+  const empty = isLead
+    ? '<div class="empty">Getting your assessment ready — this usually takes under a minute. This page will update on its own, or you can refresh in a moment.</div>'
+    : '<div class="empty">Nothing is assigned to you right now.</div>';
   return `<div class="page-head"><div><h1>Hello, ${esc(st.name.split(' ')[0])}</h1><p>Your assigned assessments. Take your time, read each question carefully and do your own work.</p></div></div>
   ${ac.extraPct || ac.largeText ? `<div class="banner info">Your accommodations are active: ${ac.extraPct ? '+' + ac.extraPct + '% extra time' : ''}${ac.extraPct && ac.largeText ? ' and ' : ''}${ac.largeText ? 'larger text' : ''}.</div>` : ''}
   ${list.length ? `<div class="stack">${list.map(a => { const s = stateFor(a, sid), done = s.at.length > 0, sup = supOf(a.id, sid);
     return `<div class="card"><div class="row sp"><div><div class="row" style="margin-bottom:6px"><span class="pill pur">${esc(a.purpose)}</span>${a.mode === 'live' ? '<span class="pill">Live in class</span>' : `<span class="pill">${a.durationMin} minutes</span>`}${a.parentSupervision ? `<span class="pill ${sup ? 'ok' : 'warn'}">${sup ? 'Parent confirmed' : 'Parent confirmation needed'}</span>` : ''}</div><h3>${esc(a.title)}</h3>
       <p class="muted small">${esc(subjectsOf(a).join(', '))} · ${a.model === 'adaptive' ? 'Questions adjust to you' : sumBy(DIFF_KEYS, k => a.dist[k] || 0) + ' questions'}</p></div>
-      <div class="row">${done ? '<span class="pill ok">Submitted</span>' : ''}${a.mode === 'live' ? '<span class="muted small">Your teacher will run this one in class.</span>' : s.left ? `<button class="btn teal" data-a="intro" data-id="${a.id}">${done ? 'Try again' : 'Open'}</button>` : '<span class="muted small">No attempts left</span>'}</div></div></div>`; }).join('')}</div>` : '<div class="empty">Nothing is assigned to you right now.</div>'}`;
+      <div class="row">${done ? '<span class="pill ok">Submitted</span>' : ''}${a.mode === 'live' ? '<span class="muted small">Your teacher will run this one in class.</span>' : s.left ? `<button class="btn teal" data-a="intro" data-id="${a.id}">${done ? 'Try again' : 'Open'}</button>` : '<span class="muted small">No attempts left</span>'}</div></div></div>`; }).join('')}</div>` : empty}`;
 };
 VIEWS.hist = function () {
   const at = S.attempts.filter(a => a.studentId === U.studentId && !a.preview).sort((a, b) => b.finished - a.finished);
@@ -3159,8 +3174,30 @@ function init() {
       // Sheet just confirmed it has, so the next edit only resyncs what
       // actually changes from here - not everything, just to catch up.
       if (window.BrainovaAPI.markSynced) window.BrainovaAPI.markSynced(S);
+      // A lead's assessment is assigned via the admin token moments
+      // before their invite email is sent (see AssessmentBookingController
+      // ::createLeadAndSend()), but a Google Sheets write can take a few
+      // seconds to become visible to the very next read - if this first
+      // bootstrap landed just before that, quietly retry instead of
+      // leaving "nothing assigned" on screen until a manual reload.
+      if (U.lms && U.lms.role === 'student' && String(U.lms.uid).startsWith('LEAD-') && !assignedFor(U.lms.uid).length) {
+        retryLeadAssignment_(0);
+      }
     }).catch(() => { /* stay on the local/cached copy */ });
   }
+}
+function retryLeadAssignment_(n) {
+  if (n >= 4 || !window.BrainovaAPI) return;
+  setTimeout(() => {
+    window.BrainovaAPI.fetchSnapshot().then(remote => {
+      if (!remote) return retryLeadAssignment_(n + 1);
+      if (!remote.settings) remote.settings = S.settings;
+      ['students', 'parents', 'assessments', 'bank'].forEach(k => { remote[k] = mergeById(S[k], remote[k]); });
+      S = remote; anCache = new WeakMap(); ensureSample(); persistLocal();
+      if (window.BrainovaAPI.markSynced) window.BrainovaAPI.markSynced(S);
+      if (assignedFor(U.lms.uid).length) render(); else retryLeadAssignment_(n + 1);
+    }).catch(() => retryLeadAssignment_(n + 1));
+  }, 4000);
 }
 init();
 
