@@ -270,7 +270,15 @@ Object.assign(GEN.Measurement, {
       wrongs: [[Math.round(flour / 1000 * price), 'concept', 'Paid for part of a bag'], [Math.floor(flour / 1000) * price, 'concept', 'Ignored the extra flour'], [m * price, 'misread', 'Bought one bag for every batch'], [(bags + 1) * price, 'calc', 'Bought one bag too many']] }; }
 });
 const STRETCH_KEYS = ['C', 'M', 'X'];
-function mathGrades(topic, diff) { const g = MATH_GRADES[topic]; return diff === 'M' ? [g[0], Math.min(10, g[1] + 1)] : diff === 'X' ? [Math.min(10, g[0] + 1), Math.min(10, g[1] + 2)] : g.slice(); }
+function mathGrades(topic, diff) {
+  // Each difficulty gets its own, narrower slice of the topic's overall
+  // grade range - previously every one of Strengthen/Hard/Extend got the
+  // SAME full range (e.g. Addition 1-5 for all three), so a Grade 1 test
+  // could pick a Hard three-digit-with-carrying question meant for Grade 4-5.
+  const g = MATH_GRADES[topic], lo = g[0], hi = g[1], sp = hi - lo, c = n => Math.max(lo, Math.min(10, n));
+  const S = [lo, c(lo + Math.floor(sp * 0.4))], H = [c(lo + Math.ceil(sp * 0.3)), c(lo + Math.ceil(sp * 0.7))], E = [c(lo + Math.ceil(sp * 0.5)), hi];
+  return diff === 'S' ? S : diff === 'H' || diff === 'C' ? H : diff === 'E' ? E : diff === 'M' ? [E[0], Math.min(10, hi + 1)] : [Math.min(10, E[0] + 1), Math.min(10, hi + 2)];
+}
 function capIdx(idx, byDiff) {
   if (idx == null) return idx;
   const n = k => (byDiff[k] && (byDiff[k].attempted != null ? byDiff[k].attempted : byDiff[k].n)) || 0;
@@ -526,16 +534,38 @@ function makeResponse(seq, q, raw, ms, meta = {}) {
 
 /* ---------- question pools and assembly ---------- */
 const topicKey = (s, t) => s + '|' + t;
-function gradeOk(q, a) { if (!a.grades || !a.grades.length || !q.grades) return true; const st = +a.stretch || 0; return a.grades.some(g => g + st >= q.grades[0] && g <= q.grades[1]); }
-function poolFor(bank, a) {
+// 'above' is 0 for every fixed/live test, and a per-topic, earned
+// amount for adaptive tests (see Adaptive.allowedFor below) - normal
+// tests never go above grade. A question with no grade set at all is
+// never used in any real test.
+function gradeOk(q, a, above) {
+  if (!a.grades || !a.grades.length) return true; if (!q.grades) return false;
+  const up = above || 0;
+  // A fixed/live test (up is always 0 here) trusts a question's own
+  // range exactly as tagged, even a wide one spanning several grades
+  // (e.g. English content tagged Grades 4-7 for its whole audience) -
+  // only its lower bound matters, so the student's actual grade must
+  // fall inside it. An adaptive test reaching ABOVE grade (up > 0) adds
+  // one more rule: the question's own upper bound must not sit beyond
+  // what was actually earned, so a Mastery/Exceptional question (which
+  // can be tagged well above the topic's base range) never jumps a
+  // low-grade student straight to content meant for a much higher one.
+  return a.grades.some(g => g + up >= q.grades[0] && g <= q.grades[1] && (up === 0 || q.grades[1] <= g + up));
+}
+// Normal (fixed) and live tests never go above grade, regardless of the
+// assessment's own stretch setting - only an adaptive test's earned,
+// per-topic allowance (Adaptive.allowedFor) can ever exceed grade level.
+function stretchCap(a) { return a.model === 'adaptive' ? Math.max(0, Math.min(2, a.stretch == null ? 2 : (+a.stretch || 0))) : 0; }
+function poolFor(bank, a, above) {
+  const up = above === undefined ? stretchCap(a) : above;
   const keys = new Set((a.topics || []).map(t => topicKey(t.subject, t.topic))), ex = new Set(a.excludeObj || []);
-  return bank.filter(q => q.status === 'approved' && keys.has(topicKey(q.subject, q.topic)) && gradeOk(q, a) && !ex.has(q.subject + '|' + q.topic + '|' + q.objective));
+  return bank.filter(q => q.status === 'approved' && keys.has(topicKey(q.subject, q.topic)) && gradeOk(q, a, up) && !ex.has(q.subject + '|' + q.topic + '|' + q.objective));
 }
 function poolCounts(pool, topics) {
   return topics.map(t => { const row = { subject: t.subject, topic: t.topic, S: 0, H: 0, E: 0, C: 0, M: 0, X: 0 }; pool.forEach(q => { if (q.subject === t.subject && q.topic === t.topic) row[q.diff]++; }); return row; });
 }
 function buildFixed(a, bank, seed) {
-  const R = rng(seed), pool = poolFor(bank, a), topics = a.topics.map(t => t.topic), items = [], shortages = [], used = new Set();
+  const R = rng(seed), pool = poolFor(bank, a, 0), topics = a.topics.map(t => t.topic), items = [], shortages = [], used = new Set();
   const byTD = {};
   pool.forEach(q => { const k = q.topic + '|' + q.diff; (byTD[k] = byTD[k] || []).push(q); });
   Object.keys(byTD).forEach(k => byTD[k] = R.shuffle(byTD[k]));
@@ -561,7 +591,7 @@ const ADAPT_DEFAULT = { min: 10, max: 20, minPer: 3, sdTarget: 0.7, startB: -0.5
 class Adaptive {
   constructor(a, bank, seed) {
     this.a = a; this.cfg = Object.assign({}, ADAPT_DEFAULT, a.adaptive || {});
-    this.R = rng(seed); this.pool = poolFor(bank, a); this.resps = []; this.used = new Set(); this.trace = []; this.probed = new Set();
+    this.R = rng(seed); this.cap = stretchCap(a); this.pool = poolFor(bank, a, this.cap); this.resps = []; this.used = new Set(); this.trace = []; this.probed = new Set();
     this.topics = a.topics.map(t => t.topic).filter(t => this.pool.some(q => q.topic === t));
     this.fullBank = bank;
     const k = Math.max(1, this.topics.length);
@@ -571,11 +601,23 @@ class Adaptive {
   overall() { return eap(this.resps.filter(r => r.correct !== null), 0, 1); }
   topicEst(t) { const rs = this.resps.filter(r => r.topic === t && r.correct !== null), o = this.overall(); return Object.assign(eap(rs, rs.length ? o.theta : 0, 0.8), { n: rs.length }); }
   countOf(t) { return this.resps.filter(r => r.topic === t).length; }
+  // How many grades above the student's own grade this topic may reach
+  // right now - earned only by a run of correct answers IN that topic,
+  // never granted up front, and capped by this assessment's own stretch
+  // setting. A single wrong answer in the topic resets the run, so the
+  // student drops back to grade-level questions in it.
+  allowedFor(t) {
+    if (!this.cap) return 0;
+    const rs = this.resps.filter(r => r.topic === t && !r.probe && r.correct !== null); let streak = 0;
+    for (let i = rs.length - 1; i >= 0 && rs[i].correct; i--) streak++;
+    const th = this.topicEst(t).theta;
+    return Math.min(this.cap, streak >= 4 && th > 0.5 ? 2 : streak >= 2 && th > 0 ? 1 : 0);
+  }
   done() {
     const n = this.resps.length;
     if (!this.topics.length) return 'No approved questions are available for the selected topics';
     if (n >= this.cfg.max) return `Reached the configured maximum of ${this.cfg.max} questions`;
-    const avail = this.topics.some(t => this.pool.some(q => q.topic === t && !this.used.has(q.id)));
+    const avail = this.topics.some(t => this.pool.some(q => q.topic === t && !this.used.has(q.id) && gradeOk(q, this.a, this.allowedFor(t))));
     if (!avail) return 'Question pool exhausted';
     if (n < this.cfg.min) return null;
     const ok = this.topics.every(t => this.countOf(t) >= this.cfg.minPer && this.topicEst(t).sd <= this.cfg.sdTarget);
@@ -583,7 +625,7 @@ class Adaptive {
   }
   next() {
     const cfg = this.cfg, n = this.resps.length, ov = this.overall();
-    const avail = t => this.pool.filter(q => q.topic === t && !this.used.has(q.id));
+    const avail = t => { const up = this.allowedFor(t); return this.pool.filter(q => q.topic === t && !this.used.has(q.id) && gradeOk(q, this.a, up)); };
     let cand = this.topics.filter(t => avail(t).length);
     const last2 = this.resps.slice(-2).map(r => r.topic);
     if (last2.length === 2 && last2[0] === last2[1] && cand.length > 1) cand = cand.filter(t => t !== last2[0]);

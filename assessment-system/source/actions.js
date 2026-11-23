@@ -95,13 +95,22 @@ ACT.tplBank = () => saveFile('brainova-question-import-template.csv', toCSV([['s
 ACT.importQ = el => {
   const f = el.files[0]; if (!f) return; const r = new FileReader();
   r.onload = () => { try {
-    const rows = parseCSV(String(r.result)), h = rows[0].map(x => x.trim().toLowerCase()), ix = k => h.indexOf(k); let ok = 0, bad = 0;
+    const rows = parseCSV(String(r.result)), h = rows[0].map(x => x.trim().toLowerCase()), ix = k => h.indexOf(k); let ok = 0, bad = 0, noGrade = 0;
     rows.slice(1).forEach(c => { const g = k => ix(k) >= 0 ? (c[ix(k)] || '').trim() : ''; const type = g('type') || 'mcq', diff = (g('difficulty') || 'S').toUpperCase()[0];
       const f2 = qToForm(Object.assign(blankQ(), { subject: g('subject'), topic: g('topic'), diff: DIFF_KEYS.includes(diff) ? diff : 'S', type, text: g('text'), objective: g('objective'), explanation: g('explanation'), marks: +g('marks') || 1, time: +g('time_sec') || 45, prereq: g('prerequisite') || null, source: g('source') || 'Imported', status: 'draft' }));
-      f2._g0 = +g('grade_min') || 1; f2._g1 = +g('grade_max') || 10; f2._opts = ['option_a', 'option_b', 'option_c', 'option_d'].map(k => g(k)); const a = g('answer');
+      // Recognise several column-naming styles, including a single
+      // "grade"/"class" column with one number or a range like "1-3".
+      // A row with no recognisable grade at all is left blank (not
+      // defaulted to Grades 1-10) - gradeOk() then never matches it to
+      // a real assessment grade, so it simply can't be used until someone
+      // sets Grade from/to by hand.
+      let g0 = +(g('grade_min') || g('min_grade') || g('grade_from')) || 0, g1 = +(g('grade_max') || g('max_grade') || g('grade_to')) || 0;
+      const gs = (g('grade') || g('class') || g('grades')).match(/\d+/g); if (!g0 && !g1 && gs) { g0 = Math.min(...gs.map(Number)); g1 = Math.max(...gs.map(Number)); }
+      if (g0 && !g1) g1 = g0; if (g1 && !g0) g0 = g1;
+      if (!g0) noGrade++; f2._g0 = g0 || ''; f2._g1 = g1 || ''; f2._opts = ['option_a', 'option_b', 'option_c', 'option_d'].map(k => g(k)); const a = g('answer');
       if (type === 'mcq') f2._correct = Math.max(0, 'abcd'.indexOf(a.toLowerCase())); if (type === 'tf') f2._tf = /^t/i.test(a) ? 't' : 'f'; if (type === 'num') f2._num = a; if (type === 'fill') f2._accept = a.replace(/\|/g, ' | '); if (type === 'short') f2._kw = a.replace(/\|/g, ' | ');
-      f2.id = 'Q-' + uid('').slice(1).toUpperCase(); const q = formToQ(f2); if (qProblems(q).length) bad++; else { S.bank.unshift(q); ok++; } });
-    save(); U.bankFilter.status = 'draft'; render(); toast(`Imported ${ok} question${ok === 1 ? '' : 's'} as drafts${bad ? ` (${bad} skipped because of missing fields)` : ''}.`);
+      f2.id = 'Q-' + uid('').slice(1).toUpperCase(); const q = formToQ(f2); if (qProblems(q).filter(x => !/grade/i.test(x)).length) bad++; else { S.bank.unshift(q); ok++; } });
+    save(); U.bankFilter.status = 'draft'; render(); toast(`Imported ${ok} question${ok === 1 ? '' : 's'} as drafts${bad ? ` (${bad} skipped because of missing fields)` : ''}.${noGrade ? ` ${noGrade} have no grade, so they will not appear in any test until you set Grade from and Grade to.` : ''}`);
   } catch (err) { toast('Could not read that CSV file.'); } el.value = ''; };
   r.readAsText(f);
 };
