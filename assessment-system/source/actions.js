@@ -91,7 +91,7 @@ ACT.qImgClear = () => { U.qDraft.image = null; render(); };
 ACT.approveAll = () => { S.bank.forEach(q => q.status = 'approved'); save(); render(); toast('All drafts approved.'); };
 ACT.bankMore = () => { U.bankLimit = (U.bankLimit || 25) + 50; render(); };
 ACT.bankTgl = el => { const sel = U.bankSel = U.bankSel || [], i = sel.indexOf(el.dataset.id); if (i >= 0) sel.splice(i, 1); else sel.push(el.dataset.id); render(); };
-ACT.bankSelAll = () => { U.bankSel = filteredBank().slice(0, U.bankLimit || 25).map(q => q.id); render(); };
+ACT.bankSelAll = () => { U.bankSel = filteredBank().map(q => q.id); render(); };
 ACT.bankSelNone = () => { U.bankSel = []; render(); };
 ACT.bankBulkDelete = () => {
   if (U.cfm !== 'bankdel') { U.cfm = 'bankdel'; render(); return; }
