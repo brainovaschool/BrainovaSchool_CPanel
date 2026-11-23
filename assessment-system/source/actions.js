@@ -90,12 +90,34 @@ ACT.qImg = el => { const f = el.files[0]; if (!f) return; if (f.size > 300 * 102
 ACT.qImgClear = () => { U.qDraft.image = null; render(); };
 ACT.approveAll = () => { S.bank.forEach(q => q.status = 'approved'); save(); render(); toast('All drafts approved.'); };
 ACT.bankMore = () => { U.bankLimit = (U.bankLimit || 25) + 50; render(); };
+ACT.bankTgl = el => { const sel = U.bankSel = U.bankSel || [], i = sel.indexOf(el.dataset.id); if (i >= 0) sel.splice(i, 1); else sel.push(el.dataset.id); render(); };
+ACT.bankSelAll = () => { U.bankSel = filteredBank().slice(0, U.bankLimit || 25).map(q => q.id); render(); };
+ACT.bankSelNone = () => { U.bankSel = []; render(); };
+ACT.bankBulkDelete = () => {
+  if (U.cfm !== 'bankdel') { U.cfm = 'bankdel'; render(); return; }
+  U.cfm = null;
+  const ids = new Set(U.bankSel || []);
+  S.bank = S.bank.filter(q => !ids.has(q.id));
+  U.bankSel = [];
+  save(); render(); toast(`${ids.size} question${ids.size === 1 ? '' : 's'} deleted.`);
+};
 ACT.exportBank = () => saveFile('brainova-question-bank.csv', EXPORTS.bank());
 ACT.tplBank = () => saveFile('brainova-question-import-template.csv', toCSV([['subject', 'topic', 'grade_min', 'grade_max', 'difficulty', 'type', 'text', 'option_a', 'option_b', 'option_c', 'option_d', 'answer', 'explanation', 'objective', 'time_sec', 'marks', 'prerequisite', 'source'], ['Mathematics', 'Addition', 2, 4, 'S', 'mcq', 'What is 24 + 13?', '35', '37', '36', '38', 'b', '24 + 13 = 37', 'Add two-digit numbers', 30, 1, '', 'Teacher'], ['English', 'Tenses', 4, 6, 'S', 'fill', 'Yesterday I ____ (go) to school.', '', '', '', '', 'went', '', 'Use simple past', 30, 1, '', 'Teacher']]));
-ACT.importQ = el => {
-  const f = el.files[0]; if (!f) return; const r = new FileReader();
-  r.onload = () => { try {
-    const rows = parseCSV(String(r.result)), h = rows[0].map(x => x.trim().toLowerCase()), ix = k => h.indexOf(k); let ok = 0, bad = 0, noGrade = 0;
+ACT.importQ = async el => {
+  const f = el.files[0]; if (!f) return;
+  try {
+    const buf = await f.arrayBuffer();
+    // Excel's plain "CSV" export (as opposed to "CSV UTF-8") saves
+    // using the system's default code page, not UTF-8 - reading that
+    // as UTF-8 corrupts every ×, ÷, − and other non-ASCII character
+    // into mojibake. Decoding strictly (fatal: true) means an invalid
+    // UTF-8 byte sequence - the signature of a non-UTF-8 file - throws
+    // here instead of silently mangling the text, so it falls through
+    // to the Windows-1252 fallback instead.
+    let text;
+    try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+    catch (e) { text = new TextDecoder('windows-1252').decode(buf); }
+    const rows = parseCSV(text), h = rows[0].map(x => x.trim().toLowerCase()), ix = k => h.indexOf(k); let ok = 0, bad = 0, noGrade = 0;
     rows.slice(1).forEach(c => { const g = k => ix(k) >= 0 ? (c[ix(k)] || '').trim() : ''; const type = g('type') || 'mcq', diff = (g('difficulty') || 'S').toUpperCase()[0];
       const f2 = qToForm(Object.assign(blankQ(), { subject: g('subject'), topic: g('topic'), diff: DIFF_KEYS.includes(diff) ? diff : 'S', type, text: g('text'), objective: g('objective'), explanation: g('explanation'), marks: +g('marks') || 1, time: +g('time_sec') || 45, prereq: g('prerequisite') || null, source: g('source') || 'Imported', status: 'draft' }));
       // Recognise several column-naming styles, including a single
@@ -111,8 +133,8 @@ ACT.importQ = el => {
       if (type === 'mcq') f2._correct = Math.max(0, 'abcd'.indexOf(a.toLowerCase())); if (type === 'tf') f2._tf = /^t/i.test(a) ? 't' : 'f'; if (type === 'num') f2._num = a; if (type === 'fill') f2._accept = a.replace(/\|/g, ' | '); if (type === 'short') f2._kw = a.replace(/\|/g, ' | ');
       f2.id = 'Q-' + uid('').slice(1).toUpperCase(); const q = formToQ(f2); if (qProblems(q).filter(x => !/grade/i.test(x)).length) bad++; else { S.bank.unshift(q); ok++; } });
     save(); U.bankFilter.status = 'draft'; render(); toast(`Imported ${ok} question${ok === 1 ? '' : 's'} as drafts${bad ? ` (${bad} skipped because of missing fields)` : ''}.${noGrade ? ` ${noGrade} have no grade, so they will not appear in any test until you set Grade from and Grade to.` : ''}`);
-  } catch (err) { toast('Could not read that CSV file.'); } el.value = ''; };
-  r.readAsText(f);
+  } catch (err) { toast('Could not read that CSV file.'); }
+  el.value = '';
 };
 ACT.qGenOpen = () => { U.qGen = { method: 'rule', topic: 'Fractions', subject: 'Science', diff: 'S', count: 3, grade: 5, notes: '' }; U.qDraft = null; U.qGenMsg = ''; render(); scrollTop(); };
 ACT.qGenClose = () => { U.qGen = null; render(); };
