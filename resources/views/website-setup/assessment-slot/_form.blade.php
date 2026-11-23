@@ -10,13 +10,10 @@
     </div>
     <div class="col-md-4 mb-3">
         <label class="form-label">{{ ___('settings.start_time') }} <span class="fillable">*</span></label>
-        <input class="form-control ot-input @error('start_time') is-invalid @enderror" name="start_time"
-            value="{{ old('start_time', $s->start_time ?? '') }}" placeholder="e.g. 10:00 AM">
+        <input class="form-control ot-input @error('start_time') is-invalid @enderror" type="time" name="start_time"
+            value="{{ old('start_time', $s ? \Carbon\Carbon::parse($s->start_time)->format('H:i') : '') }}">
         @error('start_time')<div class="invalid-feedback">{{ $message }}</div>@enderror
-    </div>
-    <div class="col-md-4 mb-3">
-        <label class="form-label">{{ ___('settings.end_time') }}</label>
-        <input class="form-control ot-input" name="end_time" value="{{ old('end_time', $s->end_time ?? '') }}" placeholder="e.g. 11:00 AM">
+        <small class="text-secondary">Each meeting runs 15 minutes - the end time is set automatically.</small>
     </div>
 
     <div class="col-md-4 mb-3">

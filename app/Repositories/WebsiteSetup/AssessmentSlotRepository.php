@@ -6,6 +6,7 @@ use App\Enums\Settings;
 use App\Models\WebsiteSetup\AssessmentLead;
 use App\Models\WebsiteSetup\AssessmentSlot;
 use App\Traits\ReturnFormatTrait;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 class AssessmentSlotRepository
@@ -17,6 +18,19 @@ class AssessmentSlotRepository
     public function __construct(AssessmentSlot $slot)
     {
         $this->slot = $slot;
+    }
+
+    /**
+     * The form only asks for a start time (24-hour HH:MM, from the
+     * native time picker) - every meeting is a fixed 15 minutes, so
+     * the end time is always start + 15, stored in the same "h:i A"
+     * display format every other slot already uses (getTimeLabelAttribute,
+     * the public booking calendar) rather than the raw 24-hour value.
+     */
+    private function timesFor(string $rawStart): array
+    {
+        $start = Carbon::createFromFormat('H:i', $rawStart);
+        return [$start->format('g:i A'), $start->copy()->addMinutes(15)->format('g:i A')];
     }
 
     public function getAll()
@@ -34,10 +48,11 @@ class AssessmentSlotRepository
     {
         DB::beginTransaction();
         try {
+            [$start, $end] = $this->timesFor($request->start_time);
             $row               = new $this->slot;
             $row->slot_date    = $request->slot_date;
-            $row->start_time   = $request->start_time;
-            $row->end_time     = $request->end_time;
+            $row->start_time   = $start;
+            $row->end_time     = $end;
             $row->capacity     = max(1, (int) $request->capacity);
             $row->note         = $request->note;
             $row->status       = $request->status;
@@ -54,10 +69,11 @@ class AssessmentSlotRepository
     {
         DB::beginTransaction();
         try {
+            [$start, $end] = $this->timesFor($request->start_time);
             $row               = $this->slot->findOrFail($id);
             $row->slot_date    = $request->slot_date;
-            $row->start_time   = $request->start_time;
-            $row->end_time     = $request->end_time;
+            $row->start_time   = $start;
+            $row->end_time     = $end;
             $row->capacity     = max($row->booked_count, max(1, (int) $request->capacity));
             $row->note         = $request->note;
             $row->status       = $request->status;
