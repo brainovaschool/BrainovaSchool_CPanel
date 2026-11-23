@@ -33,5 +33,11 @@ ${js}
 // serves any file that exists on disk before it ever reaches index.php).
 const outDir = '../../public/assessment-system';
 fs.mkdirSync(outDir, { recursive: true });
-fs.writeFileSync(outDir + '/brainova-demo.html', html);
+// A UTF-8 byte-order mark outranks BOTH the server's Content-Type
+// header and the <meta charset> tag in every browser's own encoding
+// rules - both of those were already correct (verified directly
+// against the live server), so this is a third, even more direct
+// signal in case something about how this specific server serves the
+// file still isn't being read as intended.
+fs.writeFileSync(outDir + '/brainova-demo.html', '﻿' + html);
 console.log('built ' + outDir + '/brainova-demo.html,', html.length, 'chars');
