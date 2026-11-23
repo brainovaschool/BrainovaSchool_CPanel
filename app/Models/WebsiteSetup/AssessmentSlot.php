@@ -20,6 +20,11 @@ class AssessmentSlot extends Model
         return $query->where('status', 1);
     }
 
+    public function leads()
+    {
+        return $this->hasMany(AssessmentLead::class, 'assessment_slot_id');
+    }
+
     /** Seats still available. */
     public function getRemainingAttribute(): int
     {
