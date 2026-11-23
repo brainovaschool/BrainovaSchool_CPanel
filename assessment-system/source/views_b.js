@@ -216,7 +216,7 @@ function reportBody(att, aud, opts = {}) {
   // generic registration form, not this specific lead's booking step.
   const bookLink = new URLSearchParams(location.search).get('bk');
   const bookMeeting = isLeadForParent && bookLink
-    ? `<div class="card"><h2>Next step</h2><p class="muted small" style="margin-bottom:10px">To see the detailed strengths, learning gaps and the teacher’s recommendations, book a short meeting with the concerned teacher.</p><a class="btn teal" href="${esc(bookLink)}" target="_blank" rel="noopener">Book a meeting with the teacher</a></div>`
+    ? `<div class="card"><h2>Next step</h2><p class="muted small" style="margin-bottom:10px">To see which areas your child needs support in, have a meeting with the teacher.</p><a class="btn teal" href="${esc(bookLink)}" target="_blank" rel="noopener">Book a meeting with the teacher</a></div>`
     : '';
   return body + bookMeeting;
 }

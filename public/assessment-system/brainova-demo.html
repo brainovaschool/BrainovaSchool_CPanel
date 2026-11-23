@@ -1965,7 +1965,7 @@ function reportBody(att, aud, opts = {}) {
   // generic registration form, not this specific lead's booking step.
   const bookLink = new URLSearchParams(location.search).get('bk');
   const bookMeeting = isLeadForParent && bookLink
-    ? `<div class="card"><h2>Next step</h2><p class="muted small" style="margin-bottom:10px">To see the detailed strengths, learning gaps and the teacher’s recommendations, book a short meeting with the concerned teacher.</p><a class="btn teal" href="${esc(bookLink)}" target="_blank" rel="noopener">Book a meeting with the teacher</a></div>`
+    ? `<div class="card"><h2>Next step</h2><p class="muted small" style="margin-bottom:10px">To see which areas your child needs support in, have a meeting with the teacher.</p><a class="btn teal" href="${esc(bookLink)}" target="_blank" rel="noopener">Book a meeting with the teacher</a></div>`
     : '';
   return body + bookMeeting;
 }
@@ -2055,10 +2055,12 @@ VIEWS.my = function () {
   // init() quietly retries a few times in the background, so this is
   // "getting ready", not "nothing was ever assigned" for a lead specifically.
   const isLead = String(sid).startsWith('LEAD-');
+  const hasSubmitted = isLead && list.some(a => stateFor(a, sid).at.length > 0);
   const empty = isLead
     ? '<div class="empty">Getting your assessment ready — this usually takes under a minute. This page will update on its own, or you can refresh in a moment.</div>'
     : '<div class="empty">Nothing is assigned to you right now.</div>';
   return `<div class="page-head"><div><h1>Hello, ${esc(st.name.split(' ')[0])}</h1><p>Your assigned assessments. Take your time, read each question carefully and do your own work.</p></div></div>
+  ${hasSubmitted ? '<div class="banner ok">All done! Parent, please check your email for the assessment report.</div>' : ''}
   ${ac.extraPct || ac.largeText ? `<div class="banner info">Your accommodations are active: ${ac.extraPct ? '+' + ac.extraPct + '% extra time' : ''}${ac.extraPct && ac.largeText ? ' and ' : ''}${ac.largeText ? 'larger text' : ''}.</div>` : ''}
   ${list.length ? `<div class="stack">${list.map(a => { const s = stateFor(a, sid), done = s.at.length > 0, sup = supOf(a.id, sid);
     return `<div class="card"><div class="row sp"><div><div class="row" style="margin-bottom:6px"><span class="pill pur">${esc(a.purpose)}</span>${a.mode === 'live' ? '<span class="pill">Live in class</span>' : `<span class="pill">${a.durationMin} minutes</span>`}${a.parentSupervision ? `<span class="pill ${sup ? 'ok' : 'warn'}">${sup ? 'Parent confirmed' : 'Parent confirmation needed'}</span>` : ''}</div><h3>${esc(a.title)}</h3>
@@ -2087,7 +2089,8 @@ VIEWS.parent = function () {
   const par = S.parents.find(p => p.id === U.parentId) || S.parents[0], kids = par.childIds.map(studentById).filter(Boolean);
   const kid = studentById(U.params.kid) || kids[0];
   const list = assignedFor(kid.id), at = S.attempts.filter(a => a.studentId === kid.id && !a.preview).sort((a, b) => b.finished - a.finished), rel = at.filter(a => a.released || pwShared(a))[0];
-  return `<div class="page-head"><div><h1>${esc(kid.name)}</h1><p>Grade ${kid.grade} · Student ID ${esc(kid.id)}</p></div>${kids.length > 1 ? `<div class="chips">${kids.map(k => `<button class="chip" data-a="kid" data-id="${k.id}" aria-pressed="${k.id === kid.id}">${esc(k.name.split(' ')[0])}</button>`).join('')}</div>` : ''}</div>
+  const kidIsLead = String(kid.id || '').startsWith('LEAD-');
+  return `<div class="page-head"><div><h1>${esc(kid.name)}</h1><p>Grade ${kid.grade}${kidIsLead ? '' : ' · Student ID ' + esc(kid.id)}</p></div>${kids.length > 1 ? `<div class="chips">${kids.map(k => `<button class="chip" data-a="kid" data-id="${k.id}" aria-pressed="${k.id === kid.id}">${esc(k.name.split(' ')[0])}</button>`).join('')}</div>` : ''}</div>
   <div class="card"><h2>Assessments</h2>${list.length ? `<div class="stack">${list.map(a => { const sup = supOf(a.id, kid.id), s = stateFor(a, kid.id);
     return `<div class="sub"><div class="row sp"><div><b>${esc(a.title)}</b><div class="muted small">${a.mode === 'live' ? 'Live in class' : a.durationMin + ' minutes'} · ${s.at.length ? 'Submitted' : 'Not started'}</div></div><div class="row">${a.parentSupervision ? (sup ? `<span class="pill ok">Supervision confirmed</span>` : `<button class="btn sm" data-a="parOpen" data-id="${a.id}">Confirm supervision</button>`) : '<span class="pill">No supervision needed</span>'}</div></div>
     ${U.parOpen === a.id && !sup ? `<div class="stack" style="margin-top:10px">${SUP_ITEMS.map((t, i) => `<label class="chk"><input type="checkbox" data-a="supTick" data-i="${i}" ${U.supTick && U.supTick[i] ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}${field('Your name', `<input type="text" value="${esc(U.supName || par.name)}" data-m="supName">`)}<div><button class="btn" data-a="supConfirm" data-id="${a.id}" data-s="${kid.id}">Confirm</button></div></div>` : ''}</div>`; }).join('')}</div>` : '<p class="muted">No assessments are assigned.</p>'}</div>
