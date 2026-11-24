@@ -104,6 +104,9 @@ ACT.bankBulkDelete = () => {
   save(); render(); toast(`${ids.size} question${ids.size === 1 ? '' : 's'} deleted.`);
 };
 ACT.exportBank = () => saveFile('brainova-question-bank.csv', EXPORTS.bank());
+ACT.scanMojibake = () => { const fixes = scanMojibake(); U.mojibakeFixes = fixes; render(); if (!fixes.length) toast('No broken text found.'); };
+ACT.applyMojibake = () => { const fixes = U.mojibakeFixes || []; applyMojibakeFixes(fixes); U.mojibakeFixes = null; save(); render(); toast(`Fixed broken text in ${new Set(fixes.map(f => f.id)).size} question${new Set(fixes.map(f => f.id)).size === 1 ? '' : 's'}.`); };
+ACT.cancelMojibake = () => { U.mojibakeFixes = null; render(); };
 ACT.tplBank = () => saveFile('brainova-question-import-template.csv', toCSV([['subject', 'topic', 'grade_min', 'grade_max', 'difficulty', 'type', 'text', 'option_a', 'option_b', 'option_c', 'option_d', 'answer', 'explanation', 'objective', 'time_sec', 'marks', 'prerequisite', 'source'], ['Mathematics', 'Addition', 2, 4, 'S', 'mcq', 'What is 24 + 13?', '35', '37', '36', '38', 'b', '24 + 13 = 37', 'Add two-digit numbers', 30, 1, '', 'Teacher'], ['English', 'Tenses', 4, 6, 'S', 'fill', 'Yesterday I ____ (go) to school.', '', '', '', '', 'went', '', 'Use simple past', 30, 1, '', 'Teacher']]));
 ACT.importQ = async el => {
   const f = el.files[0]; if (!f) return;

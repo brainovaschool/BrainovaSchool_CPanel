@@ -1376,6 +1376,42 @@ function leadIntakeConflicts(a) {
   return S.assessments.filter(o => o.id !== a.id && o.status === 'published' && o.leadIntake
     && o.grades.some(g => a.grades.includes(g)) && subjectsOf(o).some(s => subs.has(s)) && syllabusOverlap(a, o));
 }
+// Repairs text that was correctly written in UTF-8 (×, ÷, −, curly
+// quotes, dashes...) but got read somewhere along the way - a CSV
+// import, a copy/paste, a re-save in Excel - as if it were Windows-1252,
+// turning each multi-byte character into 2-3 garbled ones (×  becomes
+// "Ã—", an apostrophe becomes "â€™", and so on). That garbled TEXT is
+// what actually got stored, so fixing the import code afterwards never
+// un-breaks it - only reversing the same byte-for-byte misreading does.
+// Standard Windows-1252 mapping for bytes 0x80-0x9F (0xA0-0xFF is
+// identical to Unicode there, and 0x00-0x7F is plain ASCII either way).
+const CP1252_HI = { 0x80: '€', 0x82: '‚', 0x83: 'ƒ', 0x84: '„', 0x85: '…', 0x86: '†', 0x87: '‡', 0x88: 'ˆ', 0x89: '‰', 0x8A: 'Š', 0x8B: '‹', 0x8C: 'Œ', 0x8E: 'Ž', 0x91: '‘', 0x92: '’', 0x93: '“', 0x94: '”', 0x95: '•', 0x96: '–', 0x97: '—', 0x98: '˜', 0x99: '™', 0x9A: 'š', 0x9B: '›', 0x9C: 'œ', 0x9E: 'ž', 0x9F: 'Ÿ' };
+const CP1252_REV = {}; Object.keys(CP1252_HI).forEach(b => { CP1252_REV[CP1252_HI[b]] = +b; });
+function decodeMojibake(str) {
+  if (!str) return null;
+  const bytes = [];
+  for (const ch of str) {
+    const cp = ch.codePointAt(0);
+    if (cp < 0x80 || (cp >= 0xA0 && cp <= 0xFF)) bytes.push(cp);
+    else if (CP1252_REV[ch] !== undefined) bytes.push(CP1252_REV[ch]);
+    else return null; // not a character Windows-1252 could have produced - leave untouched
+  }
+  try { const fixed = new TextDecoder('utf-8', { fatal: true }).decode(new Uint8Array(bytes)); return fixed !== str ? fixed : null; }
+  catch (e) { return null; }
+}
+const MOJIBAKE_FIELDS = ['text', 'explanation', 'objective', 'passage'];
+function scanMojibake() {
+  const fixes = [];
+  S.bank.forEach(q => {
+    MOJIBAKE_FIELDS.forEach(f => { const r = decodeMojibake(q[f]); if (r) fixes.push({ id: q.id, field: f, before: q[f], after: r }); });
+    (q.options || []).forEach((o, i) => { const r = decodeMojibake(o.t); if (r) fixes.push({ id: q.id, field: 'opt' + i, before: o.t, after: r }); });
+  });
+  return fixes;
+}
+function applyMojibakeFixes(fixes) {
+  const byId = new Map(); fixes.forEach(fx => { if (!byId.has(fx.id)) byId.set(fx.id, []); byId.get(fx.id).push(fx); });
+  S.bank.forEach(q => { const fs = byId.get(q.id); if (!fs) return; fs.forEach(fx => { if (fx.field.startsWith('opt')) q.options[+fx.field.slice(3)].t = fx.after; else q[fx.field] = fx.after; }); });
+}
 function attemptsOf(asmtId, studentId) { return S.attempts.filter(a => a.asmtId === asmtId && a.studentId === studentId && !a.preview); }
 function accomFor(sid) { const s = studentById(sid); return s && s.accom ? s.accom : { extraPct: 0, largeText: false }; }
 
@@ -1866,8 +1902,9 @@ VIEWS.bank = function () {
   const draftN = S.bank.filter(q => q.status !== 'approved').length;
   const cov = SYLLABUS.flatMap(s => s.units.flatMap(u => u.topics.map(t => ({ s: s.subject, t, m: topicMeta(s.subject, t), d: S.bank.filter(q => q.subject === s.subject && q.topic === t && q.status !== 'approved').length }))));
   return `<div class="page-head"><div><h1>Question bank</h1><p>${S.bank.length} questions · ${S.bank.length - draftN} approved · ${draftN} awaiting review. Only approved questions are used in assessments.</p></div>
-    <div class="row"><button class="btn" data-a="qNew">Add question</button><button class="btn ghost" data-a="qGenOpen">Generate questions</button><label class="btn ghost" for="csvq" style="cursor:pointer">Import CSV</label><input id="csvq" type="file" accept=".csv,text/csv" hidden data-a="importQ"><button class="btn ghost" data-a="exportBank">Export CSV</button><button class="btn ghost" data-a="tplBank">CSV template</button><button class="btn ghost" data-a="qGuideOpen">Writing guide</button></div></div>
+    <div class="row"><button class="btn" data-a="qNew">Add question</button><button class="btn ghost" data-a="qGenOpen">Generate questions</button><label class="btn ghost" for="csvq" style="cursor:pointer">Import CSV</label><input id="csvq" type="file" accept=".csv,text/csv" hidden data-a="importQ"><button class="btn ghost" data-a="exportBank">Export CSV</button><button class="btn ghost" data-a="tplBank">CSV template</button><button class="btn ghost" data-a="qGuideOpen">Writing guide</button><button class="btn ghost" data-a="scanMojibake">Check for broken text (×, ÷, apostrophes…)</button></div></div>
     ${U.qGuide ? guideCard() : ''}
+    ${U.mojibakeFixes ? mojibakeCard() : ''}
     ${U.qGen ? genPanel() : ''}${U.qDraft ? qEditor() : ''}
     <details class="card"><summary>Coverage by topic and difficulty</summary><div class="tw" style="margin-top:10px"><table><thead><tr><th>Subject</th><th>Topic</th><th class="num">Strengthen</th><th class="num">Hard</th><th class="num">Extend</th><th class="num">Challenging</th><th class="num">Mastery</th><th class="num">Exceptional</th><th class="num">Drafts</th></tr></thead><tbody>${cov.map(c => `<tr><td>${esc(c.s)}</td><td>${esc(c.t)}</td>${DIFF_KEYS.map(k => `<td class="num">${c.m[k] ? c.m[k] : '<span class="pill warn">0</span>'}</td>`).join('')}<td class="num">${c.d || ''}</td></tr>`).join('')}</tbody></table></div></details>
     <div class="card"><div class="filters">${field('Search', `<input type="search" id="bsearch" data-m="bankFilter.q" data-live value="${esc(f.q)}" placeholder="Text, ID or objective">`)}
@@ -1880,6 +1917,15 @@ VIEWS.bank = function () {
     ${list.length ? `<div class="tw"><table><thead><tr><th></th><th>ID</th><th>Topic</th><th>Level</th><th>Grades</th><th>Type</th><th>Question</th><th>Status</th><th></th></tr></thead><tbody>${list.slice(0, lim).map(q => `<tr><td><input type="checkbox" data-a="bankTgl" data-id="${q.id}" ${(U.bankSel || []).includes(q.id) ? 'checked' : ''}></td><td class="mono small nowrap">${esc(q.id)}</td><td>${esc(q.topic)}<br><span class="muted small">${esc(q.subject)}</span></td><td>${DIFF[q.diff].name}</td><td class="nowrap">${q.grades ? `${q.grades[0]}–${q.grades[1]}` : '<span class="pill warn">None</span>'}</td><td>${esc(qTypeName(q.type))}</td><td style="min-width:260px">${esc(q.text.slice(0, 120))}${q.text.length > 120 ? '…' : ''}</td>
       <td><span class="pill ${q.status === 'approved' ? 'ok' : 'warn'}">${q.status === 'approved' ? 'Approved' : 'Draft'}</span></td><td class="nowrap"><button class="btn sm ghost" data-a="qEdit" data-id="${q.id}">Open</button></td></tr>`).join('')}</tbody></table></div>${list.length > lim ? `<div class="row" style="margin-top:10px"><button class="btn ghost sm" data-a="bankMore">Show more</button></div>` : ''}` : '<div class="empty">No questions match.</div>'}</div>`;
 };
+function mojibakeCard() {
+  const fixes = U.mojibakeFixes, n = new Set(fixes.map(f => f.id)).size;
+  if (!fixes.length) return '';
+  return `<div class="card lift"><div class="row sp"><h2>Broken text found in ${n} question${n === 1 ? '' : 's'}</h2><button class="btn sm ghost" data-a="cancelMojibake">Cancel</button></div>
+    <p class="muted small">These questions were saved with text that got garbled somewhere along the way (an import, a copy/paste, a re-save in another program). This reverses exactly that - it never touches text that already looks right.</p>
+    <div class="tw" style="max-height:300px;overflow:auto;margin-top:10px"><table><thead><tr><th>ID</th><th>Before</th><th>After</th></tr></thead><tbody>${fixes.slice(0, 30).map(f => `<tr><td class="mono small nowrap">${esc(f.id)}</td><td class="small" style="color:#b42318">${esc(f.before)}</td><td class="small" style="color:#15803d">${esc(f.after)}</td></tr>`).join('')}</tbody></table></div>
+    ${fixes.length > 30 ? `<p class="muted small" style="margin-top:8px">Showing the first 30 of ${fixes.length} changes.</p>` : ''}
+    <div class="row" style="margin-top:12px"><button class="btn teal" data-a="applyMojibake">Fix ${n} question${n === 1 ? '' : 's'}</button></div></div>`;
+}
 function genPanel() {
   const g = U.qGen, aiNote = 'AI drafts can contain mistakes. Check every answer key and the age level before approving.';
   return `<div class="card lift"><div class="row sp"><h2>Generate questions</h2><button class="btn sm ghost" data-a="qGenClose">Close</button></div>
@@ -2951,6 +2997,9 @@ ACT.bankBulkDelete = () => {
   save(); render(); toast(`${ids.size} question${ids.size === 1 ? '' : 's'} deleted.`);
 };
 ACT.exportBank = () => saveFile('brainova-question-bank.csv', EXPORTS.bank());
+ACT.scanMojibake = () => { const fixes = scanMojibake(); U.mojibakeFixes = fixes; render(); if (!fixes.length) toast('No broken text found.'); };
+ACT.applyMojibake = () => { const fixes = U.mojibakeFixes || []; applyMojibakeFixes(fixes); U.mojibakeFixes = null; save(); render(); toast(`Fixed broken text in ${new Set(fixes.map(f => f.id)).size} question${new Set(fixes.map(f => f.id)).size === 1 ? '' : 's'}.`); };
+ACT.cancelMojibake = () => { U.mojibakeFixes = null; render(); };
 ACT.tplBank = () => saveFile('brainova-question-import-template.csv', toCSV([['subject', 'topic', 'grade_min', 'grade_max', 'difficulty', 'type', 'text', 'option_a', 'option_b', 'option_c', 'option_d', 'answer', 'explanation', 'objective', 'time_sec', 'marks', 'prerequisite', 'source'], ['Mathematics', 'Addition', 2, 4, 'S', 'mcq', 'What is 24 + 13?', '35', '37', '36', '38', 'b', '24 + 13 = 37', 'Add two-digit numbers', 30, 1, '', 'Teacher'], ['English', 'Tenses', 4, 6, 'S', 'fill', 'Yesterday I ____ (go) to school.', '', '', '', '', 'went', '', 'Use simple past', 30, 1, '', 'Teacher']]));
 ACT.importQ = async el => {
   const f = el.files[0]; if (!f) return;
