@@ -137,11 +137,16 @@ function selectedTopic(d, s, t) { return d.topics.some(x => x.subject === s && x
 // could be used," not "what one student would actually get" (that
 // exact draw is still Step 5's own preview).
 function draftPoolPreview(d) {
-  if (!d.topics.length) return '<div class="card"><h3>Matching questions</h3><p class="muted small">Select at least one topic (Step 2) to see matching questions here.</p></div>';
-  const pool = poolFor(S.bank, d, d.model === 'adaptive' ? undefined : 0), lim = 100;
-  return `<div class="card"><div class="row sp"><h3>Matching questions in the bank</h3><span class="pill ${pool.length ? 'ok' : 'warn'}">${pool.length}</span></div>
+  const above = d.model === 'adaptive' ? undefined : 0;
+  const up = above === undefined ? stretchCap(d) : above;
+  const keys = d.topics.length ? new Set(d.topics.map(t => topicKey(t.subject, t.topic))) : null;
+  const ex = new Set(d.excludeObj || []);
+  const pool = S.bank.filter(q => q.status === 'approved' && (!keys || keys.has(topicKey(q.subject, q.topic))) && gradeOk(q, d, up) && !ex.has(q.subject + '|' + q.topic + '|' + q.objective));
+  const lim = 100;
+  const scope = keys ? '' : ' <span class="muted small">(every subject and topic - pick topics in Step 2 to narrow this down)</span>';
+  return `<div class="card"><div class="row sp"><h3>Matching questions in the bank${scope}</h3><span class="pill ${pool.length ? 'ok' : 'warn'}">${pool.length}</span></div>
     ${pool.length ? `<div class="tw" style="max-height:380px;overflow:auto"><table><thead><tr><th>ID</th><th>Topic</th><th>Level</th><th>Grades</th><th>Type</th><th>Question</th></tr></thead><tbody>${pool.slice(0, lim).map(q => `<tr><td class="mono small nowrap">${esc(q.id)}</td><td>${esc(q.topic)}<br><span class="muted small">${esc(q.subject)}</span></td><td>${DIFF[q.diff].name}</td><td class="nowrap">${q.grades ? `${q.grades[0]}–${q.grades[1]}` : '<span class="pill warn">None</span>'}</td><td>${esc(qTypeName(q.type))}</td><td style="min-width:220px">${esc(q.text.slice(0, 110))}${q.text.length > 110 ? '…' : ''}</td></tr>`).join('')}</tbody></table></div>${pool.length > lim ? `<p class="muted small" style="margin-top:8px">Showing the first ${lim} of ${pool.length}.</p>` : ''}`
-      : '<p class="muted small">No approved questions match these topics and grades yet.</p>'}</div>`;
+      : '<p class="muted small">No approved questions match these grades and topics yet.</p>'}</div>`;
 }
 VIEWS.builder = function () {
   const d = U.draft; if (!d) { return '<div class="empty">No assessment is being edited. <button class="btn sm" data-a="newAsmt">Start a new one</button></div>'; }
