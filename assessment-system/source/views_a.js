@@ -128,11 +128,27 @@ const PURPOSES = ['Diagnostic', 'Admission', 'Placement', 'Academic', 'Topic pro
 const STEPS = ['Basics', 'Subjects and topics', 'Model and difficulty', 'Delivery and rules', 'Preview and publish'];
 function objectivesFor(subject, topic) { return [...new Set(S.bank.filter(q => q.subject === subject && q.topic === topic).map(q => q.objective))]; }
 function selectedTopic(d, s, t) { return d.topics.some(x => x.subject === s && x.topic === t); }
+// Live, read-only view of every bank question the draft's current
+// topics/grades would actually draw from - shown on every builder
+// step (not just the final preview) so changing a grade chip, a
+// topic checkbox or anything else immediately shows its effect here,
+// the same table the Question bank itself uses. Ignores the
+// difficulty distribution/adaptive stretch on purpose - this is "what
+// could be used," not "what one student would actually get" (that
+// exact draw is still Step 5's own preview).
+function draftPoolPreview(d) {
+  if (!d.topics.length) return '<div class="card"><h3>Matching questions</h3><p class="muted small">Select at least one topic (Step 2) to see matching questions here.</p></div>';
+  const pool = poolFor(S.bank, d, 0), lim = 100;
+  return `<div class="card"><div class="row sp"><h3>Matching questions in the bank</h3><span class="pill ${pool.length ? 'ok' : 'warn'}">${pool.length}</span></div>
+    ${pool.length ? `<div class="tw" style="max-height:380px;overflow:auto"><table><thead><tr><th>ID</th><th>Topic</th><th>Level</th><th>Grades</th><th>Type</th><th>Question</th></tr></thead><tbody>${pool.slice(0, lim).map(q => `<tr><td class="mono small nowrap">${esc(q.id)}</td><td>${esc(q.topic)}<br><span class="muted small">${esc(q.subject)}</span></td><td>${DIFF[q.diff].name}</td><td class="nowrap">${q.grades ? `${q.grades[0]}–${q.grades[1]}` : '<span class="pill warn">None</span>'}</td><td>${esc(qTypeName(q.type))}</td><td style="min-width:220px">${esc(q.text.slice(0, 110))}${q.text.length > 110 ? '…' : ''}</td></tr>`).join('')}</tbody></table></div>${pool.length > lim ? `<p class="muted small" style="margin-top:8px">Showing the first ${lim} of ${pool.length}.</p>` : ''}`
+      : '<p class="muted small">No approved questions match these topics and grades yet.</p>'}</div>`;
+}
 VIEWS.builder = function () {
   const d = U.draft; if (!d) { return '<div class="empty">No assessment is being edited. <button class="btn sm" data-a="newAsmt">Start a new one</button></div>'; }
   const body = [null, bStep1, bStep2, bStep3, bStep4, bStep5][U.step](d);
   return `<div class="page-head"><div><h1>${d.status === 'draft' && S.assessments.some(a => a.id === d.id) ? 'Edit assessment' : 'New assessment'}</h1><p>${esc(d.title || 'Untitled')}</p></div><div class="row"><button class="btn ghost" data-a="saveDraft">Save draft</button><button class="btn ghost" data-a="go" data-v="assess">Close</button></div></div>
     <div class="steps" role="tablist">${STEPS.map((s, i) => `<button data-a="step" data-n="${i + 1}" ${U.step === i + 1 ? 'aria-current="step"' : ''}>${i + 1}. ${s}</button>`).join('')}</div>${body}
+    ${draftPoolPreview(d)}
     <div class="row sp"><button class="btn ghost" data-a="step" data-n="${Math.max(1, U.step - 1)}" ${U.step === 1 ? 'disabled' : ''}>Back</button>${U.step < 5 ? `<button class="btn" data-a="step" data-n="${U.step + 1}">Continue</button>` : ''}</div>`;
 };
 function bStep1(d) {
