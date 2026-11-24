@@ -144,8 +144,22 @@ function draftPoolPreview(d) {
   const pool = S.bank.filter(q => q.status === 'approved' && (!keys || keys.has(topicKey(q.subject, q.topic))) && gradeOk(q, d, up) && !ex.has(q.subject + '|' + q.topic + '|' + q.objective));
   const lim = 100;
   const scope = keys ? '' : ' <span class="muted small">(every subject and topic - pick topics in Step 2 to narrow this down)</span>';
-  return `<div class="card"><div class="row sp"><h3>Matching questions in the bank${scope}</h3><span class="pill ${pool.length ? 'ok' : 'warn'}">${pool.length}</span></div>
-    ${pool.length ? `<div class="tw" style="max-height:380px;overflow:auto"><table><thead><tr><th>ID</th><th>Topic</th><th>Level</th><th>Grades</th><th>Type</th><th>Question</th></tr></thead><tbody>${pool.slice(0, lim).map(q => `<tr><td class="mono small nowrap">${esc(q.id)}</td><td>${esc(q.topic)}<br><span class="muted small">${esc(q.subject)}</span></td><td>${DIFF[q.diff].name}</td><td class="nowrap">${q.grades ? `${q.grades[0]}–${q.grades[1]}` : '<span class="pill warn">None</span>'}</td><td>${esc(qTypeName(q.type))}</td><td style="min-width:220px">${esc(q.text.slice(0, 110))}${q.text.length > 110 ? '…' : ''}</td></tr>`).join('')}</tbody></table></div>${pool.length > lim ? `<p class="muted small" style="margin-top:8px">Showing the first ${lim} of ${pool.length}.</p>` : ''}`
+  // For a fixed-difficulty test (once topics are picked), this table
+  // IS the question list - a checked row is used by every student,
+  // nobody gets a different random draw. The first time there's
+  // something to pick from, seed it from one random draw (the same
+  // logic a real attempt used to make on its own) so there's always a
+  // sensible starting point; after that only checking/unchecking rows
+  // here changes anything, same as the Question bank's own search is
+  // never auto-reset once touched.
+  const pinnable = d.model === 'fixed' && !!keys;
+  if (pinnable && !(d.pinnedIds || []).length && pool.length) d.pinnedIds = buildFixed(d, S.bank, 'seed-' + d.id).items.map(q => q.id);
+  const pinned = new Set(pinnable ? (d.pinnedIds || []) : []);
+  const shown = pinnable ? pool.slice().sort((x, y) => (pinned.has(y.id) ? 1 : 0) - (pinned.has(x.id) ? 1 : 0)) : pool;
+  const pinnedCount = pool.filter(q => pinned.has(q.id)).length;
+  return `<div class="card"><div class="row sp"><h3>Matching questions in the bank${scope}</h3><span class="row">${pinnable ? `<span class="pill ${pinnedCount ? 'ok' : 'warn'}">${pinnedCount} selected</span>` : ''}<span class="pill ${pool.length ? '' : 'warn'}">${pool.length} matching</span></span></div>
+    ${pinnable ? '<p class="muted small" style="margin-bottom:8px">Every student gets exactly the checked questions below - uncheck one to drop it, check another to use it instead.</p>' : ''}
+    ${pool.length ? `<div class="tw" style="max-height:380px;overflow:auto"><table><thead><tr>${pinnable ? '<th></th>' : ''}<th>ID</th><th>Topic</th><th>Level</th><th>Grades</th><th>Type</th><th>Question</th></tr></thead><tbody>${shown.slice(0, lim).map(q => `<tr>${pinnable ? `<td><input type="checkbox" data-a="tglPinnedQ" data-id="${q.id}" ${pinned.has(q.id) ? 'checked' : ''}></td>` : ''}<td class="mono small nowrap">${esc(q.id)}</td><td>${esc(q.topic)}<br><span class="muted small">${esc(q.subject)}</span></td><td>${DIFF[q.diff].name}</td><td class="nowrap">${q.grades ? `${q.grades[0]}–${q.grades[1]}` : '<span class="pill warn">None</span>'}</td><td>${esc(qTypeName(q.type))}</td><td style="min-width:220px">${esc(q.text.slice(0, 110))}${q.text.length > 110 ? '…' : ''}</td></tr>`).join('')}</tbody></table></div>${pool.length > lim ? `<p class="muted small" style="margin-top:8px">Showing the first ${lim} of ${pool.length}${pinnable ? ', selected ones first' : ''}.</p>` : ''}`
       : '<p class="muted small">No approved questions match these grades and topics yet.</p>'}</div>`;
 }
 VIEWS.builder = function () {
@@ -233,6 +247,7 @@ function validateDraft(d) {
   if (d.application === 'course' && !d.courseId) warn.push('No course selected, so placement will use grade-level wording.');
   if (d.model === 'fixed' && sumBy(DIFF_KEYS, k => +d.dist[k] || 0) < 1) err.push('Set at least one question in the difficulty distribution.');
   if (d.topics.length && !pool.length) err.push('No approved questions exist for the chosen topics and grades. Add or generate questions in the Question bank, or change the selection.');
+  if (d.model === 'fixed' && d.topics.length && pool.length && !(d.pinnedIds || []).length) err.push('No questions are selected. Check at least one row in "Matching questions in the bank" below.');
   counts.forEach(c => { if (!(c.S + c.H + c.E)) warn.push(`${c.topic} has no approved questions and will not be assessed.`); });
   if (d.model === 'fixed' && pool.length) { const fx = buildFixed(d, S.bank, 'v'); fx.shortages.forEach(s => warn.push(`Not enough ${DIFF[s.diff].name} questions: ${s.missing} fewer than requested will be used.`)); if (d.topics.length > sumBy(DIFF_KEYS, k => +d.dist[k] || 0)) warn.push('There are more topics than questions, so some topics will not appear.'); }
   if (d.model === 'adaptive') { counts.forEach(c => { if ((c.S + c.H + c.E) && (c.S + c.H + c.E) < d.adaptive.minPer + 2) warn.push(`${c.topic}: the pool (${c.S + c.H + c.E}) is small for adaptive testing. Add more questions at each level.`); });
@@ -243,13 +258,12 @@ function validateDraft(d) {
 }
 function bStep5(d) {
   const v = validateDraft(d), c = courseOf(d);
-  const sampleSeed = 'pv' + (U.pvSeed || 1);
   let body = '';
-  if (d.model === 'fixed' && v.pool.length) {
-    const fx = buildFixed(d, S.bank, sampleSeed);
-    body = `<div class="card"><div class="row sp"><h3>Questions selected (one example draw)</h3><button class="btn sm ghost" data-a="redraw">Draw another set</button></div><p class="muted small" style="margin-bottom:8px">Each student receives their own draw from the pool, so students see different variants of similar questions.</p>
-      <div class="tw"><table><thead><tr><th>#</th><th>Topic</th><th>Difficulty</th><th>Type</th><th>Question</th></tr></thead><tbody>${fx.items.map((q, i) => `<tr><td>${i + 1}</td><td>${esc(q.topic)}</td><td>${DIFF[q.diff].name}</td><td>${q.type}</td><td>${esc(q.text)}</td></tr>`).join('')}</tbody></table></div></div>`;
-  } else if (d.model === 'adaptive' && v.pool.length) {
+  // A fixed-difficulty test's exact questions are now whatever is
+  // checked in the "Matching questions in the bank" table shown on
+  // every step (see draftPoolPreview) - every student gets that same
+  // set, so there is no "one example draw" to show separately here.
+  if (d.model === 'adaptive' && v.pool.length) {
     const th = U.simTheta == null ? 0 : U.simTheta, fake = { id: 'sim', name: 'Simulated student', grade: d.grades[0] || 5 };
     const at = simulateAttempt(d, S.bank, fake, { theta: th, speed: 1, skipP: 0 }, 'prev' + th + (U.pvSeed || 1), Date.now()), an = analyze(at, levels(), c);
     body = `<div class="card"><h3>Test the adaptive logic</h3><p class="muted small">Move the slider to simulate a student of a given ability and see how difficulty follows the answers. Nothing is saved.</p>
@@ -260,7 +274,7 @@ function bStep5(d) {
   }
   const grade = d.grades;
   const candidates = S.students.filter(s => !grade.length || grade.includes(s.grade));
-  return `<div class="card"><h3>Summary</h3><div class="tiles" style="margin-top:8px"><div class="tile"><b>${d.topics.length}</b><span>Topics</span></div><div class="tile"><b>${d.model === 'fixed' ? sumBy(DIFF_KEYS, k => +d.dist[k] || 0) : d.adaptive.min + '–' + d.adaptive.max}</b><span>Questions</span></div>
+  return `<div class="card"><h3>Summary</h3><div class="tiles" style="margin-top:8px"><div class="tile"><b>${d.topics.length}</b><span>Topics</span></div><div class="tile"><b>${d.model === 'fixed' ? (d.pinnedIds || []).length : d.adaptive.min + '–' + d.adaptive.max}</b><span>Questions</span></div>
     <div class="tile"><b>${d.mode === 'live' ? (d.perQuestionSec || 30) + 's' : d.durationMin + ' min'}</b><span>${d.mode === 'live' ? 'Per question' : 'Duration'}</span></div><div class="tile"><b>${d.mode === 'live' ? 'Live' : 'Solo'}</b><span>Mode</span></div></div>
     <p class="small muted" style="margin-top:10px">${esc(d.purpose)} · ${c ? esc(c.name) : 'School assessment'} · ${d.grades.length ? 'Grade ' + d.grades.join(', ') : 'All grades'} · ${d.model === 'adaptive' ? 'Adaptive' : 'Fixed difficulty'} · ${d.parentSupervision ? 'Parent supervision required' : 'No parent supervision step'}</p></div>
     ${v.err.length ? `<div class="banner bad"><div><b>Fix before publishing</b><ul class="ul">${v.err.map(e => `<li>${esc(e)}</li>`).join('')}</ul></div></div>` : ''}${v.warn.length ? `<div class="banner warn"><div><b>Check these</b><ul class="ul">${v.warn.map(e => `<li>${esc(e)}</li>`).join('')}</ul></div></div>` : ''}${body}

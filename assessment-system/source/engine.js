@@ -565,6 +565,19 @@ function poolCounts(pool, topics) {
   return topics.map(t => { const row = { subject: t.subject, topic: t.topic, S: 0, H: 0, E: 0, C: 0, M: 0, X: 0 }; pool.forEach(q => { if (q.subject === t.subject && q.topic === t.topic) row[q.diff]++; }); return row; });
 }
 function buildFixed(a, bank, seed) {
+  // Once questions have been hand-picked (the checkboxes on the
+  // Builder's own live "matching questions" table - see
+  // draftPoolPreview in views_a.js), that exact list is the test for
+  // every student, not a fresh random draw. A pinned id that no longer
+  // approves or matches the current topics/grades is silently dropped
+  // rather than erroring, since the admin may have changed those since.
+  if (a.pinnedIds && a.pinnedIds.length) {
+    const byId = new Map(poolFor(bank, a, 0).map(q => [q.id, q]));
+    let items = a.pinnedIds.map(id => byId.get(id)).filter(Boolean);
+    const topics = a.topics.map(t => t.topic);
+    items = a.shuffleQ ? rng(seed).shuffle(items) : items.slice().sort((x, y) => DIFF_KEYS.indexOf(x.diff) - DIFF_KEYS.indexOf(y.diff) || topics.indexOf(x.topic) - topics.indexOf(y.topic));
+    return { items, shortages: [] };
+  }
   const R = rng(seed), pool = poolFor(bank, a, 0), topics = a.topics.map(t => t.topic), items = [], shortages = [], used = new Set();
   const byTD = {};
   pool.forEach(q => { const k = q.topic + '|' + q.diff; (byTD[k] = byTD[k] || []).push(q); });
