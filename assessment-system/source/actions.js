@@ -58,6 +58,7 @@ ACT.asmtResults = el => { U.resTab = 'class'; go('results', { asmt: el.dataset.i
 ACT.liveSetup = el => { U.liveSetup = { asmtId: el.dataset.id, ids: null }; go('live'); };
 ACT.step = el => { U.step = +el.dataset.n; render(); scrollTop(); };
 ACT.tglGrade = el => { const g = +el.dataset.g, a = U.draft.grades, i = a.indexOf(g); if (i >= 0) a.splice(i, 1); else a.push(g); a.sort((x, y) => x - y); render(); };
+ACT.tglSyllabus = el => { const s = el.dataset.s, a = U.draft.syllabus = U.draft.syllabus || [], i = a.indexOf(s); if (i >= 0) a.splice(i, 1); else a.push(s); render(); };
 ACT.useCourseTopics = () => { const c = courseOf(U.draft); if (!c) return; U.draft.topics = c.topics.map(t => ({ subject: c.subject, topic: t })); U.draft._subs = [c.subject]; if (!U.draft.title) U.draft.title = c.name + ' placement'; render(); toast('Course topics selected.'); };
 function syl(s) { return SYLLABUS.find(x => x.subject === s); }
 ACT.tglSubject = el => { const s = el.dataset.s, d = U.draft, act = new Set(d.topics.map(t => t.subject).concat(d._subs || []));

@@ -53,11 +53,18 @@ function subjectsOf(a) { return [...new Set(a.topics.map(t => t.subject))]; }
 // them. If two published, leadIntake assessments ever share both, the
 // server picks one silently (whichever the Sheet returns first) - this
 // flags that situation here, before it ever reaches a real family.
+// An empty syllabus list means "any syllabus" (the same "leave empty
+// to ignore" convention grades already uses), so it overlaps with
+// everything, including another assessment's own empty list.
+function syllabusOverlap(a, b) {
+  if (!(a.syllabus || []).length || !(b.syllabus || []).length) return true;
+  return a.syllabus.some(s => b.syllabus.includes(s));
+}
 function leadIntakeConflicts(a) {
   if (!a.leadIntake || !a.grades.length) return [];
   const subs = new Set(subjectsOf(a));
   return S.assessments.filter(o => o.id !== a.id && o.status === 'published' && o.leadIntake
-    && o.grades.some(g => a.grades.includes(g)) && subjectsOf(o).some(s => subs.has(s)));
+    && o.grades.some(g => a.grades.includes(g)) && subjectsOf(o).some(s => subs.has(s)) && syllabusOverlap(a, o));
 }
 function attemptsOf(asmtId, studentId) { return S.attempts.filter(a => a.asmtId === asmtId && a.studentId === studentId && !a.preview); }
 function accomFor(sid) { const s = studentById(sid); return s && s.accom ? s.accom : { extraPct: 0, largeText: false }; }
@@ -66,8 +73,13 @@ function accomFor(sid) { const s = studentById(sid); return s && s.accom ? s.acc
 function newAsmt(over) {
   return Object.assign({ id: uid('asm'), title: '', purpose: 'Diagnostic', application: 'school', courseId: '', grades: [5], ageGroup: '9–11 years', stretch: 1, level: 'Grade level', outcomes: '', instructions: 'Read each question carefully and answer on your own. You may not use AI tools, other people or other devices.',
     topics: [], excludeObj: [], model: 'fixed', dist: { S: 6, H: 8, E: 6 }, adaptive: { min: 10, max: 20, minPer: 3, sdTarget: 0.7, startB: -0.5, probe: true }, mode: 'independent', durationMin: 30, perQuestionSec: 0, nav: 'free', allowBack: true, allowSkip: true, allowChange: true,
-    shuffleQ: false, shuffleOpts: true, attempts: 1, autoSubmit: true, feedback: 'release', resultVis: 'release', passPct: 0, parentSupervision: false, fullscreen: true, autoAdvance: false, status: 'draft', assignedTo: [], leadIntake: false, created: Date.now() }, over || {});
+    shuffleQ: false, shuffleOpts: true, attempts: 1, autoSubmit: true, feedback: 'release', resultVis: 'release', passPct: 0, parentSupervision: false, fullscreen: true, autoAdvance: false, status: 'draft', assignedTo: [], leadIntake: false, syllabus: [], created: Date.now() }, over || {});
 }
+// Same five choices the public booking form itself offers (see
+// assessment-register.blade.php / book-assessment.blade.php) - kept in
+// sync by hand since an assessment's syllabus tag and a parent's
+// syllabus answer need to speak the same values to ever match.
+const SYLLABUSES = ['SNC', 'Cambridge', 'Oxford', 'Pearson Edexcel', 'Other'];
 const mathTopics = ts => ts.map(t => ({ subject: 'Mathematics', topic: t }));
 function seedBase() {
   const now = Date.now(), day = 86400000;
