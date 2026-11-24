@@ -46,7 +46,7 @@ ACT.parOpen = el => { U.parOpen = el.dataset.id; U.supTick = []; render(); };
 function persistDraft() { const d = U.draft, i = S.assessments.findIndex(a => a.id === d.id); if (i >= 0) S.assessments[i] = JSON.parse(JSON.stringify(d)); else S.assessments.unshift(JSON.parse(JSON.stringify(d))); save(); }
 ACT.newAsmt = () => { U.draft = newAsmt(); U.step = 1; U.pvSeed = 1; go('builder'); };
 ACT.editAsmt = el => { U.draft = JSON.parse(JSON.stringify(asmtById(el.dataset.id))); U.step = 1; go('builder'); };
-ACT.dupAsmt = el => { const c = JSON.parse(JSON.stringify(asmtById(el.dataset.id))); c.id = uid('asm'); c.title += ' (copy)'; c.status = 'draft'; c.assignedTo = []; c.created = Date.now(); S.assessments.unshift(c); save(); render(); toast('Duplicated as a draft.'); };
+ACT.dupAsmt = el => { const c = JSON.parse(JSON.stringify(asmtById(el.dataset.id))); c.id = uid('asm'); c.title += ' (copy)'; c.status = 'draft'; c.assignedTo = []; c.leadIntake = false; c.created = Date.now(); S.assessments.unshift(c); save(); render(); toast('Duplicated as a draft. "Offer on the public booking page" was turned off on the copy - turn it back on once you\'re sure only one should be live for this grade and subject.'); };
 ACT.asgOpen = el => { U.asgOpen = U.asgOpen === el.dataset.id ? null : el.dataset.id; render(); };
 ACT.asgTgl = el => { const a = asmtById(el.dataset.id).assignedTo, i = a.indexOf(el.dataset.sid); if (i >= 0) a.splice(i, 1); else a.push(el.dataset.sid); save(); render(); };
 ACT.asgAll = el => { const a = asmtById(el.dataset.id); a.assignedTo = S.students.filter(s => !a.grades.length || a.grades.includes(s.grade)).map(s => s.id); save(); render(); };
@@ -76,6 +76,7 @@ ACT.assignNone = () => { U.draft.assignedTo = []; render(); };
 ACT.tglAssign = el => { const a = U.draft.assignedTo, i = a.indexOf(el.dataset.id); if (i >= 0) a.splice(i, 1); else a.push(el.dataset.id); render(); };
 ACT.saveDraft = () => { if (!U.draft.title.trim()) U.draft.title = 'Untitled assessment'; persistDraft(); toast('Draft saved.'); render(); };
 ACT.previewRun = () => { const d = U.draft, st = S.students.find(s => d.grades.includes(s.grade)) || S.students[0]; U.previewFrom = 'builder'; startRun(d, st.id, true); };
+ACT.previewAsmt = el => { const a = asmtById(el.dataset.id); if (!a) return; const st = S.students.find(s => a.grades.includes(s.grade)) || S.students[0]; U.previewFrom = 'assess'; startRun(a, st.id, true); };
 ACT.publish = () => { const v = validateDraft(U.draft); if (v.err.length) { toast(v.err[0]); return; } U.draft.status = 'published'; persistDraft(); toast('Published. Assigned students can see it now.'); go('assess'); };
 
 /* question bank */
@@ -262,7 +263,7 @@ ACT.skipQ = () => advance();
 ACT.nextQ = () => advance();
 ACT.backToQ = () => { const r = U.run; r.phase = 'q'; r.idx = r.items.length - 1; r.qStart = Date.now(); r.resp[r.idx].visits++; render(); };
 ACT.submitRun = () => submitRun(false);
-ACT.exitRun = () => { U.run = null; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } go(U.previewFrom === 'builder' ? 'builder' : 'my'); };
+ACT.exitRun = () => { U.run = null; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { } go(U.previewFrom === 'builder' ? 'builder' : U.previewFrom === 'assess' ? 'assess' : 'my'); };
 ACT.finishRun = el => { const r = U.run, att = r.att, prev = r.preview; U.run = null; try { if (document.fullscreenElement) document.exitFullscreen(); } catch (e) { }
   if (el.dataset.view === 'report') go('report', { id: att.id }); else go(prev ? 'builder' : 'my'); };
 

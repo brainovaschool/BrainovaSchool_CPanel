@@ -47,6 +47,18 @@ const courseOf = a => a && a.courseId ? COURSES.find(c => c.id === a.courseId) :
 function AN(att) { let r = anCache.get(att); if (!r) { r = analyze(att, levels(), courseOf(att)); anCache.set(att, r); } return r; }
 function finalLevelText(att, an) { return (att.review && att.review.override) ? att.review.override : (an.placement.tier || an.placement.grade || '—'); }
 function subjectsOf(a) { return [...new Set(a.topics.map(t => t.subject))]; }
+// Mirrors exactly what AssessmentBookingController::createLeadAndSend()
+// does server-side: a public visitor is matched to a published,
+// leadIntake assessment that shares BOTH a grade and a subject with
+// them. If two published, leadIntake assessments ever share both, the
+// server picks one silently (whichever the Sheet returns first) - this
+// flags that situation here, before it ever reaches a real family.
+function leadIntakeConflicts(a) {
+  if (!a.leadIntake || !a.grades.length) return [];
+  const subs = new Set(subjectsOf(a));
+  return S.assessments.filter(o => o.id !== a.id && o.status === 'published' && o.leadIntake
+    && o.grades.some(g => a.grades.includes(g)) && subjectsOf(o).some(s => subs.has(s)));
+}
 function attemptsOf(asmtId, studentId) { return S.attempts.filter(a => a.asmtId === asmtId && a.studentId === studentId && !a.preview); }
 function accomFor(sid) { const s = studentById(sid); return s && s.accom ? s.accom : { extraPct: 0, largeText: false }; }
 
