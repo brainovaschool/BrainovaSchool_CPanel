@@ -68,13 +68,16 @@
                                 </div>
                                 <div class="col-xl-4">
                                     <label class="primary_label2">Grade <span class="text-danger">*</span></label>
-                                    <select name="grade" required class="form-control ot-input mb_30 @error('grade') is-invalid @enderror">
+                                    <select name="grade" required class="form-control ot-input mb_30 @error('grade') is-invalid @enderror" {{ empty($data['eligibleGrades']) ? 'disabled' : '' }}>
                                         <option value="">— Select —</option>
-                                        @for ($g = 1; $g <= 10; $g++)
+                                        @foreach ($data['eligibleGrades'] ?? [] as $g)
                                             <option value="{{ $g }}" {{ (string) old('grade') === (string) $g ? 'selected' : '' }}>Grade {{ $g }}</option>
-                                        @endfor
+                                        @endforeach
                                     </select>
                                     @error('grade')<small class="text-danger d-block mb_20">{{ $message }}</small>@enderror
+                                    @if (empty($data['eligibleGrades']))
+                                        <small class="text-danger d-block mb_20">No assessments are open for registration yet — please check back soon.</small>
+                                    @endif
                                 </div>
                                 <div class="col-xl-4">
                                     <label class="primary_label2">Syllabus <span class="text-danger">*</span></label>

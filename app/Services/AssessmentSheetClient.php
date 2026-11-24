@@ -36,7 +36,13 @@ class AssessmentSheetClient
         return $this->url() !== '' && $this->token() !== '';
     }
 
-    /** Every published assessment currently in the Sheet, or [] on any failure. */
+    /**
+     * Every published assessment the admin has explicitly marked for the
+     * public "book an assessment" page (the leadIntake flag, set in the
+     * assessment Builder), or [] on any failure. A published assessment
+     * without that flag is never matched to a lead - it's reserved for
+     * real enrolled students, same as before this flag existed.
+     */
     public function fetchPublishedAssessments(): array
     {
         if (! $this->isConfigured()) {
@@ -62,7 +68,7 @@ class AssessmentSheetClient
 
             return array_values(array_filter(
                 $assessments,
-                fn ($a) => ($a['status'] ?? null) === 'published'
+                fn ($a) => ($a['status'] ?? null) === 'published' && ($a['leadIntake'] ?? false)
             ));
         } catch (\Throwable $e) {
             Log::warning('AssessmentSheetClient::fetchPublishedAssessments failed: '.$e->getMessage());

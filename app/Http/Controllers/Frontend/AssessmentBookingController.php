@@ -47,6 +47,7 @@ class AssessmentBookingController extends Controller
             ->toArray();
 
         $data['availableDates'] = array_keys($data['slotsByDate']);
+        $data['eligibleGrades'] = $this->eligibleGrades();
 
         return view('frontend.book-assessment', compact('data'));
     }
@@ -58,7 +59,7 @@ class AssessmentBookingController extends Controller
                 ->with('message', 'Thanks! We\'ve received your booking — check your email for the assessment link.');
         }
 
-        $request->validate($this->validationRules() + [
+        $request->validate($this->validationRules($this->eligibleGrades()) + [
             'assessment_slot_id'  => 'required|integer|exists:assessment_slots,id',
         ]);
 
@@ -82,7 +83,9 @@ class AssessmentBookingController extends Controller
      */
     public function registerShow()
     {
-        return view('frontend.assessment-register');
+        $data['eligibleGrades'] = $this->eligibleGrades();
+
+        return view('frontend.assessment-register', compact('data'));
     }
 
     public function registerStore(Request $request)
@@ -92,7 +95,7 @@ class AssessmentBookingController extends Controller
                 ->with('message', 'Thanks! Check your email for the assessment link.');
         }
 
-        $request->validate($this->validationRules());
+        $request->validate($this->validationRules($this->eligibleGrades()));
 
         $this->createLeadAndSend($request, null);
 
@@ -200,20 +203,48 @@ class AssessmentBookingController extends Controller
         return trim((string) $request->input('website')) !== '';
     }
 
-    private function validationRules(): array
+    /**
+     * Only grades with at least one published, leadIntake-flagged
+     * assessment - this is what the registration form's own Grade
+     * dropdown is built from too, so a visitor can never even select a
+     * grade nothing has been prepared for. Subjects stay the full
+     * fixed list (see class constant) on the form itself; a mismatch
+     * there still degrades gracefully in createLeadAndSend() below.
+     */
+    private function eligibleGrades(): array
+    {
+        try {
+            $assessments = (new AssessmentSheetClient())->fetchPublishedAssessments();
+        } catch (\Throwable $e) {
+            return [];
+        }
+
+        $grades = [];
+        foreach ($assessments as $a) {
+            foreach (($a['grades'] ?? []) as $g) {
+                $grades[(int) $g] = true;
+            }
+        }
+        $grades = array_keys($grades);
+        sort($grades);
+
+        return $grades;
+    }
+
+    private function validationRules(array $eligibleGrades = []): array
     {
         return [
             'guardian_name'       => 'required|string|max:120',
             'student_name'        => 'required|string|max:120',
             'student_age'         => 'nullable|string|max:40',
-            'grade'               => 'required|integer|between:1,10',
+            'grade'               => $eligibleGrades ? ['required', 'integer', Rule::in($eligibleGrades)] : 'required|integer|between:1,10',
             'syllabus'            => ['required', 'string', Rule::in(self::SYLLABI)],
             // A checklist, not a dropdown - a parent wanting more than one
             // subject assessed picks them all in one visit instead of
             // filling the whole form again per subject. Still saved into
             // the single `subject` column, as a comma-joined list - see
-            // createLeadAndSend(). Per-subject assessment matching is a
-            // later upgrade (grade-only for now, same as before).
+            // createLeadAndSend(), which now also matches on subject,
+            // not grade alone.
             'subjects'            => 'required|array|min:1',
             'subjects.*'          => Rule::in(self::SUBJECTS),
             'email'               => 'required|email|max:150',
@@ -249,19 +280,26 @@ class AssessmentBookingController extends Controller
 
         $lead->assessment_system_student_id = 'LEAD-'.$lead->id;
 
-        // Auto-assign to a published assessment matching the grade (grade
-        // only, for now - see the Sheet client for why, and the plan for
-        // the grade+subject upgrade once more subject-specific assessments
-        // exist). None found is never a hard failure: the lead still gets
+        // Auto-assign to a published, leadIntake-flagged assessment
+        // (see AssessmentSheetClient::fetchPublishedAssessments()) whose
+        // grade matches and which covers at least one of the requested
+        // subjects; if none covers a subject, fall back to a grade-only
+        // match so the lead still gets something rather than nothing.
+        // None found at all is never a hard failure: the lead still gets
         // created and emailed, just without an assigned assessment yet -
         // visible to admin as needing attention on the leads list.
         try {
             $sheet = new AssessmentSheetClient();
             $assessments = $sheet->fetchPublishedAssessments();
-            $match = collect($assessments)->first(function ($a) use ($lead) {
+            $requestedSubjects = (array) $request->input('subjects', []);
+            $gradeMatches = collect($assessments)->filter(function ($a) use ($lead) {
                 $grades = array_map('intval', $a['grades'] ?? []);
                 return in_array($lead->grade, $grades, true);
             });
+            $match = $gradeMatches->first(function ($a) use ($requestedSubjects) {
+                $subjects = collect($a['topics'] ?? [])->pluck('subject')->unique();
+                return $subjects->intersect($requestedSubjects)->isNotEmpty();
+            }) ?? $gradeMatches->first();
 
             if ($sheet->assignLead($lead->assessment_system_student_id, $lead->student_name, $lead->grade, $match)) {
                 if ($match) {

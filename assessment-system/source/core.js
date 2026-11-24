@@ -54,7 +54,7 @@ function accomFor(sid) { const s = studentById(sid); return s && s.accom ? s.acc
 function newAsmt(over) {
   return Object.assign({ id: uid('asm'), title: '', purpose: 'Diagnostic', application: 'school', courseId: '', grades: [5], ageGroup: '9–11 years', stretch: 1, level: 'Grade level', outcomes: '', instructions: 'Read each question carefully and answer on your own. You may not use AI tools, other people or other devices.',
     topics: [], excludeObj: [], model: 'fixed', dist: { S: 6, H: 8, E: 6 }, adaptive: { min: 10, max: 20, minPer: 3, sdTarget: 0.7, startB: -0.5, probe: true }, mode: 'independent', durationMin: 30, perQuestionSec: 0, nav: 'free', allowBack: true, allowSkip: true, allowChange: true,
-    shuffleQ: false, shuffleOpts: true, attempts: 1, autoSubmit: true, feedback: 'release', resultVis: 'release', passPct: 0, parentSupervision: false, fullscreen: true, autoAdvance: false, status: 'draft', assignedTo: [], created: Date.now() }, over || {});
+    shuffleQ: false, shuffleOpts: true, attempts: 1, autoSubmit: true, feedback: 'release', resultVis: 'release', passPct: 0, parentSupervision: false, fullscreen: true, autoAdvance: false, status: 'draft', assignedTo: [], leadIntake: false, created: Date.now() }, over || {});
 }
 const mathTopics = ts => ts.map(t => ({ subject: 'Mathematics', topic: t }));
 function seedBase() {
