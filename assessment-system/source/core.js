@@ -123,7 +123,16 @@ function simpleSetKey(grade, subject) { return 'simpleset-' + grade + '-' + Stri
 // engine.js) instead of the Question bank.
 function syncSimpleCompanion(set) {
   const id = 'asmt-' + set.id, i = S.assessments.findIndex(a => a.id === id);
+  // resultVis/feedback default to 'release' - fine for the Builder,
+  // where a teacher reviews and releases each attempt by hand, but
+  // nobody ever does that for this flow. Without instant release here,
+  // Code.gs's own bootstrap filter (buildBootstrapState_ in Code.gs)
+  // never sends a parent an unreleased attempt at all - not "waiting",
+  // just silently absent, which is exactly what looked like "my child's
+  // submitted test vanished" (it was never released, so it was never
+  // actually assigned/sent in the first place).
   const a = newAsmt({ id, title: (set.title || '').trim() || `Grade ${set.grade} ${set.subject} (Simple)`, application: 'school', grades: [set.grade], topics: [{ subject: set.subject, topic: 'General' }], model: 'fixed', simpleSetId: set.id,
+    resultVis: 'instant', feedback: 'instant',
     assignedTo: i >= 0 ? S.assessments[i].assignedTo : [], created: i >= 0 ? S.assessments[i].created : Date.now() });
   if (i >= 0) S.assessments[i] = a; else S.assessments.unshift(a);
 }
@@ -146,6 +155,11 @@ function applyAssessmentModeFlags() {
       const set = S.simpleSets.find(s => s.id === a.simpleSetId);
       a.status = simple ? 'published' : 'draft';
       a.leadIntake = simple && !!(set && set.leadIntake);
+      // Re-applied here too (not just in syncSimpleCompanion) so a
+      // companion created before this existed gets fixed on its own,
+      // the next time anything at all is saved - no need to re-save
+      // that specific simple set by hand.
+      a.resultVis = 'instant'; a.feedback = 'instant';
     } else if (simple) {
       if (a.leadIntakeWanted === undefined) a.leadIntakeWanted = a.leadIntake;
       a.leadIntake = false;
