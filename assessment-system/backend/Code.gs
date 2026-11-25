@@ -375,16 +375,35 @@ function buildBootstrapState_(claims) {
   list('pathways').forEach(r => { pathwaysById_[r.id] = safeParse_(r.json); });
 
   let students = list('students'), parents = list('parents'), attempts = list('attempts').map(reshapeAttempt_);
+  const assessments = list('assessments');
+  let simpleSets = list('simpleSets');
+
+  // A student/parent never needs any OTHER simple set's full question
+  // list (each one can run to 60-100 questions, embedded whole) - only
+  // the one or two actually assigned to them. Unfiltered, every single
+  // page load for every visitor downloaded every simple set that
+  // exists, which only got slower as more were added this way. A
+  // teacher/admin session (claims === null) still gets everything, same
+  // as assessments/bank already do.
+  function ownSimpleSetIds_(matches) {
+    const ids = new Set();
+    assessments.forEach(a => { if (a.simpleSetId && matches(a.assignedTo || [])) ids.add(a.simpleSetId); });
+    return ids;
+  }
 
   if (claims && claims.role === 'student') {
     attempts = attempts.filter(a => idEq_(a.studentId, claims.uid) && truthy_(a.released));
     students = students.filter(s => idEq_(s.id, claims.uid));
     parents = parents.filter(p => idIn_(p.childIds, claims.uid));
+    const mine = ownSimpleSetIds_(assignedTo => idIn_(assignedTo, claims.uid));
+    simpleSets = simpleSets.filter(s => mine.has(s.id));
   } else if (claims && claims.role === 'parent') {
     const kids = claims.children || [];
     attempts = attempts.filter(a => idIn_(kids, a.studentId) && truthy_(a.released));
     students = students.filter(s => idIn_(kids, s.id));
     parents = parents.filter(p => idEq_(p.id, claims.uid));
+    const mine = ownSimpleSetIds_(assignedTo => assignedTo.some(id => idIn_(kids, id)));
+    simpleSets = simpleSets.filter(s => mine.has(s.id));
   }
 
   // Learning pathways: teachers/admins (claims === null, or an explicit
@@ -404,9 +423,9 @@ function buildBootstrapState_(claims) {
     v: 1, sample: false,
     students: students,
     parents: parents,
-    assessments: list('assessments'),
+    assessments: assessments,
     bank: list('bank'),
-    simpleSets: list('simpleSets'),
+    simpleSets: simpleSets,
     settings: settings,
     attempts: attempts,
     supervision: supervision,
