@@ -34,6 +34,13 @@ function persistLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(S));
 // instead of enqueuing a write that would just come back "forbidden"
 // and retry forever.
 function save() {
+  // Re-applied on every single save, not just when the mode toggle
+  // itself is clicked - the old Builder's own edit/publish screen is
+  // reachable (and fully usable) no matter which procedure is active,
+  // so publishing or re-saving an old assessment while "simple" is
+  // active must not be able to quietly undo its suppression. Idempotent
+  // either way (see applyAssessmentModeFlags itself).
+  applyAssessmentModeFlags();
   persistLocal();
   if (window.BrainovaAPI && (!U.lms || U.lms.role === 'admin' || U.lms.role === 'teacher')) window.BrainovaAPI.scheduleSync(S);
 }
@@ -119,7 +126,6 @@ function syncSimpleCompanion(set) {
   const a = newAsmt({ id, title: `Grade ${set.grade} ${set.subject} (Simple)`, application: 'school', grades: [set.grade], topics: [{ subject: set.subject, topic: 'General' }], model: 'fixed', simpleSetId: set.id,
     assignedTo: i >= 0 ? S.assessments[i].assignedTo : [], created: i >= 0 ? S.assessments[i].created : Date.now() });
   if (i >= 0) S.assessments[i] = a; else S.assessments.unshift(a);
-  applyAssessmentModeFlags();
 }
 // Each simple set has its own "offer on the public booking page" flag
 // (off by default - a new set isn't exposed just by uploading it), the

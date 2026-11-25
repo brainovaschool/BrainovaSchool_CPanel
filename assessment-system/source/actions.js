@@ -82,7 +82,7 @@ ACT.previewAsmt = el => { const a = asmtById(el.dataset.id); if (!a) return; con
 ACT.publish = () => { const v = validateDraft(U.draft); if (v.err.length) { toast(v.err[0]); return; } U.draft.status = 'published'; persistDraft(); toast('Published. Assigned students can see it now.'); go('assess'); };
 
 /* simple assessment procedure */
-ACT.setMode = el => { S.settings.assessmentMode = el.dataset.v; applyAssessmentModeFlags(); save(); render();
+ACT.setMode = el => { S.settings.assessmentMode = el.dataset.v; save(); render();
   toast(el.dataset.v === 'simple' ? 'Switched to the simple CSV system. Any old assessment still offered on the public page has been suspended for now - open each simple set and turn its own "offer on the public booking page" on when it is ready.' : 'Switched back to the original Builder system - any suspended assessment is offered again exactly as it was.'); };
 ACT.simpleNew = () => { U.simpleDraft = { _origId: null, grade: 1, subject: 'Mathematics', questionCount: 20, leadIntake: false, questions: [] }; U.simpleErr = null; render(); scrollTop(); };
 ACT.simpleEdit = el => { const s = S.simpleSets.find(x => x.id === el.dataset.id); if (!s) return; U.simpleDraft = Object.assign(JSON.parse(JSON.stringify(s)), { _origId: s.id }); U.simpleErr = null; render(); scrollTop(); };
