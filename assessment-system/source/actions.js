@@ -87,6 +87,9 @@ ACT.setMode = el => { S.settings.assessmentMode = el.dataset.v; applyAssessmentM
 ACT.simpleNew = () => { U.simpleDraft = { _origId: null, grade: 1, subject: 'Mathematics', questionCount: 20, questions: [] }; U.simpleErr = null; render(); scrollTop(); };
 ACT.simpleEdit = el => { const s = S.simpleSets.find(x => x.id === el.dataset.id); if (!s) return; U.simpleDraft = Object.assign(JSON.parse(JSON.stringify(s)), { _origId: s.id }); U.simpleErr = null; render(); scrollTop(); };
 ACT.simpleClose = () => { U.simpleDraft = null; render(); };
+ACT.simpleTglQ = el => { const q = (U.simpleDraft.questions || []).find(x => x.id === el.dataset.id); if (q) q.included = q.included === false; render(); };
+ACT.simpleSelAll = () => { (U.simpleDraft.questions || []).forEach(q => q.included = true); render(); };
+ACT.simpleSelNone = () => { (U.simpleDraft.questions || []).forEach(q => q.included = false); render(); };
 ACT.simpleDelete = el => {
   const key = 'simpledel-' + el.dataset.id;
   if (U.cfm !== key) { U.cfm = key; render(); return; }

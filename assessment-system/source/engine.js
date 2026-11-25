@@ -573,8 +573,9 @@ function poolFor(bank, a, above) {
 // quiz still reaches the requested count where the file allows it.
 function buildSimpleQuiz(set, seed) {
   const R = rng(seed), order = ['H', 'S', 'E'];
-  const byTier = {}; order.forEach(k => { byTier[k] = R.shuffle(set.questions.filter(q => q.diff === k)); });
-  const X = Math.max(1, Math.min(+set.questionCount || set.questions.length, set.questions.length));
+  const pool = set.questions.filter(q => q.included !== false);
+  const byTier = {}; order.forEach(k => { byTier[k] = R.shuffle(pool.filter(q => q.diff === k)); });
+  const X = Math.max(1, Math.min(+set.questionCount || pool.length, pool.length));
   const base = Math.floor(X / 3), extra = X - base * 3;
   const want = { H: base + (extra > 0 ? 1 : 0), S: base + (extra > 1 ? 1 : 0), E: base };
   const picked = {}; let shortfall = 0;

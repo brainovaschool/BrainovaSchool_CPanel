@@ -143,16 +143,20 @@ VIEWS.simpleAssess = function () {
     }).join('') : '<div class="empty">No simple sets yet. Click "New simple set" to add one.</div>'}</div>`;
 };
 function simpleEditor() {
-  const d = U.simpleDraft, counts = { H: 0, S: 0, E: 0 }; d.questions.forEach(q => { if (counts[q.diff] != null) counts[q.diff]++; });
+  const d = U.simpleDraft, included = d.questions.filter(q => q.included !== false);
+  const counts = { H: 0, S: 0, E: 0 }; included.forEach(q => { if (counts[q.diff] != null) counts[q.diff]++; });
   const missing = ['H', 'S', 'E'].filter(k => !counts[k]);
   return `<div class="card lift"><div class="row sp"><h2>${d._origId ? 'Edit simple set' : 'New simple set'}</h2><button class="btn sm ghost" data-a="simpleClose">Close</button></div>
     <div class="grid g3" style="margin:10px 0">${field('Grade', `<select data-m="simpleDraft.grade" data-t="num">${optList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(g => ({ v: g, l: 'Grade ' + g })), d.grade)}</select>`)}
     ${field('Subject', `<select data-m="simpleDraft.subject">${optList(SYLLABUS.map(s => s.subject), d.subject)}</select>`)}
-    ${field('Number of questions to use in the quiz', inp('simpleDraft.questionCount', d.questionCount, 'number', `min="1" max="${Math.max(1, d.questions.length)}"`))}</div>
+    ${field('Number of questions to use in the quiz', inp('simpleDraft.questionCount', d.questionCount, 'number', `min="1" max="${Math.max(1, included.length)}"`))}</div>
     <div class="row" style="margin:10px 0"><label class="btn ghost" for="simplecsv" style="cursor:pointer">Upload CSV</label><input id="simplecsv" type="file" accept=".csv,text/csv" hidden data-a="simpleImportCsv"><button class="btn ghost" data-a="simpleTpl">CSV template</button>
-    ${d.questions.length ? `<span class="small muted">${d.questions.length} loaded - Hard ${counts.H} · Strengthen ${counts.S} · Extend ${counts.E}</span>` : ''}</div>
-    ${missing.length ? `<div class="banner warn">No ${missing.map(k => DIFF[k].name).join(' or ')} questions in this file - the quiz will draw extra from the other tiers to reach the number requested.</div>` : ''}
+    ${d.questions.length ? `<span class="small muted">${d.questions.length} loaded, ${included.length} included - Hard ${counts.H} · Strengthen ${counts.S} · Extend ${counts.E}</span>` : ''}</div>
+    ${missing.length ? `<div class="banner warn">No ${missing.map(k => DIFF[k].name).join(' or ')} questions included - the quiz will draw extra from the other tiers to reach the number requested.</div>` : ''}
     ${U.simpleErr ? `<div class="banner bad">${esc(U.simpleErr)}</div>` : ''}
+    ${d.questions.length ? `<div class="row sp" style="margin-top:14px"><h3 style="margin:0">Questions in this set</h3><div class="row"><button class="btn sm ghost" data-a="simpleSelAll">Select all</button><button class="btn sm ghost" data-a="simpleSelNone">Clear all</button></div></div>
+    <p class="muted small" style="margin:4px 0 8px">Uncheck a question to leave it out of every quiz drawn from this set. The rest are still reshuffled and drawn fresh for each student - this only controls which ones are in the running.</p>
+    <div class="tw" style="max-height:420px;overflow:auto"><table><thead><tr><th></th><th>#</th><th>Level</th><th>Question</th><th>Answer</th></tr></thead><tbody>${d.questions.map((q, i) => `<tr><td><input type="checkbox" data-a="simpleTglQ" data-id="${q.id}" ${q.included !== false ? 'checked' : ''}></td><td>${i + 1}</td><td>${esc(DIFF[q.diff].name)}</td><td style="min-width:260px">${esc(q.text)}</td><td class="small nowrap">${esc((q.options.find(o => o.id === q.answer) || {}).t || '')}</td></tr>`).join('')}</tbody></table></div>` : ''}
     <div class="row" style="margin-top:12px"><button class="btn teal" data-a="simpleSave">Save</button></div></div>`;
 }
 
