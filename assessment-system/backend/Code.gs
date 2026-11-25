@@ -153,14 +153,21 @@ function upsertRow_(tabName, record) {
 
 function readAll_(tabName) {
   const sheet = getSheet_(tabName);
-  const idx = headerIndex_(sheet);
-  const n = sheet.getLastRow();
-  if (n < 2) return [];
-  const width = sheet.getLastColumn();
-  const rows = sheet.getRange(2, 1, n - 1, width).getValues();
-  return rows.filter(r => r.some(c => c !== '')).map(r => {
+  const n = sheet.getLastRow(), width = sheet.getLastColumn();
+  if (n < 2 || width === 0) return [];
+  // One getRange().getValues() call for the header row AND every data
+  // row together, instead of two separate round-trips (one just for
+  // the header, done via headerIndex_ elsewhere). buildBootstrapState_
+  // reads 9 tabs this way on every single page load - halving the
+  // number of round-trips here is a bigger, more direct win than any
+  // per-cell parsing cost, since each Sheets round-trip carries its own
+  // fixed latency regardless of how much or little data it returns.
+  const values = sheet.getRange(1, 1, n, width).getValues();
+  const headers = values[0], idx = {};
+  headers.forEach((h, i) => { if (h) idx[String(h)] = i; });
+  return values.slice(1).filter(r => r.some(c => c !== '')).map(r => {
     const obj = {};
-    Object.keys(idx).forEach(k => { obj[k] = safeParse_(r[idx[k] - 1]); });
+    Object.keys(idx).forEach(k => { obj[k] = safeParse_(r[idx[k]]); });
     return obj;
   });
 }
