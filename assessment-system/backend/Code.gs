@@ -490,6 +490,15 @@ function doGet(e) {
   const auth = authenticate_(token, (e.parameter && e.parameter.authToken) || '');
   if (!auth.ok) return jsonOut_({ ok: false, error: 'unauthorized' });
   if (action === 'bootstrap') return jsonOut_({ ok: true, state: buildBootstrapState_(auth.claims) });
+  // Laravel's AssessmentSheetClient::fetchPublishedAssessments() only
+  // ever needs the assessments tab, but was calling full 'bootstrap' -
+  // which also reads the entire bank (1000s of rows) and every simple
+  // set's whole question list just to throw all of that away. As both
+  // grew, that one extra read started pushing this call close enough to
+  // Laravel's 10-second timeout to fail intermittently - exactly the
+  // "sometimes shows, sometimes doesn't" the public booking page was
+  // doing. This reads only the one tab that call actually needs.
+  if (action === 'assessments') return jsonOut_({ ok: true, assessments: readAll_('assessments') });
   return jsonOut_({ ok: false, error: 'unknown action' });
 }
 

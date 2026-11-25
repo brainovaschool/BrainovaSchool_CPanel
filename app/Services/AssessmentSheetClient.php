@@ -50,8 +50,14 @@ class AssessmentSheetClient
         }
 
         try {
+            // A dedicated, lighter action than 'bootstrap' - that one also
+            // reads the entire question bank and every simple set's full
+            // question list just for this method to throw all of it away,
+            // which on a large bank/sheet risked running long enough to
+            // intermittently exceed the timeout below. This reads only the
+            // one tab actually needed here.
             $response = Http::timeout(10)->get($this->url(), [
-                'action' => 'bootstrap',
+                'action' => 'assessments',
                 'token' => $this->token(),
             ]);
 
@@ -64,7 +70,7 @@ class AssessmentSheetClient
                 return [];
             }
 
-            $assessments = $data['state']['assessments'] ?? [];
+            $assessments = $data['assessments'] ?? [];
 
             return array_values(array_filter(
                 $assessments,
