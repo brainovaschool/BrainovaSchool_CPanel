@@ -12,7 +12,7 @@
   const CFG_KEY = 'brainova.apiconfig.v1';
   const QUEUE_KEY = 'brainova.outbox.v1';
   const SENT_KEY = 'brainova.lastsent.v1';
-  const SNAPSHOT_COLLECTIONS = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision', 'pathways'];
+  const SNAPSHOT_COLLECTIONS = ['students', 'parents', 'assessments', 'bank', 'simpleSets', 'settings', 'supervision', 'pathways'];
 
   let cfg = { url: '', token: '' };
   try { Object.assign(cfg, JSON.parse(localStorage.getItem(CFG_KEY) || '{}')); } catch (e) { /* ignore */ }
