@@ -159,7 +159,7 @@ function readAll_(tabName) {
 // already exists - upsertManyRows_ merges by column name and leaves
 // every other existing column on that row untouched, so a partial
 // write here can never blank out the rest of the attempt.
-const SNAPSHOT_TABS_ = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision', 'pathways', 'attempts'];
+const SNAPSHOT_TABS_ = ['students', 'parents', 'assessments', 'bank', 'settings', 'supervision', 'pathways', 'attempts', 'simpleSets'];
 
 function writeSnapshot_(payload) {
   SNAPSHOT_TABS_.forEach(tab => {
@@ -406,6 +406,7 @@ function buildBootstrapState_(claims) {
     parents: parents,
     assessments: list('assessments'),
     bank: list('bank'),
+    simpleSets: list('simpleSets'),
     settings: settings,
     attempts: attempts,
     supervision: supervision,

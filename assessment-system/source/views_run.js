@@ -22,7 +22,13 @@ function answerInput(q, raw) {
 function startRun(a, studentId, preview) {
   const st = studentById(studentId) || S.students[0], R = rng(uid('run')), seed = uid('seed'), ac = accomFor(st.id), ex = 1 + ac.extraPct / 100;
   let items = [], ad = null;
-  if (a.model === 'adaptive') { ad = new Adaptive(a, S.bank, seed); if (ad.done()) { toast('No approved questions are available for this assessment yet.'); return; } const q = ad.next(); items.push(Object.assign(present(q, R, a.shuffleOpts), { _probe: !!q._probe })); }
+  if (a.simpleSetId) {
+    const set = S.simpleSets.find(s => s.id === a.simpleSetId);
+    if (!set || !set.questions.length) { toast('No questions are available for this assessment yet.'); return; }
+    const fx = buildSimpleQuiz(set, seed); items = fx.items.map(q => present(q, R, true));
+    if (!items.length) { toast('No approved questions are available for this assessment yet.'); return; }
+  }
+  else if (a.model === 'adaptive') { ad = new Adaptive(a, S.bank, seed); if (ad.done()) { toast('No approved questions are available for this assessment yet.'); return; } const q = ad.next(); items.push(Object.assign(present(q, R, a.shuffleOpts), { _probe: !!q._probe })); }
   else { const fx = buildFixed(a, S.bank, seed); items = fx.items.map(q => present(q, R, a.shuffleOpts)); if (!items.length) { toast('No approved questions are available for this assessment yet.'); return; } }
   const now = Date.now(), perQ = a.perQuestionSec ? a.perQuestionSec * 1000 * ex : 0;
   U.run = { a, st, preview: !!preview, seed, R, ad, items, resp: items.map(() => ({ raw: null, ms: 0, visits: 0, changed: 0, timedOut: false })), idx: 0, started: now, deadline: a.durationMin > 0 ? now + a.durationMin * 60000 * ex : null, perQ, qStart: now, phase: 'q', events: [], doneResp: [], large: ac.largeText, att: null, attId: uid('att') };

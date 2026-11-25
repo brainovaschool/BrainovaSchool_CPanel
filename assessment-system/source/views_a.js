@@ -111,9 +111,15 @@ function asgPanel(a) {
   <div class="grid g3" style="margin:10px 0">${cand.map(s => { const n = attemptsOf(a.id, s.id).length; return `<label class="chk"><input type="checkbox" data-a="asgTgl" data-id="${a.id}" data-sid="${s.id}" ${a.assignedTo.includes(s.id) ? 'checked' : ''}><span>${esc(s.name)} <span class="muted small">Grade ${s.grade == null ? '—' : s.grade}${n ? ' · ' + n + ' attempt' + (n === 1 ? '' : 's') : ''}</span></span></label>`; }).join('')}</div>
   <div class="row"><label class="small">Attempts allowed per student <select data-a="asgAttempts" data-id="${a.id}">${[1, 2, 3, 4, 5].map(n => `<option value="${n}" ${+a.attempts === n ? 'selected' : ''}>${n}</option>`).join('')}</select></label><span class="muted small">Raise this to let students try again. Every attempt keeps its own report.</span></div></div>`;
 }
+function modeToggle() {
+  const mode = S.settings.assessmentMode || 'old';
+  return `<div class="card" style="margin-bottom:16px"><div class="row sp"><div><h3 style="margin:0 0 4px">Assessment procedure</h3><p class="muted small" style="margin:0">Which system builds and delivers tests right now - everywhere, including the public booking page.</p></div>
+    <div class="chips"><button class="chip" data-a="setMode" data-v="old" aria-pressed="${mode === 'old'}">Old (Builder)</button><button class="chip" data-a="setMode" data-v="simple" aria-pressed="${mode === 'simple'}">New (Simple CSV)</button></div></div></div>`;
+}
 VIEWS.assess = function () {
-  const list = S.assessments.slice().sort((a, b) => b.created - a.created);
-  return `<div class="page-head"><div><h1>Assessments</h1><p>Create, publish and assign assessments for Brainova School and short courses.</p></div><button class="btn" data-a="newAsmt">New assessment</button></div>
+  if ((S.settings.assessmentMode || 'old') === 'simple') return modeToggle() + VIEWS.simpleAssess();
+  const list = S.assessments.filter(a => !a.simpleSetId).slice().sort((a, b) => b.created - a.created);
+  return modeToggle() + `<div class="page-head"><div><h1>Assessments</h1><p>Create, publish and assign assessments for Brainova School and short courses.</p></div><button class="btn" data-a="newAsmt">New assessment</button></div>
   <div class="stack">${list.map(a => {
     const n = S.attempts.filter(x => x.asmtId === a.id && !x.preview).length, c = courseOf(a), tp = a.topics.length, cf = leadIntakeConflicts(a);
     return `<div class="card"><div class="row sp"><div style="min-width:0"><div class="row" style="margin-bottom:6px"><span class="pill ${a.status === 'published' ? 'ok' : a.status === 'closed' ? '' : 'warn'}">${a.status === 'published' ? 'Published' : a.status === 'closed' ? 'Closed' : 'Draft'}</span><span class="pill pur">${a.application === 'course' ? 'Short course' : 'School'}</span><span class="pill">${a.model === 'adaptive' ? 'Adaptive' : 'Fixed difficulty'}</span><span class="pill">${a.mode === 'live' ? 'Teacher-led live' : 'Independent timed'}</span>${a.leadIntake ? '<span class="pill ok">Public booking page</span>' : ''}${cf.length ? `<span class="pill warn" title="Also covered by: ${esc(cf.map(o => o.title || 'Untitled assessment').join(', '))}">Clashes with ${cf.length} other${cf.length === 1 ? '' : 's'} on public page</span>` : ''}</div>
@@ -122,6 +128,33 @@ VIEWS.assess = function () {
       ${a.status === 'published' ? `<button class="btn sm ghost" data-a="closeAsmt" data-id="${a.id}">Close</button>` : ''}${a.status === 'closed' ? `<button class="btn sm ghost" data-a="reopenAsmt" data-id="${a.id}">Reopen</button>` : ''}
       <button class="btn sm ghost" data-a="previewAsmt" data-id="${a.id}">Preview</button>${a.status !== 'draft' ? `<button class="btn sm ${U.asgOpen === a.id ? '' : 'ghost'}" data-a="asgOpen" data-id="${a.id}">Assign and attempts</button>` : ''}<button class="btn sm ghost" data-a="dupAsmt" data-id="${a.id}">Duplicate</button><button class="btn sm ghost" data-a="asmtResults" data-id="${a.id}">Results</button></div></div>${U.asgOpen === a.id ? asgPanel(a) : ''}</div>`; }).join('')}</div>`;
 };
+
+/* ---------- Simple assessment procedure (temporary, parallel system) ---------- */
+VIEWS.simpleAssess = function () {
+  const sets = S.simpleSets.slice().sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  return `<div class="page-head"><div><h1>Simple assessments</h1><p>One set of ready-made questions per grade and subject - upload a CSV, pick how many questions to use, and it's live.</p></div><button class="btn" data-a="simpleNew">New simple set</button></div>
+    ${U.simpleDraft ? simpleEditor() : ''}
+    <div class="stack">${sets.length ? sets.map(s => {
+      const counts = { H: 0, S: 0, E: 0 }; s.questions.forEach(q => { if (counts[q.diff] != null) counts[q.diff]++; });
+      const a = S.assessments.find(x => x.simpleSetId === s.id);
+      const n = a ? S.attempts.filter(x => x.asmtId === a.id && !x.preview).length : 0;
+      return `<div class="card"><div class="row sp"><div><h3>Grade ${s.grade} · ${esc(s.subject)}</h3><p class="muted small">${s.questions.length} question${s.questions.length === 1 ? '' : 's'} in file (Hard ${counts.H} · Strengthen ${counts.S} · Extend ${counts.E}) · ${s.questionCount} used per quiz, delivered Hard → Strengthen → Extend · ${a ? a.assignedTo.length : 0} assigned · ${n} attempt${n === 1 ? '' : 's'}</p></div>
+        <div class="row"><button class="btn sm ghost" data-a="previewAsmt" data-id="${a ? a.id : ''}" ${a ? '' : 'disabled'}>Preview</button>${a && a.status !== 'draft' ? `<button class="btn sm ${U.asgOpen === a.id ? '' : 'ghost'}" data-a="asgOpen" data-id="${a.id}">Assign and attempts</button>` : ''}<button class="btn sm ghost" data-a="simpleEdit" data-id="${s.id}">Edit</button><button class="btn sm danger" data-a="simpleDelete" data-id="${s.id}">${U.cfm === 'simpledel-' + s.id ? 'Click again to confirm delete' : 'Delete'}</button></div></div>${U.asgOpen === (a && a.id) ? asgPanel(a) : ''}</div>`;
+    }).join('') : '<div class="empty">No simple sets yet. Click "New simple set" to add one.</div>'}</div>`;
+};
+function simpleEditor() {
+  const d = U.simpleDraft, counts = { H: 0, S: 0, E: 0 }; d.questions.forEach(q => { if (counts[q.diff] != null) counts[q.diff]++; });
+  const missing = ['H', 'S', 'E'].filter(k => !counts[k]);
+  return `<div class="card lift"><div class="row sp"><h2>${d._origId ? 'Edit simple set' : 'New simple set'}</h2><button class="btn sm ghost" data-a="simpleClose">Close</button></div>
+    <div class="grid g3" style="margin:10px 0">${field('Grade', `<select data-m="simpleDraft.grade" data-t="num">${optList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(g => ({ v: g, l: 'Grade ' + g })), d.grade)}</select>`)}
+    ${field('Subject', `<select data-m="simpleDraft.subject">${optList(SYLLABUS.map(s => s.subject), d.subject)}</select>`)}
+    ${field('Number of questions to use in the quiz', inp('simpleDraft.questionCount', d.questionCount, 'number', `min="1" max="${Math.max(1, d.questions.length)}"`))}</div>
+    <div class="row" style="margin:10px 0"><label class="btn ghost" for="simplecsv" style="cursor:pointer">Upload CSV</label><input id="simplecsv" type="file" accept=".csv,text/csv" hidden data-a="simpleImportCsv"><button class="btn ghost" data-a="simpleTpl">CSV template</button>
+    ${d.questions.length ? `<span class="small muted">${d.questions.length} loaded - Hard ${counts.H} · Strengthen ${counts.S} · Extend ${counts.E}</span>` : ''}</div>
+    ${missing.length ? `<div class="banner warn">No ${missing.map(k => DIFF[k].name).join(' or ')} questions in this file - the quiz will draw extra from the other tiers to reach the number requested.</div>` : ''}
+    ${U.simpleErr ? `<div class="banner bad">${esc(U.simpleErr)}</div>` : ''}
+    <div class="row" style="margin-top:12px"><button class="btn teal" data-a="simpleSave">Save</button></div></div>`;
+}
 
 /* ---------- Builder ---------- */
 const PURPOSES = ['Diagnostic', 'Admission', 'Placement', 'Academic', 'Topic proficiency'];

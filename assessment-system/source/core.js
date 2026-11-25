@@ -17,7 +17,7 @@ const clock = ms => { ms = Math.max(0, ms); const s = Math.ceil(ms / 1000); retu
 // (including the proficiency levels every report depends on) with
 // nothing at all. See ensureSample() and init()'s remote-merge.
 function defaultSettings() {
-  return { levels: DEFAULT_LEVELS.map(l => ({ ...l })), school: 'Brainova', lms: { baseUrl: '', token: '', tenant: 'brainova', status: 'Not configured' }, sharing: JSON.parse(JSON.stringify(DEFAULT_SHARING)) };
+  return { levels: DEFAULT_LEVELS.map(l => ({ ...l })), school: 'Brainova', lms: { baseUrl: '', token: '', tenant: 'brainova', status: 'Not configured' }, sharing: JSON.parse(JSON.stringify(DEFAULT_SHARING)), assessmentMode: 'old' };
 }
 const levels = () => S.settings.levels;
 const lvName = i => i == null ? 'Needs assessment' : levels()[i].name;
@@ -102,6 +102,35 @@ function applyMojibakeFixes(fixes) {
   const byId = new Map(); fixes.forEach(fx => { if (!byId.has(fx.id)) byId.set(fx.id, []); byId.get(fx.id).push(fx); });
   S.bank.forEach(q => { const fs = byId.get(q.id); if (!fs) return; fs.forEach(fx => { if (fx.field.startsWith('opt')) q.options[+fx.field.slice(3)].t = fx.after; else q[fx.field] = fx.after; }); });
 }
+// ---- Simple assessment procedure (temporary, parallel to the Builder) ----
+// One CSV of ready-made questions per grade+subject, three difficulty
+// tiers, no topic/grade-range tagging to get wrong. Deterministic id
+// from grade+subject, so uploading again for the same pair replaces it
+// instead of creating a second, competing one.
+function simpleSetKey(grade, subject) { return 'simpleset-' + grade + '-' + String(subject).replace(/[^a-z0-9]+/gi, '').toLowerCase(); }
+// A real assessment, built and kept in sync automatically from a
+// simple set, so everything that already understands an assessment -
+// assigning students, the public booking page's own grade+subject
+// matching, results, reports - works for it unchanged. Only its
+// questions come from a different place (see buildSimpleQuiz in
+// engine.js) instead of the Question bank.
+function syncSimpleCompanion(set) {
+  const id = 'asmt-' + set.id, i = S.assessments.findIndex(a => a.id === id);
+  const a = newAsmt({ id, title: `Grade ${set.grade} ${set.subject} (Simple)`, application: 'school', grades: [set.grade], topics: [{ subject: set.subject, topic: 'General' }], model: 'fixed', simpleSetId: set.id,
+    assignedTo: i >= 0 ? S.assessments[i].assignedTo : [], created: i >= 0 ? S.assessments[i].created : Date.now() });
+  if (i >= 0) S.assessments[i] = a; else S.assessments.unshift(a);
+  applyAssessmentModeFlags();
+}
+// The toggle only ever touches a simple set's OWN companion assessment -
+// switching to "simple" auto-publishes every one of them for the public
+// booking page, switching back to "old" auto-un-publishes them again.
+// An old, hand-built assessment's own publish/public-page state is
+// never touched either way - if one is left live during "simple" mode,
+// the existing clash warning (leadIntakeConflicts) catches it.
+function applyAssessmentModeFlags() {
+  const simple = (S.settings.assessmentMode || 'old') === 'simple';
+  S.assessments.forEach(a => { if (a.simpleSetId) { a.status = simple ? 'published' : 'draft'; a.leadIntake = simple; } });
+}
 function attemptsOf(asmtId, studentId) { return S.attempts.filter(a => a.asmtId === asmtId && a.studentId === studentId && !a.preview); }
 function accomFor(sid) { const s = studentById(sid); return s && s.accom ? s.accom : { extraPct: 0, largeText: false }; }
 
@@ -151,7 +180,7 @@ function seedBase() {
   students.forEach(s => delete s._ab);
   attempts.forEach(a => { a.review = { notes: '', override: '', finalized: a.released }; });
   attempts[0].review.notes = 'Strong across whole numbers. Keep an eye on division word problems.';
-  return { v: 1, sample: true, settings: { levels: DEFAULT_LEVELS.map(l => ({ ...l })), school: 'Brainova', lms: { baseUrl: '', token: '', tenant: 'brainova', status: 'Not configured' } }, bank, students, parents, assessments, attempts, supervision: {}, sessions: [] };
+  return { v: 1, sample: true, settings: { levels: DEFAULT_LEVELS.map(l => ({ ...l })), school: 'Brainova', lms: { baseUrl: '', token: '', tenant: 'brainova', status: 'Not configured' } }, bank, students, parents, assessments, attempts, simpleSets: [], supervision: {}, sessions: [] };
 }
 
 /* ---------- toast + downloads ---------- */
@@ -267,6 +296,8 @@ function ensureSample() {
   // These guards repair it from scratch if it's ever missing, instead
   // of letting the rest of this function throw on a null read.
   if (!S.settings) S.settings = defaultSettings();
+  if (!S.simpleSets) S.simpleSets = [];
+  if (!S.settings.assessmentMode) S.settings.assessmentMode = 'old';
   if (!S.settings.levels || !S.settings.levels.length) S.settings.levels = DEFAULT_LEVELS.map(l => ({ ...l }));
   if (!S.settings.sharing) S.settings.sharing = JSON.parse(JSON.stringify(DEFAULT_SHARING));
   // upgrade older saved data: three levels above Advanced, and the matching question tiers

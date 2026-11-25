@@ -561,6 +561,43 @@ function poolFor(bank, a, above) {
   const keys = new Set((a.topics || []).map(t => topicKey(t.subject, t.topic))), ex = new Set(a.excludeObj || []);
   return bank.filter(q => q.status === 'approved' && keys.has(topicKey(q.subject, q.topic)) && gradeOk(q, a, up) && !ex.has(q.subject + '|' + q.topic + '|' + q.objective));
 }
+// ---- Simple assessment procedure ----
+// A grade+subject's whole CSV (up to ~60 ready-made questions, tagged
+// Hard/Strengthen/Extend) lives on the simple set itself, not the
+// shared Question bank. Every attempt reshuffles WITHIN each tier and
+// draws a fresh subset (unlike the Builder's hand-picked exact mode),
+// then lays the chosen questions out in a fixed order - Hard first,
+// then Strengthen, then Extend last - exactly as asked for, not the
+// easiest-first order a normal test would use. If one tier runs short,
+// its shortfall is handed to the others in that same order so the
+// quiz still reaches the requested count where the file allows it.
+function buildSimpleQuiz(set, seed) {
+  const R = rng(seed), order = ['H', 'S', 'E'];
+  const byTier = {}; order.forEach(k => { byTier[k] = R.shuffle(set.questions.filter(q => q.diff === k)); });
+  const X = Math.max(1, Math.min(+set.questionCount || set.questions.length, set.questions.length));
+  const base = Math.floor(X / 3), extra = X - base * 3;
+  const want = { H: base + (extra > 0 ? 1 : 0), S: base + (extra > 1 ? 1 : 0), E: base };
+  const picked = {}; let shortfall = 0;
+  order.forEach(k => { picked[k] = byTier[k].slice(0, want[k]); shortfall += Math.max(0, want[k] - picked[k].length); });
+  while (shortfall > 0) {
+    let gained = false;
+    for (const k of order) {
+      if (shortfall <= 0) break;
+      const have = new Set(picked[k].map(q => q.id));
+      const more = byTier[k].find(q => !have.has(q.id));
+      if (more) { picked[k].push(more); shortfall--; gained = true; }
+    }
+    if (!gained) break;
+  }
+  const items = order.flatMap(k => picked[k]).map(q => ({
+    id: q.id, subject: set.subject, topic: 'General', unit: null, grades: [set.grade, set.grade], diff: q.diff, type: 'mcq',
+    text: q.text, objective: 'Not specified', explanation: q.explanation || '', marks: 1, time: 45, prereq: null,
+    source: 'Simple CSV', status: 'approved', b: bFor(q.id, q.diff), c: cFor('mcq'), marking: 'Full marks for the correct answer.',
+    options: q.options, answer: q.answer,
+  }));
+  const wanted = order.reduce((s, k) => s + want[k], 0);
+  return { items, shortages: items.length < wanted ? [{ diff: 'H', missing: wanted - items.length }] : [] };
+}
 function poolCounts(pool, topics) {
   return topics.map(t => { const row = { subject: t.subject, topic: t.topic, S: 0, H: 0, E: 0, C: 0, M: 0, X: 0 }; pool.forEach(q => { if (q.subject === t.subject && q.topic === t.topic) row[q.diff]++; }); return row; });
 }

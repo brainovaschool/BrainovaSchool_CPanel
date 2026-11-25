@@ -69,6 +69,7 @@ ACT.tglUnit = el => { const s = el.dataset.s, u = syl(s).units.find(x => x.unit 
   d.topics = d.topics.filter(t => !(t.subject === s && u.topics.includes(t.topic))); if (!all) u.topics.forEach(t => d.topics.push({ subject: s, topic: t })); render(); };
 ACT.tglTopic = el => { const s = el.dataset.s, t = el.dataset.t, d = U.draft; if (selectedTopic(d, s, t)) d.topics = d.topics.filter(x => !(x.subject === s && x.topic === t)); else d.topics.push({ subject: s, topic: t }); render(); };
 ACT.tglObj = el => { const k = el.dataset.k, a = U.draft.excludeObj = U.draft.excludeObj || [], i = a.indexOf(k); if (i >= 0) a.splice(i, 1); else a.push(k); render(); };
+ACT.tglPinnedQ = el => { const id = el.dataset.id, a = U.draft.pinnedIds = U.draft.pinnedIds || [], i = a.indexOf(id); if (i >= 0) a.splice(i, 1); else a.push(id); render(); };
 ACT.splitDist = el => { U.draft.dist = { S: +el.dataset.s, H: +el.dataset.h, E: +el.dataset.e }; render(); };
 ACT.redraw = () => { U.pvSeed = (U.pvSeed || 1) + 1; render(); };
 const candIds = () => S.students.filter(s => !U.draft.grades.length || U.draft.grades.includes(s.grade)).map(s => s.id);
@@ -79,6 +80,61 @@ ACT.saveDraft = () => { if (!U.draft.title.trim()) U.draft.title = 'Untitled ass
 ACT.previewRun = () => { const d = U.draft, st = S.students.find(s => d.grades.includes(s.grade)) || S.students[0]; U.previewFrom = 'builder'; startRun(d, st.id, true); };
 ACT.previewAsmt = el => { const a = asmtById(el.dataset.id); if (!a) return; const st = S.students.find(s => a.grades.includes(s.grade)) || S.students[0]; U.previewFrom = 'assess'; startRun(a, st.id, true); };
 ACT.publish = () => { const v = validateDraft(U.draft); if (v.err.length) { toast(v.err[0]); return; } U.draft.status = 'published'; persistDraft(); toast('Published. Assigned students can see it now.'); go('assess'); };
+
+/* simple assessment procedure */
+ACT.setMode = el => { S.settings.assessmentMode = el.dataset.v; applyAssessmentModeFlags(); save(); render();
+  toast(el.dataset.v === 'simple' ? 'Switched to the simple CSV system - your simple sets are now published for public booking.' : 'Switched back to the original Builder system.'); };
+ACT.simpleNew = () => { U.simpleDraft = { _origId: null, grade: 1, subject: 'Mathematics', questionCount: 20, questions: [] }; U.simpleErr = null; render(); scrollTop(); };
+ACT.simpleEdit = el => { const s = S.simpleSets.find(x => x.id === el.dataset.id); if (!s) return; U.simpleDraft = Object.assign(JSON.parse(JSON.stringify(s)), { _origId: s.id }); U.simpleErr = null; render(); scrollTop(); };
+ACT.simpleClose = () => { U.simpleDraft = null; render(); };
+ACT.simpleDelete = el => {
+  const key = 'simpledel-' + el.dataset.id;
+  if (U.cfm !== key) { U.cfm = key; render(); return; }
+  U.cfm = null;
+  S.simpleSets = S.simpleSets.filter(s => s.id !== el.dataset.id);
+  S.assessments = S.assessments.filter(a => a.simpleSetId !== el.dataset.id);
+  save(); render(); toast('Simple set deleted.');
+};
+ACT.simpleTpl = () => saveFile('brainova-simple-set-template.csv', toCSV([
+  ['difficulty', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'answer', 'explanation'],
+  ['Hard', 'What is 23 + 48?', '71', '70', '81', '61', 'a', '23 + 48 = 71.'],
+  ['Strengthen', 'What is 5 + 3?', '7', '8', '9', '6', 'b', ''],
+  ['Extend', 'A shop had 128 pens and sold 47. How many are left?', '81', '79', '91', '71', 'a', '128 - 47 = 81.'],
+]));
+ACT.simpleImportCsv = async el => {
+  const f = el.files[0]; if (!f) return;
+  try {
+    const buf = await f.arrayBuffer();
+    let text; try { text = new TextDecoder('utf-8', { fatal: true }).decode(buf); } catch (e) { text = new TextDecoder('windows-1252').decode(buf); }
+    const rows = parseCSV(text), h = rows[0].map(x => x.trim().toLowerCase()), ix = k => h.indexOf(k);
+    const g = (c, k) => ix(k) >= 0 ? (c[ix(k)] || '').trim() : '';
+    const tierOf = s => { const t = s.trim().toLowerCase(); if (t[0] === 'h') return 'H'; if (t[0] === 's') return 'S'; if (t[0] === 'e') return 'E'; return null; };
+    const qs = []; let bad = 0;
+    rows.slice(1).forEach(c => {
+      const diff = tierOf(g(c, 'difficulty') || ''), text = g(c, 'question');
+      const opts = ['option_a', 'option_b', 'option_c', 'option_d'].map(k => g(c, k));
+      const ansRaw = g(c, 'answer').toLowerCase();
+      let ansIdx = 'abcd'.indexOf(ansRaw);
+      if (ansIdx < 0) ansIdx = opts.findIndex(o => o.toLowerCase() === ansRaw);
+      if (!diff || !text || opts.filter(Boolean).length < 2 || ansIdx < 0 || !opts[ansIdx]) { bad++; return; }
+      qs.push({ id: 'simpleq-' + uid('').slice(1, 9), diff, text, options: opts.map((t, j) => ({ id: 'abcd'[j], t })).filter(o => o.t), answer: 'abcd'[ansIdx], explanation: g(c, 'explanation') || '' });
+    });
+    U.simpleDraft.questions = qs;
+    render(); toast(`Loaded ${qs.length} question${qs.length === 1 ? '' : 's'}${bad ? ` (${bad} skipped - missing difficulty, question text, at least 2 options, or an answer that doesn't match an option).` : '.'}`);
+  } catch (err) { toast('Could not read that CSV file.'); }
+  el.value = '';
+};
+ACT.simpleSave = () => {
+  const d = U.simpleDraft;
+  if (!d.questions.length) { U.simpleErr = 'Upload a CSV of questions first.'; render(); return; }
+  const id = simpleSetKey(d.grade, d.subject);
+  S.simpleSets = S.simpleSets.filter(s => s.id !== id && s.id !== d._origId);
+  if (d._origId && d._origId !== id) S.assessments = S.assessments.filter(a => a.simpleSetId !== d._origId);
+  const saved = { id, grade: +d.grade, subject: d.subject, questionCount: Math.max(1, +d.questionCount || 1), questions: d.questions, updated: Date.now() };
+  S.simpleSets.unshift(saved);
+  syncSimpleCompanion(saved);
+  save(); U.simpleDraft = null; U.simpleErr = null; render(); toast('Simple set saved.');
+};
 
 /* question bank */
 const blankQ = () => ({ id: 'Q-' + uid('').slice(1).toUpperCase(), subject: 'Mathematics', topic: 'Addition', unit: null, grades: [3, 5], diff: 'S', type: 'mcq', text: '', objective: '', explanation: '', marking: 'Full marks for the correct answer.', marks: 1, time: 45, prereq: null, source: 'Teacher', status: 'approved', options: [{ id: 'a', t: '' }, { id: 'b', t: '' }, { id: 'c', t: '' }, { id: 'd', t: '' }], answer: 'a' });
@@ -449,7 +505,7 @@ function init() {
       // either way, but keeping real local values is still better than
       // falling back to bare defaults every time).
       if (!remote.settings) remote.settings = S.settings;
-      ['students', 'parents', 'assessments', 'bank'].forEach(k => { remote[k] = mergeById(S[k], remote[k]); });
+      ['students', 'parents', 'assessments', 'bank', 'simpleSets'].forEach(k => { remote[k] = mergeById(S[k], remote[k]); });
       // The backend attaches each attempt's learning pathway (if any and
       // if this role is allowed to see it) directly onto that attempt
       // before sending it here, so att.pathways needs no extra handling.
@@ -476,7 +532,7 @@ function retryLeadAssignment_(n) {
     window.BrainovaAPI.fetchSnapshot().then(remote => {
       if (!remote) return retryLeadAssignment_(n + 1);
       if (!remote.settings) remote.settings = S.settings;
-      ['students', 'parents', 'assessments', 'bank'].forEach(k => { remote[k] = mergeById(S[k], remote[k]); });
+      ['students', 'parents', 'assessments', 'bank', 'simpleSets'].forEach(k => { remote[k] = mergeById(S[k], remote[k]); });
       S = remote; anCache = new WeakMap(); ensureSample(); persistLocal();
       if (window.BrainovaAPI.markSynced) window.BrainovaAPI.markSynced(S);
       if (assignedFor(U.lms.uid).length) render(); else retryLeadAssignment_(n + 1);
