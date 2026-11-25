@@ -121,15 +121,32 @@ function syncSimpleCompanion(set) {
   if (i >= 0) S.assessments[i] = a; else S.assessments.unshift(a);
   applyAssessmentModeFlags();
 }
-// The toggle only ever touches a simple set's OWN companion assessment -
-// switching to "simple" auto-publishes every one of them for the public
-// booking page, switching back to "old" auto-un-publishes them again.
-// An old, hand-built assessment's own publish/public-page state is
-// never touched either way - if one is left live during "simple" mode,
-// the existing clash warning (leadIntakeConflicts) catches it.
+// Each simple set has its own "offer on the public booking page" flag
+// (off by default - a new set isn't exposed just by uploading it), the
+// same convention the old Builder already uses. The mode toggle is the
+// master switch: while "simple" is active, a companion assessment's
+// EFFECTIVE leadIntake is that flag; while "old" is active, no
+// companion is ever eligible regardless of the flag. It also actively
+// SUSPENDS every old, hand-built assessment's own leadIntake for as
+// long as "simple" is active - otherwise one left live from before the
+// switch silently competes with (and can win over) the new system,
+// which is exactly the surprise this exists to prevent - and restores
+// each one's own setting, unchanged, the moment "old" is switched back
+// on. a.leadIntakeWanted is just where that original value waits.
 function applyAssessmentModeFlags() {
   const simple = (S.settings.assessmentMode || 'old') === 'simple';
-  S.assessments.forEach(a => { if (a.simpleSetId) { a.status = simple ? 'published' : 'draft'; a.leadIntake = simple; } });
+  S.assessments.forEach(a => {
+    if (a.simpleSetId) {
+      const set = S.simpleSets.find(s => s.id === a.simpleSetId);
+      a.status = simple ? 'published' : 'draft';
+      a.leadIntake = simple && !!(set && set.leadIntake);
+    } else if (simple) {
+      if (a.leadIntakeWanted === undefined) a.leadIntakeWanted = a.leadIntake;
+      a.leadIntake = false;
+    } else if (a.leadIntakeWanted !== undefined) {
+      a.leadIntake = a.leadIntakeWanted; a.leadIntakeWanted = undefined;
+    }
+  });
 }
 function attemptsOf(asmtId, studentId) { return S.attempts.filter(a => a.asmtId === asmtId && a.studentId === studentId && !a.preview); }
 function accomFor(sid) { const s = studentById(sid); return s && s.accom ? s.accom : { extraPct: 0, largeText: false }; }
