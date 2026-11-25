@@ -45,8 +45,16 @@ VIEWS.intro = function () {
 };
 
 VIEWS.parent = function () {
-  const par = S.parents.find(p => p.id === U.parentId) || S.parents[0], kids = par.childIds.map(studentById).filter(Boolean);
+  const ready = '<div class="empty">Getting your account ready — this usually takes under a minute. This page will update on its own, or you can refresh in a moment.</div>';
+  // A lead's parent record (and the child row it points at) can land in
+  // the Sheet moments apart - the same lag VIEWS.my already allows for
+  // on the student side. Without this, catching that page mid-sync
+  // used to crash here instead of just asking to wait a moment.
+  const par = S.parents.find(p => p.id === U.parentId) || S.parents[0];
+  if (!par) return ready;
+  const kids = par.childIds.map(studentById).filter(Boolean);
   const kid = studentById(U.params.kid) || kids[0];
+  if (!kid) return ready;
   const list = assignedFor(kid.id), at = S.attempts.filter(a => a.studentId === kid.id && !a.preview).sort((a, b) => b.finished - a.finished), rel = at.filter(a => a.released || pwShared(a))[0];
   const kidIsLead = String(kid.id || '').startsWith('LEAD-');
   return `<div class="page-head"><div><h1>${esc(kid.name)}</h1><p>Grade ${kid.grade}${kidIsLead ? '' : ' · Student ID ' + esc(kid.id)}</p></div>${kids.length > 1 ? `<div class="chips">${kids.map(k => `<button class="chip" data-a="kid" data-id="${k.id}" aria-pressed="${k.id === kid.id}">${esc(k.name.split(' ')[0])}</button>`).join('')}</div>` : ''}</div>

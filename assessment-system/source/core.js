@@ -123,7 +123,7 @@ function simpleSetKey(grade, subject) { return 'simpleset-' + grade + '-' + Stri
 // engine.js) instead of the Question bank.
 function syncSimpleCompanion(set) {
   const id = 'asmt-' + set.id, i = S.assessments.findIndex(a => a.id === id);
-  const a = newAsmt({ id, title: `Grade ${set.grade} ${set.subject} (Simple)`, application: 'school', grades: [set.grade], topics: [{ subject: set.subject, topic: 'General' }], model: 'fixed', simpleSetId: set.id,
+  const a = newAsmt({ id, title: (set.title || '').trim() || `Grade ${set.grade} ${set.subject} (Simple)`, application: 'school', grades: [set.grade], topics: [{ subject: set.subject, topic: 'General' }], model: 'fixed', simpleSetId: set.id,
     assignedTo: i >= 0 ? S.assessments[i].assignedTo : [], created: i >= 0 ? S.assessments[i].created : Date.now() });
   if (i >= 0) S.assessments[i] = a; else S.assessments.unshift(a);
 }
