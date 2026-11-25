@@ -96,7 +96,7 @@
                                 <div class="col-xl-12">
                                     <label class="primary_label2">Subject(s) <span class="text-danger">*</span></label>
                                     <div class="row mb_20">
-                                        @foreach (['Mathematics', 'English', 'Science', 'Computer Science', 'Urdu', 'Islamiyat', 'History', 'Geography'] as $subj)
+                                        @foreach ($data['subjects'] as $subj)
                                             <div class="col-6 col-md-3">
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" name="subjects[]" id="subj_{{ $loop->index }}" value="{{ $subj }}" {{ in_array($subj, (array) old('subjects', [])) ? 'checked' : '' }}>

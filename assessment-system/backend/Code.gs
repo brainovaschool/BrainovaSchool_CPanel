@@ -197,6 +197,43 @@ function writeSnapshot_(payload) {
   });
 }
 
+// upsertManyRows_ (and upsertRow_) only ever add or update rows by id -
+// neither one removes a row whose id is no longer sent. Without this,
+// anything a client deletes locally (ACT.simpleDelete, ACT.qDel, ...),
+// or whose id changes because it's derived from editable fields (a
+// Simple set's id is grade+subject - see simpleSetKey in core.js), was
+// never actually removed from the Sheet: the stale row just sat there
+// and came back on the next bootstrap, looking like the edit "didn't
+// take". payload is {tabName: [id, id, ...], ...} - one or more
+// SNAPSHOT_TABS_ tabs, each with the ids to remove from it. Unknown/
+// disallowed tab names are silently ignored, same tolerance writeSnapshot_
+// already has for tabs it doesn't recognise.
+function deleteRows_(payload) {
+  Object.keys(payload || {}).forEach(tab => {
+    if (SNAPSHOT_TABS_.indexOf(tab) < 0) return;
+    const ids = payload[tab];
+    if (Array.isArray(ids) && ids.length) deleteRowsFromTab_(tab, ids);
+  });
+}
+
+function deleteRowsFromTab_(tabName, ids) {
+  const idSet = {};
+  ids.forEach(id => { idSet[String(id)] = true; });
+  const sheet = getSheet_(tabName);
+  const idx = headerIndex_(sheet);
+  if (!idx.id) return;
+  const width = sheet.getLastColumn();
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return;
+  const existing = sheet.getRange(2, 1, lastRow - 1, width).getValues();
+  const idCol = idx.id - 1;
+  const kept = existing.filter(row => !idSet[String(row[idCol])]);
+  if (kept.length === existing.length) return; // none of these ids were actually present
+  if (kept.length) sheet.getRange(2, 1, kept.length, width).setValues(kept);
+  const clearFrom = 2 + kept.length, rowsToClear = lastRow - clearFrom + 1;
+  if (rowsToClear > 0) sheet.getRange(clearFrom, 1, rowsToClear, width).clearContent();
+}
+
 // Batched version of upsertRow_, for writing many records to one tab
 // in a single pass - upsertRow_ itself does 3-4 separate Sheet API
 // calls per record (read the header, look up the row, read the row,
@@ -305,6 +342,7 @@ function writeSelf_(p) { upsertRow_(p.collection, p.record); }
 
 function handleWrite_(kind, payload) {
   if (kind === 'snapshot') return writeSnapshot_(payload);
+  if (kind === 'delete') return deleteRows_(payload);
   if (kind === 'attempt') return writeAttempt_(payload.attempt || payload, payload.analysis);
   if (kind === 'response') return writeResponse_(payload);
   if (kind === 'self') return writeSelf_(payload);
@@ -569,7 +607,7 @@ function writeAllowed_(claims, kind, payload) {
   }
 
   if (claims.role !== 'student') return false; // parents never submit assessment data
-  if (kind === 'snapshot') return false;
+  if (kind === 'snapshot' || kind === 'delete') return false;
   const sid = (payload && payload.studentId) || (payload && payload.attempt && payload.attempt.studentId);
   return idEq_(sid, claims.uid);
 }

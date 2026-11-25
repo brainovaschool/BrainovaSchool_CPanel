@@ -27,7 +27,11 @@ use Illuminate\Validation\Rule;
  */
 class AssessmentBookingController extends Controller
 {
-    const SUBJECTS = ['Mathematics', 'English', 'Science', 'Computer Science', 'Urdu', 'Islamiyat', 'History', 'Geography'];
+    // Only subjects that actually have Simple-CSV content built out across
+    // grades 1-8 right now. Add a subject here the moment it's ready - this
+    // one constant drives the form's checklist AND the server-side
+    // validation, so the two can never drift apart again.
+    const SUBJECTS = ['Mathematics', 'English', 'Science', 'Urdu'];
     const SYLLABI = ['SNC', 'Cambridge', 'Oxford', 'Pearson Edexcel', 'Other'];
 
     public function show()
@@ -48,6 +52,7 @@ class AssessmentBookingController extends Controller
 
         $data['availableDates'] = array_keys($data['slotsByDate']);
         $data['eligibleGrades'] = $this->eligibleGrades();
+        $data['subjects'] = self::SUBJECTS;
 
         return view('frontend.book-assessment', compact('data'));
     }
@@ -84,6 +89,7 @@ class AssessmentBookingController extends Controller
     public function registerShow()
     {
         $data['eligibleGrades'] = $this->eligibleGrades();
+        $data['subjects'] = self::SUBJECTS;
 
         return view('frontend.assessment-register', compact('data'));
     }
@@ -207,9 +213,11 @@ class AssessmentBookingController extends Controller
      * Only grades with at least one published, leadIntake-flagged
      * assessment - this is what the registration form's own Grade
      * dropdown is built from too, so a visitor can never even select a
-     * grade nothing has been prepared for. Subjects stay the full
-     * fixed list (see class constant) on the form itself; a mismatch
-     * there still degrades gracefully in createLeadAndSend() below.
+     * grade nothing has been prepared for. Subjects use the fixed list
+     * in the class constant - kept to only the ones with real content
+     * so a visitor can't pick a subject nothing was built for; a
+     * grade/subject pair that still has no matching assessment degrades
+     * gracefully in createLeadAndSend() below.
      */
     private function eligibleGrades(): array
     {

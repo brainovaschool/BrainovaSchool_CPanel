@@ -1176,8 +1176,32 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
         const text = JSON.stringify(full[k]);
         if (text !== lastSent[k]) changed[k] = full[k];
       });
-      if (Object.keys(changed).length) enqueue('snapshot', changed);
+      if (Object.keys(changed).length) {
+        const removed = removedIds_(changed);
+        if (Object.keys(removed).length) enqueue('delete', removed);
+        enqueue('snapshot', changed);
+      }
     }, 1000);
+  }
+
+  // For each collection about to be resent, finds ids that were in the
+  // last successfully-synced copy but are missing from the new one - a
+  // locally deleted record, or one whose id changed because it's derived
+  // from editable fields (a Simple set's id is grade+subject - see
+  // simpleSetKey in core.js). upsertManyRows_ on the backend only ever
+  // adds/updates rows by id, so without sending these as an explicit
+  // delete first, a removed-or-renamed row's old Sheet row would never
+  // go away - it would just reappear on the next bootstrap.
+  function removedIds_(changed) {
+    const out = {};
+    Object.keys(changed).forEach(k => {
+      let prev; try { prev = JSON.parse(lastSent[k] || '[]'); } catch (e) { prev = []; }
+      if (!Array.isArray(prev) || !prev.length) return;
+      const now = new Set((changed[k] || []).map(r => String(r.id)));
+      const gone = prev.map(r => String(r.id)).filter(id => id && !now.has(id));
+      if (gone.length) out[k] = gone;
+    });
+    return out;
   }
 
   // Every collection becomes an array of {id, ...} records, even the two
