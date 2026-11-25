@@ -107,7 +107,29 @@ function flatten_(record) {
 }
 
 function safeParse_(v) {
-  if (typeof v !== 'string' && typeof v !== 'number') return v;
+  if (typeof v !== 'string') return v;
+  // flatten_() only ever JSON.stringifies an object or array (see its
+  // own definition above) - every plain string/number/boolean cell is
+  // written exactly as-is, so it can never legitimately come back as
+  // JSON text. Every one of those plain cells - a question's text, its
+  // subject, a title, a source - used to still run the full JSON.parse
+  // + catch machinery and fail, for every single cell of every single
+  // row, on every single read. With the bank alone at 1000+ rows across
+  // ~20 columns, that was tens of thousands of wasted parse attempts
+  // per request - a large, measured share of why a full bootstrap read
+  // had grown to take several seconds. Skipping straight past anything
+  // that doesn't even start with { or [ - the only two characters
+  // JSON.stringify can ever start with - returns the exact same result
+  // for every cell, just without ever attempting (and catching) a parse
+  // that could only ever have failed.
+  const t = v.trim();
+  // Every character JSON.stringify can ever start a value with (object,
+  // array, quoted string, the literals true/false/null, or a number) is
+  // one of these, case-sensitively - JSON's true/false/null are always
+  // lowercase, so a cell that starts with "True..." (capital T, common
+  // in this app's own "True or false: ..." question text) can never
+  // have been produced by JSON.stringify and is safely skipped too.
+  if (!/^[{["tfn0-9-]/.test(t)) return v;
   try { return JSON.parse(v); } catch (e) { return v; }
 }
 
