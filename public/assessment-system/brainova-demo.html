@@ -3137,17 +3137,36 @@ ACT.simpleImportCsv = async el => {
     const g = (c, k) => ix(k) >= 0 ? (c[ix(k)] || '').trim() : '';
     const tierOf = s => { const t = s.trim().toLowerCase(); if (t[0] === 'h') return 'H'; if (t[0] === 's') return 'S'; if (t[0] === 'e') return 'E'; return null; };
     const qs = []; let bad = 0;
+    let skippedTier = 0;
     rows.slice(1).forEach(c => {
-      const diff = tierOf(g(c, 'difficulty') || ''), text = g(c, 'question');
-      const opts = ['option_a', 'option_b', 'option_c', 'option_d'].map(k => g(c, k));
-      const ansRaw = g(c, 'answer').toLowerCase();
-      let ansIdx = 'abcd'.indexOf(ansRaw);
-      if (ansIdx < 0) ansIdx = opts.findIndex(o => o.toLowerCase() === ansRaw);
+      const diffRaw = g(c, 'difficulty') || '';
+      const diff = tierOf(diffRaw);
+      // Accepts either this system's own simple template ("question")
+      // or the Question bank's own richer CSV shape ("text"), so a
+      // file exported/built for the other system doesn't need
+      // reformatting just to try this one.
+      const text = g(c, 'question') || g(c, 'text');
+      const type = (g(c, 'type') || 'mcq').toLowerCase();
+      let opts, ansIdx;
+      if (type === 'tf') {
+        opts = ['True', 'False'];
+        const ansRaw = g(c, 'answer').toLowerCase();
+        ansIdx = ansRaw[0] === 't' ? 0 : ansRaw[0] === 'f' ? 1 : -1;
+      } else {
+        opts = ['option_a', 'option_b', 'option_c', 'option_d'].map(k => g(c, k));
+        const ansRaw = g(c, 'answer').toLowerCase();
+        ansIdx = 'abcd'.indexOf(ansRaw);
+        if (ansIdx < 0) ansIdx = opts.findIndex(o => o.toLowerCase() === ansRaw);
+      }
+      if (diffRaw && !diff) { skippedTier++; return; } // a real difficulty this system just doesn't use (e.g. Challenging/Mastery/Exceptional) - not an error in the row
       if (!diff || !text || opts.filter(Boolean).length < 2 || ansIdx < 0 || !opts[ansIdx]) { bad++; return; }
       qs.push({ id: 'simpleq-' + uid('').slice(1, 9), diff, text, options: opts.map((t, j) => ({ id: 'abcd'[j], t })).filter(o => o.t), answer: 'abcd'[ansIdx], explanation: g(c, 'explanation') || '' });
     });
     U.simpleDraft.questions = qs;
-    render(); toast(`Loaded ${qs.length} question${qs.length === 1 ? '' : 's'}${bad ? ` (${bad} skipped - missing difficulty, question text, at least 2 options, or an answer that doesn't match an option).` : '.'}`);
+    const notes = [];
+    if (bad) notes.push(`${bad} skipped - missing difficulty, question text, at least 2 options, or an answer that doesn't match an option`);
+    if (skippedTier) notes.push(`${skippedTier} skipped - tagged with a difficulty this simple system doesn't use (only Hard, Strengthen and Extend)`);
+    render(); toast(`Loaded ${qs.length} question${qs.length === 1 ? '' : 's'}${notes.length ? ` (${notes.join('; ')}).` : '.'}`);
   } catch (err) { toast('Could not read that CSV file.'); }
   el.value = '';
 };
