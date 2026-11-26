@@ -527,7 +527,7 @@ function makeResponse(seq, q, raw, ms, meta = {}) {
   let status = g.status;
   if (status === 'unanswered' && meta.visited) status = 'skipped';
   const wt = status === 'incorrect' ? wrongTag(q, raw) : null;
-  return { seq, qid: q.id, topic: q.topic, subject: q.subject, diff: q.diff, type: q.type, objective: q.objective, b: q.b, c: q.c, status, marks: g.marks, maxMarks: q.marks,
+  return { seq, qid: q.id, topic: q.topic, subject: q.subject, diff: q.diff, type: q.type, objective: q.objective, text: q.text, b: q.b, c: q.c, status, marks: g.marks, maxMarks: q.marks,
     answerRaw: raw == null ? null : raw, answer: ansText(q, raw), correctAnswer: correctText(q), timeMs: Math.round(ms || 0), estSec: q.time || 45,
     changed: meta.changed || 0, visits: meta.visits || 1, timedOut: !!meta.timedOut, probe: !!meta.probe, tag: wt ? wt.tag : null, why: wt ? wt.why : null };
 }
