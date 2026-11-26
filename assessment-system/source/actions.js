@@ -136,7 +136,14 @@ ACT.simpleImportCsv = async el => {
       }
       if (diffRaw && !diff) { skippedTier++; return; } // a real difficulty this system just doesn't use (e.g. Challenging/Mastery/Exceptional) - not an error in the row
       if (!diff || !text || opts.filter(Boolean).length < 2 || ansIdx < 0 || !opts[ansIdx]) { bad++; return; }
-      qs.push({ id: 'simpleq-' + uid('').slice(1, 9), diff, text, options: opts.map((t, j) => ({ id: 'abcd'[j], t })).filter(o => o.t), answer: 'abcd'[ansIdx], explanation: g(c, 'explanation') || '' });
+      // Optional - a plain simple-template CSV has no 'topic' column at
+      // all (g() just returns '' for it, same as always), but a file
+      // built from the Question bank's own richer CSV shape often does
+      // have real topic names already filled in, and there's no reason
+      // to throw that away just because it came in through this
+      // importer. engine.js falls back to 'General' when this is blank,
+      // same behaviour as before this existed.
+      qs.push({ id: 'simpleq-' + uid('').slice(1, 9), diff, text, options: opts.map((t, j) => ({ id: 'abcd'[j], t })).filter(o => o.t), answer: 'abcd'[ansIdx], explanation: g(c, 'explanation') || '', topic: g(c, 'topic') || '' });
     });
     U.simpleDraft.questions = qs;
     // A fresh CSV means this course's content is being replaced, not

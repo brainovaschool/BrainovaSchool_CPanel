@@ -591,7 +591,7 @@ function buildSimpleQuiz(set, seed) {
     if (!gained) break;
   }
   const items = order.flatMap(k => picked[k]).map(q => ({
-    id: q.id, subject: set.subject, topic: 'General', unit: null, grades: [set.grade, set.grade], diff: q.diff, type: 'mcq',
+    id: q.id, subject: set.subject, topic: q.topic || 'General', unit: null, grades: [set.grade, set.grade], diff: q.diff, type: 'mcq',
     text: q.text, objective: 'Not specified', explanation: q.explanation || '', marks: 1, time: 45, prereq: null,
     source: 'Simple CSV', status: 'approved', b: bFor(q.id, q.diff), c: cFor('mcq'), marking: 'Full marks for the correct answer.',
     options: q.options, answer: q.answer,
