@@ -139,6 +139,12 @@ ACT.simpleImportCsv = async el => {
       qs.push({ id: 'simpleq-' + uid('').slice(1, 9), diff, text, options: opts.map((t, j) => ({ id: 'abcd'[j], t })).filter(o => o.t), answer: 'abcd'[ansIdx], explanation: g(c, 'explanation') || '' });
     });
     U.simpleDraft.questions = qs;
+    // A fresh CSV means this course's content is being replaced, not
+    // tweaked - any students already assigned under the OLD content
+    // should not carry over as if they'd been assigned the new one.
+    // Harmless to set unconditionally: a brand-new (unsaved) set has no
+    // existing assignments to forget in the first place.
+    U.simpleDraft._contentReplaced = true;
     const notes = [];
     if (bad) notes.push(`${bad} skipped - missing difficulty, question text, at least 2 options, or an answer that doesn't match an option`);
     if (skippedTier) notes.push(`${skippedTier} skipped - tagged with a difficulty this simple system doesn't use (only Hard, Strengthen and Extend)`);
@@ -154,7 +160,7 @@ ACT.simpleSave = () => {
   if (d._origId && d._origId !== id) S.assessments = S.assessments.filter(a => a.simpleSetId !== d._origId);
   const saved = { id, grade: +d.grade, subject: d.subject, title: (d.title || '').trim(), questionCount: Math.max(1, +d.questionCount || 1), leadIntake: !!d.leadIntake, questions: d.questions, updated: Date.now() };
   S.simpleSets.unshift(saved);
-  syncSimpleCompanion(saved);
+  syncSimpleCompanion(saved, !!d._contentReplaced);
   save(); U.simpleDraft = null; U.simpleErr = null; render(); toast('Simple set saved.');
 };
 

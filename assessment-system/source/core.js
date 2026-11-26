@@ -121,7 +121,7 @@ function simpleSetKey(grade, subject) { return 'simpleset-' + grade + '-' + Stri
 // matching, results, reports - works for it unchanged. Only its
 // questions come from a different place (see buildSimpleQuiz in
 // engine.js) instead of the Question bank.
-function syncSimpleCompanion(set) {
+function syncSimpleCompanion(set, contentReplaced) {
   const id = 'asmt-' + set.id, i = S.assessments.findIndex(a => a.id === id);
   // resultVis/feedback default to 'release' - fine for the Builder,
   // where a teacher reviews and releases each attempt by hand, but
@@ -133,7 +133,7 @@ function syncSimpleCompanion(set) {
   // actually assigned/sent in the first place).
   const a = newAsmt({ id, title: (set.title || '').trim() || `Grade ${set.grade} ${set.subject} (Simple)`, application: 'school', grades: [set.grade], topics: [{ subject: set.subject, topic: 'General' }], model: 'fixed', simpleSetId: set.id,
     resultVis: 'instant', feedback: 'instant',
-    assignedTo: i >= 0 ? S.assessments[i].assignedTo : [], created: i >= 0 ? S.assessments[i].created : Date.now() });
+    assignedTo: (i >= 0 && !contentReplaced) ? S.assessments[i].assignedTo : [], created: i >= 0 ? S.assessments[i].created : Date.now() });
   if (i >= 0) S.assessments[i] = a; else S.assessments.unshift(a);
 }
 // Each simple set has its own "offer on the public booking page" flag
