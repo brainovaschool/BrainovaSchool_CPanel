@@ -63,15 +63,18 @@ function applyLmsIdentity() {
   U.view = HOME[claims.role] || U.view;
 
   // 'vs' (view student) - the Assessment Leads admin page's "View report"
-  // button links straight here instead of the dashboard, so admin/teacher
-  // lands on that one child's own attempt history (VIEWS.students reads
-  // U.stuSel) without having to search the Students list by hand first.
-  // Never for student/parent - their own uid already IS the student being
-  // viewed, and allowing this would let one of them open a URL pointing
-  // at someone else's id.
+  // button links straight here instead of the dashboard. This is a brand
+  // new LEAD-* id the local cache has never seen, so it only resolves
+  // once the real data arrives from the Sheet (see the vsPending handoff
+  // in init(), actions.js) - landing on Students+this student selected
+  // is just the fallback until then (and stays the result if the child
+  // has no finished attempt yet to show a report for). Never for student/
+  // parent - their own uid already IS the student being viewed, and
+  // allowing this would let one of them open a URL pointing at someone
+  // else's id.
   if (claims.role === 'admin' || claims.role === 'teacher') {
     const viewStudent = new URLSearchParams(location.search).get('vs');
-    if (viewStudent) { U.view = 'students'; U.stuSel = viewStudent; }
+    if (viewStudent) { U.view = 'students'; U.stuSel = viewStudent; U.vsPending = viewStudent; }
   }
 
   // Registering this person's own roster row (below) uses saveSelf(),

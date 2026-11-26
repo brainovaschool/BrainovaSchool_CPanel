@@ -537,7 +537,7 @@ function init() {
       // The backend attaches each attempt's learning pathway (if any and
       // if this role is allowed to see it) directly onto that attempt
       // before sending it here, so att.pathways needs no extra handling.
-      S = remote; anCache = new WeakMap(); ensureSample(); if (!signedIn) setDefaultIds(); persistLocal(); render();
+      S = remote; anCache = new WeakMap(); ensureSample(); if (!signedIn) setDefaultIds(); persistLocal(); resolveVsPending_(); render();
       // Reset the "what have I already sent" baseline to match what the
       // Sheet just confirmed it has, so the next edit only resyncs what
       // actually changes from here - not everything, just to catch up.
@@ -553,6 +553,24 @@ function init() {
       }
     }).catch(() => { /* stay on the local/cached copy */ });
   }
+}
+/**
+ * The "View report" button's deep link (identity.js's 'vs' param) can
+ * only land on Students+this student selected at first, because the
+ * real data (a LEAD-* id the local cache has never seen) isn't in S yet
+ * at that point - this is what finishes the jump to that student's own
+ * latest report the moment real data arrives, so admin/teacher doesn't
+ * have to click through Students by hand. Only runs once (U.vsPending
+ * is cleared immediately), and only actually jumps to a report when
+ * there's a finished attempt to show - otherwise Students+selected is
+ * already the right, honest fallback ("no attempts yet").
+ */
+function resolveVsPending_() {
+  if (!U.vsPending) return;
+  const sid = U.vsPending;
+  U.vsPending = null;
+  const attempts = S.attempts.filter(a => a.studentId === sid && !a.preview).sort((a, b) => b.finished - a.finished);
+  if (attempts.length) { U.view = 'report'; U.params = { id: attempts[0].id }; }
 }
 function retryLeadAssignment_(n) {
   if (n >= 4 || !window.BrainovaAPI) return;
