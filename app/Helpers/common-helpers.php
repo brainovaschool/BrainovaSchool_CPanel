@@ -885,6 +885,50 @@ if (!function_exists('send_message')) {
     }
 }
 
+if (!function_exists('send_whatsapp_twillo')) {
+    /**
+     * Same Twilio account/number as send_message_twillo, but on the
+     * WhatsApp channel (both From and To prefixed 'whatsapp:'). Twilio
+     * only actually delivers these once that number has been approved as
+     * a WhatsApp sender in the Twilio console (Messaging -> Senders) -
+     * until then this still returns ['ok' => false, ...] with Twilio's
+     * own error text (e.g. "channel not enabled for this number"), which
+     * is exactly what the Settings -> SMS settings "Send test WhatsApp
+     * message" button surfaces so it's possible to tell "not configured
+     * at all" apart from "configured but WhatsApp isn't enabled yet" at
+     * a glance, without ever needing to hand the Twilio secret to anyone
+     * else to check. Never throws - a reminder job can call this as
+     * pure best-effort with no try/catch of its own.
+     */
+    function send_whatsapp_twillo($message, $recipient)
+    {
+        Log::info('WhatsApp To ::' . $recipient . ' Message:: ' . $message);
+
+        $sid = setting('twilio_account_sid');
+        $token = setting('twilio_auth_token');
+        $twilio_number = setting('twilio_phone_number');
+
+        if (!$sid || !$token || !$twilio_number) {
+            return ['ok' => false, 'sid' => null, 'error' => 'Twilio is not configured yet (Settings → SMS settings).'];
+        }
+
+        $toNumber = 'whatsapp:' . preg_replace('/^whatsapp:/', '', trim($recipient));
+        $fromNumber = 'whatsapp:' . preg_replace('/^whatsapp:/', '', trim($twilio_number));
+
+        try {
+            $twilio = new Client($sid, $token);
+            $msg = $twilio->messages->create($toNumber, [
+                'body' => $message,
+                'from' => $fromNumber,
+            ]);
+
+            return ['ok' => true, 'sid' => $msg->sid, 'error' => null];
+        } catch (\Throwable $th) {
+            Log::info('Twillo WhatsApp Msg Error: ' . $th->getMessage());
+            return ['ok' => false, 'sid' => null, 'error' => $th->getMessage()];
+        }
+    }
+}
 
 if (!function_exists('send_flutter_notification')) {
     function send_flutter_notification($title, $message, $img = null)

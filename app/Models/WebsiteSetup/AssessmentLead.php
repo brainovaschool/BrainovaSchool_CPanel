@@ -14,6 +14,8 @@ class AssessmentLead extends Model
     protected $casts = [
         'link_sent_at' => 'datetime',
         'whatsapp_sent_at' => 'datetime',
+        'meeting_reminder_sent_at' => 'datetime',
+        'meeting_confirmed_at' => 'datetime',
     ];
 
     const STATUS_NEW = 'new';

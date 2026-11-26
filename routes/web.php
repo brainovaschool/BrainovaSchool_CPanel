@@ -89,6 +89,10 @@ Route::middleware(saasMiddleware())->group(function () {
     Route::middleware(['auth.routes'])->controller(\App\Http\Controllers\WebsiteSetup\AssessmentLeadController::class)->prefix('assessment-lead')->name('assessment-lead.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/resend/{id}', 'resend')->name('resend');
+        Route::post('/calendar-settings', 'calendarSettings')->name('calendar-settings');
+        Route::get('/calendar-connect', 'calendarConnect')->name('calendar-connect');
+        Route::get('/calendar-callback', 'calendarCallback')->name('calendar-callback');
+        Route::post('/calendar-disconnect', 'calendarDisconnect')->name('calendar-disconnect');
     });
 
     Route::get('/test-emails', function () {
@@ -486,6 +490,7 @@ Route::middleware(saasMiddleware())->group(function () {
 
                         Route::get('/sms-setting',            'smsSetting')->name('settings.sms-setting')->middleware('PermissionCheck:sms_settings_read');
                         Route::post('/sms-setting',           'updateSmsSetting')->name('settings.sms-setting.update')->middleware('PermissionCheck:sms_settings_update', 'DemoCheck');
+                        Route::post('/sms-setting/test-whatsapp', 'testWhatsapp')->name('settings.sms-setting.test-whatsapp')->middleware('PermissionCheck:sms_settings_update', 'DemoCheck');
 
                         Route::get('/payment-gateway-setting',      'paymentGatewaySetting')->name('settings.payment-gateway-setting')->middleware('PermissionCheck:payment_gateway_settings_read');
                         Route::post('/payment-gateway-setting',     'updatePaymentGatewaySetting')->name('settings.payment-gateway-setting.update')->middleware('PermissionCheck:payment_gateway_settings_update', 'DemoCheck');

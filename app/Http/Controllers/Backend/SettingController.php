@@ -115,6 +115,30 @@ class SettingController extends Controller
         }
         return redirect()->back()->with('danger', ___('alert.something_went_wrong_please_try_again'));
     }
+
+    /**
+     * Sends one real WhatsApp-channel message through the Twilio number
+     * already saved above, so it's possible to tell at a glance whether
+     * that number is actually WhatsApp-approved yet, without anyone ever
+     * having to open the Twilio console or hand the account secret to
+     * anyone else to check. See send_whatsapp_twillo() for what "ok" vs
+     * the error text actually means.
+     */
+    public function testWhatsapp(Request $request)
+    {
+        $request->validate(['test_whatsapp_number' => 'required|string']);
+
+        $result = send_whatsapp_twillo(
+            'This is a test message from Brainova School to check that WhatsApp sending is working.',
+            $request->input('test_whatsapp_number')
+        );
+
+        if ($result['ok']) {
+            return redirect()->back()->with('success', 'WhatsApp message sent (Twilio SID: ' . $result['sid'] . '). If it didn\'t arrive, check that the number has opted in / joined your sandbox.');
+        }
+
+        return redirect()->back()->with('danger', 'WhatsApp send failed: ' . $result['error']);
+    }
     // Recaptcha setting end
 
     // Payment Gateway setting start

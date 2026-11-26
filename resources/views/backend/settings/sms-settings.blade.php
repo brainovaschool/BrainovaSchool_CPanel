@@ -100,5 +100,19 @@
                 </form>
             </div>
         </div>
+
+        <div class="card ot-card mt-20">
+            <div class="card-header">
+                <h4>Send test WhatsApp message</h4>
+            </div>
+            <div class="card-body">
+                <p class="text-secondary mb-3">Sends one real WhatsApp message through the Twilio number above, so you can tell right away whether it's approved for WhatsApp yet — without opening the Twilio console. If it fails, the error message below will say why (e.g. "channel not enabled" means this number can send SMS but is not yet an approved WhatsApp sender).</p>
+                <form action="{{ route('settings.sms-setting.test-whatsapp') }}" method="post" class="d-flex align-items-center gap-2 flex-wrap">
+                    @csrf
+                    <input type="text" name="test_whatsapp_number" class="form-control" style="max-width:260px" placeholder="e.g. +923001234567" required>
+                    <button class="btn ot-btn-primary">Send test message</button>
+                </form>
+            </div>
+        </div>
     </div>
 @endsection

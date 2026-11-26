@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Frontend;
 use App\Http\Controllers\Controller;
 use App\Models\WebsiteSetup\AssessmentLead;
 use App\Models\WebsiteSetup\AssessmentSlot;
+use App\Services\GoogleCalendarClient;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 /**
  * The "book a meeting with the teacher" step a lead's parent reaches
@@ -56,6 +59,7 @@ class MeetingBookingController extends Controller
             $lead->message = trim(($lead->message ? $lead->message."\n\n" : '').$request->input('message'));
         }
         $lead->status = AssessmentLead::STATUS_BOOKED_MEETING;
+        $lead->meeting_link = $this->buildMeetingLink($lead, $slot);
         $lead->save();
 
         // Re-use the current (already-validated) signed URL rather than
@@ -63,5 +67,57 @@ class MeetingBookingController extends Controller
         // the 'signed' middleware would reject on the next load.
         return redirect($request->fullUrl())
             ->with('message', 'Thanks! Your meeting is booked — we\'ll be in touch.');
+    }
+
+    /**
+     * The one-tap "I'll be there" link sent in the 1-hour-before reminder
+     * (see App\Console\Commands\AssessmentMeetingReminderCron). No login,
+     * identity carried by the signature alone, same as show()/store()
+     * above - this only ever records a confirmation, never cancels or
+     * changes anything else about the booking.
+     */
+    public function confirm(Request $request, AssessmentLead $lead)
+    {
+        if (! $lead->meeting_confirmed_at) {
+            $lead->meeting_confirmed_at = now();
+            $lead->save();
+        }
+
+        return view('frontend.book-meeting-confirmed', compact('lead'));
+    }
+
+    /**
+     * A real Google Meet link when Calendar is connected (see
+     * AssessmentLeadController::calendarConnect()); otherwise a free,
+     * no-login Jitsi room keyed off the lead's own id, so a meeting link
+     * always exists from the moment a slot is booked, same as it would
+     * once Calendar is connected - nothing downstream has to handle "no
+     * link yet" as a separate case.
+     */
+    private function buildMeetingLink(AssessmentLead $lead, AssessmentSlot $slot): string
+    {
+        try {
+            $start = Carbon::createFromFormat('Y-m-d g:i A', $slot->slot_date->format('Y-m-d').' '.$slot->start_time);
+            $end = $slot->end_time
+                ? Carbon::createFromFormat('Y-m-d g:i A', $slot->slot_date->format('Y-m-d').' '.$slot->end_time)
+                : $start->copy()->addMinutes(15);
+
+            $calendar = new GoogleCalendarClient();
+            if ($calendar->isConfigured()) {
+                $event = $calendar->createMeetEvent(
+                    'Brainova — meeting with '.$lead->guardian_name,
+                    'Assessment follow-up meeting for '.$lead->student_name.' (Grade '.$lead->grade.').',
+                    $start,
+                    $end
+                );
+                if (!empty($event['meetLink'])) {
+                    return $event['meetLink'];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Google Meet link generation failed: '.$e->getMessage());
+        }
+
+        return 'https://meet.jit.si/Brainova-Meeting-'.$lead->id;
     }
 }

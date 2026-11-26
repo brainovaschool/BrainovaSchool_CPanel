@@ -71,6 +71,12 @@ Route::middleware(saasMiddleware())->group(function () {
                 Route::get('/book-meeting/{lead}', [MeetingBookingController::class, 'show'])->name('frontend.book-meeting')->middleware('signed');
                 Route::post('/book-meeting/{lead}', [MeetingBookingController::class, 'store'])->name('frontend.book-meeting.store')->middleware('signed');
 
+                // The one-tap "I'll be there" link in the 1-hour-before
+                // reminder email (AssessmentMeetingReminderCron) - no
+                // login, same signed-link identity as the two routes
+                // above.
+                Route::get('/confirm-meeting/{lead}', [MeetingBookingController::class, 'confirm'])->name('frontend.confirm-meeting')->middleware('signed');
+
                 Route::get('/contact',          'contact')->name('frontend.contact');
                 Route::get('/online-admission', 'onlineAdmission')->name('frontend.online-admission');
                 Route::get('/online-admission-fees/{id}/{ref}', 'onlineAdmissionFees')->name('frontend.online-admission-fees');

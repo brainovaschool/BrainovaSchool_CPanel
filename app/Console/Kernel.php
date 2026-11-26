@@ -14,6 +14,7 @@ class Kernel extends ConsoleKernel
         Commands\MainMigrateSeed::class,
         \App\Console\Commands\ModuleInstall::class,
         \App\Console\Commands\Portal\TaskDeadlineCron::class,
+        \App\Console\Commands\AssessmentMeetingReminderCron::class,
     ];
     /**
      * Define the application's command schedule.
@@ -30,6 +31,9 @@ class Kernel extends ConsoleKernel
                  ->everyMinute();
 
         $schedule->command('portal:task-deadlines')
+                 ->everyMinute();
+
+        $schedule->command('assessment:meeting-reminders')
                  ->everyMinute();
     }
 
