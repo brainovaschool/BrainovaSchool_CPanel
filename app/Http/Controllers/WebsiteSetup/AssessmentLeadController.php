@@ -8,8 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Mail\AssessmentInviteMail;
 use App\Models\Setting;
 use App\Models\WebsiteSetup\AssessmentLead;
+use App\Models\WebsiteSetup\AssessmentSlot;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
@@ -208,6 +210,39 @@ class AssessmentLeadController extends Controller
         Setting::updateOrCreate(['name' => 'assessment_calendar_refresh_token'], ['value' => null]);
 
         return back()->with('success', 'Google Calendar disconnected. New bookings will fall back to a Jitsi video link.');
+    }
+
+    /**
+     * A lead is never hand-edited (see the class comment), but it is a
+     * valid thing to clean up - test/duplicate bookings, or a parent who
+     * asked to be removed. Freeing the seat(s) a deleted lead held is
+     * the one side effect that matters here: otherwise a slot's
+     * booked_count stays inflated forever and understates how many
+     * seats are actually still open, exactly the same bug the "can't
+     * delete a booked slot" guard in AssessmentSlotRepository exists to
+     * avoid from the other direction.
+     */
+    public function bulkDelete(Request $request)
+    {
+        $this->guard($request);
+
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+
+        $leads = AssessmentLead::whereIn('id', $ids)->get();
+
+        $leads->filter(fn ($lead) => $lead->assessment_slot_id)
+            ->groupBy('assessment_slot_id')
+            ->each(function ($group, $slotId) {
+                AssessmentSlot::where('id', $slotId)
+                    ->update(['booked_count' => DB::raw('GREATEST(booked_count - '.(int) $group->count().', 0)')]);
+            });
+
+        AssessmentLead::whereIn('id', $ids)->delete();
+
+        return response()->json([count($ids).' lead(s) deleted.', 'success', ___('alert.deleted'), ___('alert.OK')]);
     }
 
     public function resend(Request $request, $id)

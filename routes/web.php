@@ -89,6 +89,7 @@ Route::middleware(saasMiddleware())->group(function () {
     Route::middleware(['auth.routes'])->controller(\App\Http\Controllers\WebsiteSetup\AssessmentLeadController::class)->prefix('assessment-lead')->name('assessment-lead.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/resend/{id}', 'resend')->name('resend');
+        Route::post('/bulk-delete', 'bulkDelete')->name('bulk-delete');
         Route::post('/calendar-settings', 'calendarSettings')->name('calendar-settings');
         Route::get('/calendar-connect', 'calendarConnect')->name('calendar-connect');
         Route::get('/calendar-callback', 'calendarCallback')->name('calendar-callback');

@@ -61,10 +61,12 @@
                     </form>
                 </div>
                 <div class="card-body">
+                    @include('backend.partials.bulk-actions-bar', ['bulkStatusToggle' => false])
                     <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead">
                                 <tr>
+                                    <th style="width:36px"><input type="checkbox" id="bulkSelectAll"></th>
                                     <th class="serial">{{ ___('common.sr_no') }}</th>
                                     <th>Student</th>
                                     <th>Grade</th>
@@ -80,7 +82,8 @@
                             </thead>
                             <tbody class="tbody">
                                 @forelse ($data['leads'] as $key => $row)
-                                    <tr>
+                                    <tr id="row_{{ $row->id }}">
+                                        <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
                                         <td class="serial">{{ ++$key }}</td>
                                         <td>
                                             <b>{{ $row->student_name }}</b>
@@ -151,3 +154,4 @@
         </div>
     </div>
 @endsection
+@include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'assessment-lead'])
