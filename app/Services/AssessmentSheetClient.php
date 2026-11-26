@@ -86,12 +86,17 @@ class AssessmentSheetClient
      * Registers this lead as a lightweight student row (with the real
      * grade from the booking form - never null, unlike the generic
      * "first login" auto-registration identity.js does for any brand
-     * new LMS student) and, if a matching assessment was found, adds
-     * the lead's id to just that one assessment's assignedTo list
-     * without touching anything else about it. One combined write.
-     * Returns true only on a confirmed success from the Sheet.
+     * new LMS student) and adds the lead's id to EACH matched
+     * assessment's own assignedTo list, without touching anything else
+     * about any of them. A lead can request more than one subject (the
+     * booking form's Subject(s) field is a checklist), so this takes
+     * one matched assessment per requested subject, not just one
+     * overall - otherwise a parent who ticked both Science and Maths
+     * would only ever be assigned whichever one happened to match
+     * first. One combined write. Returns true only on a confirmed
+     * success from the Sheet.
      */
-    public function assignLead(string $leadUid, string $name, int $grade, ?array $assessment): bool
+    public function assignLead(string $leadUid, string $name, int $grade, array $assessments): bool
     {
         if (! $this->isConfigured()) {
             return false;
@@ -105,16 +110,15 @@ class AssessmentSheetClient
             ]],
         ];
 
-        if ($assessment) {
-            $assignedTo = array_values(array_unique(array_merge(
-                array_map('strval', $assessment['assignedTo'] ?? []),
-                [$leadUid]
-            )));
+        if (! empty($assessments)) {
+            $payload['assessments'] = array_map(function ($assessment) use ($leadUid) {
+                $assignedTo = array_values(array_unique(array_merge(
+                    array_map('strval', $assessment['assignedTo'] ?? []),
+                    [$leadUid]
+                )));
 
-            $payload['assessments'] = [[
-                'id' => $assessment['id'],
-                'assignedTo' => $assignedTo,
-            ]];
+                return ['id' => $assessment['id'], 'assignedTo' => $assignedTo];
+            }, $assessments);
         }
 
         try {

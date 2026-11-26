@@ -289,15 +289,19 @@ class AssessmentBookingController extends Controller
         $lead->assessment_system_student_id = 'LEAD-'.$lead->id;
 
         // Auto-assign to a published, leadIntake-flagged assessment
-        // (see AssessmentSheetClient::fetchPublishedAssessments()) whose
-        // grade matches, preferring one that also covers a requested
-        // subject AND the requested syllabus (unless the assessment left
-        // syllabus blank, meaning "any"); if nothing matches that well,
-        // fall back to a subject-only match, then grade-only, so the
-        // lead still gets something rather than nothing. None found at
-        // all is never a hard failure: the lead still gets created and
-        // emailed, just without an assigned assessment yet - visible to
-        // admin as needing attention on the leads list.
+        // (see AssessmentSheetClient::fetchPublishedAssessments()) for
+        // EACH requested subject, not just one overall - the form's
+        // Subject(s) field is a checklist, so a parent who ticked both
+        // Science and Maths should be assigned both, not whichever one
+        // happened to match first. Per subject: prefer a match that also
+        // covers the requested syllabus (unless the assessment left
+        // syllabus blank, meaning "any"); fall back to a subject-only
+        // match otherwise. If NONE of the requested subjects matched
+        // anything at all, fall back to one grade-only match so the lead
+        // still gets something rather than nothing. None found at all is
+        // never a hard failure: the lead still gets created and emailed,
+        // just without an assigned assessment yet - visible to admin as
+        // needing attention on the leads list.
         try {
             $sheet = new AssessmentSheetClient();
             $assessments = $sheet->fetchPublishedAssessments();
@@ -306,23 +310,33 @@ class AssessmentBookingController extends Controller
                 $grades = array_map('intval', $a['grades'] ?? []);
                 return in_array($lead->grade, $grades, true);
             });
-            $bySubject = function ($a) use ($requestedSubjects) {
-                $subjects = collect($a['topics'] ?? [])->pluck('subject')->unique();
-                return $subjects->intersect($requestedSubjects)->isNotEmpty();
-            };
             // An assessment's own syllabus list is empty by default,
             // meaning "any syllabus" - same "leave empty to ignore"
             // convention the Builder already uses for grades, so an
             // older/untagged assessment still matches exactly as before.
             $bySyllabus = fn ($a) => empty($a['syllabus']) || in_array($lead->syllabus, (array) $a['syllabus'], true);
-            $match = $gradeMatches->first(fn ($a) => $bySubject($a) && $bySyllabus($a))
-                ?? $gradeMatches->first($bySubject)
-                ?? $gradeMatches->first();
 
-            if ($sheet->assignLead($lead->assessment_system_student_id, $lead->student_name, $lead->grade, $match)) {
-                if ($match) {
-                    $lead->assigned_assessment_id = $match['id'] ?? null;
-                    $lead->assigned_assessment_title = $match['title'] ?? null;
+            $matches = collect();
+            foreach ($requestedSubjects as $subject) {
+                $bySubject = function ($a) use ($subject) {
+                    $subjects = collect($a['topics'] ?? [])->pluck('subject')->unique();
+                    return $subjects->contains($subject);
+                };
+                $m = $gradeMatches->first(fn ($a) => $bySubject($a) && $bySyllabus($a))
+                    ?? $gradeMatches->first($bySubject);
+                if ($m) {
+                    $matches->push($m);
+                }
+            }
+            $matches = $matches->unique('id')->values();
+            if ($matches->isEmpty() && $gradeMatches->isNotEmpty()) {
+                $matches = collect([$gradeMatches->first()]);
+            }
+
+            if ($sheet->assignLead($lead->assessment_system_student_id, $lead->student_name, $lead->grade, $matches->all())) {
+                if ($matches->isNotEmpty()) {
+                    $lead->assigned_assessment_id = $matches->pluck('id')->implode(', ');
+                    $lead->assigned_assessment_title = $matches->pluck('title')->implode(', ');
                 }
             }
         } catch (\Throwable $e) {
