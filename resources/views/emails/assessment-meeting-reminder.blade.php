@@ -11,13 +11,13 @@
                 <table role="presentation" width="100%" style="max-width:520px;background:#ffffff;border-radius:14px;overflow:hidden;">
                     <tr>
                         <td style="background:#0097b2;padding:22px 28px;">
-                            <span style="color:#ffffff;font-size:18px;font-weight:bold;">Your meeting is in about an hour</span>
+                            <span style="color:#ffffff;font-size:18px;font-weight:bold;">{{ ($data['timeframe'] ?? 'soon') === 'tomorrow' ? 'Your meeting is tomorrow' : 'Your meeting is in about an hour' }}</span>
                         </td>
                     </tr>
                     <tr>
                         <td style="padding:26px 28px;">
                             <p style="margin:0 0 18px;color:#384049;font-size:14px;line-height:1.6;">
-                                Hi {{ $data['guardian_name'] ?? 'there' }}, just a reminder — your meeting with the teacher about {{ $data['student_name'] ?? 'your child' }}'s assessment is coming up at {{ $data['slot_label'] ?? 'the scheduled time' }}.
+                                Hi {{ $data['guardian_name'] ?? 'there' }}, just a reminder — your meeting with the teacher about {{ $data['student_name'] ?? 'your child' }}'s assessment is {{ ($data['timeframe'] ?? 'soon') === 'tomorrow' ? 'coming up tomorrow' : 'coming up' }} at {{ $data['slot_label'] ?? 'the scheduled time' }}.
                             </p>
 
                             <table role="presentation" width="100%" style="margin-bottom:16px;">

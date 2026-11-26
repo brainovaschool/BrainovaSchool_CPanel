@@ -15,6 +15,7 @@ class AssessmentLead extends Model
         'link_sent_at' => 'datetime',
         'whatsapp_sent_at' => 'datetime',
         'meeting_reminder_sent_at' => 'datetime',
+        'meeting_day_before_sent_at' => 'datetime',
         'meeting_confirmed_at' => 'datetime',
     ];
 

@@ -12,32 +12,31 @@ use Illuminate\Support\Facades\URL;
 
 /**
  * Runs every minute (same pattern as the existing attendance:cron /
- * portal:task-deadlines) looking for a booked assessment-follow-up
- * meeting about an hour away that hasn't been reminded yet. Sends one
- * email (always) and attempts one WhatsApp message (best-effort - see
- * send_whatsapp_twillo in common-helpers.php), each carrying the meeting
- * link and a one-tap "I'll be there" confirmation link. Every lead is
- * only ever reminded once, however many times this fires, because
- * meeting_reminder_sent_at is stamped the moment a lead is handled -
- * whether or not the send itself actually succeeded, since a flaky mail/
- * WhatsApp provider should never turn into a reminder repeated every
- * minute forever.
+ * portal:task-deadlines) sending two independent email reminders for each
+ * booked assessment-follow-up meeting: one about a day before, one about
+ * an hour before - each tracked by its own "sent" column so it only ever
+ * fires once, however many times this command runs. Both carry the
+ * meeting link and a one-tap "I'll be there" confirmation link.
+ *
+ * No automatic WhatsApp send here - there's no working Twilio WhatsApp
+ * sender configured (and no plan to pay for one), so WhatsApp is a free
+ * manual "click to open WhatsApp with this message ready" link instead
+ * (see AssessmentLeadController::whatsappReminderLink()), sent from
+ * whichever WhatsApp account is logged into the admin's own browser/
+ * phone - not something a cron job can do on its own.
  */
 class AssessmentMeetingReminderCron extends Command
 {
     protected $signature = 'assessment:meeting-reminders';
-    protected $description = 'Send the 1-hour-before reminder + confirmation link for booked assessment meetings';
-
-    /** How late this is still allowed to send a "coming up" reminder for
-     *  a meeting that's already started - covers a cron outage without
-     *  sending a confusingly-late notice for a meeting long over. */
-    private const GRACE_MINUTES_AFTER_START = 30;
+    protected $description = 'Send the day-before and hour-before email reminders for booked assessment meetings';
 
     public function handle()
     {
         $leads = AssessmentLead::query()
             ->where('status', AssessmentLead::STATUS_BOOKED_MEETING)
-            ->whereNull('meeting_reminder_sent_at')
+            ->where(function ($q) {
+                $q->whereNull('meeting_day_before_sent_at')->orWhereNull('meeting_reminder_sent_at');
+            })
             ->with('slot')
             ->get();
 
@@ -53,27 +52,53 @@ class AssessmentMeetingReminderCron extends Command
                 continue;
             }
 
-            $remindAt = $start->copy()->subHour();
-            if (now()->lt($remindAt)) {
-                continue; // more than an hour away still - not yet
+            if (! $lead->meeting_day_before_sent_at) {
+                // A narrow 4-hour band (20h-24h before the meeting), not
+                // "any time until the hour-before reminder takes over" -
+                // a meeting booked with LESS than ~20 hours' notice (very
+                // common for a next-day or same-day slot) would otherwise
+                // still match "any time before start" and go out calling
+                // a same-day meeting "tomorrow". Missing this band (e.g.
+                // short notice, or a cron outage) just means this one
+                // reminder is silently skipped, never sent with wrong
+                // wording - the hour-before reminder still covers it.
+                $this->maybeRemind($lead, $start, 'meeting_day_before_sent_at', $start->copy()->subHours(24), $start->copy()->subHours(20), 'tomorrow');
             }
 
-            // From here on this lead is considered handled either way,
-            // so a flaky mail/WhatsApp send never causes a retry loop.
-            $lead->meeting_reminder_sent_at = now();
-            $lead->save();
-
-            if (now()->gt($start->copy()->addMinutes(self::GRACE_MINUTES_AFTER_START))) {
-                continue; // too late to usefully remind - meeting's already well underway
+            if (! $lead->meeting_reminder_sent_at) {
+                // From an hour out until 30 minutes after start - covers a
+                // short cron outage without sending a confusingly-late
+                // "coming up" notice for a meeting long over.
+                $this->maybeRemind($lead, $start, 'meeting_reminder_sent_at', $start->copy()->subHour(), $start->copy()->addMinutes(30), 'soon');
             }
-
-            $this->send($lead, $start);
         }
 
         return Command::SUCCESS;
     }
 
-    private function send(AssessmentLead $lead, Carbon $start): void
+    /**
+     * $sentColumn is stamped the moment this lead enters the send window,
+     * whether or not the email itself actually succeeds, and also when
+     * the window was missed entirely (cron outage) - either way this
+     * reminder is "handled" and must never be attempted again.
+     */
+    private function maybeRemind(AssessmentLead $lead, Carbon $start, string $sentColumn, Carbon $windowOpensAt, Carbon $windowClosesAt, string $timeframe): void
+    {
+        if (now()->lt($windowOpensAt)) {
+            return; // not yet
+        }
+
+        $lead->{$sentColumn} = now();
+        $lead->save();
+
+        if (now()->gt($windowClosesAt)) {
+            return; // window missed - stamped above so it's never retried, just not sent this late
+        }
+
+        $this->send($lead, $start, $timeframe);
+    }
+
+    private function send(AssessmentLead $lead, Carbon $start, string $timeframe): void
     {
         $slot = $lead->slot;
         $slotLabel = $start->format('D, d M Y').' · '.$slot->time_label;
@@ -87,15 +112,10 @@ class AssessmentMeetingReminderCron extends Command
                 'slot_label' => $slotLabel,
                 'meeting_link' => $meetingLink,
                 'confirm_link' => $confirmLink,
+                'timeframe' => $timeframe, // 'tomorrow' or 'soon' - see the mail view
             ]));
         } catch (\Throwable $e) {
             Log::warning('Assessment meeting reminder email failed: '.$e->getMessage());
         }
-
-        // No automatic WhatsApp send here on purpose - there's no working
-        // Twilio WhatsApp sender configured (and no plan to pay for one -
-        // see AssessmentLeadController@index's whatsapp_reminder_link,
-        // which gives the admin a free one-click "open WhatsApp with this
-        // message ready to send" link instead, same wording as above).
     }
 }
