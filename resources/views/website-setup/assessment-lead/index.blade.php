@@ -105,6 +105,9 @@
                                             @if ($row->meeting_link)
                                                 <br><a href="{{ $row->meeting_link }}" target="_blank" rel="noopener">Meeting link</a>
                                             @endif
+                                            @if ($row->whatsapp_reminder_link)
+                                                <br><a href="{{ $row->whatsapp_reminder_link }}" target="_blank" rel="noopener">Send WhatsApp reminder</a>
+                                            @endif
                                         </td>
                                         <td>
                                             @if ($row->assigned_assessment_title)

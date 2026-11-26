@@ -8,10 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Mail\AssessmentInviteMail;
 use App\Models\Setting;
 use App\Models\WebsiteSetup\AssessmentLead;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\URL;
 
 // Read-only triage list for assessment leads - a lead is never
 // hand-edited here, only created by the public booking form. Same
@@ -51,6 +53,7 @@ class AssessmentLeadController extends Controller
             $row->report_link = $row->assessment_system_student_id
                 ? $this->reportLink($request, $row->assessment_system_student_id)
                 : null;
+            $row->whatsapp_reminder_link = $this->whatsappReminderLink($row);
         }
 
         $data['calendarConnected'] = (new \App\Services\GoogleCalendarClient())->isConfigured();
@@ -72,6 +75,58 @@ class AssessmentLeadController extends Controller
         $link = AssessmentSystemController::buildAssessmentLink($claims, $request);
 
         return $link ? $link.'&vs='.urlencode($assessmentSystemStudentId) : null;
+    }
+
+    /**
+     * A free, zero-setup stand-in for automatic WhatsApp sending (no
+     * working Twilio account - see the 2026-11-26 WhatsApp send failure
+     * and the decision not to pay for one): a wa.me link pre-filled with
+     * the exact same reminder wording the email gets, so the admin can
+     * open it and send it themselves with one click and one tap, same
+     * message as if it had gone out automatically. Only offered once a
+     * meeting is actually booked and there's a number to message.
+     */
+    private function whatsappReminderLink(AssessmentLead $lead): ?string
+    {
+        if ($lead->status !== AssessmentLead::STATUS_BOOKED_MEETING || ! $lead->slot || ! $lead->whatsapp_number) {
+            return null;
+        }
+
+        try {
+            $start = Carbon::createFromFormat('Y-m-d g:i A', $lead->slot->slot_date->format('Y-m-d').' '.$lead->slot->start_time);
+        } catch (\Throwable $e) {
+            return null;
+        }
+
+        $slotLabel = $start->format('D, d M Y').' · '.$lead->slot->time_label;
+        $meetingLink = $lead->meeting_link ?: 'https://meet.jit.si/Brainova-Meeting-'.$lead->id;
+        $confirmLink = URL::signedRoute('frontend.confirm-meeting', ['lead' => $lead->id], now()->addDays(2));
+
+        $body = "Reminder: your meeting with the teacher about {$lead->student_name}'s assessment is at {$slotLabel}.\n".
+            "Join: {$meetingLink}\n".
+            "Please confirm you'll be there: {$confirmLink}";
+
+        return 'https://wa.me/'.$this->waDigits($lead->whatsapp_number).'?text='.urlencode($body);
+    }
+
+    /** Pakistan-specific local-to-international normalisation (every
+     *  number on this list so far is a Pakistani number, local or with
+     *  country code) - wa.me needs full digits with country code and no
+     *  leading zero, unlike how these numbers are typed on the booking
+     *  form. */
+    private function waDigits(string $raw): string
+    {
+        $digits = preg_replace('/\D+/', '', $raw);
+
+        if (str_starts_with($digits, '0')) {
+            return '92'.substr($digits, 1);
+        }
+
+        if (! str_starts_with($digits, '92') && strlen($digits) === 10) {
+            return '92'.$digits;
+        }
+
+        return $digits;
     }
 
     /** Saves the Google Cloud OAuth client credentials (Calendar API scope) -

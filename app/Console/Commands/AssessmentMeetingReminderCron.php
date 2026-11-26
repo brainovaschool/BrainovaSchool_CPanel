@@ -92,15 +92,10 @@ class AssessmentMeetingReminderCron extends Command
             Log::warning('Assessment meeting reminder email failed: '.$e->getMessage());
         }
 
-        if ($lead->whatsapp_number) {
-            $body = "Reminder: your meeting with the teacher about {$lead->student_name}'s assessment is at {$slotLabel}.\n".
-                "Join: {$meetingLink}\n".
-                "Please confirm you'll be there: {$confirmLink}";
-
-            $result = send_whatsapp_twillo($body, $lead->whatsapp_number);
-            if (! $result['ok']) {
-                Log::info('Assessment meeting WhatsApp reminder not delivered for lead '.$lead->id.': '.$result['error']);
-            }
-        }
+        // No automatic WhatsApp send here on purpose - there's no working
+        // Twilio WhatsApp sender configured (and no plan to pay for one -
+        // see AssessmentLeadController@index's whatsapp_reminder_link,
+        // which gives the admin a free one-click "open WhatsApp with this
+        // message ready to send" link instead, same wording as above).
     }
 }
