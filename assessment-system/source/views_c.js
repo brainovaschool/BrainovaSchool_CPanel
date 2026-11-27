@@ -14,7 +14,14 @@ VIEWS.my = function () {
   // init() quietly retries a few times in the background, so this is
   // "getting ready", not "nothing was ever assigned" for a lead specifically.
   const isLead = String(sid).startsWith('LEAD-');
-  const hasSubmitted = isLead && list.some(a => stateFor(a, sid).at.length > 0);
+  // .every, not .some - a lead can be assigned more than one subject (see
+  // Laravel's AssessmentBookingController::createLeadAndSend()), and this
+  // banner promises "check your email for the report", which only
+  // actually goes out once every assigned subject is submitted (see
+  // completed()'s own tally) - saying so after just the first one is
+  // true the same way it would be for a single-subject lead, but false
+  // and confusing for a multi-subject one.
+  const hasSubmitted = isLead && list.length > 0 && list.every(a => stateFor(a, sid).at.length > 0);
   const empty = isLead
     ? '<div class="empty">Getting your assessment ready — this usually takes under a minute. This page will update on its own, or you can refresh in a moment.</div>'
     : '<div class="empty">Nothing is assigned to you right now.</div>';
