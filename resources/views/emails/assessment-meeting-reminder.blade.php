@@ -11,13 +11,25 @@
                 <table role="presentation" width="100%" style="max-width:520px;background:#ffffff;border-radius:14px;overflow:hidden;">
                     <tr>
                         <td style="background:#0097b2;padding:22px 28px;">
-                            <span style="color:#ffffff;font-size:18px;font-weight:bold;">{{ ($data['timeframe'] ?? 'soon') === 'tomorrow' ? 'Your meeting is tomorrow' : 'Your meeting is in about an hour' }}</span>
+                            <span style="color:#ffffff;font-size:18px;font-weight:bold;">
+                                @if (($data['timeframe'] ?? 'soon') === 'justBooked')
+                                    Your meeting is booked
+                                @elseif (($data['timeframe'] ?? 'soon') === 'tomorrow')
+                                    Your meeting is tomorrow
+                                @else
+                                    Your meeting is in about an hour
+                                @endif
+                            </span>
                         </td>
                     </tr>
                     <tr>
                         <td style="padding:26px 28px;">
                             <p style="margin:0 0 18px;color:#384049;font-size:14px;line-height:1.6;">
-                                Hi {{ $data['guardian_name'] ?? 'there' }}, just a reminder — your meeting with the teacher about {{ $data['student_name'] ?? 'your child' }}'s assessment is {{ ($data['timeframe'] ?? 'soon') === 'tomorrow' ? 'coming up tomorrow' : 'coming up' }} at {{ $data['slot_label'] ?? 'the scheduled time' }}.
+                                @if (($data['timeframe'] ?? 'soon') === 'justBooked')
+                                    Hi {{ $data['guardian_name'] ?? 'there' }}, your meeting with the teacher about {{ $data['student_name'] ?? 'your child' }}'s assessment is booked for {{ $data['slot_label'] ?? 'the scheduled time' }}.
+                                @else
+                                    Hi {{ $data['guardian_name'] ?? 'there' }}, just a reminder — your meeting with the teacher about {{ $data['student_name'] ?? 'your child' }}'s assessment is {{ ($data['timeframe'] ?? 'soon') === 'tomorrow' ? 'coming up tomorrow' : 'coming up' }} at {{ $data['slot_label'] ?? 'the scheduled time' }}.
+                                @endif
                             </p>
 
                             <table role="presentation" width="100%" style="margin-bottom:16px;">
@@ -38,6 +50,9 @@
                                     </td>
                                 </tr>
                             </table>
+                            <p style="margin:0 0 16px;color:#b42318;font-size:13px;line-height:1.6;background:#fef3f2;border-radius:8px;padding:10px 14px;">
+                                Please confirm using the button above at least 24 hours before your meeting. If we don't hear from you in time, this slot may be offered to another family.
+                            </p>
                             <p style="margin:0;color:#8a97a0;font-size:12px;">If you need to reschedule, just reply to this email.</p>
                         </td>
                     </tr>

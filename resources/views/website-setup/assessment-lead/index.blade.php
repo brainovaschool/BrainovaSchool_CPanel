@@ -94,7 +94,10 @@
                                         <td>{{ $row->syllabus }}</td>
                                         <td>{{ optional($row->slot)->slot_date?->format('d M Y') }} <br><span class="text-secondary" style="font-size:12px">{{ optional($row->slot)->time_label }}</span></td>
                                         <td style="font-size:12px">
-                                            @if ($row->status !== \App\Models\WebsiteSetup\AssessmentLead::STATUS_BOOKED_MEETING)
+                                            @if ($row->meeting_released_at)
+                                                <span class="badge-basic-danger-text">Slot released</span><br>
+                                                <span class="text-secondary">no confirmation by {{ $row->meeting_released_at->format('d M, H:i') }}</span>
+                                            @elseif ($row->status !== \App\Models\WebsiteSetup\AssessmentLead::STATUS_BOOKED_MEETING)
                                                 <span class="text-secondary">—</span>
                                             @elseif ($row->meeting_confirmed_at)
                                                 <span class="badge-basic-success-text">Confirmed</span><br>

@@ -17,6 +17,8 @@ class AssessmentLead extends Model
         'meeting_reminder_sent_at' => 'datetime',
         'meeting_day_before_sent_at' => 'datetime',
         'meeting_confirmed_at' => 'datetime',
+        'meeting_confirm_deadline' => 'datetime',
+        'meeting_released_at' => 'datetime',
     ];
 
     const STATUS_NEW = 'new';

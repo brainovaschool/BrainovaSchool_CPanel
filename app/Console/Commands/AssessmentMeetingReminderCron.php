@@ -4,19 +4,29 @@ namespace App\Console\Commands;
 
 use App\Mail\AssessmentMeetingReminderMail;
 use App\Models\WebsiteSetup\AssessmentLead;
+use App\Models\WebsiteSetup\AssessmentSlot;
 use Carbon\Carbon;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\URL;
 
 /**
  * Runs every minute (same pattern as the existing attendance:cron /
- * portal:task-deadlines) sending two independent email reminders for each
- * booked assessment-follow-up meeting: one about a day before, one about
- * an hour before - each tracked by its own "sent" column so it only ever
- * fires once, however many times this command runs. Both carry the
- * meeting link and a one-tap "I'll be there" confirmation link.
+ * portal:task-deadlines) for every currently-booked assessment meeting
+ * that hasn't been released yet, doing two things:
+ *
+ *  1. Sends two independent email reminders (a day before, an hour
+ *     before), each tracked by its own "sent" column so it only ever
+ *     fires once, however many times this runs.
+ *  2. Enforces the "confirm at least 24 hours before your meeting, or
+ *     this slot may be offered to someone else" policy stated in every
+ *     one of those emails: once meeting_confirm_deadline (fixed at
+ *     booking time - see MeetingBookingController::store()) has passed
+ *     with no confirmation, the slot is freed back up and the lead
+ *     drops back to "reported" so they can book another slot if they
+ *     still want one.
  *
  * No automatic WhatsApp send here - there's no working Twilio WhatsApp
  * sender configured (and no plan to pay for one), so WhatsApp is a free
@@ -28,15 +38,13 @@ use Illuminate\Support\Facades\URL;
 class AssessmentMeetingReminderCron extends Command
 {
     protected $signature = 'assessment:meeting-reminders';
-    protected $description = 'Send the day-before and hour-before email reminders for booked assessment meetings';
+    protected $description = 'Send meeting reminders and release unconfirmed slots for booked assessment meetings';
 
     public function handle()
     {
         $leads = AssessmentLead::query()
             ->where('status', AssessmentLead::STATUS_BOOKED_MEETING)
-            ->where(function ($q) {
-                $q->whereNull('meeting_day_before_sent_at')->orWhereNull('meeting_reminder_sent_at');
-            })
+            ->whereNull('meeting_released_at')
             ->with('slot')
             ->get();
 
@@ -50,6 +58,10 @@ class AssessmentMeetingReminderCron extends Command
                 $start = Carbon::createFromFormat('Y-m-d g:i A', $slot->slot_date->format('Y-m-d').' '.$slot->start_time);
             } catch (\Throwable $e) {
                 continue;
+            }
+
+            if ($this->maybeRelease($lead, $slot)) {
+                continue; // no longer has a meeting - nothing left to remind about
             }
 
             if (! $lead->meeting_day_before_sent_at) {
@@ -74,6 +86,36 @@ class AssessmentMeetingReminderCron extends Command
         }
 
         return Command::SUCCESS;
+    }
+
+    /**
+     * Returns true if this lead's slot was just released (or already had
+     * no deadline to enforce - nothing more to do either way this tick).
+     */
+    private function maybeRelease(AssessmentLead $lead, AssessmentSlot $slot): bool
+    {
+        if ($lead->meeting_confirmed_at || ! $lead->meeting_confirm_deadline) {
+            return false;
+        }
+
+        if (now()->lt($lead->meeting_confirm_deadline)) {
+            return false; // still within the confirm-by window
+        }
+
+        // Frees the seat back up for someone else to book, same clamp-at-
+        // zero update bulkDelete() uses, then drops this lead back to
+        // "reported" (the state right before a meeting is ever booked) so
+        // they're free to book a different slot if they still want one.
+        AssessmentSlot::where('id', $slot->id)
+            ->update(['booked_count' => DB::raw('GREATEST(booked_count - 1, 0)')]);
+
+        $lead->assessment_slot_id = null;
+        $lead->meeting_link = null; // stale now - a new booking generates its own
+        $lead->meeting_released_at = now();
+        $lead->status = AssessmentLead::STATUS_REPORTED;
+        $lead->save();
+
+        return true;
     }
 
     /**
@@ -102,7 +144,7 @@ class AssessmentMeetingReminderCron extends Command
     {
         $slot = $lead->slot;
         $slotLabel = $start->format('D, d M Y').' · '.$slot->time_label;
-        $confirmLink = URL::signedRoute('frontend.confirm-meeting', ['lead' => $lead->id], now()->addDays(2));
+        $confirmLink = URL::signedRoute('frontend.confirm-meeting', ['lead' => $lead->id], now()->addDays(30));
         $meetingLink = $lead->meeting_link ?: 'https://meet.jit.si/Brainova-Meeting-'.$lead->id;
 
         try {
