@@ -19,6 +19,7 @@ class AssessmentLead extends Model
         'meeting_confirmed_at' => 'datetime',
         'meeting_confirm_deadline' => 'datetime',
         'meeting_released_at' => 'datetime',
+        'completed_attempt_ids' => 'array',
     ];
 
     const STATUS_NEW = 'new';

@@ -117,8 +117,19 @@ class AssessmentBookingController extends Controller
      * "lead" even is. For a lead, sends the limited (wrong-count only)
      * result email with the teacher-meeting booking link - fully
      * automatic, no teacher review, since a bare count carries no
-     * judgment call to get wrong. Idempotent: a retried/duplicate ping
-     * can never send a second email.
+     * judgment call to get wrong.
+     *
+     * A lead can be assigned more than one subject (see createLeadAndSend()
+     * below), and this fires once per subject submitted, not once per
+     * lead - sending the result email after only the FIRST one used to
+     * leave every other subject stuck with no way back to the student
+     * view that could still open them (the result email signs the
+     * parent in read-only). completed_attempt_ids tallies every attempt
+     * actually submitted so far, and the email only ever goes out once
+     * that tally reaches how many subjects were assigned at booking time
+     * (assigned_assessment_id's own comma-separated count) - idempotent
+     * either way, since a retried/duplicate ping for an attempt id
+     * already tallied changes nothing.
      */
     public function completed(Request $request)
     {
@@ -137,18 +148,31 @@ class AssessmentBookingController extends Controller
             return response()->json(['ok' => true]); // already reported - never send twice
         }
 
+        $attemptId = (string) $request->query('attemptId', '');
+        $done = $lead->completed_attempt_ids ?: [];
+        if ($attemptId !== '' && ! in_array($attemptId, $done, true)) {
+            $done[] = $attemptId;
+        }
+        $lead->completed_attempt_ids = $done;
         $lead->status = AssessmentLead::STATUS_TESTED;
         $lead->save();
 
-        // Marks the attempt released on the Sheet - the same flag a
-        // teacher's own "Release results" toggle sets - so the parent
-        // portal link below actually opens straight to the report
-        // instead of "waiting for the teacher to release," with no
-        // teacher action needed for this limited view specifically.
-        $attemptId = (string) $request->query('attemptId', '');
-        if ($attemptId !== '') {
+        $assignedCount = $lead->assigned_assessment_id
+            ? count(array_filter(array_map('trim', explode(',', $lead->assigned_assessment_id))))
+            : 1;
+
+        if (count($done) < $assignedCount) {
+            return response()->json(['ok' => true]); // other assigned subjects still pending - not yet
+        }
+
+        // Marks every tallied attempt released on the Sheet - the same
+        // flag a teacher's own "Release results" toggle sets - so the
+        // parent portal link below actually opens straight to every
+        // report instead of "waiting for the teacher to release," with
+        // no teacher action needed for this limited view specifically.
+        foreach ($done as $doneAttemptId) {
             try {
-                (new AssessmentSheetClient())->releaseAttempt($attemptId);
+                (new AssessmentSheetClient())->releaseAttempt($doneAttemptId);
             } catch (\Throwable $e) {
                 Log::warning('Assessment attempt release failed: '.$e->getMessage());
             }

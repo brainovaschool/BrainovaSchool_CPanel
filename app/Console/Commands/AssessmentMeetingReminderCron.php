@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Mail\AssessmentMeetingReleasedMail;
 use App\Mail\AssessmentMeetingReminderMail;
 use App\Models\WebsiteSetup\AssessmentLead;
 use App\Models\WebsiteSetup\AssessmentSlot;
@@ -100,6 +101,22 @@ class AssessmentMeetingReminderCron extends Command
 
         if (now()->lt($lead->meeting_confirm_deadline)) {
             return false; // still within the confirm-by window
+        }
+
+        // Every email along the way only ever said this MIGHT happen -
+        // this is the one message that tells the parent it actually did,
+        // with a fresh link to book another time if they still want one.
+        $slotLabel = $slot->slot_date->format('D, d M Y').' · '.$slot->time_label;
+        $bookingLink = URL::signedRoute('frontend.book-meeting', ['lead' => $lead->id], now()->addDays(30));
+        try {
+            Mail::to($lead->email)->send(new AssessmentMeetingReleasedMail([
+                'guardian_name' => $lead->guardian_name,
+                'student_name' => $lead->student_name,
+                'slot_label' => $slotLabel,
+                'booking_link' => $bookingLink,
+            ]));
+        } catch (\Throwable $e) {
+            Log::warning('Assessment meeting released email failed: '.$e->getMessage());
         }
 
         // Frees the seat back up for someone else to book, same clamp-at-
