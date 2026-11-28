@@ -139,4 +139,100 @@ class AssessmentSlotRepository
             return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
         }
     }
+
+    /**
+     * One row per (matching date x time) combination across the date
+     * range, skipping any combination that already exists (same date +
+     * same start time) so running this again over an overlapping range
+     * never creates duplicates - safe to re-run with a wider range to
+     * "top up" a week that's already partly filled in.
+     */
+    public function bulkGenerate($request): array
+    {
+        $start = Carbon::parse($request->start_date)->startOfDay();
+        $end = Carbon::parse($request->end_date)->startOfDay();
+        $weekdays = array_map('intval', (array) $request->input('weekdays', []));
+        $times = collect(preg_split('/[\r\n,]+/', (string) $request->times))
+            ->map(fn ($t) => trim($t))->filter()->unique()->values();
+        $capacity = max(1, (int) $request->capacity);
+        $status = (int) $request->status;
+        $note = $request->note;
+
+        $created = 0;
+        $skipped = 0;
+        $badTimes = [];
+        $cursor = $start->copy();
+
+        // A generous but finite cap - a typo in the date range (e.g. a
+        // wrong year) should fail loudly instead of silently generating
+        // years of slots.
+        $maxDays = 370;
+        $daysWalked = 0;
+
+        while ($cursor->lte($end) && $daysWalked < $maxDays) {
+            if (in_array($cursor->dayOfWeek, $weekdays, true)) {
+                foreach ($times as $rawTime) {
+                    try {
+                        [$startLabel, $endLabel] = $this->timesFor($rawTime);
+                    } catch (\Throwable $e) {
+                        $badTimes[$rawTime] = true;
+                        continue;
+                    }
+
+                    $exists = $this->slot->where('slot_date', $cursor->toDateString())
+                        ->where('start_time', $startLabel)->exists();
+                    if ($exists) {
+                        $skipped++;
+                        continue;
+                    }
+
+                    $row = new $this->slot;
+                    $row->slot_date = $cursor->toDateString();
+                    $row->start_time = $startLabel;
+                    $row->end_time = $endLabel;
+                    $row->capacity = $capacity;
+                    $row->note = $note;
+                    $row->status = $status;
+                    $row->save();
+                    $created++;
+                }
+            }
+            $cursor->addDay();
+            $daysWalked++;
+        }
+
+        return ['created' => $created, 'skipped' => $skipped, 'badTimes' => array_keys($badTimes)];
+    }
+
+    /**
+     * Applies a new capacity and/or status to every selected slot -
+     * capacity is still clamped to at least that slot's own
+     * booked_count (same guard update() uses), so a bulk edit can never
+     * shrink a slot below the bookings it already has.
+     */
+    public function bulkEditFields(array $ids, ?string $capacity, ?string $status): array
+    {
+        $hasCapacity = $capacity !== null && $capacity !== '';
+        $hasStatus = $status !== null && $status !== '';
+
+        if (!$hasCapacity && !$hasStatus) {
+            return $this->responseWithError('Nothing to update - set a new capacity and/or status first.', []);
+        }
+
+        try {
+            $rows = $this->slot->whereIn('id', $ids)->get();
+            foreach ($rows as $row) {
+                if ($hasCapacity) {
+                    $row->capacity = max($row->booked_count, max(1, (int) $capacity));
+                }
+                if ($hasStatus) {
+                    $row->status = (int) $status;
+                }
+                $row->save();
+            }
+            return $this->responseWithSuccess(___('alert.updated_successfully'), []);
+        } catch (\Throwable $th) {
+            return $this->responseWithError(___('alert.something_went_wrong_please_try_again'), []);
+        }
+    }
 }

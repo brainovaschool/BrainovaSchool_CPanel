@@ -85,11 +85,15 @@ Route::middleware(saasMiddleware())->group(function () {
         Route::delete('/delete/{id}', 'delete')->name('delete');
         Route::post('/bulk-delete', 'bulkDelete')->name('bulk-delete');
         Route::post('/bulk-status', 'bulkStatus')->name('bulk-status');
+        Route::get('/bulk-create', 'bulkCreateForm')->name('bulk-create');
+        Route::post('/bulk-generate', 'bulkGenerate')->name('bulk-generate');
+        Route::post('/bulk-edit', 'bulkEdit')->name('bulk-edit');
     });
     Route::middleware(['auth.routes'])->controller(\App\Http\Controllers\WebsiteSetup\AssessmentLeadController::class)->prefix('assessment-lead')->name('assessment-lead.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::post('/resend/{id}', 'resend')->name('resend');
         Route::post('/bulk-delete', 'bulkDelete')->name('bulk-delete');
+        Route::post('/bulk-resend', 'bulkResend')->name('bulk-resend');
         Route::post('/calendar-settings', 'calendarSettings')->name('calendar-settings');
         Route::get('/calendar-connect', 'calendarConnect')->name('calendar-connect');
         Route::get('/calendar-callback', 'calendarCallback')->name('calendar-callback');

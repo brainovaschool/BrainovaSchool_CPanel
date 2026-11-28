@@ -56,6 +56,7 @@ class AssessmentLeadController extends Controller
                 ? $this->reportLink($request, $row->assessment_system_student_id)
                 : null;
             $row->whatsapp_reminder_link = $this->whatsappReminderLink($row);
+            $row->whatsapp_invite_link = $this->whatsappInviteLink($row);
         }
 
         $data['calendarConnected'] = (new \App\Services\GoogleCalendarClient())->isConfigured();
@@ -109,6 +110,28 @@ class AssessmentLeadController extends Controller
             "Please confirm you'll be there: {$confirmLink}";
 
         return 'https://wa.me/'.$this->waDigits($lead->whatsapp_number).'?text='.urlencode($body);
+    }
+
+    /**
+     * The same free wa.me stand-in as whatsappReminderLink(), but for a
+     * lead that hasn't booked a meeting yet - sends whichever link this
+     * lead actually needs right now: the assessment invite while it's
+     * still pending, or a nudge toward the result/booking once it's
+     * been taken. Only ever one or the other, never both.
+     */
+    private function whatsappInviteLink(AssessmentLead $lead): ?string
+    {
+        if ($lead->status === AssessmentLead::STATUS_BOOKED_MEETING || ! $lead->whatsapp_number) {
+            return null; // the meeting reminder link covers this case instead
+        }
+
+        if ($lead->assessment_link) {
+            $body = "Hi, here's {$lead->student_name}'s assessment link — open it on the device they'll use:\n".$lead->assessment_link;
+
+            return 'https://wa.me/'.$this->waDigits($lead->whatsapp_number).'?text='.urlencode($body);
+        }
+
+        return null;
     }
 
     /** Pakistan-specific local-to-international normalisation (every
@@ -255,6 +278,17 @@ class AssessmentLeadController extends Controller
             return back()->with('danger', 'This lead has no assessment link yet to resend.');
         }
 
+        if ($this->sendInviteMail($lead)) {
+            return back()->with('success', 'Assessment link resent to '.$lead->email.'.');
+        }
+
+        return back()->with('danger', 'Could not send the email - please try again shortly.');
+    }
+
+    /** Shared by resend() (one lead, visible errors) and bulkResend()
+     *  (many leads, errors just get skipped and counted). */
+    private function sendInviteMail(AssessmentLead $lead): bool
+    {
         try {
             Mail::to($lead->email)->send(new AssessmentInviteMail([
                 'guardian_name' => $lead->guardian_name,
@@ -270,10 +304,44 @@ class AssessmentLeadController extends Controller
             }
             $lead->save();
 
-            return back()->with('success', 'Assessment link resent to '.$lead->email.'.');
+            return true;
         } catch (\Throwable $e) {
-            Log::warning('Assessment lead resend failed: '.$e->getMessage());
-            return back()->with('danger', 'Could not send the email - please try again shortly.');
+            Log::warning('Assessment lead resend failed for lead '.$lead->id.': '.$e->getMessage());
+
+            return false;
         }
+    }
+
+    /** Resends the assessment invite email to every selected lead that
+     *  actually has one to resend - a lead with no assigned assessment
+     *  yet is silently skipped and counted, not an error. */
+    public function bulkResend(Request $request)
+    {
+        $this->guard($request);
+
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+
+        $leads = AssessmentLead::whereIn('id', $ids)->get();
+        $sent = 0;
+        $skipped = 0;
+
+        foreach ($leads as $lead) {
+            if (! $lead->assessment_link) {
+                $skipped++;
+                continue;
+            }
+            if ($this->sendInviteMail($lead)) {
+                $sent++;
+            } else {
+                $skipped++;
+            }
+        }
+
+        $message = "{$sent} link(s) resent.".($skipped ? " {$skipped} skipped (no assessment link yet, or the send failed)." : '');
+
+        return response()->json([$message, $sent ? 'success' : 'warning', ___('alert.updated'), ___('alert.OK')]);
     }
 }

@@ -20,12 +20,27 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">{{ $data['title'] }}</h4>
-                    <a href="{{ route('assessment-slot.create') }}" class="btn btn-lg ot-btn-primary">
-                        <span><i class="fa-solid fa-plus"></i> </span><span>{{ ___('common.add') }}</span>
-                    </a>
+                    <div class="d-flex gap-2">
+                        <a href="{{ route('assessment-slot.bulk-create') }}" class="btn btn-lg btn-secondary">
+                            <span><i class="fa-solid fa-layer-group"></i> </span><span>Bulk Add</span>
+                        </a>
+                        <a href="{{ route('assessment-slot.create') }}" class="btn btn-lg ot-btn-primary">
+                            <span><i class="fa-solid fa-plus"></i> </span><span>{{ ___('common.add') }}</span>
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     @include('backend.partials.bulk-actions-bar')
+                    <div class="d-flex flex-wrap align-items-center gap-2 mb-3 p-2 border rounded" id="bulkEditBar">
+                        <span class="small text-secondary">Bulk edit selected (check rows below first):</span>
+                        <input type="number" min="1" id="bulkEditCapacity" class="form-control form-control-sm" style="max-width:110px" placeholder="New seats">
+                        <select id="bulkEditStatus" class="form-control form-control-sm" style="max-width:140px">
+                            <option value="">Leave status as-is</option>
+                            <option value="1">{{ ___('common.active') }}</option>
+                            <option value="0">{{ ___('common.inactive') }}</option>
+                        </select>
+                        <button type="button" class="btn btn-sm ot-btn-primary" onclick="bulk_edit_slots()">Apply</button>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead">
@@ -91,5 +106,34 @@
 
 @push('script')
     @include('backend.partials.delete-ajax')
+    <script>
+        function bulk_edit_slots() {
+            var ids = $('.bulk-row-checkbox:checked').map(function () { return $(this).val(); }).get();
+            if (!ids.length) { Swal.fire('Select at least one row first.'); return; }
+            var capacity = $('#bulkEditCapacity').val();
+            var status = $('#bulkEditStatus').val();
+            if (!capacity && status === '') { Swal.fire('Set a new seat count and/or a status first.'); return; }
+            $.ajax({
+                type: 'POST',
+                dataType: 'json',
+                data: { ids: ids, capacity: capacity, status: status },
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                url: "{{ route('assessment-slot.bulk-edit') }}",
+            }).done(function (response) {
+                Swal.fire({
+                    icon: response[1],
+                    title: response[2],
+                    text: response[0],
+                    showCloseButton: true,
+                    confirmButtonText: response[3],
+                });
+                if (response[1] !== 'error') {
+                    setTimeout(function () { location.reload(); }, 900);
+                }
+            }).fail(function () {
+                Swal.fire('{{ ___('common.opps') }}...', '{{ ___('common.something_went_wrong_with_ajax') }}', 'error');
+            });
+        }
+    </script>
 @endpush
 @include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'assessment-slot'])

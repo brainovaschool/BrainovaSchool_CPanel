@@ -61,7 +61,18 @@
                     </form>
                 </div>
                 <div class="card-body">
-                    @include('backend.partials.bulk-actions-bar', ['bulkStatusToggle' => false])
+                    <div class="d-none align-items-center gap-2 mb-3 p-2 border rounded" id="bulkActionsBar">
+                        <span class="me-2"><strong id="bulkSelectedCount">0</strong> {{ ___('common.selected') }}</span>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="bulk_resend_leads()">
+                            <i class="fa-solid fa-paper-plane"></i> Resend Links
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="bulk_whatsapp_leads()">
+                            <i class="fa-brands fa-whatsapp"></i> Open WhatsApp
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="bulk_delete()">
+                            <i class="fa-solid fa-trash-can"></i> {{ ___('common.delete_selected') }}
+                        </button>
+                    </div>
                     <div class="table-responsive">
                         <table class="table table-bordered class-table">
                             <thead class="thead">
@@ -83,7 +94,7 @@
                             <tbody class="tbody">
                                 @forelse ($data['leads'] as $key => $row)
                                     <tr id="row_{{ $row->id }}">
-                                        <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}"></td>
+                                        <td><input type="checkbox" class="bulk-row-checkbox" value="{{ $row->id }}" data-wa="{{ $row->whatsapp_reminder_link ?: $row->whatsapp_invite_link }}"></td>
                                         <td class="serial">{{ ++$key }}</td>
                                         <td>
                                             <b>{{ $row->student_name }}</b>
@@ -135,6 +146,9 @@
                                                 @else
                                                     <button type="button" class="btn btn-sm btn-secondary" disabled title="No assessment taken yet">View report</button>
                                                 @endif
+                                                @if ($row->whatsapp_invite_link)
+                                                    <a href="{{ $row->whatsapp_invite_link }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success">Send WhatsApp invite</a>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>
@@ -157,4 +171,61 @@
         </div>
     </div>
 @endsection
+@push('script')
+    <script>
+        function bulk_resend_leads() {
+            var ids = $('.bulk-row-checkbox:checked').map(function () { return $(this).val(); }).get();
+            if (!ids.length) { Swal.fire('Select at least one row first.'); return; }
+            $.ajax({
+                type: 'POST',
+                dataType: 'json',
+                data: { ids: ids },
+                headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
+                url: "{{ route('assessment-lead.bulk-resend') }}",
+            }).done(function (response) {
+                Swal.fire({
+                    icon: response[1],
+                    title: response[2],
+                    text: response[0],
+                    showCloseButton: true,
+                    confirmButtonText: response[3],
+                });
+                if (response[1] !== 'error') {
+                    setTimeout(function () { location.reload(); }, 900);
+                }
+            }).fail(function () {
+                Swal.fire('{{ ___('common.opps') }}...', '{{ ___('common.something_went_wrong_with_ajax') }}', 'error');
+            });
+        }
+
+        // Each checked row's own WhatsApp link (whichever one applies -
+        // meeting reminder or assessment invite - see data-wa) just gets
+        // opened in its own tab, staggered a little so the browser's
+        // pop-up blocker is less likely to swallow them all at once.
+        // There is no such thing as a single bulk WhatsApp send without
+        // a paid, approved WhatsApp Business sender (see the 2026-11-26
+        // decision not to pay for Twilio WhatsApp) - this is the free
+        // alternative: open every chat with its message already typed,
+        // so sending is still just one tap per chat, not one retype.
+        function bulk_whatsapp_leads() {
+            var links = [];
+            $('.bulk-row-checkbox:checked').each(function () {
+                var wa = $(this).data('wa');
+                if (wa) links.push(wa);
+            });
+            if (!links.length) {
+                Swal.fire('None of the selected leads have a WhatsApp message ready - need a WhatsApp number, and either a booked meeting or an assessment link.');
+                return;
+            }
+            links.forEach(function (url, i) {
+                setTimeout(function () { window.open(url, '_blank'); }, i * 400);
+            });
+            Swal.fire({
+                icon: 'info',
+                title: 'Opening WhatsApp',
+                text: 'Opening ' + links.length + ' WhatsApp chat(s) - allow pop-ups for this site if your browser blocks them, then just tap Send in each one.',
+            });
+        }
+    </script>
+@endpush
 @include('backend.partials.bulk-actions-ajax', ['bulkRoute' => 'assessment-lead'])

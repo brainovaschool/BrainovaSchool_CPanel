@@ -114,4 +114,55 @@ class AssessmentSlotController extends Controller
         }
         return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
     }
+
+    /** The "generate a week's worth of slots at once" form. */
+    public function bulkCreateForm(Request $request)
+    {
+        $this->guard($request);
+        $data['title'] = 'Bulk Add Assessment Slots';
+        return view('website-setup.assessment-slot.bulk-create', compact('data'));
+    }
+
+    public function bulkGenerate(Request $request)
+    {
+        $this->guard($request);
+
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after_or_equal:start_date',
+            'weekdays' => 'required|array|min:1',
+            'weekdays.*' => 'integer|between:0,6',
+            'times' => 'required|string',
+            'capacity' => 'required|integer|min:1|max:500',
+            'status' => 'required|in:0,1',
+            'note' => 'nullable|string|max:191',
+        ]);
+
+        $result = $this->repo->bulkGenerate($request);
+
+        $message = "Created {$result['created']} slot(s).";
+        if ($result['skipped']) {
+            $message .= " Skipped {$result['skipped']} that already existed.";
+        }
+        if (!empty($result['badTimes'])) {
+            $message .= ' Could not read this as a time, so it was skipped: '.implode(', ', $result['badTimes']).' (use 24-hour HH:MM, e.g. 14:00).';
+        }
+
+        return redirect()->route('assessment-slot.index')->with($result['created'] ? 'success' : 'danger', $message);
+    }
+
+    /** Bulk edit from the index page's selection bar - capacity and/or status only. */
+    public function bulkEdit(Request $request)
+    {
+        $this->guard($request);
+        $ids = array_filter((array) $request->input('ids', []));
+        if (empty($ids)) {
+            return response()->json([___('alert.select_at_least_one_row'), 'warning', ___('alert.attention'), ___('alert.OK')]);
+        }
+        $result = $this->repo->bulkEditFields($ids, $request->input('capacity'), $request->input('status'));
+        if ($result['status']) {
+            return response()->json([$result['message'], 'success', ___('alert.updated'), ___('alert.OK')]);
+        }
+        return response()->json([$result['message'], 'error', ___('alert.oops'), ___('alert.OK')]);
+    }
 }
