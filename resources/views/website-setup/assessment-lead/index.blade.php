@@ -103,7 +103,13 @@
                                         <td>Grade {{ $row->grade }}</td>
                                         <td>{{ $row->subject }}</td>
                                         <td>{{ $row->syllabus }}</td>
-                                        <td>{{ optional($row->slot)->slot_date?->format('d M Y') }} <br><span class="text-secondary" style="font-size:12px">{{ optional($row->slot)->time_label }}</span></td>
+                                        <td>
+                                            @if ($row->slot)
+                                                {{ $row->slot->slot_date->format('d M Y') }} <br><span class="text-secondary" style="font-size:12px">{{ $row->slot->time_label }}</span>
+                                            @elseif ($row->booked_slot_label)
+                                                <span class="text-secondary">{{ $row->booked_slot_label }}</span> <span class="badge-basic-warning-text" title="The slot itself was removed by Clean Up Past Slots - this is kept from when it was booked.">past</span>
+                                            @endif
+                                        </td>
                                         <td style="font-size:12px">
                                             @if ($row->meeting_released_at)
                                                 <span class="badge-basic-danger-text">Slot released</span><br>

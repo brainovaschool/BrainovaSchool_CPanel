@@ -205,6 +205,56 @@ class AssessmentSlotRepository
     }
 
     /**
+     * One click, no selection needed: removes every slot whose date and
+     * time have already passed. A past slot still referenced by a lead
+     * (the normal case - a slot with 0 left always has at least one) is
+     * not just silently blocked the way a single/bulk delete is -
+     * instead each such lead is detached first (assessment_slot_id set
+     * to null) since its booked_slot_label already preserves what to
+     * show for it afterwards (see MeetingBookingController::store()),
+     * so the slot itself can be deleted without losing that history.
+     * Deliberately only reaches dates that have already happened,
+     * whether or not they're fully booked - a merely-expired slot with
+     * seats still unused is exactly as unbookable from here on as a
+     * fully-booked one, so there's no reason to keep either around.
+     */
+    public function cleanupPast(): array
+    {
+        $candidates = $this->slot->get()->filter(function ($slot) {
+            try {
+                $start = Carbon::createFromFormat('Y-m-d g:i A', $slot->slot_date->format('Y-m-d').' '.$slot->start_time);
+            } catch (\Throwable $e) {
+                return false; // unreadable time - leave it for a human to sort out
+            }
+
+            return $start->isPast();
+        });
+
+        if ($candidates->isEmpty()) {
+            return ['deleted' => 0];
+        }
+
+        $byId = $candidates->keyBy('id');
+        $ids = $byId->keys()->all();
+
+        // A lead booked before booked_slot_label existed has none saved
+        // yet - backfill it here, from the very slot about to be
+        // deleted, so even an old booking keeps its date/time visible
+        // afterwards instead of just going blank.
+        AssessmentLead::whereIn('assessment_slot_id', $ids)->whereNull('booked_slot_label')->get()
+            ->each(function ($lead) use ($byId) {
+                $slot = $byId->get($lead->assessment_slot_id);
+                $lead->booked_slot_label = $slot->slot_date->format('D, d M Y').' · '.$slot->time_label;
+                $lead->save();
+            });
+
+        AssessmentLead::whereIn('assessment_slot_id', $ids)->update(['assessment_slot_id' => null]);
+        $this->slot->whereIn('id', $ids)->delete();
+
+        return ['deleted' => count($ids)];
+    }
+
+    /**
      * Applies a new capacity and/or status to every selected slot -
      * capacity is still clamped to at least that slot's own
      * booked_count (same guard update() uses), so a bulk edit can never

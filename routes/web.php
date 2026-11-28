@@ -88,6 +88,7 @@ Route::middleware(saasMiddleware())->group(function () {
         Route::get('/bulk-create', 'bulkCreateForm')->name('bulk-create');
         Route::post('/bulk-generate', 'bulkGenerate')->name('bulk-generate');
         Route::post('/bulk-edit', 'bulkEdit')->name('bulk-edit');
+        Route::post('/cleanup-past', 'cleanupPast')->name('cleanup-past');
     });
     Route::middleware(['auth.routes'])->controller(\App\Http\Controllers\WebsiteSetup\AssessmentLeadController::class)->prefix('assessment-lead')->name('assessment-lead.')->group(function () {
         Route::get('/', 'index')->name('index');

@@ -60,6 +60,12 @@ class MeetingBookingController extends Controller
         $start = Carbon::createFromFormat('Y-m-d g:i A', $slot->slot_date->format('Y-m-d').' '.$slot->start_time);
 
         $lead->assessment_slot_id = $slot->id;
+        // A plain-text copy of the date/time, kept even after the slot
+        // itself is gone - see AssessmentSlotRepository::cleanupPast(),
+        // which deletes old, used-up slots and detaches the leads that
+        // pointed at them. Without this, the leads list would show a
+        // blank Slot column for a meeting that genuinely happened.
+        $lead->booked_slot_label = $start->format('D, d M Y').' · '.$slot->time_label;
         if ($request->filled('message')) {
             $lead->message = trim(($lead->message ? $lead->message."\n\n" : '').$request->input('message'));
         }

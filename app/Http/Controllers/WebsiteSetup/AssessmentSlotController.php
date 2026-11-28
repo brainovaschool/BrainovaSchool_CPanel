@@ -151,6 +151,19 @@ class AssessmentSlotController extends Controller
         return redirect()->route('assessment-slot.index')->with($result['created'] ? 'success' : 'danger', $message);
     }
 
+    /** One click, no selection needed - see repo's cleanupPast() for what this actually does to leads that pointed at a removed slot. */
+    public function cleanupPast(Request $request)
+    {
+        $this->guard($request);
+        $result = $this->repo->cleanupPast();
+
+        $message = $result['deleted']
+            ? "Removed {$result['deleted']} past slot(s)."
+            : 'Nothing to clean up — no past slots found.';
+
+        return redirect()->route('assessment-slot.index')->with('success', $message);
+    }
+
     /** Bulk edit from the index page's selection bar - capacity and/or status only. */
     public function bulkEdit(Request $request)
     {

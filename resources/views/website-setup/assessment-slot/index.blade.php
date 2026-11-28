@@ -21,6 +21,9 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">{{ $data['title'] }}</h4>
                     <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-lg btn-outline-danger" onclick="cleanup_past_slots()">
+                            <span><i class="fa-solid fa-broom"></i> </span><span>Clean Up Past Slots</span>
+                        </button>
                         <a href="{{ route('assessment-slot.bulk-create') }}" class="btn btn-lg btn-secondary">
                             <span><i class="fa-solid fa-layer-group"></i> </span><span>Bulk Add</span>
                         </a>
@@ -28,6 +31,9 @@
                             <span><i class="fa-solid fa-plus"></i> </span><span>{{ ___('common.add') }}</span>
                         </a>
                     </div>
+                    <form id="cleanupPastForm" method="post" action="{{ route('assessment-slot.cleanup-past') }}" class="d-none">
+                        @csrf
+                    </form>
                 </div>
                 <div class="card-body">
                     @include('backend.partials.bulk-actions-bar')
@@ -107,6 +113,21 @@
 @push('script')
     @include('backend.partials.delete-ajax')
     <script>
+        function cleanup_past_slots() {
+            Swal.fire({
+                title: 'Clean up past slots?',
+                text: 'Removes every slot whose date and time have already passed, whether or not it was booked. A booking already made keeps its own record of when it was for - only the empty slot row itself goes away. This can\'t be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, clean up',
+                cancelButtonText: 'Cancel',
+            }).then(function (confirmed) {
+                if (confirmed.isConfirmed) {
+                    document.getElementById('cleanupPastForm').submit();
+                }
+            });
+        }
+
         function bulk_edit_slots() {
             var ids = $('.bulk-row-checkbox:checked').map(function () { return $(this).val(); }).get();
             if (!ids.length) { Swal.fire('Select at least one row first.'); return; }
