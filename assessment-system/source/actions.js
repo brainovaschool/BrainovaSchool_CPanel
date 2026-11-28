@@ -8,6 +8,23 @@ function setModel(el) {
   if (root === 'lvl') { if (!U.lvDraft) U.lvDraft = JSON.parse(JSON.stringify(levels())); U.lvDraft[+parts[1]][parts[2]] = parts[2] === 'min' ? Number(v) : v; return; }
   if (root === 'stuAcc') { const s = studentById(U.stuSel); if (!s) return; s.accom = s.accom || { extraPct: 0, largeText: false }; if (parts[1] === 'extra') s.accom.extraPct = Number(v); else s.accom.largeText = !!v; save(); return; }
   if (root === 'stuGrade') { const s = studentById(U.stuSel); if (!s) return; s.grade = v === '' ? null : Number(v); save(); return; }
+  // pwWeek.<attemptId>.<tier>.<stepIndex> - hand-edits one step's own
+  // weeks and locks it (see rebalanceWeeks in pathways.js); pwTotal.
+  // <attemptId>.<tier> - edits that option's overall target, which
+  // rebalances every still-unlocked step to fit it. Both no-op on a
+  // legacy (plain-string-steps) plan, which has no weeks to edit.
+  if (root === 'pwWeek') {
+    const att = attById(parts[1]); const opt = att && att.pathways && att.pathways.options[parts[2]];
+    const step = opt && opt.steps[+parts[3]]; if (!step || typeof step === 'string') return;
+    step.weeks = Math.max(1, +v || 1); step.locked = true; opt.weeks = sumWeeks(opt.steps);
+    att.pathways.updatedAt = Date.now(); save(); return;
+  }
+  if (root === 'pwTotal') {
+    const att = attById(parts[1]); const opt = att && att.pathways && att.pathways.options[parts[2]];
+    if (!opt || opt.steps.some(s => typeof s === 'string')) return;
+    rebalanceWeeks(opt.steps, v); opt.weeks = sumWeeks(opt.steps);
+    att.pathways.updatedAt = Date.now(); save(); return;
+  }
   setPath(U, m, v);
 }
 const ACT = {};
@@ -21,7 +38,7 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => {
   const el = e.target;
   if (el.dataset.m) { setModel(el); if (el.dataset.r !== undefined && !el.dataset.live) render(); return; }
-  if (el.dataset.a && (el.tagName === 'SELECT' || ty(el) === 'file')) { const fn = ACT[el.dataset.a]; if (fn) fn(el, e); }
+  if (el.dataset.a && (el.tagName === 'SELECT' || el.tagName === 'TEXTAREA' || ty(el) === 'file')) { const fn = ACT[el.dataset.a]; if (fn) fn(el, e); }
 });
 function ty(el) { return el.type; }
 document.addEventListener('input', e => {
@@ -503,6 +520,18 @@ ACT.pwFinalize = el => { const att = attById(el.dataset.id); if (!att || !att.pa
 ACT.pwSend = el => { const att = attById(el.dataset.id); if (!att || !att.pathways) return; att.pathways.status = 'sent'; att.pathways.updatedAt = Date.now(); save(); render(); toast('Sent to the administrator for review.'); };
 ACT.pwShare = el => { const att = attById(el.dataset.id); if (!att || !att.pathways || U.role !== 'admin') return; att.pathways.status = 'shared'; att.pathways.updatedAt = Date.now(); save(); render(); toast('Shared with the parent.'); };
 ACT.pwReopen = el => { const att = attById(el.dataset.id); if (!att || !att.pathways || U.role !== 'admin') return; att.pathways.status = 'draft'; att.pathways.updatedAt = Date.now(); save(); render(); toast('Reopened for edits.'); };
+// A separate flag, not another status value - so an admin can forward
+// to the teacher and/or share with the parent from 'sent' in either
+// order, instead of one overwriting the other.
+ACT.pwAssignTeacher = el => { const att = attById(el.dataset.id); if (!att || !att.pathways || U.role !== 'admin') return; att.pathways.assignedTeacherAt = Date.now(); save(); render(); toast('Forwarded to the teacher.'); };
+// Clears a step's hand-edited lock so the next "Target weeks" change
+// can rebalance it again.
+ACT.pwUnlock = el => {
+  const att = attById(el.dataset.id); if (!att || !att.pathways) return;
+  const opt = att.pathways.options[el.dataset.k]; const step = opt && opt.steps[+el.dataset.i];
+  if (!step || typeof step === 'string') return;
+  step.locked = false; att.pathways.updatedAt = Date.now(); save(); render();
+};
 ACT.pwPdf = el => { const att = attById(el.dataset.id); if (att) downloadPathwayPdf(att); };
 
 /* voice-over and rewards */
