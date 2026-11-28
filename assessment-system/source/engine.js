@@ -571,15 +571,46 @@ function poolFor(bank, a, above) {
 // easiest-first order a normal test would use. If one tier runs short,
 // its shortfall is handed to the others in that same order so the
 // quiz still reaches the requested count where the file allows it.
+// Spreads a tier's picks across topics instead of a flat shuffle, which
+// could otherwise hand back (say) 8 Hard questions all from the same
+// topic and none from three others still sitting in the pool. Groups by
+// topic, shuffles each topic's own questions, then takes one at a time
+// in round-robin order across topics until n is reached or the tier
+// runs out - so a tier with 4 topics and a want of 8 takes 2 from each
+// before it would ever take a 3rd from any one of them.
+function pickAcrossTopics(list, n, R) {
+  if (n <= 0 || !list.length) return [];
+  const byTopic = {};
+  list.forEach(q => { const t = q.topic || 'General'; (byTopic[t] = byTopic[t] || []).push(q); });
+  const topics = R.shuffle(Object.keys(byTopic));
+  topics.forEach(t => { byTopic[t] = R.shuffle(byTopic[t]); });
+  const picked = [];
+  for (let i = 0; picked.length < n && topics.some(t => byTopic[t].length); i++) {
+    const t = topics[i % topics.length];
+    if (byTopic[t].length) picked.push(byTopic[t].shift());
+  }
+  return picked;
+}
 function buildSimpleQuiz(set, seed) {
   const R = rng(seed), order = ['H', 'S', 'E'];
   const pool = set.questions.filter(q => q.included !== false);
   const byTier = {}; order.forEach(k => { byTier[k] = R.shuffle(pool.filter(q => q.diff === k)); });
-  const X = Math.max(1, Math.min(+set.questionCount || pool.length, pool.length));
-  const base = Math.floor(X / 3), extra = X - base * 3;
-  const want = { H: base + (extra > 0 ? 1 : 0), S: base + (extra > 1 ? 1 : 0), E: base };
+  // set.counts (Hard/Strengthen/Extend, set by hand in the editor) is
+  // the normal path now. set.counts is only missing for a set saved
+  // before this existed and never re-opened since - for that one, fall
+  // back to exactly the old behaviour (an even ~1/3 split of the single
+  // total it was saved with) so it keeps delivering the same quiz until
+  // someone opens and re-saves it.
+  let want;
+  if (set.counts) {
+    want = { H: Math.max(0, +set.counts.H || 0), S: Math.max(0, +set.counts.S || 0), E: Math.max(0, +set.counts.E || 0) };
+  } else {
+    const X = Math.max(1, Math.min(+set.questionCount || pool.length, pool.length));
+    const base = Math.floor(X / 3), extra = X - base * 3;
+    want = { H: base + (extra > 0 ? 1 : 0), S: base + (extra > 1 ? 1 : 0), E: base };
+  }
   const picked = {}; let shortfall = 0;
-  order.forEach(k => { picked[k] = byTier[k].slice(0, want[k]); shortfall += Math.max(0, want[k] - picked[k].length); });
+  order.forEach(k => { picked[k] = pickAcrossTopics(byTier[k], want[k], R); shortfall += Math.max(0, want[k] - picked[k].length); });
   while (shortfall > 0) {
     let gained = false;
     for (const k of order) {

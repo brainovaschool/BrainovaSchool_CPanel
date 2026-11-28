@@ -139,27 +139,35 @@ VIEWS.simpleAssess = function () {
       const a = S.assessments.find(x => x.simpleSetId === s.id);
       const n = a ? S.attempts.filter(x => x.asmtId === a.id && !x.preview).length : 0;
       const cf = a ? leadIntakeConflicts(a) : [];
-      return `<div class="card"><div class="row sp"><div><div class="row" style="margin-bottom:4px">${s.leadIntake ? '<span class="pill ok">Public booking page</span>' : '<span class="pill warn">Not offered publicly</span>'}${cf.length ? `<span class="pill warn" title="Also covered by: ${esc(cf.map(o => o.title || 'Untitled assessment').join(', '))}">Clashes with ${cf.length} other${cf.length === 1 ? '' : 's'} on public page</span>` : ''}</div><h3>${esc((s.title || '').trim() || `Grade ${s.grade} ${s.subject} (Simple)`)}</h3><p class="muted small">Grade ${s.grade} · ${esc(s.subject)} · ${s.questions.length} question${s.questions.length === 1 ? '' : 's'} in file (Hard ${counts.H} · Strengthen ${counts.S} · Extend ${counts.E}) · ${s.questionCount} used per quiz, delivered Hard → Strengthen → Extend · ${a ? a.assignedTo.length : 0} assigned · ${n} attempt${n === 1 ? '' : 's'}</p></div>
+      const used = s.counts ? `Hard ${s.counts.H || 0} · Strengthen ${s.counts.S || 0} · Extend ${s.counts.E || 0}` : `${s.questionCount} (auto split)`;
+      return `<div class="card"><div class="row sp"><div><div class="row" style="margin-bottom:4px">${s.leadIntake ? '<span class="pill ok">Public booking page</span>' : '<span class="pill warn">Not offered publicly</span>'}${cf.length ? `<span class="pill warn" title="Also covered by: ${esc(cf.map(o => o.title || 'Untitled assessment').join(', '))}">Clashes with ${cf.length} other${cf.length === 1 ? '' : 's'} on public page</span>` : ''}</div><h3>${esc((s.title || '').trim() || `Grade ${s.grade} ${s.subject} (Simple)`)}</h3><p class="muted small">Grade ${s.grade} · ${esc(s.subject)} · ${s.questions.length} question${s.questions.length === 1 ? '' : 's'} in file (Hard ${counts.H} · Strengthen ${counts.S} · Extend ${counts.E}) · ${used} used per quiz, delivered Hard → Strengthen → Extend · ${a ? a.assignedTo.length : 0} assigned · ${n} attempt${n === 1 ? '' : 's'}</p></div>
         <div class="row"><button class="btn sm ghost" data-a="previewAsmt" data-id="${a ? a.id : ''}" ${a ? '' : 'disabled'}>Preview</button>${a && a.status !== 'draft' ? `<button class="btn sm ${U.asgOpen === a.id ? '' : 'ghost'}" data-a="asgOpen" data-id="${a.id}">Assign and attempts</button>` : ''}<button class="btn sm ghost" data-a="simpleEdit" data-id="${s.id}">Edit</button><button class="btn sm danger" data-a="simpleDelete" data-id="${s.id}">${U.cfm === 'simpledel-' + s.id ? 'Click again to confirm delete' : 'Delete'}</button></div></div>${U.asgOpen === (a && a.id) ? asgPanel(a) : ''}</div>`;
     }).join('') : '<div class="empty">No simple sets yet. Click "New simple set" to add one.</div>'}</div>`;
 };
 function simpleEditor() {
   const d = U.simpleDraft, included = d.questions.filter(q => q.included !== false);
-  const counts = { H: 0, S: 0, E: 0 }; included.forEach(q => { if (counts[q.diff] != null) counts[q.diff]++; });
-  const missing = ['H', 'S', 'E'].filter(k => !counts[k]);
+  const avail = { H: 0, S: 0, E: 0 }; included.forEach(q => { if (avail[q.diff] != null) avail[q.diff]++; });
+  const missing = ['H', 'S', 'E'].filter(k => !avail[k]);
+  const dc = d.counts || {};
+  // A dropdown, not a free-typed number - capped to how many questions
+  // that tier actually has included, so it can never be set higher than
+  // the file can deliver.
+  const countField = (k, label) => field(`${label} questions to use (${avail[k]} available)`,
+    `<select data-m="simpleDraft.counts.${k}" data-t="num">${optList(Array.from({ length: avail[k] + 1 }, (_, i) => i), dc[k] ?? 0)}</select>`);
   return `<div class="card lift"><div class="row sp"><h2>${d._origId ? 'Edit simple set' : 'New simple set'}</h2><button class="btn sm ghost" data-a="simpleClose">Close</button></div>
     ${field('Assessment name', inp('simpleDraft.title', d.title, 'text', `placeholder="Grade ${d.grade} ${esc(d.subject)} (Simple)"`))}
     <div class="grid g3" style="margin:10px 0">${field('Grade', `<select data-m="simpleDraft.grade" data-t="num">${optList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(g => ({ v: g, l: 'Grade ' + g })), d.grade)}</select>`)}
-    ${field('Subject', `<select data-m="simpleDraft.subject">${optList(SYLLABUS.map(s => s.subject), d.subject)}</select>`)}
-    ${field('Number of questions to use in the quiz', inp('simpleDraft.questionCount', d.questionCount, 'number', `min="1" max="${Math.max(1, included.length)}"`))}</div>
+    ${field('Subject', `<select data-m="simpleDraft.subject">${optList(SYLLABUS.map(s => s.subject), d.subject)}</select>`)}</div>
+    <p class="small muted" style="margin:0 0 6px">How many questions to draw from each tier - set by hand, one tier at a time. Within a tier, the quiz spreads its picks across topics instead of drawing at random, so one topic can't crowd out the rest.</p>
+    <div class="grid g3" style="margin:0 0 10px">${countField('H', 'Hard')}${countField('S', 'Strengthen')}${countField('E', 'Extend')}</div>
     <div class="sub">${chk('simpleDraft.leadIntake', !!d.leadIntake, 'Offer this grade and subject on the public "book an assessment" page')}<p class="small muted" style="margin-top:6px">Off by default so a set isn't exposed the moment you upload it. Only takes effect while the toggle above is set to "New (Simple CSV)".</p></div>
     <div class="row" style="margin:10px 0"><label class="btn ghost" for="simplecsv" style="cursor:pointer">Upload CSV</label><input id="simplecsv" type="file" accept=".csv,text/csv" hidden data-a="simpleImportCsv"><button class="btn ghost" data-a="simpleTpl">CSV template</button>
-    ${d.questions.length ? `<span class="small muted">${d.questions.length} loaded, ${included.length} included - Hard ${counts.H} · Strengthen ${counts.S} · Extend ${counts.E}</span>` : ''}</div>
+    ${d.questions.length ? `<span class="small muted">${d.questions.length} loaded, ${included.length} included - Hard ${avail.H} · Strengthen ${avail.S} · Extend ${avail.E}</span>` : ''}</div>
     ${missing.length ? `<div class="banner warn">No ${missing.map(k => DIFF[k].name).join(' or ')} questions included - the quiz will draw extra from the other tiers to reach the number requested.</div>` : ''}
     ${U.simpleErr ? `<div class="banner bad">${esc(U.simpleErr)}</div>` : ''}
     ${d.questions.length ? `<div class="row sp" style="margin-top:14px"><h3 style="margin:0">Questions in this set</h3><div class="row"><button class="btn sm ghost" data-a="simpleSelAll">Select all</button><button class="btn sm ghost" data-a="simpleSelNone">Clear all</button></div></div>
     <p class="muted small" style="margin:4px 0 8px">Uncheck a question to leave it out of every quiz drawn from this set. The rest are still reshuffled and drawn fresh for each student - this only controls which ones are in the running.</p>
-    <div class="tw" style="max-height:420px;overflow:auto"><table><thead><tr><th></th><th>#</th><th>Level</th><th>Question</th><th>Answer</th></tr></thead><tbody>${d.questions.map((q, i) => `<tr><td><input type="checkbox" data-a="simpleTglQ" data-id="${q.id}" ${q.included !== false ? 'checked' : ''}></td><td>${i + 1}</td><td>${esc(DIFF[q.diff].name)}</td><td style="min-width:260px">${esc(q.text)}</td><td class="small nowrap">${esc((q.options.find(o => o.id === q.answer) || {}).t || '')}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    <div class="tw" style="max-height:420px;overflow:auto"><table><thead><tr><th></th><th>#</th><th>Level</th><th>Topic</th><th>Question</th><th>Answer</th></tr></thead><tbody>${d.questions.map((q, i) => `<tr><td><input type="checkbox" data-a="simpleTglQ" data-id="${q.id}" ${q.included !== false ? 'checked' : ''}></td><td>${i + 1}</td><td>${esc(DIFF[q.diff].name)}</td><td>${esc(q.topic || 'General')}</td><td style="min-width:260px">${esc(q.text)}</td><td class="small nowrap">${esc((q.options.find(o => o.id === q.answer) || {}).t || '')}</td></tr>`).join('')}</tbody></table></div>` : ''}
     <div class="row" style="margin-top:12px"><button class="btn teal" data-a="simpleSave">Save</button></div></div>`;
 }
 

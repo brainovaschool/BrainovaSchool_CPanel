@@ -84,8 +84,25 @@ ACT.publish = () => { const v = validateDraft(U.draft); if (v.err.length) { toas
 /* simple assessment procedure */
 ACT.setMode = el => { S.settings.assessmentMode = el.dataset.v; save(); render();
   toast(el.dataset.v === 'simple' ? 'Switched to the simple CSV system. Any old assessment still offered on the public page has been suspended for now - open each simple set and turn its own "offer on the public booking page" on when it is ready.' : 'Switched back to the original Builder system - any suspended assessment is offered again exactly as it was.'); };
-ACT.simpleNew = () => { U.simpleDraft = { _origId: null, grade: 1, subject: 'Mathematics', title: '', questionCount: 20, leadIntake: false, questions: [] }; U.simpleErr = null; render(); scrollTop(); };
-ACT.simpleEdit = el => { const s = S.simpleSets.find(x => x.id === el.dataset.id); if (!s) return; U.simpleDraft = Object.assign(JSON.parse(JSON.stringify(s)), { _origId: s.id }); U.simpleErr = null; render(); scrollTop(); };
+ACT.simpleNew = () => { U.simpleDraft = { _origId: null, grade: 1, subject: 'Mathematics', title: '', counts: { H: 0, S: 0, E: 0 }, leadIntake: false, questions: [] }; U.simpleErr = null; render(); scrollTop(); };
+// A set saved before per-tier counts existed only has the old single
+// questionCount - migrated here (once, in the editor's own copy, not
+// written back until she hits Save) to the same even ~1/3 split
+// buildSimpleQuiz's own legacy fallback would otherwise compute, so
+// opening an old set shows the split it was actually already using
+// instead of starting her from zero.
+ACT.simpleEdit = el => {
+  const s = S.simpleSets.find(x => x.id === el.dataset.id); if (!s) return;
+  const d = Object.assign(JSON.parse(JSON.stringify(s)), { _origId: s.id });
+  if (!d.counts) {
+    const avail = { H: 0, S: 0, E: 0 }; d.questions.forEach(q => { if (q.included !== false && avail[q.diff] != null) avail[q.diff]++; });
+    const X = Math.max(1, Math.min(+d.questionCount || d.questions.length, d.questions.length));
+    const base = Math.floor(X / 3), extra = X - base * 3;
+    const even = { H: base + (extra > 0 ? 1 : 0), S: base + (extra > 1 ? 1 : 0), E: base };
+    d.counts = { H: Math.min(even.H, avail.H), S: Math.min(even.S, avail.S), E: Math.min(even.E, avail.E) };
+  }
+  U.simpleDraft = d; U.simpleErr = null; render(); scrollTop();
+};
 ACT.simpleClose = () => { U.simpleDraft = null; render(); };
 ACT.simpleTglQ = el => { const q = (U.simpleDraft.questions || []).find(x => x.id === el.dataset.id); if (q) q.included = q.included === false; render(); };
 ACT.simpleSelAll = () => { (U.simpleDraft.questions || []).forEach(q => q.included = true); render(); };
@@ -99,10 +116,10 @@ ACT.simpleDelete = el => {
   save(); render(); toast('Simple set deleted.');
 };
 ACT.simpleTpl = () => saveFile('brainova-simple-set-template.csv', toCSV([
-  ['difficulty', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'answer', 'explanation'],
-  ['Hard', 'What is 23 + 48?', '71', '70', '81', '61', 'a', '23 + 48 = 71.'],
-  ['Strengthen', 'What is 5 + 3?', '7', '8', '9', '6', 'b', ''],
-  ['Extend', 'A shop had 128 pens and sold 47. How many are left?', '81', '79', '91', '71', 'a', '128 - 47 = 81.'],
+  ['difficulty', 'topic', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'answer', 'explanation'],
+  ['Hard', 'Addition', 'What is 23 + 48?', '71', '70', '81', '61', 'a', '23 + 48 = 71.'],
+  ['Strengthen', 'Addition', 'What is 5 + 3?', '7', '8', '9', '6', 'b', ''],
+  ['Extend', 'Word problems', 'A shop had 128 pens and sold 47. How many are left?', '81', '79', '91', '71', 'a', '128 - 47 = 81.'],
 ]));
 ACT.simpleImportCsv = async el => {
   const f = el.files[0]; if (!f) return;
@@ -162,10 +179,12 @@ ACT.simpleImportCsv = async el => {
 ACT.simpleSave = () => {
   const d = U.simpleDraft;
   if (!d.questions.length) { U.simpleErr = 'Upload a CSV of questions first.'; render(); return; }
+  const counts = { H: Math.max(0, +(d.counts && d.counts.H) || 0), S: Math.max(0, +(d.counts && d.counts.S) || 0), E: Math.max(0, +(d.counts && d.counts.E) || 0) };
+  if (!(counts.H + counts.S + counts.E)) { U.simpleErr = 'Set at least one of Hard, Strengthen or Extend to more than 0.'; render(); return; }
   const id = simpleSetKey(d.grade, d.subject);
   S.simpleSets = S.simpleSets.filter(s => s.id !== id && s.id !== d._origId);
   if (d._origId && d._origId !== id) S.assessments = S.assessments.filter(a => a.simpleSetId !== d._origId);
-  const saved = { id, grade: +d.grade, subject: d.subject, title: (d.title || '').trim(), questionCount: Math.max(1, +d.questionCount || 1), leadIntake: !!d.leadIntake, questions: d.questions, updated: Date.now() };
+  const saved = { id, grade: +d.grade, subject: d.subject, title: (d.title || '').trim(), counts, leadIntake: !!d.leadIntake, questions: d.questions, updated: Date.now() };
   S.simpleSets.unshift(saved);
   syncSimpleCompanion(saved, !!d._contentReplaced);
   save(); U.simpleDraft = null; U.simpleErr = null; render(); toast('Simple set saved.');

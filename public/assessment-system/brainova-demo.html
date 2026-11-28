@@ -745,15 +745,46 @@ function poolFor(bank, a, above) {
 // easiest-first order a normal test would use. If one tier runs short,
 // its shortfall is handed to the others in that same order so the
 // quiz still reaches the requested count where the file allows it.
+// Spreads a tier's picks across topics instead of a flat shuffle, which
+// could otherwise hand back (say) 8 Hard questions all from the same
+// topic and none from three others still sitting in the pool. Groups by
+// topic, shuffles each topic's own questions, then takes one at a time
+// in round-robin order across topics until n is reached or the tier
+// runs out - so a tier with 4 topics and a want of 8 takes 2 from each
+// before it would ever take a 3rd from any one of them.
+function pickAcrossTopics(list, n, R) {
+  if (n <= 0 || !list.length) return [];
+  const byTopic = {};
+  list.forEach(q => { const t = q.topic || 'General'; (byTopic[t] = byTopic[t] || []).push(q); });
+  const topics = R.shuffle(Object.keys(byTopic));
+  topics.forEach(t => { byTopic[t] = R.shuffle(byTopic[t]); });
+  const picked = [];
+  for (let i = 0; picked.length < n && topics.some(t => byTopic[t].length); i++) {
+    const t = topics[i % topics.length];
+    if (byTopic[t].length) picked.push(byTopic[t].shift());
+  }
+  return picked;
+}
 function buildSimpleQuiz(set, seed) {
   const R = rng(seed), order = ['H', 'S', 'E'];
   const pool = set.questions.filter(q => q.included !== false);
   const byTier = {}; order.forEach(k => { byTier[k] = R.shuffle(pool.filter(q => q.diff === k)); });
-  const X = Math.max(1, Math.min(+set.questionCount || pool.length, pool.length));
-  const base = Math.floor(X / 3), extra = X - base * 3;
-  const want = { H: base + (extra > 0 ? 1 : 0), S: base + (extra > 1 ? 1 : 0), E: base };
+  // set.counts (Hard/Strengthen/Extend, set by hand in the editor) is
+  // the normal path now. set.counts is only missing for a set saved
+  // before this existed and never re-opened since - for that one, fall
+  // back to exactly the old behaviour (an even ~1/3 split of the single
+  // total it was saved with) so it keeps delivering the same quiz until
+  // someone opens and re-saves it.
+  let want;
+  if (set.counts) {
+    want = { H: Math.max(0, +set.counts.H || 0), S: Math.max(0, +set.counts.S || 0), E: Math.max(0, +set.counts.E || 0) };
+  } else {
+    const X = Math.max(1, Math.min(+set.questionCount || pool.length, pool.length));
+    const base = Math.floor(X / 3), extra = X - base * 3;
+    want = { H: base + (extra > 0 ? 1 : 0), S: base + (extra > 1 ? 1 : 0), E: base };
+  }
   const picked = {}; let shortfall = 0;
-  order.forEach(k => { picked[k] = byTier[k].slice(0, want[k]); shortfall += Math.max(0, want[k] - picked[k].length); });
+  order.forEach(k => { picked[k] = pickAcrossTopics(byTier[k], want[k], R); shortfall += Math.max(0, want[k] - picked[k].length); });
   while (shortfall > 0) {
     let gained = false;
     for (const k of order) {
@@ -1890,27 +1921,35 @@ VIEWS.simpleAssess = function () {
       const a = S.assessments.find(x => x.simpleSetId === s.id);
       const n = a ? S.attempts.filter(x => x.asmtId === a.id && !x.preview).length : 0;
       const cf = a ? leadIntakeConflicts(a) : [];
-      return `<div class="card"><div class="row sp"><div><div class="row" style="margin-bottom:4px">${s.leadIntake ? '<span class="pill ok">Public booking page</span>' : '<span class="pill warn">Not offered publicly</span>'}${cf.length ? `<span class="pill warn" title="Also covered by: ${esc(cf.map(o => o.title || 'Untitled assessment').join(', '))}">Clashes with ${cf.length} other${cf.length === 1 ? '' : 's'} on public page</span>` : ''}</div><h3>${esc((s.title || '').trim() || `Grade ${s.grade} ${s.subject} (Simple)`)}</h3><p class="muted small">Grade ${s.grade} · ${esc(s.subject)} · ${s.questions.length} question${s.questions.length === 1 ? '' : 's'} in file (Hard ${counts.H} · Strengthen ${counts.S} · Extend ${counts.E}) · ${s.questionCount} used per quiz, delivered Hard → Strengthen → Extend · ${a ? a.assignedTo.length : 0} assigned · ${n} attempt${n === 1 ? '' : 's'}</p></div>
+      const used = s.counts ? `Hard ${s.counts.H || 0} · Strengthen ${s.counts.S || 0} · Extend ${s.counts.E || 0}` : `${s.questionCount} (auto split)`;
+      return `<div class="card"><div class="row sp"><div><div class="row" style="margin-bottom:4px">${s.leadIntake ? '<span class="pill ok">Public booking page</span>' : '<span class="pill warn">Not offered publicly</span>'}${cf.length ? `<span class="pill warn" title="Also covered by: ${esc(cf.map(o => o.title || 'Untitled assessment').join(', '))}">Clashes with ${cf.length} other${cf.length === 1 ? '' : 's'} on public page</span>` : ''}</div><h3>${esc((s.title || '').trim() || `Grade ${s.grade} ${s.subject} (Simple)`)}</h3><p class="muted small">Grade ${s.grade} · ${esc(s.subject)} · ${s.questions.length} question${s.questions.length === 1 ? '' : 's'} in file (Hard ${counts.H} · Strengthen ${counts.S} · Extend ${counts.E}) · ${used} used per quiz, delivered Hard → Strengthen → Extend · ${a ? a.assignedTo.length : 0} assigned · ${n} attempt${n === 1 ? '' : 's'}</p></div>
         <div class="row"><button class="btn sm ghost" data-a="previewAsmt" data-id="${a ? a.id : ''}" ${a ? '' : 'disabled'}>Preview</button>${a && a.status !== 'draft' ? `<button class="btn sm ${U.asgOpen === a.id ? '' : 'ghost'}" data-a="asgOpen" data-id="${a.id}">Assign and attempts</button>` : ''}<button class="btn sm ghost" data-a="simpleEdit" data-id="${s.id}">Edit</button><button class="btn sm danger" data-a="simpleDelete" data-id="${s.id}">${U.cfm === 'simpledel-' + s.id ? 'Click again to confirm delete' : 'Delete'}</button></div></div>${U.asgOpen === (a && a.id) ? asgPanel(a) : ''}</div>`;
     }).join('') : '<div class="empty">No simple sets yet. Click "New simple set" to add one.</div>'}</div>`;
 };
 function simpleEditor() {
   const d = U.simpleDraft, included = d.questions.filter(q => q.included !== false);
-  const counts = { H: 0, S: 0, E: 0 }; included.forEach(q => { if (counts[q.diff] != null) counts[q.diff]++; });
-  const missing = ['H', 'S', 'E'].filter(k => !counts[k]);
+  const avail = { H: 0, S: 0, E: 0 }; included.forEach(q => { if (avail[q.diff] != null) avail[q.diff]++; });
+  const missing = ['H', 'S', 'E'].filter(k => !avail[k]);
+  const dc = d.counts || {};
+  // A dropdown, not a free-typed number - capped to how many questions
+  // that tier actually has included, so it can never be set higher than
+  // the file can deliver.
+  const countField = (k, label) => field(`${label} questions to use (${avail[k]} available)`,
+    `<select data-m="simpleDraft.counts.${k}" data-t="num">${optList(Array.from({ length: avail[k] + 1 }, (_, i) => i), dc[k] ?? 0)}</select>`);
   return `<div class="card lift"><div class="row sp"><h2>${d._origId ? 'Edit simple set' : 'New simple set'}</h2><button class="btn sm ghost" data-a="simpleClose">Close</button></div>
     ${field('Assessment name', inp('simpleDraft.title', d.title, 'text', `placeholder="Grade ${d.grade} ${esc(d.subject)} (Simple)"`))}
     <div class="grid g3" style="margin:10px 0">${field('Grade', `<select data-m="simpleDraft.grade" data-t="num">${optList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(g => ({ v: g, l: 'Grade ' + g })), d.grade)}</select>`)}
-    ${field('Subject', `<select data-m="simpleDraft.subject">${optList(SYLLABUS.map(s => s.subject), d.subject)}</select>`)}
-    ${field('Number of questions to use in the quiz', inp('simpleDraft.questionCount', d.questionCount, 'number', `min="1" max="${Math.max(1, included.length)}"`))}</div>
+    ${field('Subject', `<select data-m="simpleDraft.subject">${optList(SYLLABUS.map(s => s.subject), d.subject)}</select>`)}</div>
+    <p class="small muted" style="margin:0 0 6px">How many questions to draw from each tier - set by hand, one tier at a time. Within a tier, the quiz spreads its picks across topics instead of drawing at random, so one topic can't crowd out the rest.</p>
+    <div class="grid g3" style="margin:0 0 10px">${countField('H', 'Hard')}${countField('S', 'Strengthen')}${countField('E', 'Extend')}</div>
     <div class="sub">${chk('simpleDraft.leadIntake', !!d.leadIntake, 'Offer this grade and subject on the public "book an assessment" page')}<p class="small muted" style="margin-top:6px">Off by default so a set isn't exposed the moment you upload it. Only takes effect while the toggle above is set to "New (Simple CSV)".</p></div>
     <div class="row" style="margin:10px 0"><label class="btn ghost" for="simplecsv" style="cursor:pointer">Upload CSV</label><input id="simplecsv" type="file" accept=".csv,text/csv" hidden data-a="simpleImportCsv"><button class="btn ghost" data-a="simpleTpl">CSV template</button>
-    ${d.questions.length ? `<span class="small muted">${d.questions.length} loaded, ${included.length} included - Hard ${counts.H} · Strengthen ${counts.S} · Extend ${counts.E}</span>` : ''}</div>
+    ${d.questions.length ? `<span class="small muted">${d.questions.length} loaded, ${included.length} included - Hard ${avail.H} · Strengthen ${avail.S} · Extend ${avail.E}</span>` : ''}</div>
     ${missing.length ? `<div class="banner warn">No ${missing.map(k => DIFF[k].name).join(' or ')} questions included - the quiz will draw extra from the other tiers to reach the number requested.</div>` : ''}
     ${U.simpleErr ? `<div class="banner bad">${esc(U.simpleErr)}</div>` : ''}
     ${d.questions.length ? `<div class="row sp" style="margin-top:14px"><h3 style="margin:0">Questions in this set</h3><div class="row"><button class="btn sm ghost" data-a="simpleSelAll">Select all</button><button class="btn sm ghost" data-a="simpleSelNone">Clear all</button></div></div>
     <p class="muted small" style="margin:4px 0 8px">Uncheck a question to leave it out of every quiz drawn from this set. The rest are still reshuffled and drawn fresh for each student - this only controls which ones are in the running.</p>
-    <div class="tw" style="max-height:420px;overflow:auto"><table><thead><tr><th></th><th>#</th><th>Level</th><th>Question</th><th>Answer</th></tr></thead><tbody>${d.questions.map((q, i) => `<tr><td><input type="checkbox" data-a="simpleTglQ" data-id="${q.id}" ${q.included !== false ? 'checked' : ''}></td><td>${i + 1}</td><td>${esc(DIFF[q.diff].name)}</td><td style="min-width:260px">${esc(q.text)}</td><td class="small nowrap">${esc((q.options.find(o => o.id === q.answer) || {}).t || '')}</td></tr>`).join('')}</tbody></table></div>` : ''}
+    <div class="tw" style="max-height:420px;overflow:auto"><table><thead><tr><th></th><th>#</th><th>Level</th><th>Topic</th><th>Question</th><th>Answer</th></tr></thead><tbody>${d.questions.map((q, i) => `<tr><td><input type="checkbox" data-a="simpleTglQ" data-id="${q.id}" ${q.included !== false ? 'checked' : ''}></td><td>${i + 1}</td><td>${esc(DIFF[q.diff].name)}</td><td>${esc(q.topic || 'General')}</td><td style="min-width:260px">${esc(q.text)}</td><td class="small nowrap">${esc((q.options.find(o => o.id === q.answer) || {}).t || '')}</td></tr>`).join('')}</tbody></table></div>` : ''}
     <div class="row" style="margin-top:12px"><button class="btn teal" data-a="simpleSave">Save</button></div></div>`;
 }
 
@@ -3210,8 +3249,25 @@ ACT.publish = () => { const v = validateDraft(U.draft); if (v.err.length) { toas
 /* simple assessment procedure */
 ACT.setMode = el => { S.settings.assessmentMode = el.dataset.v; save(); render();
   toast(el.dataset.v === 'simple' ? 'Switched to the simple CSV system. Any old assessment still offered on the public page has been suspended for now - open each simple set and turn its own "offer on the public booking page" on when it is ready.' : 'Switched back to the original Builder system - any suspended assessment is offered again exactly as it was.'); };
-ACT.simpleNew = () => { U.simpleDraft = { _origId: null, grade: 1, subject: 'Mathematics', title: '', questionCount: 20, leadIntake: false, questions: [] }; U.simpleErr = null; render(); scrollTop(); };
-ACT.simpleEdit = el => { const s = S.simpleSets.find(x => x.id === el.dataset.id); if (!s) return; U.simpleDraft = Object.assign(JSON.parse(JSON.stringify(s)), { _origId: s.id }); U.simpleErr = null; render(); scrollTop(); };
+ACT.simpleNew = () => { U.simpleDraft = { _origId: null, grade: 1, subject: 'Mathematics', title: '', counts: { H: 0, S: 0, E: 0 }, leadIntake: false, questions: [] }; U.simpleErr = null; render(); scrollTop(); };
+// A set saved before per-tier counts existed only has the old single
+// questionCount - migrated here (once, in the editor's own copy, not
+// written back until she hits Save) to the same even ~1/3 split
+// buildSimpleQuiz's own legacy fallback would otherwise compute, so
+// opening an old set shows the split it was actually already using
+// instead of starting her from zero.
+ACT.simpleEdit = el => {
+  const s = S.simpleSets.find(x => x.id === el.dataset.id); if (!s) return;
+  const d = Object.assign(JSON.parse(JSON.stringify(s)), { _origId: s.id });
+  if (!d.counts) {
+    const avail = { H: 0, S: 0, E: 0 }; d.questions.forEach(q => { if (q.included !== false && avail[q.diff] != null) avail[q.diff]++; });
+    const X = Math.max(1, Math.min(+d.questionCount || d.questions.length, d.questions.length));
+    const base = Math.floor(X / 3), extra = X - base * 3;
+    const even = { H: base + (extra > 0 ? 1 : 0), S: base + (extra > 1 ? 1 : 0), E: base };
+    d.counts = { H: Math.min(even.H, avail.H), S: Math.min(even.S, avail.S), E: Math.min(even.E, avail.E) };
+  }
+  U.simpleDraft = d; U.simpleErr = null; render(); scrollTop();
+};
 ACT.simpleClose = () => { U.simpleDraft = null; render(); };
 ACT.simpleTglQ = el => { const q = (U.simpleDraft.questions || []).find(x => x.id === el.dataset.id); if (q) q.included = q.included === false; render(); };
 ACT.simpleSelAll = () => { (U.simpleDraft.questions || []).forEach(q => q.included = true); render(); };
@@ -3225,10 +3281,10 @@ ACT.simpleDelete = el => {
   save(); render(); toast('Simple set deleted.');
 };
 ACT.simpleTpl = () => saveFile('brainova-simple-set-template.csv', toCSV([
-  ['difficulty', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'answer', 'explanation'],
-  ['Hard', 'What is 23 + 48?', '71', '70', '81', '61', 'a', '23 + 48 = 71.'],
-  ['Strengthen', 'What is 5 + 3?', '7', '8', '9', '6', 'b', ''],
-  ['Extend', 'A shop had 128 pens and sold 47. How many are left?', '81', '79', '91', '71', 'a', '128 - 47 = 81.'],
+  ['difficulty', 'topic', 'question', 'option_a', 'option_b', 'option_c', 'option_d', 'answer', 'explanation'],
+  ['Hard', 'Addition', 'What is 23 + 48?', '71', '70', '81', '61', 'a', '23 + 48 = 71.'],
+  ['Strengthen', 'Addition', 'What is 5 + 3?', '7', '8', '9', '6', 'b', ''],
+  ['Extend', 'Word problems', 'A shop had 128 pens and sold 47. How many are left?', '81', '79', '91', '71', 'a', '128 - 47 = 81.'],
 ]));
 ACT.simpleImportCsv = async el => {
   const f = el.files[0]; if (!f) return;
@@ -3288,10 +3344,12 @@ ACT.simpleImportCsv = async el => {
 ACT.simpleSave = () => {
   const d = U.simpleDraft;
   if (!d.questions.length) { U.simpleErr = 'Upload a CSV of questions first.'; render(); return; }
+  const counts = { H: Math.max(0, +(d.counts && d.counts.H) || 0), S: Math.max(0, +(d.counts && d.counts.S) || 0), E: Math.max(0, +(d.counts && d.counts.E) || 0) };
+  if (!(counts.H + counts.S + counts.E)) { U.simpleErr = 'Set at least one of Hard, Strengthen or Extend to more than 0.'; render(); return; }
   const id = simpleSetKey(d.grade, d.subject);
   S.simpleSets = S.simpleSets.filter(s => s.id !== id && s.id !== d._origId);
   if (d._origId && d._origId !== id) S.assessments = S.assessments.filter(a => a.simpleSetId !== d._origId);
-  const saved = { id, grade: +d.grade, subject: d.subject, title: (d.title || '').trim(), questionCount: Math.max(1, +d.questionCount || 1), leadIntake: !!d.leadIntake, questions: d.questions, updated: Date.now() };
+  const saved = { id, grade: +d.grade, subject: d.subject, title: (d.title || '').trim(), counts, leadIntake: !!d.leadIntake, questions: d.questions, updated: Date.now() };
   S.simpleSets.unshift(saved);
   syncSimpleCompanion(saved, !!d._contentReplaced);
   save(); U.simpleDraft = null; U.simpleErr = null; render(); toast('Simple set saved.');
