@@ -299,23 +299,33 @@
              Course Details happening to be on the same page to supply the
              styling. Adds a visible shadow too, so cards read as distinct
              blocks instead of blending into the page background. --}}
+        {{-- Same sky-blue "gamified" look as the Overview/Course Details
+             pages - a light page-wide gradient wash, with each card
+             picking up a pale tint of Primary instead of flat white, so
+             this page recolours alongside them with the header's theme
+             colour picker. --}}
+        .cc-pr {
+            background: linear-gradient(180deg, #f8fafc 0%, #eff6ff 40%, #f8fbff 100%);
+            padding: 1.1rem 1.1rem 1.5rem;
+            border-radius: 18px;
+        }
         .cc-cd-card {
-            background: #ffffff;
-            border: 1px solid var(--ot-border-basic-table, #e4e7ec);
+            background: linear-gradient(145deg, #ffffff 0%, var(--bn-primary-tint-1, #f0f9ff) 100%);
+            border: 1px solid var(--bn-primary-tint-border, rgba(147, 197, 253, 0.45));
             border-radius: 20px;
             padding: 1.25rem 1.5rem;
             margin-bottom: 1rem;
-            box-shadow: 0 2px 10px rgba(15, 23, 42, .05);
+            box-shadow: 0 4px 14px rgba(var(--bn-turquoise-rgb, 37, 99, 235), 0.05);
         }
         .cc-cd-label { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #8b93a3; margin: 0 0 0.6rem; }
         .cc-pr-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
         .cc-pr-stat {
-            background: #ffffff;
-            border: 1px solid var(--ot-border-basic-table, #e4e7ec);
+            background: linear-gradient(145deg, #ffffff 0%, var(--bn-primary-tint-1, #f0f9ff) 100%);
+            border: 1px solid var(--bn-primary-tint-border, rgba(147, 197, 253, 0.45));
             border-radius: 16px;
             padding: 1rem 1.1rem;
             position: relative;
-            box-shadow: 0 2px 10px rgba(15, 23, 42, .05);
+            box-shadow: 0 4px 14px rgba(var(--bn-turquoise-rgb, 37, 99, 235), 0.05);
         }
         .cc-pr-stat-icon {
             display: inline-flex; align-items: center; justify-content: center;
