@@ -36,6 +36,45 @@
                     </form>
                 </div>
                 <div class="card-body">
+                    <form method="get" class="d-flex align-items-end gap-2 flex-wrap mb-3 p-2 border rounded">
+                        <div>
+                            <label class="form-label small mb-1">Day: from</label>
+                            <input type="date" name="from_date" class="form-control form-control-sm" value="{{ request('from_date') }}">
+                        </div>
+                        <div>
+                            <label class="form-label small mb-1">to</label>
+                            <input type="date" name="to_date" class="form-control form-control-sm" value="{{ request('to_date') }}">
+                        </div>
+                        <div>
+                            <label class="form-label small mb-1">Time</label>
+                            <select name="time" class="form-control form-control-sm" style="max-width:150px">
+                                <option value="">All times</option>
+                                @foreach ($data['times'] as $t)
+                                    <option value="{{ $t }}" {{ request('time') === $t ? 'selected' : '' }}>{{ $t }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label small mb-1">Status</label>
+                            <select name="status" class="form-control form-control-sm" style="max-width:130px">
+                                <option value="">All</option>
+                                <option value="1" {{ request('status') === '1' ? 'selected' : '' }}>{{ ___('common.active') }}</option>
+                                <option value="0" {{ request('status') === '0' ? 'selected' : '' }}>{{ ___('common.inactive') }}</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label small mb-1">Slots</label>
+                            <select name="availability" class="form-control form-control-sm" style="max-width:160px">
+                                <option value="">All</option>
+                                <option value="open" {{ request('availability') === 'open' ? 'selected' : '' }}>Has seats left</option>
+                                <option value="full" {{ request('availability') === 'full' ? 'selected' : '' }}>Fully booked</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-sm ot-btn-primary">Filter</button>
+                        @if (collect(request()->only(['from_date', 'to_date', 'time', 'status', 'availability']))->filter(fn ($v) => $v !== null && $v !== '')->isNotEmpty())
+                            <a href="{{ route('assessment-slot.index') }}" class="btn btn-sm btn-secondary">Clear</a>
+                        @endif
+                    </form>
                     @include('backend.partials.bulk-actions-bar')
                     <div class="d-flex flex-wrap align-items-center gap-2 mb-3 p-2 border rounded" id="bulkEditBar">
                         <span class="small text-secondary">Bulk edit selected (check rows below first):</span>

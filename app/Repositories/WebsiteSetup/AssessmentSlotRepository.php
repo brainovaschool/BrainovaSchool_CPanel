@@ -33,10 +33,48 @@ class AssessmentSlotRepository
         return [$start->format('g:i A'), $start->copy()->addMinutes(15)->format('g:i A')];
     }
 
-    public function getAll()
+    /**
+     * $filters (all optional): from_date/to_date (the "day" filter - a
+     * single day is just the same date in both), time (one of the
+     * exact start_time labels timesDropdown() returns), status (0/1),
+     * availability ('open' = remaining > 0, 'full' = remaining <= 0 -
+     * the "slots" filter, since "status" above already covers active/
+     * inactive and would otherwise be confusingly overloaded).
+     */
+    public function getAll(array $filters = [])
     {
-        return $this->slot->orderBy('slot_date', 'desc')->orderBy('start_time')
-            ->paginate(Settings::PAGINATE);
+        $query = $this->slot->newQuery();
+
+        if (!empty($filters['from_date'])) {
+            $query->whereDate('slot_date', '>=', $filters['from_date']);
+        }
+        if (!empty($filters['to_date'])) {
+            $query->whereDate('slot_date', '<=', $filters['to_date']);
+        }
+        if (!empty($filters['time'])) {
+            $query->where('start_time', $filters['time']);
+        }
+        if (isset($filters['status']) && $filters['status'] !== '') {
+            $query->where('status', (int) $filters['status']);
+        }
+        if (!empty($filters['availability']) && $filters['availability'] === 'open') {
+            $query->whereColumn('booked_count', '<', 'capacity');
+        } elseif (!empty($filters['availability']) && $filters['availability'] === 'full') {
+            $query->whereColumn('booked_count', '>=', 'capacity');
+        }
+
+        return $query->orderBy('slot_date', 'desc')->orderBy('start_time')
+            ->paginate(Settings::PAGINATE)->withQueryString();
+    }
+
+    /** Every start_time already in use, for the Time filter's dropdown -
+     *  sorted by actual time of day, not alphabetically (the stored
+     *  "g:i A" strings would otherwise put "10:00 AM" before "9:00 AM"). */
+    public function timesDropdown(): array
+    {
+        return $this->slot->newQuery()->distinct()->pluck('start_time')
+            ->sortBy(fn ($t) => Carbon::createFromFormat('g:i A', $t)->format('Hi'))
+            ->values()->all();
     }
 
     public function show($id)

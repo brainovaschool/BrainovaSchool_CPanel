@@ -34,7 +34,8 @@ class AssessmentSlotController extends Controller
     public function index(Request $request)
     {
         $this->guard($request);
-        $data['slots'] = $this->repo->getAll();
+        $data['slots'] = $this->repo->getAll($request->only(['from_date', 'to_date', 'time', 'status', 'availability']));
+        $data['times'] = $this->repo->timesDropdown();
         $data['title'] = 'Assessment Slots';
         return view('website-setup.assessment-slot.index', compact('data'));
     }
