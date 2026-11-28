@@ -278,6 +278,48 @@
                 </div>
             </div>
             <div class="header-control-item">
+                <div class="bn-theme-picker">
+                    <button id="bnThemeBtn" type="button" class="btn bn-theme-trigger" title="Theme colours" aria-haspopup="true" aria-expanded="false">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                            <circle cx="7.5" cy="7" r="4.5" fill="#0097B2" fill-opacity="0.9"/>
+                            <circle cx="13" cy="8" r="4.5" fill="#8B7BF0" fill-opacity="0.85"/>
+                            <circle cx="10" cy="13.5" r="4.5" fill="#EC4899" fill-opacity="0.8"/>
+                        </svg>
+                    </button>
+                    <div id="bnThemePanel" class="bn-theme-panel" hidden>
+                        <div class="bn-theme-head">
+                            <h6>Theme colours</h6>
+                            <p>Pick a slot, then a colour — it applies straight away and is remembered on this device.</p>
+                        </div>
+                        <div class="bn-theme-slots">
+                            <button type="button" class="bn-theme-slot" data-slot="p">
+                                <span class="bn-theme-slot-dot"></span> Primary
+                            </button>
+                            <button type="button" class="bn-theme-slot" data-slot="s">
+                                <span class="bn-theme-slot-dot"></span> Secondary
+                            </button>
+                            <button type="button" class="bn-theme-slot" data-slot="a">
+                                <span class="bn-theme-slot-dot"></span> Accent
+                            </button>
+                        </div>
+                        <div class="bn-theme-grid" id="bnThemeGrid"></div>
+                        <button type="button" class="bn-theme-noaccent" id="bnThemeNoAccent">No accent (auto)</button>
+                        <div class="bn-theme-presets">
+                            <p>Or start from a preset</p>
+                            <div class="bn-theme-preset-row" id="bnThemePresets"></div>
+                        </div>
+                        <div class="bn-theme-preview-card">
+                            <span class="bn-theme-preview-pill p">Primary</span>
+                            <span class="bn-theme-preview-pill s">Secondary</span>
+                            <div class="bn-theme-preview-bar"><span></span></div>
+                        </div>
+                        <div class="bn-theme-actions">
+                            <button type="button" class="bn-theme-reset" id="bnThemeReset">Use Brainova colours</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="header-control-item">
                 <div class="dropdown theme_dropdown ">
                     <button id="button" class="btn "><i class="lar la-sun"></i></button>
                 </div>

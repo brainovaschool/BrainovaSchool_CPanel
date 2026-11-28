@@ -47,6 +47,7 @@
     <link rel="stylesheet" href="{{ global_asset('backend') }}/assets/css/style2.css">
     <link rel="stylesheet" href="{{ global_asset('backend') }}/assets/css/custom.css?v={{ @filemtime(public_path('backend/assets/css/custom.css')) }}">
     <link rel="stylesheet" href="{{ global_asset('backend') }}/assets/css/aurora-glass.css?v={{ @filemtime(public_path('backend/assets/css/aurora-glass.css')) }}">
+    <link rel="stylesheet" href="{{ global_asset('backend') }}/assets/css/theme-picker.css?v={{ @filemtime(public_path('backend/assets/css/theme-picker.css')) }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 
 
@@ -79,6 +80,7 @@
 
     {{-- theme mode switch --}}
     <script src="{{ global_asset('backend') }}/assets/js/theme.js"></script>
+    <script src="{{ global_asset('backend') }}/assets/js/theme-colors.js?v={{ @filemtime(public_path('backend/assets/js/theme-colors.js')) }}"></script>
     <script src="{{ global_asset('backend') }}/assets/js/popper.min.js"></script>
     <script src="{{ global_asset('backend') }}/assets/js/bootstrap.min.js"></script>
     <script src="{{ global_asset('backend') }}/assets/js/jquery-3.6.0.min.js"></script>
