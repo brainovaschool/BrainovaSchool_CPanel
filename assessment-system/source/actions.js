@@ -104,6 +104,7 @@ ACT.simpleEdit = el => {
   U.simpleDraft = d; U.simpleErr = null; render(); scrollTop();
 };
 ACT.simpleClose = () => { U.simpleDraft = null; render(); };
+ACT.simpleFilterClear = () => { U.simpleFilter = {}; render(); };
 ACT.simpleTglQ = el => { const q = (U.simpleDraft.questions || []).find(x => x.id === el.dataset.id); if (q) q.included = q.included === false; render(); };
 ACT.simpleSelAll = () => { (U.simpleDraft.questions || []).forEach(q => q.included = true); render(); };
 ACT.simpleSelNone = () => { (U.simpleDraft.questions || []).forEach(q => q.included = false); render(); };
