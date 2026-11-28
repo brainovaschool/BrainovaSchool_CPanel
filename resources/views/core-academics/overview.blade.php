@@ -116,12 +116,12 @@
     .ca-hero {
         position: relative;
         overflow: hidden;
-        background: linear-gradient(125deg, #dbeafe 0%, #e0f2fe 25%, #f0f9ff 55%, #ffffff 100%);
-        border: 1px solid rgba(147, 197, 253, 0.55);
+        background: linear-gradient(125deg, var(--bn-primary-tint-1, #dbeafe) 0%, var(--bn-primary-tint-2, #e0f2fe) 25%, #f0f9ff 55%, #ffffff 100%);
+        border: 1px solid var(--bn-primary-tint-border, rgba(147, 197, 253, 0.55));
         border-radius: 18px;
         padding: 2rem 2.25rem;
         margin-bottom: 1.25rem;
-        box-shadow: 0 8px 28px rgba(14, 165, 233, 0.12);
+        box-shadow: 0 8px 28px rgba(var(--bn-turquoise-rgb, 56, 189, 248), 0.12);
     }
     .ca-hero::after {
         content: "";
@@ -130,7 +130,7 @@
         right: -8%;
         width: 220px;
         height: 220px;
-        background: radial-gradient(circle, rgba(56, 189, 248, 0.22) 0%, transparent 70%);
+        background: radial-gradient(circle, rgba(var(--bn-turquoise-rgb, 56, 189, 248), 0.22) 0%, transparent 70%);
         pointer-events: none;
     }
     .ca-hero-badge {
@@ -210,11 +210,11 @@
     }
 
     .ca-featured {
-        background: linear-gradient(168deg, #eff6ff 0%, #dbeafe 20%, #e0f2fe 45%, #f8fafc 85%, #ffffff 100%);
-        border: 1px solid rgba(147, 197, 253, 0.5);
+        background: linear-gradient(168deg, #eff6ff 0%, var(--bn-primary-tint-1, #dbeafe) 20%, var(--bn-primary-tint-2, #e0f2fe) 45%, #f8fafc 85%, #ffffff 100%);
+        border: 1px solid var(--bn-primary-tint-border, rgba(147, 197, 253, 0.5));
         border-radius: 18px;
         padding: 1.5rem 1.75rem;
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 10px 28px rgba(37, 99, 235, 0.08);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85), 0 10px 28px rgba(var(--bn-turquoise-rgb, 37, 99, 235), 0.08);
     }
     .ca-featured-head {
         display: flex;

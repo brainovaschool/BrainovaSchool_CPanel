@@ -18,6 +18,15 @@
   --bn-purple: #8b7bf0;
   --bn-purple-light: #a996ff;
   --bn-purple-rgb: 139, 123, 240;
+  --bn-on-primary: #fff;
+  --bn-on-secondary: #fff;
+  /* Theme colour picker's "light box" tint, derived from --bn-turquoise -
+     these defaults match the look the Academics Boost hero/course-grid
+     already shipped with before the picker existed. */
+  --bn-primary-tint-1: #dbeafe;
+  --bn-primary-tint-2: #e0f2fe;
+  --bn-primary-tint-3: #c3e8fb;
+  --bn-primary-tint-border: rgba(147, 197, 253, .55);
   --bn-ink: #101a2b;
   --bn-ink-soft: #45547a;
   --bn-muted: #6b7a99;
@@ -105,14 +114,14 @@ body {
 
 .sidebar .sidebar-menu .sidebar-menu-section .mm-active > a {
   background: linear-gradient(135deg, var(--bn-turquoise), var(--bn-turquoise-light)) !important;
-  color: #fff !important;
+  color: var(--bn-on-primary, #fff) !important;
   border-left: none !important;
   box-shadow: 0 10px 22px -10px rgba(var(--bn-turquoise-rgb), .6);
 }
 
 .sidebar .sidebar-menu .sidebar-menu-section .mm-active > a svg,
 .sidebar .sidebar-menu .sidebar-menu-section .mm-active > a i {
-  color: #fff !important;
+  color: var(--bn-on-primary, #fff) !important;
 }
 
 .sidebar .sidebar-menu-section-heading,
