@@ -46,13 +46,12 @@
                             <input type="date" name="to_date" class="form-control form-control-sm" value="{{ request('to_date') }}">
                         </div>
                         <div>
-                            <label class="form-label small mb-1">Time</label>
-                            <select name="time" class="form-control form-control-sm" style="max-width:150px">
-                                <option value="">All times</option>
-                                @foreach ($data['times'] as $t)
-                                    <option value="{{ $t }}" {{ request('time') === $t ? 'selected' : '' }}>{{ $t }}</option>
-                                @endforeach
-                            </select>
+                            <label class="form-label small mb-1">Time: from</label>
+                            <input type="time" name="time_from" class="form-control form-control-sm" value="{{ request('time_from') }}">
+                        </div>
+                        <div>
+                            <label class="form-label small mb-1">to</label>
+                            <input type="time" name="time_to" class="form-control form-control-sm" value="{{ request('time_to') }}">
                         </div>
                         <div>
                             <label class="form-label small mb-1">Status</label>
@@ -71,7 +70,7 @@
                             </select>
                         </div>
                         <button type="submit" class="btn btn-sm ot-btn-primary">Filter</button>
-                        @if (collect(request()->only(['from_date', 'to_date', 'time', 'status', 'availability']))->filter(fn ($v) => $v !== null && $v !== '')->isNotEmpty())
+                        @if (collect(request()->only(['from_date', 'to_date', 'time_from', 'time_to', 'status', 'availability']))->filter(fn ($v) => $v !== null && $v !== '')->isNotEmpty())
                             <a href="{{ route('assessment-slot.index') }}" class="btn btn-sm btn-secondary">Clear</a>
                         @endif
                     </form>

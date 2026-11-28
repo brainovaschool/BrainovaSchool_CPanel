@@ -35,11 +35,13 @@ class AssessmentSlotRepository
 
     /**
      * $filters (all optional): from_date/to_date (the "day" filter - a
-     * single day is just the same date in both), time (one of the
-     * exact start_time labels timesDropdown() returns), status (0/1),
-     * availability ('open' = remaining > 0, 'full' = remaining <= 0 -
-     * the "slots" filter, since "status" above already covers active/
-     * inactive and would otherwise be confusingly overloaded).
+     * single day is just the same date in both), time_from/time_to
+     * (24-hour "HH:MM" from a native time input - the "time" filter,
+     * compared by actual time of day, not the stored string, see
+     * timeRange() below), status (0/1), availability ('open' =
+     * remaining > 0, 'full' = remaining <= 0 - the "slots" filter,
+     * since "status" above already covers active/inactive and would
+     * otherwise be confusingly overloaded).
      */
     public function getAll(array $filters = [])
     {
@@ -51,8 +53,11 @@ class AssessmentSlotRepository
         if (!empty($filters['to_date'])) {
             $query->whereDate('slot_date', '<=', $filters['to_date']);
         }
-        if (!empty($filters['time'])) {
-            $query->where('start_time', $filters['time']);
+        if (!empty($filters['time_from'])) {
+            $this->timeRange($query, '>=', $filters['time_from']);
+        }
+        if (!empty($filters['time_to'])) {
+            $this->timeRange($query, '<=', $filters['time_to']);
         }
         if (isset($filters['status']) && $filters['status'] !== '') {
             $query->where('status', (int) $filters['status']);
@@ -67,14 +72,22 @@ class AssessmentSlotRepository
             ->paginate(Settings::PAGINATE)->withQueryString();
     }
 
-    /** Every start_time already in use, for the Time filter's dropdown -
-     *  sorted by actual time of day, not alphabetically (the stored
-     *  "g:i A" strings would otherwise put "10:00 AM" before "9:00 AM"). */
-    public function timesDropdown(): array
+    /**
+     * start_time is stored as a "g:i A" display string (e.g. "9:30 AM"),
+     * which sorts and compares wrong as plain text ("10:00 AM" < "9:00
+     * AM" alphabetically) - STR_TO_DATE parses both sides back into an
+     * actual time of day first, so "from 09:00 to 12:00" compares the
+     * way a person means it, regardless of AM/PM wording or digit count.
+     */
+    private function timeRange($query, string $operator, string $rawTime24h): void
     {
-        return $this->slot->newQuery()->distinct()->pluck('start_time')
-            ->sortBy(fn ($t) => Carbon::createFromFormat('g:i A', $t)->format('Hi'))
-            ->values()->all();
+        try {
+            $label = Carbon::createFromFormat('H:i', $rawTime24h)->format('g:i A');
+        } catch (\Throwable $e) {
+            return; // not a real time - ignore rather than error the whole list out
+        }
+
+        $query->whereRaw("STR_TO_DATE(start_time, '%h:%i %p') {$operator} STR_TO_DATE(?, '%h:%i %p')", [$label]);
     }
 
     public function show($id)
