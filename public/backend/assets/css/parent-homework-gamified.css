@@ -15,7 +15,7 @@
   --r: #dc2626;
   --rl: #fee2e2;
   --sl: #64748b;
-  --bd: rgba(14, 165, 233, 0.22);
+  --bd: var(--bn-primary-tint-border, rgba(14, 165, 233, 0.22));
   --rr: 14px;
   --hw-glow: rgba(56, 189, 248, 0.35);
   font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
@@ -39,9 +39,9 @@ body.default-theme .main-content .pp-hw-gamified.pp {
   border-radius: var(--rr);
   padding: 1.1rem 1.25rem 1rem;
   margin-bottom: 1.25rem;
-  background: linear-gradient(125deg, #e0f2fe 0%, #f0f9ff 42%, #ffffff 100%);
+  background: linear-gradient(125deg, var(--bn-primary-tint-1, #e0f2fe) 0%, var(--bn-primary-tint-2, #f0f9ff) 42%, #ffffff 100%);
   border: 1px solid var(--bd);
-  box-shadow: 0 8px 26px rgba(14, 165, 233, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 26px rgba(var(--bn-turquoise-rgb, 14, 165, 233), 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.9);
   overflow: hidden;
 }
 
@@ -52,7 +52,7 @@ body.default-theme .main-content .pp-hw-gamified.pp {
   right: -5%;
   width: 200px;
   height: 200px;
-  background: radial-gradient(circle, rgba(56, 189, 248, 0.2) 0%, transparent 68%);
+  background: radial-gradient(circle, rgba(var(--bn-turquoise-rgb, 56, 189, 248), 0.2) 0%, transparent 68%);
   pointer-events: none;
 }
 
