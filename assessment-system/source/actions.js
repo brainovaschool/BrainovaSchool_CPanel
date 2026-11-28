@@ -84,7 +84,7 @@ ACT.publish = () => { const v = validateDraft(U.draft); if (v.err.length) { toas
 /* simple assessment procedure */
 ACT.setMode = el => { S.settings.assessmentMode = el.dataset.v; save(); render();
   toast(el.dataset.v === 'simple' ? 'Switched to the simple CSV system. Any old assessment still offered on the public page has been suspended for now - open each simple set and turn its own "offer on the public booking page" on when it is ready.' : 'Switched back to the original Builder system - any suspended assessment is offered again exactly as it was.'); };
-ACT.simpleNew = () => { U.simpleDraft = { _origId: null, grade: 1, subject: 'Mathematics', title: '', counts: { H: 0, S: 0, E: 0 }, leadIntake: false, questions: [] }; U.simpleErr = null; render(); scrollTop(); };
+ACT.simpleNew = () => { U.simpleDraft = { _origId: null, grade: 1, subject: 'Mathematics', title: '', counts: { H: 0, S: 0, E: 0 }, model: 'fixed', leadIntake: false, questions: [] }; U.simpleErr = null; render(); scrollTop(); };
 // A set saved before per-tier counts existed only has the old single
 // questionCount - migrated here (once, in the editor's own copy, not
 // written back until she hits Save) to the same even ~1/3 split
@@ -184,7 +184,7 @@ ACT.simpleSave = () => {
   const id = simpleSetKey(d.grade, d.subject);
   S.simpleSets = S.simpleSets.filter(s => s.id !== id && s.id !== d._origId);
   if (d._origId && d._origId !== id) S.assessments = S.assessments.filter(a => a.simpleSetId !== d._origId);
-  const saved = { id, grade: +d.grade, subject: d.subject, title: (d.title || '').trim(), counts, leadIntake: !!d.leadIntake, questions: d.questions, updated: Date.now() };
+  const saved = { id, grade: +d.grade, subject: d.subject, title: (d.title || '').trim(), counts, model: d.model === 'adaptive' ? 'adaptive' : 'fixed', leadIntake: !!d.leadIntake, questions: d.questions, updated: Date.now() };
   S.simpleSets.unshift(saved);
   syncSimpleCompanion(saved, !!d._contentReplaced);
   save(); U.simpleDraft = null; U.simpleErr = null; render(); toast('Simple set saved.');

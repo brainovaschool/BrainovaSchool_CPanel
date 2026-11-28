@@ -795,14 +795,102 @@ function buildSimpleQuiz(set, seed) {
     }
     if (!gained) break;
   }
-  const items = order.flatMap(k => picked[k]).map(q => ({
+  const items = order.flatMap(k => picked[k]).map(q => simpleItemFrom(set, q));
+  const wanted = order.reduce((s, k) => s + want[k], 0);
+  return { items, shortages: items.length < wanted ? [{ diff: 'H', missing: wanted - items.length }] : [] };
+}
+// Shared by buildSimpleQuiz (whole list upfront) and SimpleLadder (one
+// question at a time) so a question drawn from a simple set's CSV
+// always turns into the exact same item shape either way.
+function simpleItemFrom(set, q) {
+  return {
     id: q.id, subject: set.subject, topic: q.topic || 'General', unit: null, grades: [set.grade, set.grade], diff: q.diff, type: 'mcq',
     text: q.text, objective: 'Not specified', explanation: q.explanation || '', marks: 1, time: 45, prereq: null,
     source: 'Simple CSV', status: 'approved', b: bFor(q.id, q.diff), c: cFor('mcq'), marking: 'Full marks for the correct answer.',
     options: q.options, answer: q.answer,
-  }));
-  const wanted = order.reduce((s, k) => s + want[k], 0);
-  return { items, shortages: items.length < wanted ? [{ diff: 'H', missing: wanted - items.length }] : [] };
+  };
+}
+// ---- Simple assessment procedure: adaptive ladder ----
+// A lightweight, topic-by-topic escalation instead of the IRT-driven
+// Adaptive class the old Builder uses (which needs per-question
+// b-values spread across six tiers and real topic/objective metadata
+// this flat 3-tier CSV shape doesn't have). Each topic starts at Hard;
+// a correct answer climbs it to Strengthen then Extend; a wrong answer
+// gets ONE retry at the same tier (a different question, if one is
+// left) before that topic's climb ends and the next topic's Hard
+// question begins. Hard/Strengthen/Extend counts (set.counts) are
+// spent as a single budget across the WHOLE attempt - exactly what
+// they already mean in fixed mode - not "per topic", so they cap how
+// many of each tier get used overall, however many topics that ends up
+// covering. Once every topic has had a turn, topics reshuffle and get
+// another pass (fresh questions only, nothing repeats) for as long as
+// the budget and the file's content allow.
+class SimpleLadder {
+  constructor(set, seed) {
+    this.set = set; this.R = rng(seed);
+    const pool = set.questions.filter(q => q.included !== false);
+    this.byTier = { H: pool.filter(q => q.diff === 'H'), S: pool.filter(q => q.diff === 'S'), E: pool.filter(q => q.diff === 'E') };
+    this.budget = { H: Math.max(0, +(set.counts && set.counts.H) || 0), S: Math.max(0, +(set.counts && set.counts.S) || 0), E: Math.max(0, +(set.counts && set.counts.E) || 0) };
+    this.used = new Set();
+    this.topics = this.R.shuffle([...new Set(this.byTier.H.map(q => q.topic || 'General'))]);
+    this.topicIdx = 0;
+    this.climb = null; // { topic, tier, retried }
+    this.resps = [];
+    this.trace = [];
+  }
+  totalBudget_() { return this.budget.H + this.budget.S + this.budget.E; }
+  pick_(tier, topic) {
+    const have = this.byTier[tier].filter(q => (q.topic || 'General') === topic && !this.used.has(q.id));
+    return have.length ? this.R.pick(have) : null;
+  }
+  done() {
+    if (this.totalBudget_() <= 0) return 'Reached the configured question budget';
+    if (!this.topics.length) return 'No Hard-tier questions are set up for any topic';
+    const climbAlive = this.climb && this.budget[this.climb.tier] > 0 && !!this.pick_(this.climb.tier, this.climb.topic);
+    const freshStart = this.budget.H > 0 && this.topics.some(t => this.pick_('H', t));
+    return (climbAlive || freshStart) ? null : 'Question pool exhausted';
+  }
+  next() {
+    const n = this.resps.length;
+    if (this.climb && this.budget[this.climb.tier] > 0) {
+      const q = this.pick_(this.climb.tier, this.climb.topic);
+      if (q) {
+        this.used.add(q.id); this.budget[this.climb.tier]--;
+        this.trace.push({ n: n + 1, topic: this.climb.topic, qid: q.id, diff: q.diff, probe: false, why: `${this.climb.retried ? 'Retry after a miss' : 'Climbed up'} - ${DIFF[this.climb.tier].name} question for ${this.climb.topic}.` });
+        return simpleItemFrom(this.set, q);
+      }
+    }
+    // The current climb (if any) can't continue - start a fresh topic
+    // at Hard instead. Tries every topic at most once here (wrapping
+    // the shuffled order at most once): content only ever depletes, so
+    // one full pass is always enough to prove nothing is left to start.
+    if (this.budget.H <= 0) { this.climb = null; return null; }
+    for (let tries = 0; tries < this.topics.length; tries++) {
+      if (this.topicIdx >= this.topics.length) { this.topics = this.R.shuffle(this.topics); this.topicIdx = 0; }
+      const topic = this.topics[this.topicIdx++];
+      const q = this.pick_('H', topic);
+      if (q) {
+        this.used.add(q.id); this.budget.H--;
+        this.climb = { topic, tier: 'H', retried: false };
+        this.trace.push({ n: n + 1, topic, qid: q.id, diff: q.diff, probe: false, why: `Starting ${topic} at ${DIFF.H.name}.` });
+        return simpleItemFrom(this.set, q);
+      }
+    }
+    this.climb = null;
+    return null;
+  }
+  record(resp) {
+    this.resps.push(resp);
+    if (!this.climb) return;
+    const order = ['H', 'S', 'E'], i = order.indexOf(this.climb.tier);
+    if (resp.status === 'correct') {
+      this.climb = i < 2 ? { topic: this.climb.topic, tier: order[i + 1], retried: false } : null;
+    } else if (!this.climb.retried) {
+      this.climb.retried = true;
+    } else {
+      this.climb = null;
+    }
+  }
 }
 function poolCounts(pool, topics) {
   return topics.map(t => { const row = { subject: t.subject, topic: t.topic, S: 0, H: 0, E: 0, C: 0, M: 0, X: 0 }; pool.forEach(q => { if (q.subject === t.subject && q.topic === t.topic) row[q.diff]++; }); return row; });
@@ -1562,9 +1650,23 @@ function syncSimpleCompanion(set, contentReplaced) {
   // just silently absent, which is exactly what looked like "my child's
   // submitted test vanished" (it was never released, so it was never
   // actually assigned/sent in the first place).
-  const a = newAsmt({ id, title: (set.title || '').trim() || `Grade ${set.grade} ${set.subject} (Simple)`, application: 'school', grades: [set.grade], topics: [{ subject: set.subject, topic: 'General' }], model: 'fixed', simpleSetId: set.id,
+  const adaptive = set.model === 'adaptive';
+  const over = { id, title: (set.title || '').trim() || `Grade ${set.grade} ${set.subject} (Simple)`, application: 'school', grades: [set.grade], topics: [{ subject: set.subject, topic: 'General' }], model: adaptive ? 'adaptive' : 'fixed', simpleSetId: set.id,
     resultVis: 'instant', feedback: 'instant',
-    assignedTo: (i >= 0 && !contentReplaced) ? S.assessments[i].assignedTo : [], created: i >= 0 ? S.assessments[i].created : Date.now() });
+    assignedTo: (i >= 0 && !contentReplaced) ? S.assessments[i].assignedTo : [], created: i >= 0 ? S.assessments[i].created : Date.now() };
+  // Only set when adaptive - newAsmt's Object.assign would otherwise
+  // stomp the default adaptive config with an explicit `undefined` for
+  // a fixed set. min/max only drive the student dashboard's "about how
+  // many questions" text (VIEWS.my/VIEWS.intro in views_c.js) -
+  // SimpleLadder itself reads set.counts directly, never this. max is
+  // the real ceiling (the Hard+Strengthen+Extend budget); min assumes
+  // the worst case, every topic's climb ending after just one question.
+  if (adaptive) {
+    const topicCount = new Set(set.questions.filter(q => q.included !== false && q.diff === 'H').map(q => q.topic || 'General')).size;
+    const budget = Math.max(1, (+(set.counts && set.counts.H) || 0) + (+(set.counts && set.counts.S) || 0) + (+(set.counts && set.counts.E) || 0));
+    over.adaptive = { min: Math.max(1, Math.min(topicCount, budget)), max: budget, minPer: 1, sdTarget: 0.7, startB: -0.5, probe: false };
+  }
+  const a = newAsmt(over);
   if (i >= 0) S.assessments[i] = a; else S.assessments.unshift(a);
 }
 // Each simple set has its own "offer on the public booking page" flag
@@ -1922,7 +2024,8 @@ VIEWS.simpleAssess = function () {
       const n = a ? S.attempts.filter(x => x.asmtId === a.id && !x.preview).length : 0;
       const cf = a ? leadIntakeConflicts(a) : [];
       const used = s.counts ? `Hard ${s.counts.H || 0} · Strengthen ${s.counts.S || 0} · Extend ${s.counts.E || 0}` : `${s.questionCount} (auto split)`;
-      return `<div class="card"><div class="row sp"><div><div class="row" style="margin-bottom:4px">${s.leadIntake ? '<span class="pill ok">Public booking page</span>' : '<span class="pill warn">Not offered publicly</span>'}${cf.length ? `<span class="pill warn" title="Also covered by: ${esc(cf.map(o => o.title || 'Untitled assessment').join(', '))}">Clashes with ${cf.length} other${cf.length === 1 ? '' : 's'} on public page</span>` : ''}</div><h3>${esc((s.title || '').trim() || `Grade ${s.grade} ${s.subject} (Simple)`)}</h3><p class="muted small">Grade ${s.grade} · ${esc(s.subject)} · ${s.questions.length} question${s.questions.length === 1 ? '' : 's'} in file (Hard ${counts.H} · Strengthen ${counts.S} · Extend ${counts.E}) · ${used} used per quiz, delivered Hard → Strengthen → Extend · ${a ? a.assignedTo.length : 0} assigned · ${n} attempt${n === 1 ? '' : 's'}</p></div>
+      const delivery = s.model === 'adaptive' ? `${used} budget, climbing each topic Hard → Strengthen → Extend as answers are correct` : `${used} used per quiz, delivered Hard → Strengthen → Extend`;
+      return `<div class="card"><div class="row sp"><div><div class="row" style="margin-bottom:4px">${s.model === 'adaptive' ? '<span class="pill pur">Adaptive</span>' : '<span class="pill">Fixed</span>'}${s.leadIntake ? '<span class="pill ok">Public booking page</span>' : '<span class="pill warn">Not offered publicly</span>'}${cf.length ? `<span class="pill warn" title="Also covered by: ${esc(cf.map(o => o.title || 'Untitled assessment').join(', '))}">Clashes with ${cf.length} other${cf.length === 1 ? '' : 's'} on public page</span>` : ''}</div><h3>${esc((s.title || '').trim() || `Grade ${s.grade} ${s.subject} (Simple)`)}</h3><p class="muted small">Grade ${s.grade} · ${esc(s.subject)} · ${s.questions.length} question${s.questions.length === 1 ? '' : 's'} in file (Hard ${counts.H} · Strengthen ${counts.S} · Extend ${counts.E}) · ${delivery} · ${a ? a.assignedTo.length : 0} assigned · ${n} attempt${n === 1 ? '' : 's'}</p></div>
         <div class="row"><button class="btn sm ghost" data-a="previewAsmt" data-id="${a ? a.id : ''}" ${a ? '' : 'disabled'}>Preview</button>${a && a.status !== 'draft' ? `<button class="btn sm ${U.asgOpen === a.id ? '' : 'ghost'}" data-a="asgOpen" data-id="${a.id}">Assign and attempts</button>` : ''}<button class="btn sm ghost" data-a="simpleEdit" data-id="${s.id}">Edit</button><button class="btn sm danger" data-a="simpleDelete" data-id="${s.id}">${U.cfm === 'simpledel-' + s.id ? 'Click again to confirm delete' : 'Delete'}</button></div></div>${U.asgOpen === (a && a.id) ? asgPanel(a) : ''}</div>`;
     }).join('') : '<div class="empty">No simple sets yet. Click "New simple set" to add one.</div>'}</div>`;
 };
@@ -1936,11 +2039,17 @@ function simpleEditor() {
   // the file can deliver.
   const countField = (k, label) => field(`${label} questions to use (${avail[k]} available)`,
     `<select data-m="simpleDraft.counts.${k}" data-t="num">${optList(Array.from({ length: avail[k] + 1 }, (_, i) => i), dc[k] ?? 0)}</select>`);
+  const model = d.model === 'adaptive' ? 'adaptive' : 'fixed';
+  const modelPick = (v, label, desc) => `<label class="sub chk" style="cursor:pointer"><input type="radio" name="simpleModel" data-m="simpleDraft.model" data-r value="${v}" ${model === v ? 'checked' : ''}><span><b>${label}</b><br><span class="muted small">${desc}</span></span></label>`;
+  const countsNote = model === 'adaptive'
+    ? 'Adaptive: these are a total budget for the whole attempt, not a per-topic count - the ladder spends from them as topics climb, however many topics that ends up covering.'
+    : 'Fixed: exactly these many questions are used from each tier, spread across topics instead of picked at random.';
   return `<div class="card lift"><div class="row sp"><h2>${d._origId ? 'Edit simple set' : 'New simple set'}</h2><button class="btn sm ghost" data-a="simpleClose">Close</button></div>
     ${field('Assessment name', inp('simpleDraft.title', d.title, 'text', `placeholder="Grade ${d.grade} ${esc(d.subject)} (Simple)"`))}
     <div class="grid g3" style="margin:10px 0">${field('Grade', `<select data-m="simpleDraft.grade" data-t="num">${optList([1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(g => ({ v: g, l: 'Grade ' + g })), d.grade)}</select>`)}
     ${field('Subject', `<select data-m="simpleDraft.subject">${optList(SYLLABUS.map(s => s.subject), d.subject)}</select>`)}</div>
-    <p class="small muted" style="margin:0 0 6px">How many questions to draw from each tier - set by hand, one tier at a time. Within a tier, the quiz spreads its picks across topics instead of drawing at random, so one topic can't crowd out the rest.</p>
+    <div class="grid g2" style="margin:10px 0">${modelPick('fixed', 'Fixed', 'Draws the counts below from each tier, spread across topics.')}${modelPick('adaptive', 'Adaptive', 'Starts a topic at Hard; a correct answer climbs it to Strengthen then Extend. A miss gets one retry at the same tier before moving to the next topic.')}</div>
+    <p class="small muted" style="margin:0 0 6px">${countsNote}</p>
     <div class="grid g3" style="margin:0 0 10px">${countField('H', 'Hard')}${countField('S', 'Strengthen')}${countField('E', 'Extend')}</div>
     <div class="sub">${chk('simpleDraft.leadIntake', !!d.leadIntake, 'Offer this grade and subject on the public "book an assessment" page')}<p class="small muted" style="margin-top:6px">Off by default so a set isn't exposed the moment you upload it. Only takes effect while the toggle above is set to "New (Simple CSV)".</p></div>
     <div class="row" style="margin:10px 0"><label class="btn ghost" for="simplecsv" style="cursor:pointer">Upload CSV</label><input id="simplecsv" type="file" accept=".csv,text/csv" hidden data-a="simpleImportCsv"><button class="btn ghost" data-a="simpleTpl">CSV template</button>
@@ -2715,8 +2824,16 @@ function startRun(a, studentId, preview) {
   if (a.simpleSetId) {
     const set = S.simpleSets.find(s => s.id === a.simpleSetId);
     if (!set || !set.questions.length) { toast('No questions are available for this assessment yet.'); return; }
-    const fx = buildSimpleQuiz(set, seed); items = fx.items.map(q => present(q, R, true));
-    if (!items.length) { toast('No approved questions are available for this assessment yet.'); return; }
+    if (set.model === 'adaptive') {
+      ad = new SimpleLadder(set, seed);
+      if (ad.done()) { toast('No approved questions are available for this assessment yet.'); return; }
+      const q = ad.next();
+      if (!q) { toast('No approved questions are available for this assessment yet.'); return; }
+      items.push(present(q, R, true));
+    } else {
+      const fx = buildSimpleQuiz(set, seed); items = fx.items.map(q => present(q, R, true));
+      if (!items.length) { toast('No approved questions are available for this assessment yet.'); return; }
+    }
   }
   else if (a.model === 'adaptive') { ad = new Adaptive(a, S.bank, seed); if (ad.done()) { toast('No approved questions are available for this assessment yet.'); return; } const q = ad.next(); items.push(Object.assign(present(q, R, a.shuffleOpts), { _probe: !!q._probe })); }
   else { const fx = buildFixed(a, S.bank, seed); items = fx.items.map(q => present(q, R, a.shuffleOpts)); if (!items.length) { toast('No approved questions are available for this assessment yet.'); return; } }
@@ -3249,7 +3366,7 @@ ACT.publish = () => { const v = validateDraft(U.draft); if (v.err.length) { toas
 /* simple assessment procedure */
 ACT.setMode = el => { S.settings.assessmentMode = el.dataset.v; save(); render();
   toast(el.dataset.v === 'simple' ? 'Switched to the simple CSV system. Any old assessment still offered on the public page has been suspended for now - open each simple set and turn its own "offer on the public booking page" on when it is ready.' : 'Switched back to the original Builder system - any suspended assessment is offered again exactly as it was.'); };
-ACT.simpleNew = () => { U.simpleDraft = { _origId: null, grade: 1, subject: 'Mathematics', title: '', counts: { H: 0, S: 0, E: 0 }, leadIntake: false, questions: [] }; U.simpleErr = null; render(); scrollTop(); };
+ACT.simpleNew = () => { U.simpleDraft = { _origId: null, grade: 1, subject: 'Mathematics', title: '', counts: { H: 0, S: 0, E: 0 }, model: 'fixed', leadIntake: false, questions: [] }; U.simpleErr = null; render(); scrollTop(); };
 // A set saved before per-tier counts existed only has the old single
 // questionCount - migrated here (once, in the editor's own copy, not
 // written back until she hits Save) to the same even ~1/3 split
@@ -3349,7 +3466,7 @@ ACT.simpleSave = () => {
   const id = simpleSetKey(d.grade, d.subject);
   S.simpleSets = S.simpleSets.filter(s => s.id !== id && s.id !== d._origId);
   if (d._origId && d._origId !== id) S.assessments = S.assessments.filter(a => a.simpleSetId !== d._origId);
-  const saved = { id, grade: +d.grade, subject: d.subject, title: (d.title || '').trim(), counts, leadIntake: !!d.leadIntake, questions: d.questions, updated: Date.now() };
+  const saved = { id, grade: +d.grade, subject: d.subject, title: (d.title || '').trim(), counts, model: d.model === 'adaptive' ? 'adaptive' : 'fixed', leadIntake: !!d.leadIntake, questions: d.questions, updated: Date.now() };
   S.simpleSets.unshift(saved);
   syncSimpleCompanion(saved, !!d._contentReplaced);
   save(); U.simpleDraft = null; U.simpleErr = null; render(); toast('Simple set saved.');

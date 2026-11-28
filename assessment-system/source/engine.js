@@ -621,14 +621,102 @@ function buildSimpleQuiz(set, seed) {
     }
     if (!gained) break;
   }
-  const items = order.flatMap(k => picked[k]).map(q => ({
+  const items = order.flatMap(k => picked[k]).map(q => simpleItemFrom(set, q));
+  const wanted = order.reduce((s, k) => s + want[k], 0);
+  return { items, shortages: items.length < wanted ? [{ diff: 'H', missing: wanted - items.length }] : [] };
+}
+// Shared by buildSimpleQuiz (whole list upfront) and SimpleLadder (one
+// question at a time) so a question drawn from a simple set's CSV
+// always turns into the exact same item shape either way.
+function simpleItemFrom(set, q) {
+  return {
     id: q.id, subject: set.subject, topic: q.topic || 'General', unit: null, grades: [set.grade, set.grade], diff: q.diff, type: 'mcq',
     text: q.text, objective: 'Not specified', explanation: q.explanation || '', marks: 1, time: 45, prereq: null,
     source: 'Simple CSV', status: 'approved', b: bFor(q.id, q.diff), c: cFor('mcq'), marking: 'Full marks for the correct answer.',
     options: q.options, answer: q.answer,
-  }));
-  const wanted = order.reduce((s, k) => s + want[k], 0);
-  return { items, shortages: items.length < wanted ? [{ diff: 'H', missing: wanted - items.length }] : [] };
+  };
+}
+// ---- Simple assessment procedure: adaptive ladder ----
+// A lightweight, topic-by-topic escalation instead of the IRT-driven
+// Adaptive class the old Builder uses (which needs per-question
+// b-values spread across six tiers and real topic/objective metadata
+// this flat 3-tier CSV shape doesn't have). Each topic starts at Hard;
+// a correct answer climbs it to Strengthen then Extend; a wrong answer
+// gets ONE retry at the same tier (a different question, if one is
+// left) before that topic's climb ends and the next topic's Hard
+// question begins. Hard/Strengthen/Extend counts (set.counts) are
+// spent as a single budget across the WHOLE attempt - exactly what
+// they already mean in fixed mode - not "per topic", so they cap how
+// many of each tier get used overall, however many topics that ends up
+// covering. Once every topic has had a turn, topics reshuffle and get
+// another pass (fresh questions only, nothing repeats) for as long as
+// the budget and the file's content allow.
+class SimpleLadder {
+  constructor(set, seed) {
+    this.set = set; this.R = rng(seed);
+    const pool = set.questions.filter(q => q.included !== false);
+    this.byTier = { H: pool.filter(q => q.diff === 'H'), S: pool.filter(q => q.diff === 'S'), E: pool.filter(q => q.diff === 'E') };
+    this.budget = { H: Math.max(0, +(set.counts && set.counts.H) || 0), S: Math.max(0, +(set.counts && set.counts.S) || 0), E: Math.max(0, +(set.counts && set.counts.E) || 0) };
+    this.used = new Set();
+    this.topics = this.R.shuffle([...new Set(this.byTier.H.map(q => q.topic || 'General'))]);
+    this.topicIdx = 0;
+    this.climb = null; // { topic, tier, retried }
+    this.resps = [];
+    this.trace = [];
+  }
+  totalBudget_() { return this.budget.H + this.budget.S + this.budget.E; }
+  pick_(tier, topic) {
+    const have = this.byTier[tier].filter(q => (q.topic || 'General') === topic && !this.used.has(q.id));
+    return have.length ? this.R.pick(have) : null;
+  }
+  done() {
+    if (this.totalBudget_() <= 0) return 'Reached the configured question budget';
+    if (!this.topics.length) return 'No Hard-tier questions are set up for any topic';
+    const climbAlive = this.climb && this.budget[this.climb.tier] > 0 && !!this.pick_(this.climb.tier, this.climb.topic);
+    const freshStart = this.budget.H > 0 && this.topics.some(t => this.pick_('H', t));
+    return (climbAlive || freshStart) ? null : 'Question pool exhausted';
+  }
+  next() {
+    const n = this.resps.length;
+    if (this.climb && this.budget[this.climb.tier] > 0) {
+      const q = this.pick_(this.climb.tier, this.climb.topic);
+      if (q) {
+        this.used.add(q.id); this.budget[this.climb.tier]--;
+        this.trace.push({ n: n + 1, topic: this.climb.topic, qid: q.id, diff: q.diff, probe: false, why: `${this.climb.retried ? 'Retry after a miss' : 'Climbed up'} - ${DIFF[this.climb.tier].name} question for ${this.climb.topic}.` });
+        return simpleItemFrom(this.set, q);
+      }
+    }
+    // The current climb (if any) can't continue - start a fresh topic
+    // at Hard instead. Tries every topic at most once here (wrapping
+    // the shuffled order at most once): content only ever depletes, so
+    // one full pass is always enough to prove nothing is left to start.
+    if (this.budget.H <= 0) { this.climb = null; return null; }
+    for (let tries = 0; tries < this.topics.length; tries++) {
+      if (this.topicIdx >= this.topics.length) { this.topics = this.R.shuffle(this.topics); this.topicIdx = 0; }
+      const topic = this.topics[this.topicIdx++];
+      const q = this.pick_('H', topic);
+      if (q) {
+        this.used.add(q.id); this.budget.H--;
+        this.climb = { topic, tier: 'H', retried: false };
+        this.trace.push({ n: n + 1, topic, qid: q.id, diff: q.diff, probe: false, why: `Starting ${topic} at ${DIFF.H.name}.` });
+        return simpleItemFrom(this.set, q);
+      }
+    }
+    this.climb = null;
+    return null;
+  }
+  record(resp) {
+    this.resps.push(resp);
+    if (!this.climb) return;
+    const order = ['H', 'S', 'E'], i = order.indexOf(this.climb.tier);
+    if (resp.status === 'correct') {
+      this.climb = i < 2 ? { topic: this.climb.topic, tier: order[i + 1], retried: false } : null;
+    } else if (!this.climb.retried) {
+      this.climb.retried = true;
+    } else {
+      this.climb = null;
+    }
+  }
 }
 function poolCounts(pool, topics) {
   return topics.map(t => { const row = { subject: t.subject, topic: t.topic, S: 0, H: 0, E: 0, C: 0, M: 0, X: 0 }; pool.forEach(q => { if (q.subject === t.subject && q.topic === t.topic) row[q.diff]++; }); return row; });
@@ -872,4 +960,4 @@ function simulateAttempt(a, bank, student, ability, seed, when) {
   return att;
 }
 
-if (typeof module !== 'undefined') module.exports = { DIFF, DIFF_KEYS, DEFAULT_LEVELS, PREREQ, MATH_TOPICS, buildBank, SYLLABUS, COURSES, rng, eap, levelIdx, gradeAnswer, poolFor, poolCounts, buildFixed, Adaptive, analyze, simulateAttempt, makeAttempt, makeResponse, present, ansText, correctText, P, hashStr, ERR, ADAPT_DEFAULT, wrongTag, parseNum, norm, cFor, bFor };
+if (typeof module !== 'undefined') module.exports = { DIFF, DIFF_KEYS, DEFAULT_LEVELS, PREREQ, MATH_TOPICS, buildBank, SYLLABUS, COURSES, rng, eap, levelIdx, gradeAnswer, poolFor, poolCounts, buildFixed, Adaptive, analyze, simulateAttempt, makeAttempt, makeResponse, present, ansText, correctText, P, hashStr, ERR, ADAPT_DEFAULT, wrongTag, parseNum, norm, cFor, bFor, buildSimpleQuiz, SimpleLadder, pickAcrossTopics };

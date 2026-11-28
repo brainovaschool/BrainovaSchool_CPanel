@@ -25,8 +25,16 @@ function startRun(a, studentId, preview) {
   if (a.simpleSetId) {
     const set = S.simpleSets.find(s => s.id === a.simpleSetId);
     if (!set || !set.questions.length) { toast('No questions are available for this assessment yet.'); return; }
-    const fx = buildSimpleQuiz(set, seed); items = fx.items.map(q => present(q, R, true));
-    if (!items.length) { toast('No approved questions are available for this assessment yet.'); return; }
+    if (set.model === 'adaptive') {
+      ad = new SimpleLadder(set, seed);
+      if (ad.done()) { toast('No approved questions are available for this assessment yet.'); return; }
+      const q = ad.next();
+      if (!q) { toast('No approved questions are available for this assessment yet.'); return; }
+      items.push(present(q, R, true));
+    } else {
+      const fx = buildSimpleQuiz(set, seed); items = fx.items.map(q => present(q, R, true));
+      if (!items.length) { toast('No approved questions are available for this assessment yet.'); return; }
+    }
   }
   else if (a.model === 'adaptive') { ad = new Adaptive(a, S.bank, seed); if (ad.done()) { toast('No approved questions are available for this assessment yet.'); return; } const q = ad.next(); items.push(Object.assign(present(q, R, a.shuffleOpts), { _probe: !!q._probe })); }
   else { const fx = buildFixed(a, S.bank, seed); items = fx.items.map(q => present(q, R, a.shuffleOpts)); if (!items.length) { toast('No approved questions are available for this assessment yet.'); return; } }

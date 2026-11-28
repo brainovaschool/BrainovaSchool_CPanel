@@ -131,9 +131,23 @@ function syncSimpleCompanion(set, contentReplaced) {
   // just silently absent, which is exactly what looked like "my child's
   // submitted test vanished" (it was never released, so it was never
   // actually assigned/sent in the first place).
-  const a = newAsmt({ id, title: (set.title || '').trim() || `Grade ${set.grade} ${set.subject} (Simple)`, application: 'school', grades: [set.grade], topics: [{ subject: set.subject, topic: 'General' }], model: 'fixed', simpleSetId: set.id,
+  const adaptive = set.model === 'adaptive';
+  const over = { id, title: (set.title || '').trim() || `Grade ${set.grade} ${set.subject} (Simple)`, application: 'school', grades: [set.grade], topics: [{ subject: set.subject, topic: 'General' }], model: adaptive ? 'adaptive' : 'fixed', simpleSetId: set.id,
     resultVis: 'instant', feedback: 'instant',
-    assignedTo: (i >= 0 && !contentReplaced) ? S.assessments[i].assignedTo : [], created: i >= 0 ? S.assessments[i].created : Date.now() });
+    assignedTo: (i >= 0 && !contentReplaced) ? S.assessments[i].assignedTo : [], created: i >= 0 ? S.assessments[i].created : Date.now() };
+  // Only set when adaptive - newAsmt's Object.assign would otherwise
+  // stomp the default adaptive config with an explicit `undefined` for
+  // a fixed set. min/max only drive the student dashboard's "about how
+  // many questions" text (VIEWS.my/VIEWS.intro in views_c.js) -
+  // SimpleLadder itself reads set.counts directly, never this. max is
+  // the real ceiling (the Hard+Strengthen+Extend budget); min assumes
+  // the worst case, every topic's climb ending after just one question.
+  if (adaptive) {
+    const topicCount = new Set(set.questions.filter(q => q.included !== false && q.diff === 'H').map(q => q.topic || 'General')).size;
+    const budget = Math.max(1, (+(set.counts && set.counts.H) || 0) + (+(set.counts && set.counts.S) || 0) + (+(set.counts && set.counts.E) || 0));
+    over.adaptive = { min: Math.max(1, Math.min(topicCount, budget)), max: budget, minPer: 1, sdTarget: 0.7, startB: -0.5, probe: false };
+  }
+  const a = newAsmt(over);
   if (i >= 0) S.assessments[i] = a; else S.assessments.unshift(a);
 }
 // Each simple set has its own "offer on the public booking page" flag
